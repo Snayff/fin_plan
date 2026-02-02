@@ -1,0 +1,48 @@
+{
+  "name": "@finplan/frontend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.1.4",
+    "zustand": "^5.0.2",
+    "@tanstack/react-query": "^5.62.14",
+    "rxdb": "^15.38.2",
+    "zod": "^3.24.1",
+    "date-fns": "^4.1.0",
+    "recharts": "^2.15.0",
+    "d3": "^7.9.0",
+    "framer-motion": "^11.15.0",
+    "cmdk": "^1.0.4",
+    "react-hotkeys-hook": "^4.5.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.18",
+    "@types/react-dom": "^18.3.5",
+    "@types/d3": "^7.4.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "vite": "^6.0.7",
+    "vitest": "^3.0.8",
+    "@vitest/ui": "^3.0.8",
+    "@testing-library/react": "^16.1.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "tailwindcss": "^3.4.17",
+    "postcss": "^8.4.49",
+    "autoprefixer": "^10.4.20",
+    "typescript": "^5.7.3",
+    "eslint": "^9.19.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "eslint-plugin-react-refresh": "^0.4.16"
+  }
+}
