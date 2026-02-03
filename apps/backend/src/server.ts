@@ -6,6 +6,10 @@ import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
 import { config } from './config/env';
 import { authRoutes } from './routes/auth.routes';
+import { accountRoutes } from './routes/account.routes';
+import { categoryRoutes } from './routes/category.routes';
+import { transactionRoutes } from './routes/transaction.routes';
+import { dashboardRoutes } from './routes/dashboard.routes';
 import { errorHandler } from './middleware/errorHandler';
 
 const server = Fastify({
@@ -48,6 +52,10 @@ async function start() {
 
     // API routes
     server.register(authRoutes, { prefix: '/api/auth' });
+    server.register(accountRoutes, { prefix: '/api' });
+    server.register(categoryRoutes, { prefix: '/api' });
+    server.register(transactionRoutes, { prefix: '/api' });
+    server.register(dashboardRoutes, { prefix: '/api' });
 
     // WebSocket route for sync (placeholder for Phase 1)
     server.register(async (fastify) => {
