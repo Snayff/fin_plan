@@ -11,21 +11,21 @@ export const dashboardService = {
     if (options?.endDate) params.append('endDate', options.endDate);
     const query = params.toString();
     return apiClient.get<DashboardSummary>(
-      `/dashboard/summary${query ? `?${query}` : ''}`,
+      `/api/dashboard/summary${query ? `?${query}` : ''}`,
       getToken() || undefined
     );
   },
 
   async getNetWorthTrend(months: number = 6): Promise<{ trend: TrendData[] }> {
     return apiClient.get<{ trend: TrendData[] }>(
-      `/dashboard/net-worth-trend?months=${months}`,
+      `/api/dashboard/net-worth-trend?months=${months}`,
       getToken() || undefined
     );
   },
 
   async getIncomeExpenseTrend(months: number = 6): Promise<{ trend: TrendData[] }> {
     return apiClient.get<{ trend: TrendData[] }>(
-      `/dashboard/income-expense-trend?months=${months}`,
+      `/api/dashboard/income-expense-trend?months=${months}`,
       getToken() || undefined
     );
   },

@@ -1,8 +1,13 @@
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { transactionService } from '../services/transaction.service';
 import { format } from 'date-fns';
+import Modal from '../components/ui/Modal';
+import TransactionForm from '../components/transactions/TransactionForm';
 
 export default function TransactionsPage() {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  
   const { data, isLoading, error } = useQuery({
     queryKey: ['transactions'],
     queryFn: () => transactionService.getTransactions({ limit: 50, orderBy: 'date', orderDir: 'desc' }),
@@ -30,9 +35,19 @@ export default function TransactionsPage() {
 
   return (
     <div className="p-6">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
-        <p className="text-gray-600 mt-1">View and manage your transactions</p>
+      <div className="mb-6 flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
+          <p className="text-gray-600 mt-1">View and manage your transactions</p>
+        </div>
+        {transactions.length > 0 && (
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            + Add Transaction
+          </button>
+        )}
       </div>
 
       {transactions.length === 0 ? (
@@ -54,7 +69,10 @@ export default function TransactionsPage() {
           </div>
           <h3 className="text-lg font-medium text-gray-900 mb-2">No transactions yet</h3>
           <p className="text-gray-500 mb-4">Start tracking your income and expenses</p>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+          <button
+            onClick={() => setIsModalOpen(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
             Add Transaction
           </button>
         </div>
@@ -139,6 +157,17 @@ export default function TransactionsPage() {
           )}
         </div>
       )}
+
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Create New Transaction"
+      >
+        <TransactionForm
+          onSuccess={() => setIsModalOpen(false)}
+          onCancel={() => setIsModalOpen(false)}
+        />
+      </Modal>
     </div>
   );
 }

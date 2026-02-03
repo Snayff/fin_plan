@@ -1,3 +1,4 @@
+"The day isn’t over. You can still make progress."
 
 ## **Goals**
 - Allow quick capturing of expected income and planned spend. 

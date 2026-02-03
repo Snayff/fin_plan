@@ -26,13 +26,13 @@ export const transactionService = {
     }
     const query = params.toString();
     return apiClient.get<TransactionListResponse>(
-      `/transactions${query ? `?${query}` : ''}`,
+      `/api/transactions${query ? `?${query}` : ''}`,
       getToken() || undefined
     );
   },
 
   async getTransaction(id: string): Promise<{ transaction: Transaction }> {
-    return apiClient.get<{ transaction: Transaction }>(`/transactions/${id}`, getToken() || undefined);
+    return apiClient.get<{ transaction: Transaction }>(`/api/transactions/${id}`, getToken() || undefined);
   },
 
   async getTransactionSummary(filters?: Partial<TransactionFilters>): Promise<TransactionSummary> {
@@ -46,23 +46,23 @@ export const transactionService = {
     }
     const query = params.toString();
     return apiClient.get<TransactionSummary>(
-      `/transactions/summary${query ? `?${query}` : ''}`,
+      `/api/transactions/summary${query ? `?${query}` : ''}`,
       getToken() || undefined
     );
   },
 
   async createTransaction(data: CreateTransactionInput): Promise<{ transaction: Transaction }> {
-    return apiClient.post<{ transaction: Transaction }>('/transactions', data, getToken() || undefined);
+    return apiClient.post<{ transaction: Transaction }>('/api/transactions', data, getToken() || undefined);
   },
 
   async updateTransaction(
     id: string,
     data: Partial<CreateTransactionInput>
   ): Promise<{ transaction: Transaction }> {
-    return apiClient.put<{ transaction: Transaction }>(`/transactions/${id}`, data, getToken() || undefined);
+    return apiClient.put<{ transaction: Transaction }>(`/api/transactions/${id}`, data, getToken() || undefined);
   },
 
   async deleteTransaction(id: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/transactions/${id}`, getToken() || undefined);
+    return apiClient.delete<{ message: string }>(`/api/transactions/${id}`, getToken() || undefined);
   },
 };

@@ -106,16 +106,19 @@ export const dashboardService = {
 
     // Get category details for the top spending categories
     const categoryIds = categorySpending.map((cs) => cs.categoryId);
-    const categories = await prisma.category.findMany({
-      where: {
-        id: { in: categoryIds },
-      },
-      select: {
-        id: true,
-        name: true,
-        color: true,
-      },
-    });
+    
+    const categories = categoryIds.length > 0 
+      ? await prisma.category.findMany({
+          where: {
+            id: { in: categoryIds },
+          },
+          select: {
+            id: true,
+            name: true,
+            color: true,
+          },
+        })
+      : [];
 
     const categoryMap = new Map(categories.map((c) => [c.id, c]));
     const topCategories = categorySpending.map((cs) => ({
