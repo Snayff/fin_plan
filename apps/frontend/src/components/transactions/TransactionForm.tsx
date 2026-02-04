@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { transactionService } from '../../services/transaction.service';
 import { accountService } from '../../services/account.service';
@@ -23,12 +23,12 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
   });
 
   // Fetch accounts and categories
-  const { data: accountsData } = useQuery({
+  const { data: accountsData, isLoading: isLoadingAccounts, error: accountsError } = useQuery({
     queryKey: ['accounts'],
     queryFn: () => accountService.getAccounts(),
   });
 
-  const { data: categoriesData } = useQuery({
+  const { data: categoriesData, isLoading: isLoadingCategories, error: categoriesError } = useQuery({
     queryKey: ['categories'],
     queryFn: () => categoryService.getCategories(),
   });
@@ -59,6 +59,65 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
     e.preventDefault();
     createMutation.mutate(formData);
   };
+
+  // Show loading state while fetching data
+  if (isLoadingAccounts || isLoadingCategories) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
+          <p className="text-gray-600 text-sm">Loading form data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if data fetching failed
+  if (accountsError || categoriesError) {
+    return (
+      <div className="py-8">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+          <p className="font-medium mb-1">Failed to load form data</p>
+          {accountsError && <p>Accounts: {(accountsError as Error).message}</p>}
+          {categoriesError && <p>Categories: {(categoriesError as Error).message}</p>}
+        </div>
+        {onCancel && (
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+            >
+              Close
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // Show warning if no accounts exist
+  if (accounts.length === 0) {
+    return (
+      <div className="py-8">
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded text-sm">
+          <p className="font-medium mb-1">No accounts available</p>
+          <p>You need to create at least one account before adding transactions.</p>
+        </div>
+        {onCancel && (
+          <div className="mt-4 flex justify-end">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+            >
+              Close
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -139,7 +198,7 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
           <option value="">Select account...</option>
           {accounts.map((account) => (
             <option key={account.id} value={account.id}>
-              {account.name} ({account.currency} {account.balance.toFixed(2)})
+              {account.name} ({account.currency} {Number(account.balance || 0).toFixed(2)})
             </option>
           ))}
         </select>
@@ -147,27 +206,36 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
 
       <div>
         <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
-          Category *
+          Category {filteredCategories.length > 0 && '*'}
         </label>
-        <select
-          id="categoryId"
-          required
-          value={formData.categoryId}
-          onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Select category...</option>
-          {filteredCategories.map((category) => (
-            <optgroup key={category.id} label={category.name}>
-              <option value={category.id}>{category.name}</option>
-              {category.subcategories?.map((sub) => (
-                <option key={sub.id} value={sub.id}>
-                  └─ {sub.name}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
+        {filteredCategories.length === 0 ? (
+          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded text-sm">
+            <p>No {formData.type} categories available.</p>
+            <p className="text-xs mt-1">
+              You can still create the transaction, but consider adding categories for better organization.
+            </p>
+          </div>
+        ) : (
+          <select
+            id="categoryId"
+            required={filteredCategories.length > 0}
+            value={formData.categoryId}
+            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select category...</option>
+            {filteredCategories.map((category) => (
+              <React.Fragment key={category.id}>
+                <option value={category.id}>{category.name}</option>
+                {category.subcategories?.map((sub) => (
+                  <option key={sub.id} value={sub.id}>
+                    &nbsp;&nbsp;└─ {sub.name}
+                  </option>
+                ))}
+              </React.Fragment>
+            ))}
+          </select>
+        )}
       </div>
 
       <div>
