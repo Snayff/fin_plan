@@ -206,36 +206,27 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
 
       <div>
         <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
-          Category {filteredCategories.length > 0 && '*'}
+          Category *
         </label>
-        {filteredCategories.length === 0 ? (
-          <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 rounded text-sm">
-            <p>No {formData.type} categories available.</p>
-            <p className="text-xs mt-1">
-              You can still create the transaction, but consider adding categories for better organization.
-            </p>
-          </div>
-        ) : (
-          <select
-            id="categoryId"
-            required={filteredCategories.length > 0}
-            value={formData.categoryId}
-            onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select category...</option>
-            {filteredCategories.map((category) => (
-              <React.Fragment key={category.id}>
-                <option value={category.id}>{category.name}</option>
-                {category.subcategories?.map((sub) => (
-                  <option key={sub.id} value={sub.id}>
-                    &nbsp;&nbsp;└─ {sub.name}
-                  </option>
-                ))}
-              </React.Fragment>
-            ))}
-          </select>
-        )}
+        <select
+          id="categoryId"
+          required
+          value={formData.categoryId}
+          onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+        >
+          <option value="">Select category...</option>
+          {filteredCategories.map((category) => (
+            <React.Fragment key={category.id}>
+              <option value={category.id}>{category.name}</option>
+              {category.subcategories?.map((sub) => (
+                <option key={sub.id} value={sub.id}>
+                  &nbsp;&nbsp;└─ {sub.name}
+                </option>
+              ))}
+            </React.Fragment>
+          ))}
+        </select>
       </div>
 
       <div>

@@ -13,19 +13,18 @@ async function seedCategories() {
     { name: 'Dividends', type: 'income' as CategoryType, color: '#3b82f6', icon: '📈', isSystemCategory: true, sortOrder: 2 },
     { name: 'Gifts', type: 'income' as CategoryType, color: '#8b5cf6', icon: '🎁', isSystemCategory: true, sortOrder: 3 },
     { name: 'Refunds', type: 'income' as CategoryType, color: '#06b6d4', icon: '💵', isSystemCategory: true, sortOrder: 4 },
-    { name: 'Other Income', type: 'income' as CategoryType, color: '#6b7280', icon: '💸', isSystemCategory: true, sortOrder: 5 },
+    { name: 'Other', type: 'income' as CategoryType, color: '#6b7280', icon: '💸', isSystemCategory: true, sortOrder: 5 },
 
     // Expense categories
     { name: 'Housing', type: 'expense' as CategoryType, color: '#ef4444', icon: '🏠', isSystemCategory: true, sortOrder: 10 },
     { name: 'Transportation', type: 'expense' as CategoryType, color: '#f59e0b', icon: '🚗', isSystemCategory: true, sortOrder: 11 },
     { name: 'Food', type: 'expense' as CategoryType, color: '#84cc16', icon: '🍔', isSystemCategory: true, sortOrder: 12 },
     { name: 'Utilities', type: 'expense' as CategoryType, color: '#06b6d4', icon: '⚡', isSystemCategory: true, sortOrder: 13 },
-    { name: 'Healthcare', type: 'expense' as CategoryType, color: '#ec4899', icon: '🏥', isSystemCategory: true, sortOrder: 14 },
+    { name: 'Health', type: 'expense' as CategoryType, color: '#ec4899', icon: '🏥', isSystemCategory: true, sortOrder: 14 },
     { name: 'Entertainment', type: 'expense' as CategoryType, color: '#8b5cf6', icon: '🎮', isSystemCategory: true, sortOrder: 15 },
     { name: 'Insurance', type: 'expense' as CategoryType, color: '#3b82f6', icon: '🛡️', isSystemCategory: true, sortOrder: 16 },
     { name: 'Debt Payments', type: 'expense' as CategoryType, color: '#dc2626', icon: '💳', isSystemCategory: true, sortOrder: 17 },
-    { name: 'Savings', type: 'expense' as CategoryType, color: '#10b981', icon: '🐷', isSystemCategory: true, sortOrder: 18 },
-    { name: 'Other Expenses', type: 'expense' as CategoryType, color: '#6b7280', icon: '📦', isSystemCategory: true, sortOrder: 19 },
+    { name: 'Other', type: 'expense' as CategoryType, color: '#6b7280', icon: '📦', isSystemCategory: true, sortOrder: 18 },
   ];
 
   // Create categories if they don't exist
