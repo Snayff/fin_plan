@@ -19,7 +19,10 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
     amount: 0,
     type: 'expense',
     categoryId: '',
+    name: '',
     description: '',
+    recurrence: 'none',
+    recurrence_end_date: '',
   });
 
   // Fetch accounts and categories
@@ -122,8 +125,37 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
+        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+          Name *
+        </label>
+        <input
+          type="text"
+          id="name"
+          required
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="e.g., Monthly Salary, Grocery Shopping"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+          Description
+        </label>
+        <input
+          type="text"
+          id="description"
+          value={formData.description || ''}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Optional description"
+        />
+      </div>
+
+      <div>
         <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-          Transaction Type *
+          Type *
         </label>
         <select
           id="type"
@@ -132,47 +164,54 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
           onChange={(e) => setFormData({ ...formData, type: e.target.value as TransactionType, categoryId: '' })}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="income">Income</option>
           <option value="expense">Expense</option>
-          <option value="transfer">Transfer</option>
+          <option value="income">Income</option>
         </select>
       </div>
 
       <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Description *
+        <label htmlFor="accountId" className="block text-sm font-medium text-gray-700 mb-1">
+          Target Account *
         </label>
-        <input
-          type="text"
-          id="description"
+        <select
+          id="accountId"
           required
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          value={formData.accountId}
+          onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="e.g., Monthly Salary, Grocery Shopping"
-        />
+        >
+          <option value="">Select account...</option>
+          {accounts.map((account) => (
+            <option key={account.id} value={account.id}>
+              {account.name} (£{Number(account.balance || 0).toFixed(2)})
+            </option>
+          ))}
+        </select>
       </div>
 
       <div>
         <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
           Amount *
         </label>
-        <input
-          type="number"
-          id="amount"
-          required
-          step="0.01"
-          min="0"
-          value={formData.amount}
-          onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="0.00"
-        />
+        <div className="relative">
+          <span className="absolute left-3 top-2 text-gray-500">£</span>
+          <input
+            type="number"
+            id="amount"
+            required
+            step="0.01"
+            min="0"
+            value={formData.amount}
+            onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="0.00"
+          />
+        </div>
       </div>
 
       <div>
         <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
-          Date *
+          Transaction Date *
         </label>
         <input
           type="date"
@@ -185,33 +224,12 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
       </div>
 
       <div>
-        <label htmlFor="accountId" className="block text-sm font-medium text-gray-700 mb-1">
-          Account *
-        </label>
-        <select
-          id="accountId"
-          required
-          value={formData.accountId}
-          onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Select account...</option>
-          {accounts.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name} ({account.currency} {Number(account.balance || 0).toFixed(2)})
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div>
         <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
-          Category *
+          Category
         </label>
         <select
           id="categoryId"
-          required
-          value={formData.categoryId}
+          value={formData.categoryId || ''}
           onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
@@ -230,18 +248,36 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
       </div>
 
       <div>
-        <label htmlFor="memo" className="block text-sm font-medium text-gray-700 mb-1">
-          Memo (optional)
+        <label htmlFor="recurrence" className="block text-sm font-medium text-gray-700 mb-1">
+          Recurrence
         </label>
-        <textarea
-          id="memo"
-          value={formData.memo || ''}
-          onChange={(e) => setFormData({ ...formData, memo: e.target.value })}
+        <select
+          id="recurrence"
+          value={formData.recurrence || 'none'}
+          onChange={(e) => setFormData({ ...formData, recurrence: e.target.value as any })}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          rows={2}
-          placeholder="Additional notes..."
-        />
+        >
+          <option value="none">None</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+          <option value="yearly">Yearly</option>
+        </select>
       </div>
+
+      {formData.recurrence && formData.recurrence !== 'none' && (
+        <div>
+          <label htmlFor="recurrence_end_date" className="block text-sm font-medium text-gray-700 mb-1">
+            End Date
+          </label>
+          <input
+            type="date"
+            id="recurrence_end_date"
+            value={formData.recurrence_end_date || ''}
+            onChange={(e) => setFormData({ ...formData, recurrence_end_date: e.target.value })}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
+      )}
 
       {createMutation.error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">

@@ -8,6 +8,7 @@ export interface CreateAccountInput {
   subtype?: string;
   balance: number;
   currency: string;
+  description?: string;
   metadata?: {
     institution?: string;
     accountNumber?: string;
@@ -22,6 +23,7 @@ export interface UpdateAccountInput {
   subtype?: string;
   balance?: number;
   currency?: string;
+  description?: string;
   isActive?: boolean;
   metadata?: {
     institution?: string;
@@ -89,6 +91,7 @@ export const accountService = {
         subtype: data.subtype?.trim() || null,
         balance: data.balance,
         currency: data.currency.toUpperCase(),
+        description: data.description?.trim() || null,
         metadata: data.metadata || {},
         isActive: true,
       },
@@ -126,6 +129,7 @@ export const accountService = {
     if (data.subtype !== undefined) updateData.subtype = data.subtype?.trim() || null;
     if (data.balance !== undefined) updateData.balance = data.balance;
     if (data.currency !== undefined) updateData.currency = data.currency.toUpperCase();
+    if (data.description !== undefined) updateData.description = data.description?.trim() || null;
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
     if (data.metadata !== undefined) {
       // Merge existing metadata with new metadata

@@ -12,9 +12,10 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState<CreateAccountInput>({
     name: '',
-    type: 'checking',
+    type: 'current',
     balance: 0,
-    currency: 'USD',
+    currency: 'GBP',
+    description: '',
   });
 
   const createMutation = useMutation({
@@ -43,13 +44,27 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="e.g., Main Checking"
+          placeholder="e.g., Main Current Account"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
+          Description
+        </label>
+        <input
+          type="text"
+          id="description"
+          value={formData.description || ''}
+          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="Optional description"
         />
       </div>
 
       <div>
         <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-          Account Type *
+          Type *
         </label>
         <select
           id="type"
@@ -58,13 +73,10 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
           onChange={(e) => setFormData({ ...formData, type: e.target.value as AccountType })}
           className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         >
-          <option value="checking">Checking</option>
+          <option value="current">Current</option>
           <option value="savings">Savings</option>
-          <option value="credit">Credit Card</option>
-          <option value="investment">Investment</option>
-          <option value="loan">Loan</option>
-          <option value="asset">Asset</option>
-          <option value="liability">Liability</option>
+          <option value="isa">ISA</option>
+          <option value="stocks_and_shares_isa">Stocks and Shares ISA</option>
         </select>
       </div>
 
@@ -72,46 +84,19 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
         <label htmlFor="balance" className="block text-sm font-medium text-gray-700 mb-1">
           Current Balance *
         </label>
-        <input
-          type="number"
-          id="balance"
-          required
-          step="0.01"
-          value={formData.balance}
-          onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="0.00"
-        />
-      </div>
-
-      <div>
-        <label htmlFor="currency" className="block text-sm font-medium text-gray-700 mb-1">
-          Currency *
-        </label>
-        <input
-          type="text"
-          id="currency"
-          required
-          value={formData.currency}
-          onChange={(e) => setFormData({ ...formData, currency: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="USD"
-          maxLength={3}
-        />
-      </div>
-
-      <div>
-        <label htmlFor="subtype" className="block text-sm font-medium text-gray-700 mb-1">
-          Subtype (optional)
-        </label>
-        <input
-          type="text"
-          id="subtype"
-          value={formData.subtype || ''}
-          onChange={(e) => setFormData({ ...formData, subtype: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="e.g., High Yield Savings"
-        />
+        <div className="relative">
+          <span className="absolute left-3 top-2 text-gray-500">£</span>
+          <input
+            type="number"
+            id="balance"
+            required
+            step="0.01"
+            value={formData.balance}
+            onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })}
+            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="0.00"
+          />
+        </div>
       </div>
 
       {createMutation.error && (

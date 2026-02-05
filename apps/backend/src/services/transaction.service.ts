@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { TransactionType } from '@prisma/client';
+import { TransactionType, RecurrenceType } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { Prisma } from '@prisma/client';
 
@@ -8,13 +8,16 @@ export interface CreateTransactionInput {
   date: Date | string;
   amount: number;
   type: TransactionType;
-  categoryId: string;
+  categoryId?: string;
   subcategoryId?: string;
-  description: string;
+  name: string;
+  description?: string;
   memo?: string;
   tags?: string[];
   isRecurring?: boolean;
   recurringRuleId?: string;
+  recurrence?: RecurrenceType;
+  recurrence_end_date?: Date | string;
   metadata?: Record<string, any>;
 }
 
@@ -25,9 +28,12 @@ export interface UpdateTransactionInput {
   type?: TransactionType;
   categoryId?: string;
   subcategoryId?: string;
+  name?: string;
   description?: string;
   memo?: string;
   tags?: string[];
+  recurrence?: RecurrenceType;
+  recurrence_end_date?: Date | string;
   metadata?: Record<string, any>;
 }
 
@@ -93,6 +99,7 @@ export const transactionService = {
 
     if (filters.search) {
       where.OR = [
+        { name: { contains: filters.search, mode: 'insensitive' } },
         { description: { contains: filters.search, mode: 'insensitive' } },
         { memo: { contains: filters.search, mode: 'insensitive' } },
       ];
@@ -210,12 +217,8 @@ export const transactionService = {
       throw new ValidationError('Transaction type is required');
     }
 
-    if (!data.categoryId) {
-      throw new ValidationError('Category is required');
-    }
-
-    if (!data.description || data.description.trim().length === 0) {
-      throw new ValidationError('Description is required');
+    if (!data.name || data.name.trim().length === 0) {
+      throw new ValidationError('Transaction name is required');
     }
 
     // Verify account belongs to user
@@ -227,13 +230,15 @@ export const transactionService = {
       throw new NotFoundError('Account not found');
     }
 
-    // Verify category exists
-    const category = await prisma.category.findUnique({
-      where: { id: data.categoryId },
-    });
+    // Verify category exists if provided
+    if (data.categoryId) {
+      const category = await prisma.category.findUnique({
+        where: { id: data.categoryId },
+      });
 
-    if (!category) {
-      throw new NotFoundError('Category not found');
+      if (!category) {
+        throw new NotFoundError('Category not found');
+      }
     }
 
     // Verify subcategory if provided
@@ -257,13 +262,16 @@ export const transactionService = {
           date: new Date(data.date),
           amount: data.amount,
           type: data.type,
-          categoryId: data.categoryId,
+          categoryId: data.categoryId || null,
           subcategoryId: data.subcategoryId || null,
-          description: data.description.trim(),
+          name: data.name.trim(),
+          description: data.description?.trim() || null,
           memo: data.memo?.trim() || null,
           tags: data.tags || [],
           isRecurring: data.isRecurring || false,
           recurringRuleId: data.recurringRuleId || null,
+          recurrence: data.recurrence || 'none',
+          recurrenceEndDate: data.recurrence_end_date ? new Date(data.recurrence_end_date) : null,
           metadata: data.metadata || {},
         },
         include: {
@@ -323,8 +331,8 @@ export const transactionService = {
     }
 
     // Validate fields if provided
-    if (data.description !== undefined && data.description.trim().length === 0) {
-      throw new ValidationError('Description cannot be empty');
+    if (data.name !== undefined && data.name.trim().length === 0) {
+      throw new ValidationError('Transaction name cannot be empty');
     }
 
     if (data.accountId) {
@@ -382,11 +390,14 @@ export const transactionService = {
       if (data.date !== undefined) updateData.date = new Date(data.date);
       if (data.amount !== undefined) updateData.amount = data.amount;
       if (data.type !== undefined) updateData.type = data.type;
-      if (data.categoryId !== undefined) updateData.categoryId = data.categoryId;
+      if (data.categoryId !== undefined) updateData.categoryId = data.categoryId || null;
       if (data.subcategoryId !== undefined) updateData.subcategoryId = data.subcategoryId || null;
-      if (data.description !== undefined) updateData.description = data.description.trim();
+      if (data.name !== undefined) updateData.name = data.name.trim();
+      if (data.description !== undefined) updateData.description = data.description?.trim() || null;
       if (data.memo !== undefined) updateData.memo = data.memo?.trim() || null;
       if (data.tags !== undefined) updateData.tags = data.tags;
+      if (data.recurrence !== undefined) updateData.recurrence = data.recurrence;
+      if (data.recurrence_end_date !== undefined) updateData.recurrenceEndDate = data.recurrence_end_date ? new Date(data.recurrence_end_date) : null;
       if (data.metadata !== undefined) {
         const existingMeta = (existing.metadata as Record<string, any>) || {};
         updateData.metadata = { ...existingMeta, ...data.metadata };

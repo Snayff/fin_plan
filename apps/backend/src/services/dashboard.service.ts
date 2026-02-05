@@ -105,7 +105,10 @@ export const dashboardService = {
     });
 
     // Get category details for the top spending categories
-    const categoryIds = categorySpending.map((cs) => cs.categoryId);
+    // Filter out null values to avoid Prisma 'in' operator errors
+    const categoryIds = categorySpending
+      .map((cs) => cs.categoryId)
+      .filter((id): id is string => id !== null);
     
     const categories = categoryIds.length > 0 
       ? await prisma.category.findMany({
@@ -122,7 +125,7 @@ export const dashboardService = {
 
     const categoryMap = new Map(categories.map((c) => [c.id, c]));
     const topCategories = categorySpending.map((cs) => ({
-      category: categoryMap.get(cs.categoryId),
+      category: cs.categoryId ? categoryMap.get(cs.categoryId) : null,
       amount: Number(cs._sum.amount) || 0,
     }));
 

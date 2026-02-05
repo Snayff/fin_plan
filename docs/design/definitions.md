@@ -1,0 +1,6 @@
+- Account: a place to hold funds  and to pay for things. 
+- Transaction: movement of money 
+- Expense: a removal of funds from an Account.
+- Income: an addition of funds to an Account.
+- Goal: an amount of funds to be saved, to be allocated to a specific purpose. 
+- Budget: the overview of the balance of expenses and income.

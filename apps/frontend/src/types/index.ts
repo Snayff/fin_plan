@@ -1,5 +1,5 @@
 // Account types
-export type AccountType = 'checking' | 'savings' | 'credit' | 'investment' | 'loan' | 'asset' | 'liability';
+export type AccountType = 'current' | 'savings' | 'isa' | 'stocks_and_shares_isa' | 'credit' | 'investment' | 'loan' | 'asset' | 'liability';
 
 export interface Account {
   id: string;
@@ -10,6 +10,7 @@ export interface Account {
   balance: number;
   currency: string;
   isActive: boolean;
+  description: string | null;
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;
@@ -21,6 +22,7 @@ export interface CreateAccountInput {
   subtype?: string;
   balance: number;
   currency: string;
+  description?: string;
   metadata?: {
     institution?: string;
     accountNumber?: string;
@@ -49,6 +51,7 @@ export interface Category {
 
 // Transaction types
 export type TransactionType = 'income' | 'expense' | 'transfer';
+export type RecurrenceType = 'none' | 'weekly' | 'monthly' | 'yearly';
 
 export interface Transaction {
   id: string;
@@ -59,11 +62,14 @@ export interface Transaction {
   type: TransactionType;
   categoryId: string;
   subcategoryId: string | null;
-  description: string;
+  name: string | null;
+  description: string | null;
   memo: string | null;
   tags: string[];
   isRecurring: boolean;
   recurringRuleId: string | null;
+  recurrence: RecurrenceType;
+  recurrence_end_date: string | null;
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;
@@ -90,13 +96,16 @@ export interface CreateTransactionInput {
   date: string;
   amount: number;
   type: TransactionType;
-  categoryId: string;
+  categoryId?: string;
   subcategoryId?: string;
-  description: string;
+  name: string;
+  description?: string;
   memo?: string;
   tags?: string[];
   isRecurring?: boolean;
   recurringRuleId?: string;
+  recurrence?: RecurrenceType;
+  recurrence_end_date?: string;
   metadata?: Record<string, any>;
 }
 
