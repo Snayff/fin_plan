@@ -1,5 +1,22 @@
-// Account types
-export type AccountType = 'current' | 'savings' | 'isa' | 'stocks_and_shares_isa' | 'credit' | 'investment' | 'loan' | 'asset' | 'liability';
+// Import shared types from the shared package
+import type {
+  AccountType as SharedAccountType,
+  CreateAccountInput as SharedCreateAccountInput,
+  CategoryType as SharedCategoryType,
+  CreateCategoryInput as SharedCreateCategoryInput,
+  TransactionType as SharedTransactionType,
+  RecurrenceType as SharedRecurrenceType,
+  CreateTransactionInput as SharedCreateTransactionInput,
+} from '@finplan/shared';
+
+// Re-export for backward compatibility
+export type AccountType = SharedAccountType;
+export type CreateAccountInput = SharedCreateAccountInput;
+export type CategoryType = SharedCategoryType;
+export type CreateCategoryInput = SharedCreateCategoryInput;
+export type TransactionType = SharedTransactionType;
+export type RecurrenceType = SharedRecurrenceType;
+export type CreateTransactionInput = SharedCreateTransactionInput;
 
 export interface Account {
   id: string;
@@ -16,23 +33,6 @@ export interface Account {
   updatedAt: string;
 }
 
-export interface CreateAccountInput {
-  name: string;
-  type: AccountType;
-  subtype?: string;
-  balance: number;
-  currency: string;
-  description?: string;
-  metadata?: {
-    institution?: string;
-    accountNumber?: string;
-    interestRate?: number;
-    creditLimit?: number;
-  };
-}
-
-// Category types
-export type CategoryType = 'income' | 'expense';
 
 export interface Category {
   id: string;
@@ -49,9 +49,6 @@ export interface Category {
   subcategories?: Category[];
 }
 
-// Transaction types
-export type TransactionType = 'income' | 'expense' | 'transfer';
-export type RecurrenceType = 'none' | 'weekly' | 'monthly' | 'yearly';
 
 export interface Transaction {
   id: string;
@@ -91,23 +88,6 @@ export interface Transaction {
   } | null;
 }
 
-export interface CreateTransactionInput {
-  accountId: string;
-  date: string;
-  amount: number;
-  type: TransactionType;
-  categoryId?: string;
-  subcategoryId?: string;
-  name: string;
-  description?: string;
-  memo?: string;
-  tags?: string[];
-  isRecurring?: boolean;
-  recurringRuleId?: string;
-  recurrence?: RecurrenceType;
-  recurrence_end_date?: string;
-  metadata?: Record<string, any>;
-}
 
 export interface TransactionFilters {
   accountId?: string;

@@ -267,7 +267,7 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
       {formData.recurrence && formData.recurrence !== 'none' && (
         <div>
           <label htmlFor="recurrence_end_date" className="block text-sm font-medium text-gray-700 mb-1">
-            End Date
+            End Date <span className="text-gray-500 font-normal text-xs">(Optional - leave blank for indefinite)</span>
           </label>
           <input
             type="date"
@@ -275,7 +275,9 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
             value={formData.recurrence_end_date || ''}
             onChange={(e) => setFormData({ ...formData, recurrence_end_date: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="Leave blank for indefinite recurrence"
           />
+          <p className="text-xs text-gray-500 mt-1">Leave blank if the transaction should recur indefinitely</p>
         </div>
       )}
 

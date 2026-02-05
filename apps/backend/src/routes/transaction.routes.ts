@@ -1,36 +1,7 @@
 import { FastifyInstance } from 'fastify';
 import { transactionService } from '../services/transaction.service';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { z } from 'zod';
-import { TransactionType } from '@prisma/client';
-
-const createTransactionSchema = z.object({
-  accountId: z.string().uuid('Invalid account ID'),
-  date: z.string().or(z.date()),
-  amount: z.number().positive('Amount must be positive'),
-  type: z.nativeEnum(TransactionType),
-  categoryId: z.string().uuid('Invalid category ID'),
-  subcategoryId: z.string().uuid().optional(),
-  description: z.string().min(1, 'Description is required'),
-  memo: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  isRecurring: z.boolean().optional(),
-  recurringRuleId: z.string().uuid().optional(),
-  metadata: z.record(z.any()).optional(),
-});
-
-const updateTransactionSchema = z.object({
-  accountId: z.string().uuid().optional(),
-  date: z.string().or(z.date()).optional(),
-  amount: z.number().positive().optional(),
-  type: z.nativeEnum(TransactionType).optional(),
-  categoryId: z.string().uuid().optional(),
-  subcategoryId: z.string().uuid().optional(),
-  description: z.string().min(1).optional(),
-  memo: z.string().optional(),
-  tags: z.array(z.string()).optional(),
-  metadata: z.record(z.any()).optional(),
-});
+import { createTransactionSchema, updateTransactionSchema } from '@finplan/shared';
 
 export async function transactionRoutes(fastify: FastifyInstance) {
   // Get transactions with filters and pagination

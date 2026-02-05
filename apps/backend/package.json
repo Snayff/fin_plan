@@ -16,6 +16,7 @@
     "db:push": "prisma db push"
   },
   "dependencies": {
+    "@finplan/shared": "*",
     "@fastify/cors": "^10.0.1",
     "@fastify/helmet": "^12.0.1",
     "@fastify/rate-limit": "^10.1.1",
