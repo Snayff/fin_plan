@@ -1,6 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { dashboardService } from '../services/dashboard.service';
 import { format } from 'date-fns';
+import NetWorthChart from '../components/charts/NetWorthChart';
+import IncomeExpenseChart from '../components/charts/IncomeExpenseChart';
+import CategoryPieChart from '../components/charts/CategoryPieChart';
 
 export default function DashboardPage() {
   const { data, isLoading, error } = useQuery({
@@ -30,6 +33,26 @@ export default function DashboardPage() {
   const accounts = data?.accounts || [];
   const recentTransactions = data?.recentTransactions || [];
   const topCategories = data?.topCategories || [];
+
+  // Prepare chart data
+  const categoryChartData = topCategories.map((item) => ({
+    name: item.category?.name || 'Unknown',
+    value: item.amount,
+    color: item.category?.color || '#gray',
+  }));
+
+  // Mock data for charts (replace with real data from backend when available)
+  const netWorthData = [
+    { date: '2024-01-01', netWorth: summary?.netWorth || 0 },
+  ];
+
+  const incomeExpenseData = [
+    { 
+      date: data?.period?.startDate || new Date().toISOString(), 
+      income: summary?.monthlyIncome || 0, 
+      expense: summary?.monthlyExpense || 0 
+    },
+  ];
 
   return (
     <div className="p-6">
@@ -77,6 +100,22 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Net Worth Trend */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Net Worth Trend</h2>
+          <NetWorthChart data={netWorthData} />
+        </div>
+
+        {/* Income vs Expenses */}
+        <div className="bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Income vs Expenses</h2>
+          <IncomeExpenseChart data={incomeExpenseData} />
+        </div>
+      </div>
+
+      {/* Accounts and Categories Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
         {/* Accounts Overview */}
         <div className="bg-white rounded-lg shadow p-6">
@@ -110,32 +149,10 @@ export default function DashboardPage() {
           )}
         </div>
 
-        {/* Top Spending Categories */}
+        {/* Top Spending Categories - Pie Chart */}
         <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Top Spending Categories</h2>
-          {topCategories.length === 0 ? (
-            <p className="text-gray-500 text-sm">No expense data yet. Add transactions to see your spending breakdown.</p>
-          ) : (
-            <div className="space-y-3">
-              {topCategories.map((item, index) => (
-                <div key={index} className="flex justify-between items-center">
-                  <div className="flex items-center">
-                    <div
-                      className="w-3 h-3 rounded-full mr-2"
-                      style={{ backgroundColor: item.category?.color || '#gray' }}
-                    />
-                    <span className="text-gray-900">{item.category?.name || 'Unknown'}</span>
-                  </div>
-                  <span className="font-medium text-gray-900">
-                    ${item.amount.toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Spending by Category</h2>
+          <CategoryPieChart data={categoryChartData} />
         </div>
       </div>
 

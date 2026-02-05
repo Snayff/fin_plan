@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { Toaster } from 'react-hot-toast';
 import { queryClient } from './lib/queryClient';
 import { useAuthStore } from "./stores/authStore";
 import LoginPage from "./pages/auth/LoginPage";
@@ -15,6 +16,7 @@ function App() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <Toaster />
       <BrowserRouter>
         <Routes>
         {/* Public routes */}
