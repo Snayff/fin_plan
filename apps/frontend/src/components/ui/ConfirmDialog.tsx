@@ -1,5 +1,22 @@
+/**
+ * ConfirmDialog Component (shadcn AlertDialog wrapper)
+ * 
+ * Migration wrapper to maintain backward compatibility.
+ * Uses shadcn AlertDialog with our design tokens.
+ * Follows design principle: supportive, not supervisory
+ */
 import { ReactNode } from 'react';
-import Modal from './Modal';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from './alert-dialog';
+import { cn } from '../../lib/utils';
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -24,36 +41,35 @@ export default function ConfirmDialog({
   isLoading = false,
   variant = 'warning',
 }: ConfirmDialogProps) {
+  // Map variants to our design token system
   const variantStyles = {
-    danger: 'bg-red-600 hover:bg-red-700',
-    warning: 'bg-yellow-600 hover:bg-yellow-700',
-    info: 'bg-blue-600 hover:bg-blue-700',
+    danger: 'bg-destructive hover:bg-destructive/90 text-destructive-foreground',
+    warning: 'bg-warning hover:bg-warning/90 text-warning-foreground',
+    info: 'bg-primary hover:bg-primary-hover text-primary-foreground',
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={title}>
-      <div className="space-y-4">
-        <div className="text-gray-700">{message}</div>
-        
-        <div className="flex justify-end space-x-3 pt-4">
-          <button
-            type="button"
-            onClick={onClose}
-            disabled={isLoading}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-          >
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>{title}</AlertDialogTitle>
+          <AlertDialogDescription className="text-text-secondary">
+            {message}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onClose} disabled={isLoading}>
             {cancelText}
-          </button>
-          <button
-            type="button"
+          </AlertDialogCancel>
+          <AlertDialogAction
             onClick={onConfirm}
             disabled={isLoading}
-            className={`px-4 py-2 text-sm font-medium text-white rounded-md disabled:opacity-50 ${variantStyles[variant]}`}
+            className={cn(variantStyles[variant])}
           >
             {isLoading ? 'Processing...' : confirmText}
-          </button>
-        </div>
-      </div>
-    </Modal>
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }

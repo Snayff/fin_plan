@@ -4,6 +4,8 @@ import { format } from 'date-fns';
 import NetWorthChart from '../components/charts/NetWorthChart';
 import IncomeExpenseChart from '../components/charts/IncomeExpenseChart';
 import CategoryPieChart from '../components/charts/CategoryPieChart';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 
 export default function DashboardPage() {
   const { data, isLoading, error } = useQuery({
@@ -14,7 +16,7 @@ export default function DashboardPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading dashboard...</div>
+        <div className="text-muted-foreground">Loading dashboard...</div>
       </div>
     );
   }
@@ -22,7 +24,7 @@ export default function DashboardPage() {
   if (error) {
     return (
       <div className="p-4">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md">
           Error loading dashboard: {(error as Error).message}
         </div>
       </div>
@@ -57,159 +59,181 @@ export default function DashboardPage() {
   return (
     <div className="p-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">
+        <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+        <p className="text-text-secondary mt-1">
           Overview for {data?.period?.startDate ? format(new Date(data.period.startDate), 'MMMM yyyy') : 'this month'}
         </p>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-500 mb-2">Net Worth</div>
-          <div className="text-2xl font-bold text-gray-900">
-            ${summary?.netWorth?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
-          </div>
-          <div className="text-sm text-gray-500 mt-1">Total Balance</div>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm font-medium text-muted-foreground mb-2">Net Worth</div>
+            <div className="text-2xl font-bold text-foreground">
+              ${summary?.netWorth?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+            </div>
+            <div className="text-sm text-text-tertiary mt-1">Total Balance</div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-500 mb-2">Income</div>
-          <div className="text-2xl font-bold text-green-600">
-            ${summary?.monthlyIncome?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
-          </div>
-          <div className="text-sm text-gray-500 mt-1">This Period</div>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm font-medium text-muted-foreground mb-2">Income</div>
+            <div className="text-2xl font-bold text-success">
+              ${summary?.monthlyIncome?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+            </div>
+            <div className="text-sm text-text-tertiary mt-1">This Period</div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-500 mb-2">Expenses</div>
-          <div className="text-2xl font-bold text-red-600">
-            ${summary?.monthlyExpense?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
-          </div>
-          <div className="text-sm text-gray-500 mt-1">This Period</div>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm font-medium text-muted-foreground mb-2">Expenses</div>
+            <div className="text-2xl font-bold text-primary">
+              ${summary?.monthlyExpense?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+            </div>
+            <div className="text-sm text-text-tertiary mt-1">This Period</div>
+          </CardContent>
+        </Card>
 
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="text-sm font-medium text-gray-500 mb-2">Net Cash Flow</div>
-          <div className={`text-2xl font-bold ${(summary?.netCashFlow || 0) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            ${summary?.netCashFlow?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
-          </div>
-          <div className="text-sm text-gray-500 mt-1">
-            Savings Rate: {summary?.savingsRate || '0'}%
-          </div>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm font-medium text-muted-foreground mb-2">Net Cash Flow</div>
+            <div className={`text-2xl font-bold ${(summary?.netCashFlow || 0) >= 0 ? 'text-success' : 'text-warning'}`}>
+              ${summary?.netCashFlow?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+            </div>
+            <div className="text-sm text-text-tertiary mt-1">
+              Savings Rate: {summary?.savingsRate || '0'}%
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Net Worth Trend */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Net Worth Trend</h2>
-          <NetWorthChart data={netWorthData} />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Net Worth Trend</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <NetWorthChart data={netWorthData} />
+          </CardContent>
+        </Card>
 
-        {/* Income vs Expenses */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Income vs Expenses</h2>
-          <IncomeExpenseChart data={incomeExpenseData} />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Income vs Expenses</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <IncomeExpenseChart data={incomeExpenseData} />
+          </CardContent>
+        </Card>
       </div>
 
       {/* Accounts and Categories Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        {/* Accounts Overview */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Accounts</h2>
-          {accounts.length === 0 ? (
-            <p className="text-gray-500 text-sm">No accounts yet. Add your first account to get started.</p>
-          ) : (
-            <div className="space-y-3">
-              {accounts.slice(0, 5).map((account) => (
-                <div key={account.id} className="flex justify-between items-center">
-                  <div>
-                    <div className="font-medium text-gray-900">{account.name}</div>
-                    <div className="text-sm text-gray-500 capitalize">{account.type}</div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-medium text-gray-900">
-                      {account.currency} {account.balance.toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+        <Card>
+          <CardHeader>
+            <CardTitle>Accounts</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {accounts.length === 0 ? (
+              <p className="text-muted-foreground text-sm">No accounts yet. Add your first account to get started.</p>
+            ) : (
+              <div className="space-y-3">
+                {accounts.slice(0, 5).map((account) => (
+                  <div key={account.id} className="flex justify-between items-center py-2 border-b border-border last:border-0">
+                    <div>
+                      <div className="font-medium text-foreground">{account.name}</div>
+                      <div className="text-sm text-text-secondary capitalize">{account.type}</div>
                     </div>
-                  </div>
-                </div>
-              ))}
-              {accounts.length > 5 && (
-                <div className="text-sm text-blue-600 hover:text-blue-800 cursor-pointer">
-                  View all {accounts.length} accounts →
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Top Spending Categories - Pie Chart */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Spending by Category</h2>
-          <CategoryPieChart data={categoryChartData} />
-        </div>
-      </div>
-
-      {/* Recent Transactions */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h2>
-        {recentTransactions.length === 0 ? (
-          <p className="text-gray-500 text-sm">No transactions yet. Add your first transaction to get started.</p>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead>
-                <tr>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Date</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Description</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Category</th>
-                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500 uppercase">Amount</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {recentTransactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
-                      {format(new Date(transaction.date), 'MMM d')}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900">
-                      {transaction.description}
-                    </td>
-                    <td className="px-4 py-3 text-sm">
-                      {transaction.category && (
-                        <span
-                          className="px-2 py-1 text-xs font-medium rounded"
-                          style={{
-                            backgroundColor: `${transaction.category.color}20`,
-                            color: transaction.category.color,
-                          }}
-                        >
-                          {transaction.category.name}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-right font-medium">
-                      <span className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                        {transaction.type === 'income' ? '+' : '-'}$
-                        {transaction.amount.toLocaleString('en-US', {
+                    <div className="text-right">
+                      <div className="font-medium text-foreground">
+                        {account.currency} {account.balance.toLocaleString('en-US', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
-                      </span>
-                    </td>
-                  </tr>
+                      </div>
+                    </div>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                {accounts.length > 5 && (
+                  <div className="text-sm text-primary hover:text-primary-hover cursor-pointer pt-2">
+                    View all {accounts.length} accounts →
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Spending by Category</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CategoryPieChart data={categoryChartData} />
+          </CardContent>
+        </Card>
       </div>
+
+      {/* Recent Transactions */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Recent Transactions</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {recentTransactions.length === 0 ? (
+            <p className="text-muted-foreground text-sm">No transactions yet. Add your first transaction to get started.</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-border">
+                <thead>
+                  <tr>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Date</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Description</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-muted-foreground uppercase">Category</th>
+                    <th className="px-4 py-2 text-right text-xs font-medium text-muted-foreground uppercase">Amount</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {recentTransactions.map((transaction) => (
+                    <tr key={transaction.id} className="hover:bg-muted/50 transition-colors">
+                      <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
+                        {format(new Date(transaction.date), 'MMM d')}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-foreground">
+                        {transaction.description}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {transaction.category && (
+                          <Badge variant="outline" style={{
+                            backgroundColor: `${transaction.category.color}20`,
+                            color: transaction.category.color,
+                            borderColor: transaction.category.color,
+                          }}>
+                            {transaction.category.name}
+                          </Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right font-medium">
+                        <span className={transaction.type === 'income' ? 'text-success' : 'text-primary'}>
+                          {transaction.type === 'income' ? '+' : '-'}$
+                          {transaction.amount.toLocaleString('en-US', {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

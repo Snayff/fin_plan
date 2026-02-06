@@ -2,50 +2,81 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Inter font for high x-height and excellent accessibility */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /* Dark mode only - our primary theme */
+    --background: 230 31% 15%;           /* #191D32 - Background */
+    --foreground: 230 29% 96%;           /* #F2F3F7 - Primary Text */
+    
+    /* Cards & Surfaces */
+    --card: 230 27% 19%;                 /* #22263D - Surface */
+    --card-foreground: 230 29% 96%;      /* #F2F3F7 - Primary Text */
+    
+    /* Popovers & Overlays */
+    --popover: 230 27% 19%;              /* #22263D - Surface */
+    --popover-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
+    
+    /* Primary Action (Orange - Focus & Momentum) */
+    --primary: 25 100% 55%;              /* #FF7A18 - Primary Action */
+    --primary-foreground: 230 29% 96%;   /* #F2F3F7 - Text on primary */
+    --primary-hover: 25 88% 49%;         /* #E66D15 - Hover state */
+    --primary-subtle: 25 32% 17%;        /* #3B2A1E - Subtle background */
+    
+    /* Secondary Actions (Muted) */
+    --secondary: 230 27% 26%;            /* #2F3452 - Border/Muted */
+    --secondary-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
+    
+    /* Muted/Disabled */
+    --muted: 230 27% 26%;                /* #2F3452 - Border */
+    --muted-foreground: 230 20% 67%;     /* #9DA1B8 - Tertiary Text */
+    
+    /* Accent (Brand - Purple/Rose) */
+    --accent: 320 23% 62%;               /* #B38BA3 - Brand Primary */
+    --accent-foreground: 230 29% 96%;    /* #F2F3F7 - Primary Text */
+    --accent-subtle: 270 20% 22%;        /* #3A2F44 - Brand Subtle */
+    
+    /* Progress/Success (Teal - Calm Positive) */
+    --success: 177 95% 39%;              /* #07BEB8 - Progress */
+    --success-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
+    --success-hover: 177 95% 35%;        /* #06A9A3 - Hover */
+    --success-subtle: 190 38% 20%;       /* #1F3F46 - Subtle background */
+    
+    /* Highlight (Magenta - Supportive Emphasis) */
+    --highlight: 306 44% 40%;            /* #8F3985 - Highlight */
+    --highlight-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
+    --highlight-subtle: 277 28% 17%;     /* #2F2038 - Subtle background */
+    
+    /* Attention/Warning (Warm Orange - Neutral Awareness) */
+    --warning: 30 61% 70%;               /* #E0B084 - Attention */
+    --warning-foreground: 230 31% 15%;   /* #191D32 - Background (for contrast) */
+    --warning-subtle: 30 24% 18%;        /* #3A3123 - Subtle background */
+    
+    /* Destructive/Error (Red - Rare, Explicit Only) */
+    --destructive: 358 75% 59%;          /* #E5484D - Error */
+    --destructive-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
+    --destructive-subtle: 350 33% 19%;   /* #402024 - Subtle background */
+    
+    /* Borders & Inputs */
+    --border: 230 27% 26%;               /* #2F3452 - Border */
+    --input: 230 27% 26%;                /* #2F3452 - Input border */
+    --ring: 25 100% 55%;                 /* #FF7A18 - Focus ring (orange) */
+    
+    /* Border Radius */
+    --radius: 0.5rem;                    /* 8px - default */
+    
+    /* Chart Colors (for Recharts) */
+    --chart-1: 177 95% 39%;              /* #07BEB8 - Teal (Progress) */
+    --chart-2: 25 100% 55%;              /* #FF7A18 - Orange (Primary Action) */
+    --chart-3: 320 23% 62%;              /* #B38BA3 - Purple/Rose (Brand) */
+    --chart-4: 306 44% 40%;              /* #8F3985 - Magenta (Highlight) */
+    --chart-5: 30 61% 70%;               /* #E0B084 - Warm Orange (Attention) */
+    
+    /* Text Hierarchy - Additional tokens */
+    --text-secondary: 230 23% 82%;       /* #C7CAD9 - Secondary Text */
+    --text-tertiary: 230 20% 67%;        /* #9DA1B8 - Tertiary Text */
   }
 }
 
@@ -53,8 +84,142 @@
   * {
     @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
+    font-size: 16px; /* Larger base for accessibility */
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* High contrast focus indicators for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  
+  /* Heading styles with proper hierarchy */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-foreground;
+    line-height: 1.25;
+  }
+  
+  h1 { @apply text-3xl; }
+  h2 { @apply text-2xl; }
+  h3 { @apply text-xl; }
+  h4 { @apply text-lg; }
+  h5 { @apply text-base; }
+  h6 { @apply text-sm; }
+  
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Custom utility classes for design system */
+  .text-secondary {
+    color: hsl(var(--text-secondary));
+  }
+  
+  .text-tertiary {
+    color: hsl(var(--text-tertiary));
+  }
+  
+  /* Success utilities */
+  .bg-success {
+    background-color: hsl(var(--success));
+  }
+  
+  .text-success {
+    color: hsl(var(--success));
+  }
+  
+  .bg-success-subtle {
+    background-color: hsl(var(--success-subtle));
+  }
+  
+  /* Highlight utilities */
+  .bg-highlight {
+    background-color: hsl(var(--highlight));
+  }
+  
+  .text-highlight {
+    color: hsl(var(--highlight));
+  }
+  
+  .bg-highlight-subtle {
+    background-color: hsl(var(--highlight-subtle));
+  }
+  
+  /* Warning utilities */
+  .bg-warning {
+    background-color: hsl(var(--warning));
+  }
+  
+  .text-warning {
+    color: hsl(var(--warning));
+  }
+  
+  .bg-warning-subtle {
+    background-color: hsl(var(--warning-subtle));
+  }
+  
+  /* Achievement animation */
+  @keyframes achievement {
+    0% {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  .animate-achievement {
+    animation: achievement 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  /* Pulse animation for attention */
+  @keyframes pulse-subtle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+  
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  /* Slide in from bottom (for toasts/notifications) */
+  @keyframes slide-in-bottom {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-in-bottom {
+    animation: slide-in-bottom 250ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 }

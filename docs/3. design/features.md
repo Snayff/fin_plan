@@ -14,8 +14,12 @@
 - Real-time validation with inline errors
 - Bulk save with progress indicator
 
-## Transaction Duplication
+## Transaction Creation
 - duplicate existing transaction
+
+## Transaction View
+- search transactions; name, date, type
+- filter transactions; name, date-range, type
 
 
 # Controls
@@ -142,7 +146,6 @@
 - Plain language alternatives for jargon
 
 
-
 # Accessibility
 
 ## Core Accessibility
@@ -151,10 +154,6 @@
 - Color-blind friendly palette
 - Icons alongside colors (not color-only)
 - Adjustable font sizes
-
-
-
-
 
 
 # Cross-Device Usage
@@ -168,49 +167,50 @@
 - Changes made updated for all synced users
 
 
----
+# Polish
 
-## **Phase 10: Polish & Enhanced Features (Weeks 34-36)**
-
-### 10.1 Error Handling & Validation
+## Error Handling & Validation
 - Comprehensive form validation with Zod
 - Inline validation feedback
 - Friendly error messages with solutions
 - Auto-save for draft data
 - Undo functionality for destructive actions
 - Confirmation dialogs
-- Bulk operation rollback
 
-### 10.2 Data Import/Export
-- CSV/OFX/QFX transaction import
-- Column mapping interface
-- Duplicate detection during import
-- Data export (JSON, CSV)
-- Backup/restore functionality
-- Activity log export
-
-### 10.3 Self-Hosting Support
-- Docker image creation
-- Docker Compose configuration
-- Installation documentation
-- Environment variable configuration
-- SQLite mode for single-user
-- Backup/restore scripts
-- Admin dashboard for self-hosted instances
-
-### 10.4 Performance Optimization
-- Virtual scrolling for large lists (react-window)
+##  Performance Optimization
+- Virtual scrolling for large lists
 - Image optimization and lazy loading
 - Code splitting and dynamic imports
 - Database query optimization
-- Caching strategy (Redis integration)
+- Caching strategy
 - Bundle size optimization
 
-**Testing for Phase 10:**
-- Import/export data integrity tests
-- Validation error message coverage tests
-- Undo/redo functionality tests
-- Docker deployment tests
-- Performance benchmarks (page load, rendering)
-- Load testing for API endpoints
-- Memory leak tests
+## Visual
+- Loading Skeletons - Better than spinners for perceived performance
+- Animations - Smooth transitions
+- Consistent Icons - Icon library for visual consistency
+
+
+# Data Functions
+
+## Backup
+- Data export (JSON, CSV)
+- Backup/restore functionality
+
+
+# Audit
+
+## Logging
+- Activity log tracking
+
+# Self Host Support
+
+## Setup
+- Docker image creation
+- Docker Compose configuration
+
+## Docs
+- Installation documentation
+
+## Self Host Specific Functionality
+- Admin dashboard for self-hosted instances

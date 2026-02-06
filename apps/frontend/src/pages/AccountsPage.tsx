@@ -6,6 +6,9 @@ import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AccountForm from '../components/accounts/AccountForm';
 import AccountEditForm from '../components/accounts/AccountEditForm';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 import type { Account } from '../types';
 
 export default function AccountsPage() {
@@ -37,7 +40,7 @@ export default function AccountsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading accounts...</div>
+        <div className="text-muted-foreground">Loading accounts...</div>
       </div>
     );
   }
@@ -45,7 +48,7 @@ export default function AccountsPage() {
   if (error) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md">
           Error loading accounts: {(error as Error).message}
         </div>
       </div>
@@ -55,70 +58,66 @@ export default function AccountsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Accounts</h1>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
+        <h1 className="text-3xl font-bold text-foreground">Accounts</h1>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
           + Add Account
-        </button>
+        </Button>
       </div>
 
       {accounts.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <p className="text-gray-500 mb-4">No accounts yet. Create your first account to get started.</p>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Create Account
-          </button>
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground mb-4">No accounts yet. Create your first account to get started.</p>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              Create Account
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {accounts.map((account) => (
-            <div key={account.id} className="bg-white rounded-lg shadow p-6">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900">{account.name}</h3>
-                  <p className="text-sm text-gray-500 capitalize">{account.type}</p>
+            <Card key={account.id}>
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start mb-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-foreground">{account.name}</h3>
+                    <p className="text-sm text-text-secondary capitalize">{account.type}</p>
+                  </div>
+                  <Badge variant={account.isActive ? "default" : "secondary"} className={account.isActive ? "bg-success-subtle text-success" : ""}>
+                    {account.isActive ? 'Active' : 'Inactive'}
+                  </Badge>
                 </div>
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded ${
-                    account.isActive
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-gray-100 text-gray-800'
-                  }`}
-                >
-                  {account.isActive ? 'Active' : 'Inactive'}
-                </span>
-              </div>
 
-              <div className="mb-4">
-                <p className="text-sm text-gray-500 mb-1">Balance</p>
-                <p className="text-2xl font-bold text-gray-900">
-                  {account.currency} {account.balance.toLocaleString('en-US', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </p>
-              </div>
+                <div className="mb-4">
+                  <p className="text-sm text-muted-foreground mb-1">Balance</p>
+                  <p className="text-2xl font-bold text-foreground">
+                    {account.currency} {account.balance.toLocaleString('en-US', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}
+                  </p>
+                </div>
 
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setEditingAccount(account)}
-                  className="flex-1 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-md hover:bg-blue-100"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => setDeletingAccount(account)}
-                  className="flex-1 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 rounded-md hover:bg-red-100"
-                >
-                  Delete
-                </button>
-              </div>
-            </div>
+                <div className="flex space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setEditingAccount(account)}
+                    className="flex-1"
+                  >
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setDeletingAccount(account)}
+                    className="flex-1 text-destructive hover:text-destructive hover:bg-destructive-subtle"
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}

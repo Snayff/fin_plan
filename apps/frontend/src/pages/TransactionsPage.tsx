@@ -7,6 +7,9 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import TransactionForm from '../components/transactions/TransactionForm';
 import TransactionEditForm from '../components/transactions/TransactionEditForm';
 import TransactionFilters from '../components/transactions/TransactionFilters';
+import { Button } from '../components/ui/button';
+import { Card, CardContent } from '../components/ui/card';
+import { Badge } from '../components/ui/badge';
 import type { Transaction, TransactionFilters as Filters } from '../types';
 import { format } from 'date-fns';
 
@@ -41,7 +44,7 @@ export default function TransactionsPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-gray-500">Loading transactions...</div>
+        <div className="text-muted-foreground">Loading transactions...</div>
       </div>
     );
   }
@@ -49,7 +52,7 @@ export default function TransactionsPage() {
   if (error) {
     return (
       <div className="p-6">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md">
           Error loading transactions: {(error as Error).message}
         </div>
       </div>
@@ -59,95 +62,88 @@ export default function TransactionsPage() {
   return (
     <div className="p-6">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Transactions</h1>
-        <button
-          onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-        >
+        <h1 className="text-3xl font-bold text-foreground">Transactions</h1>
+        <Button onClick={() => setIsCreateModalOpen(true)}>
           + Add Transaction
-        </button>
+        </Button>
       </div>
 
       <TransactionFilters onFilterChange={setFilters} currentFilters={filters} />
 
       {transactions.length === 0 ? (
-        <div className="bg-white rounded-lg shadow p-12 text-center">
-          <p className="text-gray-500 mb-4">
-            {Object.keys(filters).length > 0 
-              ? 'No transactions match your filters.'
-              : 'No transactions yet. Create your first transaction to get started.'}
-          </p>
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            Create Transaction
-          </button>
-        </div>
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground mb-4">
+              {Object.keys(filters).length > 0 
+                ? 'No transactions match your filters.'
+                : 'No transactions yet. Create your first transaction to get started.'}
+            </p>
+            <Button onClick={() => setIsCreateModalOpen(true)}>
+              Create Transaction
+            </Button>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <Card>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
+            <table className="min-w-full divide-y divide-border">
+              <thead className="bg-muted/50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Description
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Category
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Account
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="divide-y divide-border">
                 {transactions.map((transaction) => (
-                  <tr key={transaction.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <tr key={transaction.id} className="hover:bg-muted/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                       {format(new Date(transaction.date), 'MMM d, yyyy')}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-900">
+                    <td className="px-6 py-4 text-sm text-foreground">
                       <div>
                         <div className="font-medium">{transaction.description}</div>
                         {transaction.memo && (
-                          <div className="text-xs text-gray-500 mt-1">{transaction.memo}</div>
+                          <div className="text-xs text-text-tertiary mt-1">{transaction.memo}</div>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {transaction.category ? (
-                        <span
-                          className="px-2 py-1 text-xs font-medium rounded"
+                        <Badge 
+                          variant="outline"
                           style={{
                             backgroundColor: `${transaction.category.color}20`,
                             color: transaction.category.color,
+                            borderColor: transaction.category.color,
                           }}
                         >
                           {transaction.category.name}
-                        </span>
+                        </Badge>
                       ) : (
-                        <span className="text-gray-400">No category</span>
+                        <span className="text-muted-foreground">No category</span>
                       )}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                       {transaction.account?.name || 'Unknown'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
-                      <span
-                        className={
-                          transaction.type === 'income' ? 'text-green-600' : 'text-red-600'
-                        }
-                      >
+                      <span className={transaction.type === 'income' ? 'text-success' : 'text-primary'}>
                         {transaction.type === 'income' ? '+' : '-'}$
                         {transaction.amount.toLocaleString('en-US', {
                           minimumFractionDigits: 2,
@@ -155,26 +151,30 @@ export default function TransactionsPage() {
                         })}
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right">
-                      <button
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setEditingTransaction(transaction)}
-                        className="text-blue-600 hover:text-blue-800 mr-3"
+                        className="text-primary hover:text-primary-hover"
                       >
                         Edit
-                      </button>
-                      <button
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
                         onClick={() => setDeletingTransaction(transaction)}
-                        className="text-red-600 hover:text-red-800"
+                        className="text-destructive hover:text-destructive/90"
                       >
                         Delete
-                      </button>
+                      </Button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-        </div>
+        </Card>
       )}
 
       {/* Create Modal */}
