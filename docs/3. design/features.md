@@ -153,41 +153,20 @@
 - Adjustable font sizes
 
 
----
 
-## **Phase 9: Cross-Device Sync & PWA (Weeks 30-33)**
 
-### 9.1 Enhanced Sync Implementation
-- Operational Transform or CRDT-based conflict resolution
-- Merkle trees for efficient state comparison
-- Incremental sync (delta synchronization)
-- Conflict detection and logging
-- Manual conflict resolution UI
+
+
+# Cross-Device Usage
+
+## Local only version vs Online Version
+- local only - no online capability. 
+- online version - only able to make changes when connected to the app. 
+
+## Online Support
 - Sync status indicators
+- Changes made updated for all synced users
 
-### 9.2 Device Management
-- Device registration/deregistration
-- Active device listing
-- Per-device sync settings
-- Remote device wipe
-- Sync queue management
-
-### 9.3 Progressive Web App
-- Service worker for offline capability
-- Installable on desktop and mobile
-- Offline mode (read-only)
-- Background sync when reconnected
-- Push notification support
-- App manifest configuration
-
-**Testing for Phase 9:**
-- Sync conflict scenarios testing
-- Multi-device sync tests
-- Offline functionality tests
-- Service worker caching tests
-- Background sync tests
-- PWA installation tests (desktop/mobile)
-- Network interruption recovery tests
 
 ---
 
