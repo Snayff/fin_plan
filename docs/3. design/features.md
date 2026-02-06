@@ -1,4 +1,5 @@
 # Transaction Management
+
 ## Recurring Transactions
 - Recurring rule engine
 - Automatic transaction generation
@@ -18,6 +19,7 @@
 
 
 # Controls
+
 ## Command Palette & Keyboard Navigation
 - Implement cmdk for command palette (Ctrl+K/Cmd+K)
 - Quick transaction entry from anywhere
@@ -26,6 +28,7 @@
 - Keyboard shortcut hints throughout app
 
 # Onboarding & Intro
+
 ## Onboarding & Empty States
 - First-time setup wizard
 - Profile setup (currency, date format, theme)
@@ -34,9 +37,35 @@
 - Helpful messaging and CTAs
 
 
+# Account Management
+
+## Account Card (visual for account on Account Screen)
+- name, current value
+- mini chart: value over time
+- incoming this month, outgoing this month
+
+
+# Asset Management
+
+## Asset Creation
+- Asset CRUD operations. Asset types (housing, investments, vehicles, etc.). Current value, growth rate settings.
+- Update current value. Store value history snapshots.
+
+# Liability Management
+
+## Liability Creation
+- Liability CRUD operations. 
+- Allocation of Transactions to Liability
+- Expected interest breakdown
+
+## Liability Analysis
+- Payoff projections
+
+
 # Budget Management
+
 ## Budget Creation
-- Budget creation. Fund allocation to categories. 
+- Budget CRUD operations. Fund allocation to categories. 
 - Archive of previous budgets
 - Budget templates (50/30/20, zero-based)
 
@@ -50,169 +79,61 @@
 - Historical budget performance
 
 # Goal Management
+
 ## Goal Planning
-- Goal creation with types (savings, debt payoff, net worth, etc.)
+- Goal CRUD operations. Allocation of goal types (savings, debt payoff, net worth, etc.)
 - Target amount and date
 - Contribution tracking
 - Progress visualization with milestones
 - Goal priority management
 - Automatic contribution calculations
 
-### 4.4 What-If Scenarios for Goals
-- Interactive slider widget
-- Real-time projection updates
-- Impact visualization on other goals
-- Scenario comparison (side-by-side)
-- Apply or discard scenario changes
 
-**Testing for Phase 4:**
-- Unit tests for budget calculations
-- Unit tests for goal progress calculations
-- Tests for budget alerts and thresholds
-- Integration tests for budget-transaction linkage
-- E2E tests for complete budget creation flow
-- What-if scenario calculation accuracy tests
-- Goal achievement projection tests
+# Portfolio Analysis
 
----
-
-## **Phase 5: Asset & Liability Management (Weeks 16-18)**
-
-### 5.1 Asset Tracking
-- Asset CRUD operations
-- Asset types (real estate, investments, vehicles, etc.)
-- Current value and purchase price tracking
-- Growth rate settings
-- Value history snapshots
-- Asset valuation charts
-
-### 5.2 Liability Management
-- Debt/loan tracking
-- Amortization schedule calculation
-- Payment tracking and interest breakdown
-- Payoff projections
-- Debt-to-income ratio
-
-### 5.3 Net Worth Calculations
+## Net Worth Calculations
 - Automatic net worth calculation (Assets - Liabilities)
 - Historical net worth tracking
 - Net worth trend visualization
-- Asset allocation breakdown
 - Liquidity classification
 
-**Testing for Phase 5:**
-- Unit tests for amortization calculations
-- Unit tests for net worth aggregation
-- Unit tests for growth projections
-- Integration tests for asset-account linking
-- Tests for payment-to-liability assignment
-- Chart data accuracy tests
-
----
-
-## **Phase 6: Advanced Visualization & Reporting (Weeks 19-22)**
-
-### 6.1 Interactive Dashboards
-- Customizable dashboard layout (drag-and-drop using react-grid-layout)
+## At a Glance
+- Line chart: Net worth
 - Summary cards with trend indicators
-- Widget selection and configuration
-- Multiple saved dashboard views
-- Time range selectors
 
-### 6.2 Chart Library Implementation
-- Line charts: Net worth, income/expense trends (Recharts)
-- Bar charts: Category comparisons, monthly breakdowns
-- Pie/donut charts: Expense distribution, asset allocation
-- Area charts: Stacked spending over time
-- Waterfall charts: Net worth change breakdown
-
-### 6.3 Sankey Diagrams
-- D3.js-based Sankey visualization
-- Income sources → Expenses → Savings flow
-- Interactive nodes with drill-down
-- Color coding (income=green, expenses=red, savings=blue)
+## Movement
 - Toggle views (monthly/quarterly/annual)
+- Sankey Diagram: Income sources → Expenses → Savings flow
 
-### 6.4 Contextual Mini-Charts
-- Sparklines in budget progress bars
-- Inline trends in transaction lists
-- Mini-charts on account cards
-- Category spending trends in sidebar
+## Spending
+- stacked area chart: expenses by account
+- stacked bar chart: expenses by category
 
-### 6.5 Comparative Analytics
-- Period-over-period comparisons (month-over-month, year-over-year)
-- Budget vs. actual variance visualization
-- Goal progress indicators (on-track vs. behind with icons)
-- Percentage change badges throughout UI
+## income 
+- stacked area  chart: income by account
+- stacked bar chart: income by category
 
-**Testing for Phase 6:**
-- Visual regression tests for charts (using Percy or Chromatic)
-- Data accuracy tests (chart data matches source)
-- Interaction tests (drill-down, filtering)
-- Responsive design tests (charts on mobile)
-- Performance tests (large datasets)
-- Export functionality tests (PDF, CSV, image)
 
----
+# Simulation
 
-## **Phase 7: Forecasting & Simulation (Weeks 23-26)**
+## Basic Forecasting
+- Automatic simple projection based on current trends. Linear projection using income/expense patterns. 
+- Select time horizon
 
-### 7.1 Basic Forecasting
-- Automatic simple projection based on current trends
-- Dashboard widget showing 6-month forecast
-- Linear projection using income/expense patterns
-- Update on transaction changes
-- Detailed forecast view
-
-### 7.2 Insight Generation Engine
-- Background job for analyzing spending patterns
-- Pattern detection: percentage changes, anomalies
-- Budget tracking alerts
-- Goal progress notifications
-- Natural language insight generation
-- Insight caching and display
-
-### 7.3 Advanced Forecasting
-- Forecast creation wizard
-- Multi-year projections
+## What-If Scenarios 
+- Show affects of changes to values without changing base values, e.g. what if salary increased by X
+- Show impact on goals
 - Life event modeling (home purchase, retirement, etc.)
-- Income/expense growth assumptions
-- Goal integration in forecasts
-
-### 7.4 Inflation Modeling
-- General inflation rate settings
-- Category-specific inflation rates (healthcare, education, housing)
-- Real vs. nominal value toggle
-- Purchasing power calculations
+- save discrete scenarios
+- Purchasing power calculations and comparisons
 - Inflation scenarios (low, moderate, high)
+- Scenario comparison (side-by-side)
+- Monte Carlo simulations. Simplified one-click "best/worst case" button. Variable inputs (income, expense, market returns)
 
-### 7.5 Monte Carlo Simulation
-- Simplified one-click "best/worst case" button
-- Default parameters with progressive disclosure
-- Worker threads for computation (using Bull/BullMQ)
-- Simulation engine with configurable iterations (1K-50K)
-- Variable inputs (income, expense, market returns)
-- Fan chart visualization (D3.js)
-- Probability distribution graphs
-- Success metrics (probability of goal achievement)
-- Sensitivity analysis
-- Historical backtesting
 
-**Testing for Phase 7:**
-- Unit tests for projection algorithms
-- Unit tests for inflation calculations
-- Monte Carlo simulation accuracy tests (statistical validation)
-- Performance tests for simulation engine
-- Worker thread tests (multiple concurrent simulations)
-- Insight generation logic tests
-- Cache invalidation tests
-- Forecast data consistency tests
+# Financial Literacy
 
----
-
-## **Phase 8: Contextual Help & Accessibility (Weeks 27-29)**
-
-### 8.1 Help System
+## Help System
 - Rich tooltips with examples on all form fields
 - Inline education for financial concepts
 - Expandable "Learn more" sections
@@ -220,33 +141,17 @@
 - Searchable glossary page
 - Plain language alternatives for jargon
 
-### 8.2 Suggested Actions & Progress
-- Context-aware prompts and nudges
-- Empty state guidance
-- Setup completion tracker
-- Feature adoption tracking
-- Milestone celebrations
-- Best practice tips
 
-### 8.3 Accessibility
+
+# Accessibility
+
+## Core Accessibility
 - WCAG 2.1 AA compliance
-- Keyboard navigation for all features
-- Screen reader compatibility (ARIA labels)
 - Focus indicators
-- High contrast mode
 - Color-blind friendly palette
 - Icons alongside colors (not color-only)
-- Pattern fills for charts
 - Adjustable font sizes
 
-**Testing for Phase 8:**
-- Accessibility audit with axe-core or Lighthouse
-- Screen reader testing (NVDA, JAWS, VoiceOver)
-- Keyboard-only navigation tests
-- Color contrast ratio tests
-- High contrast mode visual tests
-- Focus management tests
-- ARIA label coverage tests
 
 ---
 

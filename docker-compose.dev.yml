@@ -1,6 +1,7 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
   postgres:
     image: postgres:16-alpine
     container_name: finplan-postgres-dev
@@ -18,7 +19,10 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - finplan-network
 
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: finplan-redis-dev
@@ -31,7 +35,80 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - finplan-network
+
+  # Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile.dev
+    container_name: finplan-backend-dev
+    ports:
+      - "3001:3001"
+    environment:
+      # Database
+      DATABASE_URL: postgresql://finplan:finplan_dev_password@postgres:5432/finplan_dev
+      # Redis
+      REDIS_URL: redis://redis:6379
+      # JWT Secrets (change these in production!)
+      JWT_SECRET: your-super-secret-jwt-key-min-32-chars-long-dev
+      JWT_REFRESH_SECRET: your-super-secret-refresh-key-min-32-chars-long-dev
+      # CORS
+      CORS_ORIGIN: http://localhost:3000
+      # Environment
+      NODE_ENV: development
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/backend/src:/workspace/apps/backend/src
+      - ./apps/backend/prisma:/workspace/apps/backend/prisma
+      - ./packages/shared/src:/workspace/packages/shared/src
+      # Prevent overwriting node_modules
+      - backend_node_modules:/workspace/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - finplan-network
+    restart: unless-stopped
+
+  # Frontend Application
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile.dev
+    container_name: finplan-frontend-dev
+    ports:
+      - "3000:3000"
+    environment:
+      # API URL - points to backend container
+      VITE_API_URL: http://localhost:3001
+      # Development mode
+      NODE_ENV: development
+    volumes:
+      # Mount source code for hot reload
+      - ./apps/frontend/src:/workspace/apps/frontend/src
+      - ./apps/frontend/index.html:/workspace/apps/frontend/index.html
+      - ./apps/frontend/vite.config.ts:/workspace/apps/frontend/vite.config.ts
+      - ./apps/frontend/tailwind.config.js:/workspace/apps/frontend/tailwind.config.js
+      - ./apps/frontend/postcss.config.js:/workspace/apps/frontend/postcss.config.js
+      - ./packages/shared/src:/workspace/packages/shared/src
+      # Prevent overwriting node_modules
+      - frontend_node_modules:/workspace/node_modules
+    depends_on:
+      - backend
+    networks:
+      - finplan-network
+    restart: unless-stopped
 
 volumes:
   postgres_data:
   redis_data:
+  backend_node_modules:
+  frontend_node_modules:
+
+networks:
+  finplan-network:
+    driver: bridge

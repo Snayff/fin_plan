@@ -1,0 +1,35 @@
+FROM node:20-alpine
+
+# Install system dependencies
+RUN apk add --no-cache python3 make g++
+
+WORKDIR /workspace
+
+# Copy root package.json and workspace configuration
+COPY package*.json ./
+COPY turbo.json ./
+COPY tsconfig.json ./
+
+# Copy shared package
+COPY packages/shared ./packages/shared/
+
+# Copy backend package.json
+COPY apps/backend/package*.json ./apps/backend/
+
+# Install all dependencies (including workspace packages)
+RUN npm install
+
+# Copy prisma schema and generate client
+COPY apps/backend/prisma ./apps/backend/prisma/
+WORKDIR /workspace/apps/backend
+RUN npx prisma generate
+
+# Copy backend source code
+COPY apps/backend/src ./src/
+COPY apps/backend/tsconfig.json ./
+
+# Expose port
+EXPOSE 3001
+
+# Development command with hot reload
+CMD ["npm", "run", "dev"]
