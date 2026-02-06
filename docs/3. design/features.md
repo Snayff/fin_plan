@@ -1,148 +1,56 @@
-
-# Financial Planning App - Detailed Implementation Plan
-
-I've reviewed all three design documents. This is an ambitious local-first financial planning application with comprehensive features. Here's my detailed implementation plan:
-
-## **Phase 1: Foundation & Core Infrastructure (Weeks 1-3)**
-
-### 1.1 Project Scaffolding
-- **Frontend:** React + TypeScript + Vite setup with Tailwind CSS + shadcn/ui
-- **Backend:** Node.js + TypeScript + Fastify + tRPC
-- **Database:** PostgreSQL + RxDB (local-first architecture)
-- **Monorepo setup:** Turborepo or Nx for managing frontend/backend/shared packages
-- **Development environment:** Docker Compose for local development (PostgreSQL + Redis)
-
-### 1.2 Authentication & User Management
-- JWT-based authentication with refresh tokens
-- User registration with email verification
-- Password reset flow
-- Session management
-- bcrypt/Argon2 password hashing
-- Rate limiting on auth endpoints
-
-### 1.3 Database Schema & Migrations
-- Set up PostgreSQL schema based on the data models in architecture.md
-- Create migration system (using Prisma or Drizzle ORM)
-- Implement core tables: Users, Accounts, Transactions, Categories
-- Set up indexes for performance
-- Database seeding with default categories
-
-### 1.4 Local-First Sync Foundation
-- RxDB setup on frontend with IndexedDB
-- WebSocket server for real-time sync
-- Basic sync protocol implementation
-- Conflict resolution strategy (last-write-wins initially)
-- Device registration and management
-
-**Testing for Phase 1:**
-- Unit tests for auth service (JWT generation, password hashing)
-- Integration tests for user registration/login flows
-- Database migration tests
-- API endpoint tests with Supertest
-- E2E tests for user signup/login with Playwright
-
----
-
-## **Phase 2: Core Financial Features - MVP (Weeks 4-8)**
-
-### 2.1 Account Management
-- CRUD operations for payment accounts
-- Account types: checking, savings, credit, investment
-- Account balance tracking
-- Account listing with visual cards
-- Account selection components
-
-### 2.2 Transaction Management
-- Basic transaction entry (income/expense)
-- Transaction list with filtering and sorting
-- Category/subcategory system
-- Default category hierarchy
-- Transaction editing and deletion
-- Tag support
-
-### 2.3 Recurring Transactions
+# Transaction Management
+## Recurring Transactions
 - Recurring rule engine
 - Automatic transaction generation
 - Individual instance editing without affecting series
 - Series-wide editing for future instances
 - Visual indicators for recurring vs. one-time transactions
 
-### 2.4 Basic Dashboard
-- Net worth calculation and display
-- Monthly income vs. expenses summary
-- Recent transactions list
-- Account balance overview
-- Basic line charts (net worth trend) using Recharts
-
-**Testing for Phase 2:**
-- Unit tests for transaction calculations
-- Unit tests for recurring transaction generation logic
-- Integration tests for transaction CRUD operations
-- Tests for category hierarchy
-- E2E tests for adding transactions via different flows
-- Performance tests for transaction list rendering (1000+ records)
-
----
-
-## **Phase 3: Progressive UX Features (Weeks 9-11)**
-
-### 3.1 Command Palette & Keyboard Navigation
-- Implement cmdk for command palette (Ctrl+K/Cmd+K)
-- Quick transaction entry from anywhere
-- Navigation shortcuts
-- Search functionality
-- Keyboard shortcut hints throughout app
-
-### 3.2 Bulk Transaction Entry
+## Bulk Transaction Entry
 - Spreadsheet-like interface using Handsontable or react-data-grid
 - Keyboard navigation (Tab, Enter, arrows)
 - Copy/paste from Excel/CSV
 - Real-time validation with inline errors
 - Bulk save with progress indicator
 
-### 3.3 Smart Defaults & Templates
-- Remember last-used values (category, account)
-- Recent transaction templates
-- Transaction duplication
-- Form auto-fill based on history
+## Transaction Duplication
+- duplicate existing transaction
 
-### 3.4 Onboarding & Empty States
+
+# Controls
+## Command Palette & Keyboard Navigation
+- Implement cmdk for command palette (Ctrl+K/Cmd+K)
+- Quick transaction entry from anywhere
+- Navigation shortcuts
+- Search functionality
+- Keyboard shortcut hints throughout app
+
+# Onboarding & Intro
+## Onboarding & Empty States
 - First-time setup wizard
 - Profile setup (currency, date format, theme)
-- Guided account/transaction/budget creation
+- Guided account/transaction/budget creation. User tour with interactive walkthrough (using libraries like Intro.js or react-joyride)
 - Empty state designs for all screens
 - Helpful messaging and CTAs
-- User tour with interactive walkthrough (using libraries like Intro.js or react-joyride)
 
-**Testing for Phase 3:**
-- E2E tests for command palette workflows
-- Keyboard navigation tests
-- Bulk entry validation tests
-- CSV import/paste tests
-- User tour completion tests
-- Empty state rendering tests
 
----
-
-## **Phase 4: Budgeting & Goal Tracking (Weeks 12-15)**
-
-### 4.1 Budget System
-- Budget creation wizard
-- Period selection (monthly, quarterly, annual)
-- Category allocation interface
+# Budget Management
+## Budget Creation
+- Budget creation. Fund allocation to categories. 
+- Archive of previous budgets
 - Budget templates (50/30/20, zero-based)
-- Real-time budget vs. actual tracking
+
+## Budget Overview
+- Current budget vs. current transactions
 - Progress bars with utilization percentage
 - Over/under budget indicators
 
-### 4.2 Budget Analysis & Alerts
+## Budget Analysis
 - Variance reporting
-- Alert system (75%, 90%, 100% thresholds)
 - Historical budget performance
-- Mid-period adjustments
-- Rollover/carryover options
 
-### 4.3 Goal Planning
+# Goal Management
+## Goal Planning
 - Goal creation with types (savings, debt payoff, net worth, etc.)
 - Target amount and date
 - Contribution tracking
@@ -422,166 +330,3 @@ I've reviewed all three design documents. This is an ambitious local-first finan
 - Performance benchmarks (page load, rendering)
 - Load testing for API endpoints
 - Memory leak tests
-
----
-
-## **Comprehensive Testing Strategy**
-
-### Test Pyramid Structure
-
-**Unit Tests (70% coverage target)**
-- Financial calculation functions (compound interest, amortization, inflation adjustments)
-- Business logic (budget calculations, goal progress, net worth aggregation)
-- Utility functions (date formatting, currency conversion)
-- React component logic (hooks, state management)
-- API route handlers
-- Validation schemas (Zod)
-- Tools: Vitest, React Testing Library
-
-**Integration Tests (20% coverage target)**
-- API endpoint flows (full request/response cycles)
-- Database operations (CRUD, transactions)
-- Authentication flows
-- Sync operations
-- Transaction-to-budget linkage
-- Goal-to-transaction contributions
-- Tools: Supertest, Test Containers for PostgreSQL
-
-**E2E Tests (10% coverage target)**
-- Critical user journeys:
-  - User registration → account setup → first transaction
-  - Budget creation → transaction entry → budget tracking
-  - Goal creation → contribution → progress tracking
-  - Multi-device sync scenario
-- Tools: Playwright
-
-**Additional Testing Types**
-
-**Visual Regression Testing**
-- Chart rendering consistency
-- Dashboard layouts
-- Theme variations (light/dark)
-- Tools: Percy or Chromatic
-
-**Accessibility Testing**
-- Automated: axe-core, Lighthouse
-- Manual: screen reader testing
-- Keyboard navigation flows
-
-**Performance Testing**
-- Load testing: k6 or Artillery
-- Frontend performance: Lighthouse CI
-- Database query performance: pg_stat_statements
-- Scenarios:
-  - 10,000+ transactions
-  - 100+ simultaneous sync clients
-  - Complex Monte Carlo simulations
-
-**Security Testing**
-- Authentication bypass attempts
-- SQL injection tests
-- XSS vulnerability scanning
-- CSRF protection validation
-- Rate limiting effectiveness
-- Tools: OWASP ZAP, Snyk
-
-**Mutation Testing**
-- Test suite quality validation
-- Tools: Stryker
-
-### Continuous Integration
-
-- GitHub Actions for CI/CD
-- Run on every pull request:
-  - Linting (ESLint)
-  - Type checking (TypeScript)
-  - Unit tests
-  - Integration tests
-  - Build validation
-- Run on main branch:
-  - All of the above plus E2E tests
-  - Performance benchmarks
-  - Security scans
-  - Docker image build
-
-### Testing Environments
-
-- **Local:** Docker Compose with PostgreSQL
-- **CI:** GitHub Actions with Test Containers
-- **Staging:** Cloud deployment for integration testing
-- **Production:** Monitoring and error tracking (Sentry)
-
----
-
-## **Deployment Strategy**
-
-### Cloud-Hosted SaaS (Primary)
-
-**Infrastructure:**
-- Frontend: Vercel or Netlify
-- Backend: Railway, Fly.io, or Render
-- Database: Managed PostgreSQL (Railway, Supabase, or Neon)
-- Redis: Upstash or managed Redis
-- File storage: S3-compatible (Cloudflare R2, Backblaze B2)
-
-**CI/CD:**
-- Automatic deployment on main branch merge
-- Preview deployments for pull requests
-- Database migrations via CI
-- Health checks before traffic routing
-
-### Self-Hosted (Secondary)
-
-**Options:**
-- Docker Compose (single-server deployment)
-- Support for NAS systems (Synology, QNAP, Unraid)
-- SQLite mode for simplicity
-- nginx for reverse proxy
-- Let's Encrypt for SSL
-
-**Documentation:**
-- Installation guide
-- Configuration guide
-- Backup/restore procedures
-- Upgrade path
-- Troubleshooting guide
-
----
-
-## **Development Timeline Summary**
-
-- **Phase 1:** Foundation (Weeks 1-3) - Auth, database, sync foundation
-- **Phase 2:** Core MVP (Weeks 4-8) - Accounts, transactions, basic dashboard
-- **Phase 3:** UX Features (Weeks 9-11) - Command palette, bulk entry, onboarding
-- **Phase 4:** Budgeting & Goals (Weeks 12-15)
-- **Phase 5:** Assets & Liabilities (Weeks 16-18)
-- **Phase 6:** Visualization (Weeks 19-22) - Charts, Sankey, reports
-- **Phase 7:** Forecasting (Weeks 23-26) - Projections, Monte Carlo, insights
-- **Phase 8:** Help & A11y (Weeks 27-29)
-- **Phase 9:** Sync & PWA (Weeks 30-33)
-- **Phase 10:** Polish & Self-hosting (Weeks 34-36)
-
-**Total Timeline: ~8-9 months** for full feature set
-
-**MVP Launch Target: 3 months** (Phases 1-2 + essential UX from Phase 3)
-
----
-
-## **Risk Mitigation**
-
-1. **Sync Complexity:** Start with simple last-write-wins, iterate to CRDT
-2. **Financial Calculation Accuracy:** Extensive unit testing, peer review of algorithms
-3. **Performance with Large Datasets:** Early performance testing, virtual scrolling from day one
-4. **Browser Compatibility:** Target modern browsers only (latest 2 versions)
-5. **Data Security:** Security audit before launch, encryption at rest and in transit
-
----
-
-## **Recommended Team Structure**
-
-- **2 Full-stack developers:** Core features, API, database
-- **1 Frontend specialist:** React, charts, UX implementation
-- **1 Designer:** UI/UX, accessibility, visual design
-- **QA/Testing:** Embedded in team (developers write tests) + external QA for release testing
-
----

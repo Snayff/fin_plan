@@ -397,7 +397,7 @@ export const transactionService = {
       if (data.memo !== undefined) updateData.memo = data.memo?.trim() || null;
       if (data.tags !== undefined) updateData.tags = data.tags;
       if (data.recurrence !== undefined) updateData.recurrence = data.recurrence;
-      if (data.recurrence_end_date !== undefined) updateData.recurrenceEndDate = data.recurrence_end_date ? new Date(data.recurrence_end_date) : null;
+      if (data.recurrence_end_date !== undefined) updateData.recurrence_end_date = data.recurrence_end_date ? new Date(data.recurrence_end_date) : null;
       if (data.metadata !== undefined) {
         const existingMeta = (existing.metadata as Record<string, any>) || {};
         updateData.metadata = { ...existingMeta, ...data.metadata };
