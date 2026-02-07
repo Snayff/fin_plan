@@ -16,7 +16,7 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
   const [formData, setFormData] = useState<CreateAccountInput>({
     name: '',
     type: 'current',
-    balance: 0,
+    openingBalance: 0,
     currency: 'GBP',
     description: '',
   });
@@ -76,20 +76,23 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="balance">Current Balance *</Label>
+        <Label htmlFor="openingBalance">Opening Balance *</Label>
         <div className="relative">
           <span className="absolute left-3 top-2 text-muted-foreground">£</span>
           <Input
             type="number"
-            id="balance"
+            id="openingBalance"
             required
             step="0.01"
-            value={formData.balance}
-            onChange={(e) => setFormData({ ...formData, balance: parseFloat(e.target.value) || 0 })}
+            value={formData.openingBalance}
+            onChange={(e) => setFormData({ ...formData, openingBalance: parseFloat(e.target.value) || 0 })}
             className="pl-8"
             placeholder="0.00"
           />
         </div>
+        <p className="text-xs text-muted-foreground">
+          Can be negative for credit cards or loans (e.g., -1000 for £1000 debt)
+        </p>
       </div>
 
       {createMutation.error && (

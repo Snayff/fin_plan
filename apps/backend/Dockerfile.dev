@@ -32,4 +32,5 @@ COPY apps/backend/tsconfig.json ./
 EXPOSE 3001
 
 # Development command with hot reload
+# Note: postinstall script in package.json will regenerate Prisma client on npm install
 CMD ["npm", "run", "dev"]

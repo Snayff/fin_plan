@@ -37,7 +37,6 @@ model Account {
   name         String
   type         AccountType
   subtype      String?
-  balance      Decimal       @db.Decimal(15, 2)
   currency     String        @default("GBP")
   isActive     Boolean       @default(true) @map("is_active")
   createdAt    DateTime      @default(now()) @map("created_at")

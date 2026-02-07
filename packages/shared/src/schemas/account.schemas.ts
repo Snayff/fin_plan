@@ -22,7 +22,7 @@ export const createAccountSchema = z.object({
   name: z.string().min(1, 'Account name is required'),
   type: AccountTypeEnum,
   subtype: z.string().optional(),
-  balance: z.number(),
+  openingBalance: z.number().default(0),
   currency: z.string().length(3, 'Currency must be 3 characters (ISO 4217)').default('GBP'),
   description: z.string().optional(),
   metadata: z
@@ -42,7 +42,6 @@ export const updateAccountSchema = z.object({
   name: z.string().min(1, 'Account name cannot be empty').optional(),
   type: AccountTypeEnum.optional(),
   subtype: z.string().optional(),
-  balance: z.number().optional(),
   currency: z.string().length(3, 'Currency must be 3 characters (ISO 4217)').optional(),
   isActive: z.boolean().optional(),
   description: z.string().optional(),

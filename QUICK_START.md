@@ -112,14 +112,25 @@ Hot reload might have failed.
 npm run docker:restart
 ```
 
-### Database errors
-Database might not be initialized.
+### Database errors / Prisma "column does not exist"
+Database might not be initialized, or Prisma client is out of sync.
 
-**Fix:**
+**Quick Fix:**
+```bash
+# Windows
+regenerate-prisma-docker.bat
+
+# Mac/Linux
+./regenerate-prisma-docker.sh
+```
+
+**Alternative:**
 ```bash
 npm run db:migrate
 npm run db:seed
 ```
+
+> 📖 **See [docs/4. build/PRISMA_DOCKER_GUIDE.md](docs/4.%20build/PRISMA_DOCKER_GUIDE.md)** for detailed Prisma troubleshooting
 
 ### Nothing works
 Nuclear option - start fresh:

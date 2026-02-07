@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { Prisma } from '@prisma/client';
+import { calculateAccountBalances } from '../utils/balance.utils';
 
 export const dashboardService = {
   /**
@@ -20,13 +20,18 @@ export const dashboardService = {
         id: true,
         name: true,
         type: true,
-        balance: true,
         currency: true,
       },
     });
 
+    // Calculate balances for all accounts
+    const accountIds = accounts.map(a => a.id);
+    const balances = accountIds.length > 0 
+      ? await calculateAccountBalances(accountIds)
+      : new Map<string, number>();
+
     // Calculate total balance
-    const totalBalance = accounts.reduce((sum, acc) => sum + Number(acc.balance), 0);
+    const totalBalance = Array.from(balances.values()).reduce((sum, balance) => sum + balance, 0);
 
     // Get transaction summary for the period
     const [incomeAgg, expenseAgg] = await Promise.all([
@@ -148,7 +153,7 @@ export const dashboardService = {
       },
       accounts: accounts.map((acc) => ({
         ...acc,
-        balance: Number(acc.balance),
+        balance: balances.get(acc.id) || 0,
       })),
       recentTransactions: recentTransactions.map((t) => ({
         ...t,
@@ -167,54 +172,43 @@ export const dashboardService = {
    * Get net worth trend (monthly data for charts)
    */
   async getNetWorthTrend(userId: string, months: number = 6) {
-    const endDate = new Date();
+    const now = new Date();
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - months);
 
-    // Get transactions grouped by month
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        userId,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      orderBy: { date: 'asc' },
-      select: {
-        date: true,
-        amount: true,
-        type: true,
-      },
-    });
-
-    // Get starting balance (sum of all accounts at start date)
-    const accountsAtStart = await prisma.account.findMany({
+    // Get all user accounts
+    const accounts = await prisma.account.findMany({
       where: { userId, isActive: true },
-      select: { balance: true },
+      select: { id: true },
     });
 
-    // Calculate cumulative balance changes
-    const monthlyData: { [key: string]: number } = {};
-    let runningBalance = accountsAtStart.reduce((sum, acc) => sum + Number(acc.balance), 0);
+    const accountIds = accounts.map(a => a.id);
+    
+    // If no accounts, return empty trend data
+    if (accountIds.length === 0) {
+      return [];
+    }
+    
+    // Generate array of month-end dates
+    const monthlyDates: Date[] = [];
+    for (let i = 0; i <= months; i++) {
+      const date = new Date(now.getFullYear(), now.getMonth() - months + i + 1, 0); // Last day of month
+      monthlyDates.push(date);
+    }
 
-    // Group transactions by month
-    transactions.forEach((t) => {
-      const monthKey = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = runningBalance;
-      }
-
-      const change = t.type === 'income' ? Number(t.amount) : -Number(t.amount);
-      runningBalance += change;
-      monthlyData[monthKey] = runningBalance;
-    });
-
-    // Convert to array format for charts
-    const trendData = Object.entries(monthlyData).map(([month, balance]) => ({
-      month,
-      balance,
-    }));
+    // Calculate balances for each month-end
+    const trendData = await Promise.all(
+      monthlyDates.map(async (date) => {
+        const balances = await calculateAccountBalances(accountIds, date);
+        const totalBalance = Array.from(balances.values()).reduce((sum, bal) => sum + bal, 0);
+        
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        return {
+          month: monthKey,
+          balance: totalBalance,
+        };
+      })
+    );
 
     return trendData;
   },

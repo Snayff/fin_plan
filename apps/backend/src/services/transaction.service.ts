@@ -252,69 +252,53 @@ export const transactionService = {
       }
     }
 
-    // Create transaction within a database transaction to update account balance
-    const result = await prisma.$transaction(async (tx) => {
-      // Create transaction
-      const transaction = await tx.transaction.create({
-        data: {
-          userId,
-          accountId: data.accountId,
-          date: new Date(data.date),
-          amount: data.amount,
-          type: data.type,
-          categoryId: data.categoryId || null,
-          subcategoryId: data.subcategoryId || null,
-          name: data.name.trim(),
-          description: data.description?.trim() || null,
-          memo: data.memo?.trim() || null,
-          tags: data.tags || [],
-          isRecurring: data.isRecurring || false,
-          recurringRuleId: data.recurringRuleId || null,
-          recurrence: data.recurrence || 'none',
-          recurrence_end_date: data.recurrence_end_date ? new Date(data.recurrence_end_date) : null,
-          metadata: data.metadata || {},
-        },
-        include: {
-          account: {
-            select: {
-              id: true,
-              name: true,
-              type: true,
-            },
-          },
-          category: {
-            select: {
-              id: true,
-              name: true,
-              type: true,
-              color: true,
-            },
-          },
-          subcategory: {
-            select: {
-              id: true,
-              name: true,
-              color: true,
-            },
+    // Create transaction
+    const transaction = await prisma.transaction.create({
+      data: {
+        userId,
+        accountId: data.accountId,
+        date: new Date(data.date),
+        amount: data.amount,
+        type: data.type,
+        categoryId: data.categoryId || null,
+        subcategoryId: data.subcategoryId || null,
+        name: data.name.trim(),
+        description: data.description?.trim() || null,
+        memo: data.memo?.trim() || null,
+        tags: data.tags || [],
+        isRecurring: data.isRecurring || false,
+        recurringRuleId: data.recurringRuleId || null,
+        recurrence: data.recurrence || 'none',
+        recurrence_end_date: data.recurrence_end_date ? new Date(data.recurrence_end_date) : null,
+        metadata: data.metadata || {},
+      },
+      include: {
+        account: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
           },
         },
-      });
-
-      // Update account balance
-      const balanceChange = data.type === 'income' ? data.amount : -data.amount;
-      await tx.account.update({
-        where: { id: data.accountId },
-        data: {
-          balance: {
-            increment: balanceChange,
+        category: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            color: true,
           },
         },
-      });
-
-      return transaction;
+        subcategory: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+          },
+        },
+      },
     });
 
-    return result;
+    return transaction;
   },
 
   /**
@@ -365,105 +349,56 @@ export const transactionService = {
       }
     }
 
-    // Update within transaction to handle balance changes
-    const result = await prisma.$transaction(async (tx) => {
-      // Calculate balance changes if amount or type changed
-      let balanceChange = 0;
-      
-      if (data.amount !== undefined || data.type !== undefined) {
-        const oldAmount = Number(existing.amount);
-        const newAmount = data.amount !== undefined ? data.amount : oldAmount;
-        const oldType = existing.type;
-        const newType = data.type !== undefined ? data.type : oldType;
+    // Build update data
+    const updateData: any = {};
+    if (data.accountId !== undefined) updateData.accountId = data.accountId;
+    if (data.date !== undefined) updateData.date = new Date(data.date);
+    if (data.amount !== undefined) updateData.amount = data.amount;
+    if (data.type !== undefined) updateData.type = data.type;
+    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId || null;
+    if (data.subcategoryId !== undefined) updateData.subcategoryId = data.subcategoryId || null;
+    if (data.name !== undefined) updateData.name = data.name.trim();
+    if (data.description !== undefined) updateData.description = data.description?.trim() || null;
+    if (data.memo !== undefined) updateData.memo = data.memo?.trim() || null;
+    if (data.tags !== undefined) updateData.tags = data.tags;
+    if (data.recurrence !== undefined) updateData.recurrence = data.recurrence;
+    if (data.recurrence_end_date !== undefined) updateData.recurrence_end_date = data.recurrence_end_date ? new Date(data.recurrence_end_date) : null;
+    if (data.metadata !== undefined) {
+      const existingMeta = (existing.metadata as Record<string, any>) || {};
+      updateData.metadata = { ...existingMeta, ...data.metadata };
+    }
 
-        // Reverse old transaction's effect
-        const oldBalanceChange = oldType === 'income' ? oldAmount : -oldAmount;
-        // Apply new transaction's effect
-        const newBalanceChange = newType === 'income' ? newAmount : -newAmount;
-        
-        balanceChange = newBalanceChange - oldBalanceChange;
-      }
-
-      // Build update data
-      const updateData: any = {};
-      if (data.accountId !== undefined) updateData.accountId = data.accountId;
-      if (data.date !== undefined) updateData.date = new Date(data.date);
-      if (data.amount !== undefined) updateData.amount = data.amount;
-      if (data.type !== undefined) updateData.type = data.type;
-      if (data.categoryId !== undefined) updateData.categoryId = data.categoryId || null;
-      if (data.subcategoryId !== undefined) updateData.subcategoryId = data.subcategoryId || null;
-      if (data.name !== undefined) updateData.name = data.name.trim();
-      if (data.description !== undefined) updateData.description = data.description?.trim() || null;
-      if (data.memo !== undefined) updateData.memo = data.memo?.trim() || null;
-      if (data.tags !== undefined) updateData.tags = data.tags;
-      if (data.recurrence !== undefined) updateData.recurrence = data.recurrence;
-      if (data.recurrence_end_date !== undefined) updateData.recurrence_end_date = data.recurrence_end_date ? new Date(data.recurrence_end_date) : null;
-      if (data.metadata !== undefined) {
-        const existingMeta = (existing.metadata as Record<string, any>) || {};
-        updateData.metadata = { ...existingMeta, ...data.metadata };
-      }
-
-      // Update transaction
-      const transaction = await tx.transaction.update({
-        where: { id: transactionId },
-        data: updateData,
-        include: {
-          account: {
-            select: {
-              id: true,
-              name: true,
-              type: true,
-            },
-          },
-          category: {
-            select: {
-              id: true,
-              name: true,
-              type: true,
-              color: true,
-            },
-          },
-          subcategory: {
-            select: {
-              id: true,
-              name: true,
-              color: true,
-            },
+    // Update transaction
+    const transaction = await prisma.transaction.update({
+      where: { id: transactionId },
+      data: updateData,
+      include: {
+        account: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
           },
         },
-      });
-
-      // Update account balance if needed
-      if (balanceChange !== 0) {
-        const accountId = data.accountId || existing.accountId;
-        await tx.account.update({
-          where: { id: accountId },
-          data: {
-            balance: {
-              increment: balanceChange,
-            },
+        category: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+            color: true,
           },
-        });
-
-        // If account changed, update old account too
-        if (data.accountId && data.accountId !== existing.accountId) {
-          const oldAmount = Number(existing.amount);
-          const oldBalanceChange = existing.type === 'income' ? -oldAmount : oldAmount;
-          await tx.account.update({
-            where: { id: existing.accountId },
-            data: {
-              balance: {
-                increment: oldBalanceChange,
-              },
-            },
-          });
-        }
-      }
-
-      return transaction;
+        },
+        subcategory: {
+          select: {
+            id: true,
+            name: true,
+            color: true,
+          },
+        },
+      },
     });
 
-    return result;
+    return transaction;
   },
 
   /**
@@ -479,23 +414,9 @@ export const transactionService = {
       throw new NotFoundError('Transaction not found');
     }
 
-    // Delete within transaction to update account balance
-    await prisma.$transaction(async (tx) => {
-      // Delete transaction
-      await tx.transaction.delete({
-        where: { id: transactionId },
-      });
-
-      // Reverse the transaction's effect on account balance
-      const balanceChange = transaction.type === 'income' ? -Number(transaction.amount) : Number(transaction.amount);
-      await tx.account.update({
-        where: { id: transaction.accountId },
-        data: {
-          balance: {
-            increment: balanceChange,
-          },
-        },
-      });
+    // Delete transaction
+    await prisma.transaction.delete({
+      where: { id: transactionId },
     });
 
     return { message: 'Transaction deleted successfully' };

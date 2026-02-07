@@ -1,12 +1,13 @@
 import { prisma } from '../config/database';
 import { AccountType } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../utils/errors';
+import { calculateAccountBalance, calculateAccountBalances } from '../utils/balance.utils';
 
 export interface CreateAccountInput {
   name: string;
   type: AccountType;
   subtype?: string;
-  balance: number;
+  openingBalance?: number;
   currency: string;
   description?: string;
   metadata?: {
@@ -21,7 +22,6 @@ export interface UpdateAccountInput {
   name?: string;
   type?: AccountType;
   subtype?: string;
-  balance?: number;
   currency?: string;
   description?: string;
   isActive?: boolean;
@@ -43,48 +43,21 @@ export const accountService = {
       orderBy: [{ isActive: 'desc' }, { createdAt: 'desc' }],
     });
 
-    // Calculate balance to current date for each account
-    const today = new Date();
-    today.setHours(23, 59, 59, 999); // End of today
+    // Calculate balances efficiently for all accounts
+    const accountIds = accounts.map(a => a.id);
+    const balances = await calculateAccountBalances(accountIds);
 
-    const accountsWithBalance = await Promise.all(
-      accounts.map(async (account) => {
-        // Get sum of all transactions up to today
-        const [incomeSum, expenseSum] = await Promise.all([
-          prisma.transaction.aggregate({
-            where: {
-              accountId: account.id,
-              type: 'income',
-              date: { lte: today },
-            },
-            _sum: { amount: true },
-          }),
-          prisma.transaction.aggregate({
-            where: {
-              accountId: account.id,
-              type: 'expense',
-              date: { lte: today },
-            },
-            _sum: { amount: true },
-          }),
-        ]);
-
-        const income = Number(incomeSum._sum.amount) || 0;
-        const expense = Number(expenseSum._sum.amount) || 0;
-        const balanceToDate = income - expense;
-
-        return {
-          ...account,
-          balance: balanceToDate,
-        };
-      })
-    );
+    // Attach calculated balances to accounts
+    const accountsWithBalance = accounts.map(account => ({
+      ...account,
+      balance: balances.get(account.id) || 0,
+    }));
 
     return accountsWithBalance;
   },
 
   /**
-   * Get a single account by ID
+   * Get a single account by ID with calculated balance
    */
   async getAccountById(accountId: string, userId: string) {
     const account = await prisma.account.findFirst({
@@ -95,11 +68,17 @@ export const accountService = {
       throw new NotFoundError('Account not found');
     }
 
-    return account;
+    // Calculate current balance
+    const balance = await calculateAccountBalance(accountId);
+
+    return {
+      ...account,
+      balance,
+    };
   },
 
   /**
-   * Create a new account
+   * Create a new account with optional opening balance
    */
   async createAccount(userId: string, data: CreateAccountInput) {
     // Validate required fields
@@ -111,30 +90,77 @@ export const accountService = {
       throw new ValidationError('Account type is required');
     }
 
-    if (data.balance === undefined || data.balance === null) {
-      throw new ValidationError('Account balance is required');
-    }
-
     if (!data.currency || data.currency.trim().length === 0) {
       throw new ValidationError('Currency is required');
     }
 
-    // Create account
-    const account = await prisma.account.create({
-      data: {
-        userId,
-        name: data.name.trim(),
-        type: data.type,
-        subtype: data.subtype?.trim() || null,
-        balance: data.balance,
-        currency: data.currency.toUpperCase(),
-        description: data.description?.trim() || null,
-        metadata: data.metadata || {},
-        isActive: true,
+    const openingBalance = data.openingBalance ?? 0;
+
+    // Get or create "Opening Balance" category
+    let openingBalanceCategory = await prisma.category.findFirst({
+      where: {
+        userId: null, // System category
+        name: 'Opening Balance',
+        isSystemCategory: true,
       },
     });
 
-    return account;
+    if (!openingBalanceCategory) {
+      // Create system category for opening balances
+      openingBalanceCategory = await prisma.category.create({
+        data: {
+          name: 'Opening Balance',
+          type: 'income', // Default, but will vary per transaction
+          isSystemCategory: true,
+          userId: null,
+        },
+      });
+    }
+
+    // Create account and opening balance transaction in a transaction
+    const result = await prisma.$transaction(async (tx) => {
+      // Create account
+      const account = await tx.account.create({
+        data: {
+          userId,
+          name: data.name.trim(),
+          type: data.type,
+          subtype: data.subtype?.trim() || null,
+          currency: data.currency.toUpperCase(),
+          description: data.description?.trim() || null,
+          metadata: data.metadata || {},
+          isActive: true,
+        },
+      });
+
+      // Create opening balance transaction if non-zero
+      if (openingBalance !== 0) {
+        await tx.transaction.create({
+          data: {
+            userId,
+            accountId: account.id,
+            date: account.createdAt,
+            amount: Math.abs(openingBalance),
+            type: openingBalance >= 0 ? 'income' : 'expense',
+            name: 'Opening Balance',
+            categoryId: openingBalanceCategory!.id,
+            metadata: {
+              isSystemTransaction: true,
+              transactionType: 'opening_balance',
+            },
+          },
+        });
+      }
+
+      return account;
+    });
+
+    // Return account with calculated balance
+    const balance = await calculateAccountBalance(result.id);
+    return {
+      ...result,
+      balance,
+    };
   },
 
   /**
@@ -164,7 +190,6 @@ export const accountService = {
     if (data.name !== undefined) updateData.name = data.name.trim();
     if (data.type !== undefined) updateData.type = data.type;
     if (data.subtype !== undefined) updateData.subtype = data.subtype?.trim() || null;
-    if (data.balance !== undefined) updateData.balance = data.balance;
     if (data.currency !== undefined) updateData.currency = data.currency.toUpperCase();
     if (data.description !== undefined) updateData.description = data.description?.trim() || null;
     if (data.isActive !== undefined) updateData.isActive = data.isActive;
@@ -180,7 +205,12 @@ export const accountService = {
       data: updateData,
     });
 
-    return account;
+    // Return account with calculated balance
+    const balance = await calculateAccountBalance(accountId);
+    return {
+      ...account,
+      balance,
+    };
   },
 
   /**
@@ -236,6 +266,9 @@ export const accountService = {
       throw new NotFoundError('Account not found');
     }
 
+    // Calculate current balance
+    const balance = await calculateAccountBalance(accountId);
+
     // Get recent transactions
     const recentTransactions = await prisma.transaction.findMany({
       where: { accountId },
@@ -254,7 +287,10 @@ export const accountService = {
     });
 
     return {
-      account,
+      account: {
+        ...account,
+        balance,
+      },
       transactionCount: account._count.transactions,
       recentTransactions,
     };
