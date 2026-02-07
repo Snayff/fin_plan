@@ -11,7 +11,7 @@ interface CategoryPieChartProps {
 export default function CategoryPieChart({ data }: CategoryPieChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-gray-500">
+      <div className="h-64 flex items-center justify-center text-muted-foreground">
         No spending data available yet.
       </div>
     );
@@ -36,10 +36,11 @@ export default function CategoryPieChart({ data }: CategoryPieChartProps) {
         </Pie>
         <Tooltip
           contentStyle={{
-            backgroundColor: 'white',
-            border: '1px solid #e5e7eb',
+            backgroundColor: 'hsl(230 27% 19%)',
+            border: '1px solid hsl(230 27% 26%)',
             borderRadius: '6px',
             fontSize: '12px',
+            color: 'hsl(230 29% 96%)',
           }}
           formatter={(value: number) => `$${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
         />

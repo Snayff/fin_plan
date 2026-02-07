@@ -5,6 +5,9 @@ import { accountService } from '../../services/account.service';
 import { categoryService } from '../../services/category.service';
 import type { TransactionType, CreateTransactionInput } from '../../types';
 import { format } from 'date-fns';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 interface TransactionFormProps {
   onSuccess?: () => void;
@@ -68,8 +71,8 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-2"></div>
-          <p className="text-gray-600 text-sm">Loading form data...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+          <p className="text-muted-foreground text-sm">Loading form data...</p>
         </div>
       </div>
     );
@@ -79,20 +82,16 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
   if (accountsError || categoriesError) {
     return (
       <div className="py-8">
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
           <p className="font-medium mb-1">Failed to load form data</p>
           {accountsError && <p>Accounts: {(accountsError as Error).message}</p>}
           {categoriesError && <p>Categories: {(categoriesError as Error).message}</p>}
         </div>
         {onCancel && (
           <div className="mt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-            >
+            <Button type="button" onClick={onCancel} variant="secondary">
               Close
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -103,19 +102,15 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
   if (accounts.length === 0) {
     return (
       <div className="py-8">
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded text-sm">
+        <div className="bg-warning-subtle border border-warning text-warning px-4 py-3 rounded-md text-sm">
           <p className="font-medium mb-1">No accounts available</p>
           <p>You need to create at least one account before adding transactions.</p>
         </div>
         {onCancel && (
           <div className="mt-4 flex justify-end">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-            >
+            <Button type="button" onClick={onCancel} variant="secondary">
               Close
-            </button>
+            </Button>
           </div>
         )}
       </div>
@@ -124,61 +119,51 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-          Name *
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="name">Name *</Label>
+        <Input
           type="text"
           id="name"
           required
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="e.g., Monthly Salary, Grocery Shopping"
         />
       </div>
 
-      <div>
-        <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-1">
-          Description
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="description">Description</Label>
+        <Input
           type="text"
           id="description"
           value={formData.description || ''}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Optional description"
         />
       </div>
 
-      <div>
-        <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-          Type *
-        </label>
+      <div className="space-y-2">
+        <Label htmlFor="type">Type *</Label>
         <select
           id="type"
           required
           value={formData.type}
           onChange={(e) => setFormData({ ...formData, type: e.target.value as TransactionType, categoryId: '' })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="expense">Expense</option>
           <option value="income">Income</option>
         </select>
       </div>
 
-      <div>
-        <label htmlFor="accountId" className="block text-sm font-medium text-gray-700 mb-1">
-          Target Account *
-        </label>
+      <div className="space-y-2">
+        <Label htmlFor="accountId">Target Account *</Label>
         <select
           id="accountId"
           required
           value={formData.accountId}
           onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="">Select account...</option>
           {accounts.map((account) => (
@@ -189,13 +174,11 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
         </select>
       </div>
 
-      <div>
-        <label htmlFor="amount" className="block text-sm font-medium text-gray-700 mb-1">
-          Amount *
-        </label>
+      <div className="space-y-2">
+        <Label htmlFor="amount">Amount *</Label>
         <div className="relative">
-          <span className="absolute left-3 top-2 text-gray-500">£</span>
-          <input
+          <span className="absolute left-3 top-2 text-muted-foreground">£</span>
+          <Input
             type="number"
             id="amount"
             required
@@ -203,35 +186,30 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
             min="0"
             value={formData.amount}
             onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-            className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="pl-8"
             placeholder="0.00"
           />
         </div>
       </div>
 
-      <div>
-        <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
-          Transaction Date *
-        </label>
-        <input
+      <div className="space-y-2">
+        <Label htmlFor="date">Transaction Date *</Label>
+        <Input
           type="date"
           id="date"
           required
           value={formData.date}
           onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
       </div>
 
-      <div>
-        <label htmlFor="categoryId" className="block text-sm font-medium text-gray-700 mb-1">
-          Category
-        </label>
+      <div className="space-y-2">
+        <Label htmlFor="categoryId">Category</Label>
         <select
           id="categoryId"
           value={formData.categoryId || ''}
           onChange={(e) => setFormData({ ...formData, categoryId: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="">Select category...</option>
           {filteredCategories.map((category) => (
@@ -247,15 +225,13 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
         </select>
       </div>
 
-      <div>
-        <label htmlFor="recurrence" className="block text-sm font-medium text-gray-700 mb-1">
-          Recurrence
-        </label>
+      <div className="space-y-2">
+        <Label htmlFor="recurrence">Recurrence</Label>
         <select
           id="recurrence"
           value={formData.recurrence || 'none'}
           onChange={(e) => setFormData({ ...formData, recurrence: e.target.value as any })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="none">None</option>
           <option value="weekly">Weekly</option>
@@ -265,45 +241,36 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
       </div>
 
       {formData.recurrence && formData.recurrence !== 'none' && (
-        <div>
-          <label htmlFor="recurrence_end_date" className="block text-sm font-medium text-gray-700 mb-1">
-            End Date <span className="text-gray-500 font-normal text-xs">(Optional - leave blank for indefinite)</span>
-          </label>
-          <input
+        <div className="space-y-2">
+          <Label htmlFor="recurrence_end_date">
+            End Date <span className="text-muted-foreground font-normal text-xs">(Optional - leave blank for indefinite)</span>
+          </Label>
+          <Input
             type="date"
             id="recurrence_end_date"
             value={formData.recurrence_end_date || ''}
             onChange={(e) => setFormData({ ...formData, recurrence_end_date: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Leave blank for indefinite recurrence"
           />
-          <p className="text-xs text-gray-500 mt-1">Leave blank if the transaction should recur indefinitely</p>
+          <p className="text-xs text-muted-foreground mt-1">Leave blank if the transaction should recur indefinitely</p>
         </div>
       )}
 
       {createMutation.error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded text-sm">
+        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
           {(createMutation.error as Error).message}
         </div>
       )}
 
       <div className="flex justify-end space-x-3 pt-4">
         {onCancel && (
-          <button
-            type="button"
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-          >
+          <Button type="button" onClick={onCancel} variant="secondary">
             Cancel
-          </button>
+          </Button>
         )}
-        <button
-          type="submit"
-          disabled={createMutation.isPending}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <Button type="submit" disabled={createMutation.isPending}>
           {createMutation.isPending ? 'Creating...' : 'Create Transaction'}
-        </button>
+        </Button>
       </div>
     </form>
   );

@@ -159,7 +159,7 @@ export default function AccountsPage() {
           message={
             <div>
               <p>Are you sure you want to delete <strong>{deletingAccount.name}</strong>?</p>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-muted-foreground">
                 This action cannot be undone. If the account has transactions, it will be marked as inactive instead.
               </p>
             </div>

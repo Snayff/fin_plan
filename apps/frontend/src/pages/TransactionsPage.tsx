@@ -222,7 +222,7 @@ export default function TransactionsPage() {
                   minimumFractionDigits: 2,
                 })}
               </p>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-muted-foreground">
                 This action cannot be undone and will update your account balance.
               </p>
             </div>

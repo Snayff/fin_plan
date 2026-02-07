@@ -3,6 +3,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountService } from '../../services/account.service';
 import { showSuccess, showError } from '../../lib/toast';
 import type { Account, AccountType } from '../../types';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
+import { Label } from '../ui/label';
 
 interface AccountEditFormProps {
   account: Account;
@@ -55,25 +58,24 @@ export default function AccountEditForm({ account, onSuccess, onCancel }: Accoun
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Account Name *</label>
-        <input
+      <div className="space-y-2">
+        <Label>Account Name *</Label>
+        <Input
           type="text"
           required
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="e.g., Main Checking"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Account Type *</label>
+      <div className="space-y-2">
+        <Label>Account Type *</Label>
         <select
           required
           value={formData.type}
           onChange={(e) => setFormData({ ...formData, type: e.target.value as AccountType })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           {accountTypes.map((type) => (
             <option key={type.value} value={type.value}>
@@ -83,61 +85,58 @@ export default function AccountEditForm({ account, onSuccess, onCancel }: Accoun
         </select>
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Current Balance *</label>
-        <input
+      <div className="space-y-2">
+        <Label>Current Balance *</Label>
+        <Input
           type="number"
           step="0.01"
           required
           value={formData.balance}
           onChange={(e) => setFormData({ ...formData, balance: e.target.value })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="0.00"
         />
       </div>
 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Currency *</label>
-        <input
+      <div className="space-y-2">
+        <Label>Currency *</Label>
+        <Input
           type="text"
           required
           maxLength={3}
           value={formData.currency}
           onChange={(e) => setFormData({ ...formData, currency: e.target.value.toUpperCase() })}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="USD"
         />
       </div>
 
-      <div className="flex items-center">
+      <div className="flex items-center space-x-2">
         <input
           type="checkbox"
           id="isActive"
           checked={formData.isActive}
           onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+          className="h-4 w-4 rounded border-input focus:ring-2 focus:ring-ring focus:ring-offset-2"
         />
-        <label htmlFor="isActive" className="ml-2 block text-sm text-gray-700">
+        <Label htmlFor="isActive" className="font-normal cursor-pointer">
           Account is active
-        </label>
+        </Label>
       </div>
 
       <div className="flex justify-end space-x-3 pt-4">
-        <button
+        <Button
           type="button"
           onClick={onCancel}
           disabled={mutation.isPending}
-          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+          variant="outline"
         >
           Cancel
-        </button>
-        <button
+        </Button>
+        <Button
           type="submit"
           disabled={mutation.isPending}
-          className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
         >
           {mutation.isPending ? 'Updating...' : 'Update Account'}
-        </button>
+        </Button>
       </div>
     </form>
   );

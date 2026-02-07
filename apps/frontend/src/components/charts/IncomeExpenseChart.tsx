@@ -1,6 +1,14 @@
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
 
+// Use design tokens for chart colors
+const CHART_COLORS = {
+  income: 'hsl(177 95% 39%)',    // Teal (chart-1/success) - neutral positive
+  expense: 'hsl(25 100% 55%)',   // Orange (chart-2/primary) - neutral
+  grid: 'hsl(230 27% 26%)',      // border color
+  text: 'hsl(230 23% 82%)',      // text-secondary
+};
+
 interface IncomeExpenseChartProps {
   data: Array<{
     date: string;
@@ -12,7 +20,7 @@ interface IncomeExpenseChartProps {
 export default function IncomeExpenseChart({ data }: IncomeExpenseChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-gray-500">
+      <div className="h-64 flex items-center justify-center text-muted-foreground">
         No data available yet. Add transactions to see your income vs expenses.
       </div>
     );
@@ -21,31 +29,32 @@ export default function IncomeExpenseChart({ data }: IncomeExpenseChartProps) {
   return (
     <ResponsiveContainer width="100%" height={300}>
       <BarChart data={data} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+        <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
         <XAxis
           dataKey="date"
           tickFormatter={(date) => format(new Date(date), 'MMM')}
-          stroke="#6b7280"
+          stroke={CHART_COLORS.text}
           style={{ fontSize: '12px' }}
         />
         <YAxis
-          stroke="#6b7280"
+          stroke={CHART_COLORS.text}
           style={{ fontSize: '12px' }}
           tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
         />
         <Tooltip
           contentStyle={{
-            backgroundColor: 'white',
-            border: '1px solid #e5e7eb',
+            backgroundColor: 'hsl(230 27% 19%)',
+            border: '1px solid hsl(230 27% 26%)',
             borderRadius: '6px',
             fontSize: '12px',
+            color: 'hsl(230 29% 96%)',
           }}
           labelFormatter={(date) => format(new Date(date), 'MMMM yyyy')}
           formatter={(value: number) => `$${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
         />
         <Legend />
-        <Bar dataKey="income" fill="#10b981" name="Income" radius={[4, 4, 0, 0]} />
-        <Bar dataKey="expense" fill="#ef4444" name="Expenses" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="income" fill={CHART_COLORS.income} name="Income" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="expense" fill={CHART_COLORS.expense} name="Expenses" radius={[4, 4, 0, 0]} />
       </BarChart>
     </ResponsiveContainer>
   );
