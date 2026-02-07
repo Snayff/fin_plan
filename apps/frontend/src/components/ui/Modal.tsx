@@ -8,6 +8,7 @@ import { ReactNode } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from './dialog';
@@ -25,6 +26,9 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Modal dialog content
+          </DialogDescription>
         </DialogHeader>
         <div className="mt-4">
           {children}

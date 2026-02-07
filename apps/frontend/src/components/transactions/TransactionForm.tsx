@@ -184,8 +184,8 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
             required
             step="0.01"
             min="0"
-            value={formData.amount}
-            onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
+            value={formData.amount || ''}
+            onChange={(e) => setFormData({ ...formData, amount: e.target.value === '' ? 0 : parseFloat(e.target.value) })}
             className="pl-8"
             placeholder="0.00"
           />

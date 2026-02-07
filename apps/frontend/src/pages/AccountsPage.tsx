@@ -157,12 +157,13 @@ export default function AccountsPage() {
           onConfirm={() => deleteMutation.mutate(deletingAccount.id)}
           title="Delete Account"
           message={
-            <div>
-              <p>Are you sure you want to delete <strong>{deletingAccount.name}</strong>?</p>
-              <p className="mt-2 text-sm text-muted-foreground">
+            <>
+              Are you sure you want to delete <strong>{deletingAccount.name}</strong>?
+              <br /><br />
+              <span className="text-sm text-muted-foreground">
                 This action cannot be undone. If the account has transactions, it will be marked as inactive instead.
-              </p>
-            </div>
+              </span>
+            </>
           }
           confirmText="Delete"
           variant="danger"

@@ -35,7 +35,7 @@ export interface UpdateAccountInput {
 
 export const accountService = {
   /**
-   * Get all accounts for a user
+   * Get all accounts for a user with balance calculated to current date
    */
   async getUserAccounts(userId: string) {
     const accounts = await prisma.account.findMany({
@@ -43,7 +43,44 @@ export const accountService = {
       orderBy: [{ isActive: 'desc' }, { createdAt: 'desc' }],
     });
 
-    return accounts;
+    // Calculate balance to current date for each account
+    const today = new Date();
+    today.setHours(23, 59, 59, 999); // End of today
+
+    const accountsWithBalance = await Promise.all(
+      accounts.map(async (account) => {
+        // Get sum of all transactions up to today
+        const [incomeSum, expenseSum] = await Promise.all([
+          prisma.transaction.aggregate({
+            where: {
+              accountId: account.id,
+              type: 'income',
+              date: { lte: today },
+            },
+            _sum: { amount: true },
+          }),
+          prisma.transaction.aggregate({
+            where: {
+              accountId: account.id,
+              type: 'expense',
+              date: { lte: today },
+            },
+            _sum: { amount: true },
+          }),
+        ]);
+
+        const income = Number(incomeSum._sum.amount) || 0;
+        const expense = Number(expenseSum._sum.amount) || 0;
+        const balanceToDate = income - expense;
+
+        return {
+          ...account,
+          balance: balanceToDate,
+        };
+      })
+    );
+
+    return accountsWithBalance;
   },
 
   /**
