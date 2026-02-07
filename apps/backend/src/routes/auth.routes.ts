@@ -14,6 +14,10 @@ const loginSchema = z.object({
   password: z.string().min(1),
 });
 
+const refreshSchema = z.object({
+  refreshToken: z.string().min(1),
+});
+
 export async function authRoutes(fastify: FastifyInstance) {
   /**
    * POST /api/auth/register
@@ -56,6 +60,17 @@ export async function authRoutes(fastify: FastifyInstance) {
     }
 
     return reply.status(200).send({ user });
+  });
+
+  /**
+   * POST /api/auth/refresh
+   * Refresh access token using refresh token
+   */
+  fastify.post('/refresh', async (request, reply) => {
+    const body = refreshSchema.parse(request.body);
+    const result = await authService.refreshAccessToken(body.refreshToken);
+    
+    return reply.status(200).send(result);
   });
 
   /**

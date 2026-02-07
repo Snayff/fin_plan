@@ -47,4 +47,8 @@ export const authService = {
   async getCurrentUser(token: string): Promise<{ user: User }> {
     return apiClient.get<{ user: User }>('/api/auth/me', token);
   },
+
+  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
+    return apiClient.post<{ accessToken: string }>('/api/auth/refresh', { refreshToken });
+  },
 };

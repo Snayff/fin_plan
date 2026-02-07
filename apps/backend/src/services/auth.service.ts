@@ -149,3 +149,37 @@ export async function findUserByEmail(email: string): Promise<User | null> {
     where: { email: email.toLowerCase() },
   });
 }
+
+/**
+ * Refresh access token using refresh token
+ */
+export async function refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+  if (!refreshToken) {
+    throw new AuthenticationError('Refresh token is required');
+  }
+
+  try {
+    // Verify refresh token
+    const { verifyRefreshToken } = await import('../utils/jwt');
+    const payload = verifyRefreshToken(refreshToken);
+
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+    });
+
+    if (!user) {
+      throw new AuthenticationError('User not found');
+    }
+
+    // Generate new access token
+    const accessToken = generateAccessToken({ userId: user.id, email: user.email });
+
+    return { accessToken };
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      throw error;
+    }
+    throw new AuthenticationError('Invalid or expired refresh token');
+  }
+}

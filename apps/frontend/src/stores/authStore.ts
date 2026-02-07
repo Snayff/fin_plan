@@ -17,6 +17,7 @@ interface AuthState {
   logout: () => Promise<void>;
   clearError: () => void;
   setUser: (user: User, accessToken: string, refreshToken: string) => void;
+  updateAccessToken: (accessToken: string) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -101,6 +102,11 @@ export const useAuthStore = create<AuthState>()(
       },
 
       clearError: () => set({ error: null }),
+
+      updateAccessToken: (accessToken) =>
+        set({
+          accessToken,
+        }),
     }),
     {
       name: 'finplan-auth',
