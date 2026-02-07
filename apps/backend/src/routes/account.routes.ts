@@ -8,8 +8,9 @@ const createAccountSchema = z.object({
   name: z.string().min(1, 'Account name is required'),
   type: z.nativeEnum(AccountType),
   subtype: z.string().optional(),
-  balance: z.number(),
+  openingBalance: z.number().optional().default(0),
   currency: z.string().min(1, 'Currency is required'),
+  description: z.string().optional(),
   metadata: z
     .object({
       institution: z.string().optional(),

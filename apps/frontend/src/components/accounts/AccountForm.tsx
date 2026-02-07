@@ -13,10 +13,10 @@ interface AccountFormProps {
 
 export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<CreateAccountInput>({
+  const [formData, setFormData] = useState({
     name: '',
-    type: 'current',
-    openingBalance: 0,
+    type: 'current' as AccountType,
+    openingBalance: '' as string | number,
     currency: 'GBP',
     description: '',
   });
@@ -31,7 +31,14 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate(formData);
+    const submitData: CreateAccountInput = {
+      name: formData.name,
+      type: formData.type,
+      currency: formData.currency,
+      description: formData.description,
+      openingBalance: formData.openingBalance === '' ? 0 : Number(formData.openingBalance),
+    };
+    createMutation.mutate(submitData);
   };
 
   return (
@@ -76,22 +83,21 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="openingBalance">Opening Balance *</Label>
+        <Label htmlFor="openingBalance">Opening Balance</Label>
         <div className="relative">
           <span className="absolute left-3 top-2 text-muted-foreground">£</span>
           <Input
             type="number"
             id="openingBalance"
-            required
             step="0.01"
             value={formData.openingBalance}
-            onChange={(e) => setFormData({ ...formData, openingBalance: parseFloat(e.target.value) || 0 })}
+            onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
             className="pl-8"
             placeholder="0.00"
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Can be negative for credit cards or loans (e.g., -1000 for £1000 debt)
+          Can be negative for credit cards or loans (e.g., -1000 for £1000 debt). Leave empty to default to 0.
         </p>
       </div>
 

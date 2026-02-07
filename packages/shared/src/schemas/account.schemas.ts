@@ -22,7 +22,7 @@ export const createAccountSchema = z.object({
   name: z.string().min(1, 'Account name is required'),
   type: AccountTypeEnum,
   subtype: z.string().optional(),
-  openingBalance: z.number().default(0),
+  openingBalance: z.number().optional().default(0),
   currency: z.string().length(3, 'Currency must be 3 characters (ISO 4217)').default('GBP'),
   description: z.string().optional(),
   metadata: z
