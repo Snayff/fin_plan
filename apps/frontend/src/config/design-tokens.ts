@@ -51,6 +51,10 @@ export const primitiveColors = {
   attention: { h: 30, s: 61, l: 70 },          // #E0B084
   attentionSubtle: { h: 30, s: 24, l: 18 },    // #3A3123
   
+  // Expense (Muted Teal - Discrete, Harmonious)
+  expense: { h: 177, s: 25, l: 50 },           // Desaturated teal
+  expenseSubtle: { h: 177, s: 20, l: 25 },     // Very muted teal
+  
   // Error (Red - Rare, Explicit Only)
   error: { h: 358, s: 75, l: 59 },             // #E5484D
   errorSubtle: { h: 350, s: 33, l: 19 },       // #402024
@@ -114,10 +118,15 @@ export const semanticColors = {
   highlightForeground: primitiveColors.textPrimary,
   highlightSubtle: primitiveColors.highlightSubtle,
   
-  // Attention/Warning
-  warning: primitiveColors.attention,
-  warningForeground: primitiveColors.background,
-  warningSubtle: primitiveColors.attentionSubtle,
+  // Expense (Muted Teal - Discrete)
+  expense: primitiveColors.expense,
+  expenseForeground: primitiveColors.textPrimary,
+  expenseSubtle: primitiveColors.expenseSubtle,
+  
+  // Attention/Warning (Magenta - Supportive Emphasis)
+  warning: primitiveColors.highlight,
+  warningForeground: primitiveColors.textPrimary,
+  warningSubtle: primitiveColors.highlightSubtle,
   
   // Destructive/Error (Used sparingly)
   destructive: primitiveColors.error,
@@ -130,11 +139,11 @@ export const semanticColors = {
   ring: primitiveColors.actionPrimary,
   
   // Chart colors (for Recharts)
-  chart1: primitiveColors.progress,          // Teal
-  chart2: primitiveColors.actionPrimary,     // Orange
+  chart1: primitiveColors.progress,          // Teal (Income)
+  chart2: primitiveColors.expense,           // Muted Teal (Expenses)
   chart3: primitiveColors.brandPrimary,      // Purple/Rose
   chart4: primitiveColors.highlight,         // Magenta
-  chart5: primitiveColors.attention,         // Warm Orange
+  chart5: primitiveColors.actionPrimary,     // Orange (for CTAs in charts)
 } as const;
 
 // ============================================================================

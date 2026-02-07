@@ -49,10 +49,15 @@
     --highlight-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
     --highlight-subtle: 277 28% 17%;     /* #2F2038 - Subtle background */
     
-    /* Attention/Warning (Warm Orange - Neutral Awareness) */
-    --warning: 30 61% 70%;               /* #E0B084 - Attention */
-    --warning-foreground: 230 31% 15%;   /* #191D32 - Background (for contrast) */
-    --warning-subtle: 30 24% 18%;        /* #3A3123 - Subtle background */
+    /* Expense (Muted Teal - Discrete, Harmonious) */
+    --expense: 177 25% 50%;              /* Muted teal */
+    --expense-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
+    --expense-subtle: 177 20% 25%;       /* Very muted teal */
+    
+    /* Attention/Warning (Magenta - Supportive Emphasis) */
+    --warning: 306 44% 40%;              /* #8F3985 - Magenta */
+    --warning-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
+    --warning-subtle: 277 28% 17%;       /* #2F2038 - Subtle background */
     
     /* Destructive/Error (Red - Rare, Explicit Only) */
     --destructive: 358 75% 59%;          /* #E5484D - Error */
@@ -68,11 +73,11 @@
     --radius: 0.5rem;                    /* 8px - default */
     
     /* Chart Colors (for Recharts) */
-    --chart-1: 177 95% 39%;              /* #07BEB8 - Teal (Progress) */
-    --chart-2: 25 100% 55%;              /* #FF7A18 - Orange (Primary Action) */
+    --chart-1: 177 95% 39%;              /* #07BEB8 - Teal (Income) */
+    --chart-2: 177 25% 50%;              /* Muted Teal (Expenses) */
     --chart-3: 320 23% 62%;              /* #B38BA3 - Purple/Rose (Brand) */
     --chart-4: 306 44% 40%;              /* #8F3985 - Magenta (Highlight) */
-    --chart-5: 30 61% 70%;               /* #E0B084 - Warm Orange (Attention) */
+    --chart-5: 25 100% 55%;              /* #FF7A18 - Orange (for CTAs in charts) */
     
     /* Text Hierarchy - Additional tokens */
     --text-secondary: 230 23% 82%;       /* #C7CAD9 - Secondary Text */
@@ -172,6 +177,19 @@
   
   .bg-warning-subtle {
     background-color: hsl(var(--warning-subtle));
+  }
+  
+  /* Expense utilities */
+  .bg-expense {
+    background-color: hsl(var(--expense));
+  }
+  
+  .text-expense {
+    color: hsl(var(--expense));
+  }
+  
+  .bg-expense-subtle {
+    background-color: hsl(var(--expense-subtle));
   }
   
   /* Achievement animation */

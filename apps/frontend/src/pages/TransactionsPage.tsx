@@ -143,7 +143,7 @@ export default function TransactionsPage() {
                       {transaction.account?.name || 'Unknown'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
-                      <span className={transaction.type === 'income' ? 'text-success' : 'text-primary'}>
+                      <span className={transaction.type === 'income' ? 'text-success' : 'text-expense'}>
                         {transaction.type === 'income' ? '+' : '-'}$
                         {transaction.amount.toLocaleString('en-US', {
                           minimumFractionDigits: 2,

@@ -70,6 +70,11 @@ export default {
   				foreground: 'hsl(var(--warning-foreground))',
   				subtle: 'hsl(var(--warning-subtle))'
   			},
+  			expense: {
+  				DEFAULT: 'hsl(var(--expense))',
+  				foreground: 'hsl(var(--expense-foreground))',
+  				subtle: 'hsl(var(--expense-subtle))'
+  			},
   			chart: {
   				'1': 'hsl(var(--chart-1))',
   				'2': 'hsl(var(--chart-2))',
