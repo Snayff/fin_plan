@@ -271,7 +271,7 @@ export const transactionService = {
           isRecurring: data.isRecurring || false,
           recurringRuleId: data.recurringRuleId || null,
           recurrence: data.recurrence || 'none',
-          recurrenceEndDate: data.recurrence_end_date ? new Date(data.recurrence_end_date) : null,
+          recurrence_end_date: data.recurrence_end_date ? new Date(data.recurrence_end_date) : null,
           metadata: data.metadata || {},
         },
         include: {

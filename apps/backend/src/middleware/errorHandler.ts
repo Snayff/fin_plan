@@ -48,9 +48,20 @@ export async function errorHandler(
 
   // Handle Zod validation errors
   if (error instanceof ZodError) {
+    // Format Zod errors into a more readable format
+    const formattedErrors = error.errors.map((err) => {
+      const field = err.path.join('.');
+      return `${field}: ${err.message}`;
+    });
+    
+    // Create a user-friendly message
+    const userMessage = formattedErrors.length === 1
+      ? formattedErrors[0]
+      : `Validation failed:\n${formattedErrors.map((e, i) => `${i + 1}. ${e}`).join('\n')}`;
+
     return reply.status(400).send({
       error: {
-        message: 'Validation failed',
+        message: userMessage,
         code: 'VALIDATION_ERROR',
         statusCode: 400,
         details: error.errors,

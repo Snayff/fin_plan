@@ -258,7 +258,8 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
 
       {createMutation.error && (
         <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
-          {(createMutation.error as Error).message}
+          <p className="font-medium mb-1">Unable to create transaction</p>
+          <p className="whitespace-pre-line">{(createMutation.error as Error).message}</p>
         </div>
       )}
 
