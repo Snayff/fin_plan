@@ -39,14 +39,22 @@ const updateAccountSchema = z.object({
 });
 
 export async function accountRoutes(fastify: FastifyInstance) {
-  // Get all accounts for current user
+  // Get all accounts for current user with enhanced data
   fastify.get(
     '/accounts',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
       const userId = request.user!.userId;
-      const accounts = await accountService.getUserAccounts(userId);
+      const { enhanced } = request.query as { enhanced?: string };
       
+      // If enhanced=true is in query params, return enhanced data
+      if (enhanced === 'true') {
+        const accounts = await accountService.getUserAccountsWithEnhancedData(userId);
+        return reply.send({ accounts });
+      }
+      
+      // Otherwise return basic data
+      const accounts = await accountService.getUserAccounts(userId);
       return reply.send({ accounts });
     }
   );

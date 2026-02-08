@@ -5,7 +5,6 @@ import { showSuccess, showError } from '../lib/toast';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import TransactionForm from '../components/transactions/TransactionForm';
-import TransactionEditForm from '../components/transactions/TransactionEditForm';
 import TransactionFilters from '../components/transactions/TransactionFilters';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
@@ -196,7 +195,7 @@ export default function TransactionsPage() {
           onClose={() => setEditingTransaction(null)}
           title="Edit Transaction"
         >
-          <TransactionEditForm
+          <TransactionForm
             transaction={editingTransaction}
             onSuccess={() => setEditingTransaction(null)}
             onCancel={() => setEditingTransaction(null)}

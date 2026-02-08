@@ -97,3 +97,181 @@ export async function calculateAccountBalances(
 
   return balances;
 }
+
+/**
+ * Calculate historical balance snapshots for an account at weekly intervals
+ * 
+ * @param accountId - Account to calculate balance history for
+ * @param daysBack - Number of days to look back (default 90)
+ * @returns Array of balance snapshots with date and balance
+ */
+export async function calculateAccountBalanceHistory(
+  accountId: string,
+  daysBack: number = 90
+): Promise<Array<{ date: Date; balance: number }>> {
+  const now = new Date();
+  const startDate = new Date(now);
+  startDate.setDate(startDate.getDate() - daysBack);
+
+  // Calculate weekly snapshots
+  const snapshots: Array<{ date: Date; balance: number }> = [];
+  const weeksBack = Math.ceil(daysBack / 7);
+
+  for (let i = weeksBack; i >= 0; i--) {
+    const snapshotDate = new Date(now);
+    snapshotDate.setDate(snapshotDate.getDate() - (i * 7));
+    
+    const balance = await calculateAccountBalance(accountId, snapshotDate);
+    snapshots.push({
+      date: snapshotDate,
+      balance,
+    });
+  }
+
+  return snapshots;
+}
+
+/**
+ * Calculate account flow (income and expenses) for a date range
+ * 
+ * @param accountId - Account to calculate flow for
+ * @param startDate - Start of date range (inclusive)
+ * @param endDate - End of date range (inclusive)
+ * @returns Object with income and expense totals
+ */
+export async function calculateAccountFlow(
+  accountId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<{ income: number; expense: number }> {
+  const cutoffStart = new Date(startDate);
+  cutoffStart.setHours(0, 0, 0, 0);
+  
+  const cutoffEnd = endOfDay(endDate);
+
+  const [incomeSum, expenseSum] = await Promise.all([
+    prisma.transaction.aggregate({
+      where: {
+        accountId,
+        type: 'income',
+        date: { gte: cutoffStart, lte: cutoffEnd },
+      },
+      _sum: { amount: true },
+    }),
+    prisma.transaction.aggregate({
+      where: {
+        accountId,
+        type: 'expense',
+        date: { gte: cutoffStart, lte: cutoffEnd },
+      },
+      _sum: { amount: true },
+    }),
+  ]);
+
+  return {
+    income: Number(incomeSum._sum.amount) || 0,
+    expense: Number(expenseSum._sum.amount) || 0,
+  };
+}
+
+/**
+ * Calculate monthly flow for multiple accounts efficiently
+ * 
+ * @param accountIds - Array of account IDs
+ * @param startDate - Start of month
+ * @param endDate - End of month
+ * @returns Map of accountId to flow data
+ */
+export async function calculateAccountsMonthlyFlow(
+  accountIds: string[],
+  startDate: Date,
+  endDate: Date
+): Promise<Map<string, { income: number; expense: number }>> {
+  if (accountIds.length === 0) {
+    return new Map();
+  }
+
+  const cutoffStart = new Date(startDate);
+  cutoffStart.setHours(0, 0, 0, 0);
+  
+  const cutoffEnd = endOfDay(endDate);
+
+  // Get all transactions for these accounts in the date range
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      accountId: { in: accountIds },
+      date: { gte: cutoffStart, lte: cutoffEnd },
+    },
+    select: {
+      accountId: true,
+      amount: true,
+      type: true,
+    },
+  });
+
+  // Calculate flow for each account
+  const flows = new Map<string, { income: number; expense: number }>();
+  
+  // Initialize all accounts with 0 flow
+  accountIds.forEach(id => flows.set(id, { income: 0, expense: 0 }));
+
+  // Sum up transactions by type
+  transactions.forEach(transaction => {
+    const currentFlow = flows.get(transaction.accountId)!;
+    const amount = Number(transaction.amount);
+    
+    if (transaction.type === 'income') {
+      currentFlow.income += amount;
+    } else {
+      currentFlow.expense += amount;
+    }
+  });
+
+  return flows;
+}
+
+/**
+ * Calculate balance history for multiple accounts efficiently
+ * Returns weekly snapshots over the specified period
+ * 
+ * @param accountIds - Array of account IDs
+ * @param daysBack - Number of days to look back (default 90)
+ * @returns Map of accountId to array of balance snapshots
+ */
+export async function calculateAccountsBalanceHistory(
+  accountIds: string[],
+  daysBack: number = 90
+): Promise<Map<string, Array<{ date: Date; balance: number }>>> {
+  if (accountIds.length === 0) {
+    return new Map();
+  }
+
+  const now = new Date();
+  const weeksBack = Math.ceil(daysBack / 7);
+
+  // Generate snapshot dates (weekly)
+  const snapshotDates: Date[] = [];
+  for (let i = weeksBack; i >= 0; i--) {
+    const snapshotDate = new Date(now);
+    snapshotDate.setDate(snapshotDate.getDate() - (i * 7));
+    snapshotDates.push(snapshotDate);
+  }
+
+  // Initialize result map
+  const historiesMap = new Map<string, Array<{ date: Date; balance: number }>>();
+  accountIds.forEach(id => historiesMap.set(id, []));
+
+  // Calculate balance for each account at each snapshot date
+  for (const snapshotDate of snapshotDates) {
+    const balances = await calculateAccountBalances(accountIds, snapshotDate);
+    
+    balances.forEach((balance, accountId) => {
+      historiesMap.get(accountId)!.push({
+        date: snapshotDate,
+        balance,
+      });
+    });
+  }
+
+  return historiesMap;
+}

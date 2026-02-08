@@ -1,5 +1,5 @@
 import { apiClient } from '../lib/api';
-import type { Account, CreateAccountInput } from '../types';
+import type { Account, CreateAccountInput, EnhancedAccount } from '../types';
 import { useAuthStore } from '../stores/authStore';
 
 const getToken = () => useAuthStore.getState().accessToken;
@@ -7,6 +7,10 @@ const getToken = () => useAuthStore.getState().accessToken;
 export const accountService = {
   async getAccounts(): Promise<{ accounts: Account[] }> {
     return apiClient.get<{ accounts: Account[] }>('/api/accounts', getToken() || undefined);
+  },
+
+  async getEnhancedAccounts(): Promise<{ accounts: EnhancedAccount[] }> {
+    return apiClient.get<{ accounts: EnhancedAccount[] }>('/api/accounts?enhanced=true', getToken() || undefined);
   },
 
   async getAccount(id: string): Promise<{ account: Account }> {

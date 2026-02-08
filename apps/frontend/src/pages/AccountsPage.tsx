@@ -6,10 +6,12 @@ import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AccountForm from '../components/accounts/AccountForm';
 import AccountEditForm from '../components/accounts/AccountEditForm';
+import MiniAccountChart from '../components/charts/MiniAccountChart';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import type { Account } from '../types';
+import type { Account, EnhancedAccount } from '../types';
+import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
 
 export default function AccountsPage() {
   const queryClient = useQueryClient();
@@ -18,8 +20,8 @@ export default function AccountsPage() {
   const [deletingAccount, setDeletingAccount] = useState<Account | null>(null);
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['accounts'],
-    queryFn: () => accountService.getAccounts(),
+    queryKey: ['accounts', 'enhanced'],
+    queryFn: () => accountService.getEnhancedAccounts(),
   });
 
   const deleteMutation = useMutation({
@@ -89,13 +91,46 @@ export default function AccountsPage() {
                 </div>
 
                 <div className="mb-4">
-                  <p className="text-sm text-muted-foreground mb-1">Balance</p>
+                  <p className="text-sm text-muted-foreground mb-1">Current Balance</p>
                   <p className="text-2xl font-bold text-foreground">
                     {account.currency} {account.balance.toLocaleString('en-US', {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}
                   </p>
+                </div>
+
+                {/* Mini Chart */}
+                <div className="mb-4 border border-border rounded-md overflow-hidden">
+                  <MiniAccountChart data={account.balanceHistory} />
+                </div>
+
+                {/* Monthly Flow */}
+                <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="bg-success-subtle/20 border border-success-subtle rounded-md p-3">
+                    <div className="flex items-center gap-1 mb-1">
+                      <ArrowUpIcon className="h-3 w-3 text-success" />
+                      <p className="text-xs text-muted-foreground">Incoming</p>
+                    </div>
+                    <p className="text-sm font-semibold text-success">
+                      {account.currency} {account.monthlyFlow.income.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                  </div>
+                  <div className="bg-destructive-subtle/20 border border-destructive-subtle rounded-md p-3">
+                    <div className="flex items-center gap-1 mb-1">
+                      <ArrowDownIcon className="h-3 w-3 text-destructive" />
+                      <p className="text-xs text-muted-foreground">Outgoing</p>
+                    </div>
+                    <p className="text-sm font-semibold text-destructive">
+                      {account.currency} {account.monthlyFlow.expense.toLocaleString('en-US', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </p>
+                  </div>
                 </div>
 
                 <div className="flex space-x-2">

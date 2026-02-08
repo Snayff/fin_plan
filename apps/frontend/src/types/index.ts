@@ -33,6 +33,17 @@ export interface Account {
   updatedAt: string;
 }
 
+export interface EnhancedAccount extends Account {
+  balanceHistory: Array<{
+    date: string;
+    balance: number;
+  }>;
+  monthlyFlow: {
+    income: number;
+    expense: number;
+  };
+}
+
 
 export interface Category {
   id: string;

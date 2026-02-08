@@ -3,29 +3,33 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { transactionService } from '../../services/transaction.service';
 import { accountService } from '../../services/account.service';
 import { categoryService } from '../../services/category.service';
-import type { TransactionType, CreateTransactionInput } from '../../types';
+import { showSuccess, showError } from '../../lib/toast';
+import type { TransactionType, CreateTransactionInput, Transaction } from '../../types';
 import { format } from 'date-fns';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 
 interface TransactionFormProps {
+  transaction?: Transaction; // Optional - if provided, we're editing
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export default function TransactionForm({ onSuccess, onCancel }: TransactionFormProps) {
+export default function TransactionForm({ transaction, onSuccess, onCancel }: TransactionFormProps) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState<CreateTransactionInput>({
-    accountId: '',
-    date: format(new Date(), 'yyyy-MM-dd'),
-    amount: 0,
-    type: 'expense',
-    categoryId: '',
-    name: '',
-    description: '',
-    recurrence: 'none',
-    recurrence_end_date: '',
+  const isEditing = !!transaction;
+
+  const [formData, setFormData] = useState({
+    accountId: transaction?.accountId || '',
+    date: transaction ? format(new Date(transaction.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
+    amount: transaction?.amount || 0,
+    type: transaction?.type || ('expense' as TransactionType),
+    categoryId: transaction?.categoryId || '',
+    name: transaction?.name || '',
+    description: transaction?.description || '',
+    recurrence: transaction?.recurrence || 'none',
+    recurrence_end_date: transaction?.recurrence_end_date || '',
   });
 
   // Fetch accounts and categories
@@ -44,7 +48,27 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+      showSuccess('Transaction created successfully!');
       onSuccess?.();
+    },
+    onError: (error: Error) => {
+      showError(error.message || 'Failed to create transaction');
+    },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: Partial<CreateTransactionInput>) => 
+      transactionService.updateTransaction(transaction!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+      showSuccess('Transaction updated successfully!');
+      onSuccess?.();
+    },
+    onError: (error: Error) => {
+      showError(error.message || 'Failed to update transaction');
     },
   });
 
@@ -54,17 +78,32 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
   // Filter categories by type
   const filteredCategories = categories.filter(cat => cat.type === formData.type);
 
-  // Auto-select first account if none selected
+  // Auto-select first account if none selected (create mode only)
   useEffect(() => {
-    if (accounts.length > 0 && !formData.accountId) {
+    if (!isEditing && accounts.length > 0 && !formData.accountId) {
       setFormData(prev => ({ ...prev, accountId: accounts[0]?.id || '' }));
     }
-  }, [accounts, formData.accountId]);
+  }, [accounts, formData.accountId, isEditing]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    createMutation.mutate(formData);
+    
+    const submitData = {
+      ...formData,
+      date: new Date(formData.date).toISOString(),
+      categoryId: formData.categoryId || undefined,
+      description: formData.description || undefined,
+      recurrence_end_date: formData.recurrence_end_date || undefined,
+    };
+
+    if (isEditing) {
+      updateMutation.mutate(submitData);
+    } else {
+      createMutation.mutate(submitData);
+    }
   };
+
+  const mutation = isEditing ? updateMutation : createMutation;
 
   // Show loading state while fetching data
   if (isLoadingAccounts || isLoadingCategories) {
@@ -125,7 +164,7 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
           type="text"
           id="name"
           required
-          value={formData.name}
+          value={formData.name || ''}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g., Monthly Salary, Grocery Shopping"
         />
@@ -213,14 +252,9 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
         >
           <option value="">Select category...</option>
           {filteredCategories.map((category) => (
-            <React.Fragment key={category.id}>
-              <option value={category.id}>{category.name}</option>
-              {category.subcategories?.map((sub) => (
-                <option key={sub.id} value={sub.id}>
-                  &nbsp;&nbsp;└─ {sub.name}
-                </option>
-              ))}
-            </React.Fragment>
+            <option key={category.id} value={category.id}>
+              {category.name}
+            </option>
           ))}
         </select>
       </div>
@@ -256,21 +290,24 @@ export default function TransactionForm({ onSuccess, onCancel }: TransactionForm
         </div>
       )}
 
-      {createMutation.error && (
+      {mutation.error && (
         <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
-          <p className="font-medium mb-1">Unable to create transaction</p>
-          <p className="whitespace-pre-line">{(createMutation.error as Error).message}</p>
+          <p className="font-medium mb-1">Unable to {isEditing ? 'update' : 'create'} transaction</p>
+          <p className="whitespace-pre-line">{(mutation.error as Error).message}</p>
         </div>
       )}
 
       <div className="flex justify-end space-x-3 pt-4">
         {onCancel && (
-          <Button type="button" onClick={onCancel} variant="secondary">
+          <Button type="button" onClick={onCancel} variant="secondary" disabled={mutation.isPending}>
             Cancel
           </Button>
         )}
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending ? 'Creating...' : 'Create Transaction'}
+        <Button type="submit" disabled={mutation.isPending}>
+          {mutation.isPending 
+            ? (isEditing ? 'Updating...' : 'Creating...') 
+            : (isEditing ? 'Update Transaction' : 'Create Transaction')
+          }
         </Button>
       </div>
     </form>

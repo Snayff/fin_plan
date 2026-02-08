@@ -1,7 +1,12 @@
 import { prisma } from '../config/database';
 import { AccountType } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../utils/errors';
-import { calculateAccountBalance, calculateAccountBalances } from '../utils/balance.utils';
+import { 
+  calculateAccountBalance, 
+  calculateAccountBalances,
+  calculateAccountsBalanceHistory,
+  calculateAccountsMonthlyFlow
+} from '../utils/balance.utils';
 
 export interface CreateAccountInput {
   name: string;
@@ -54,6 +59,58 @@ export const accountService = {
     }));
 
     return accountsWithBalance;
+  },
+
+  /**
+   * Get all accounts for a user with enhanced data:
+   * - Current balance
+   * - Balance history (weekly snapshots over 90 days)
+   * - Monthly flow (income and expense for current month)
+   */
+  async getUserAccountsWithEnhancedData(userId: string) {
+    const accounts = await prisma.account.findMany({
+      where: { userId },
+      orderBy: [{ isActive: 'desc' }, { createdAt: 'desc' }],
+    });
+
+    if (accounts.length === 0) {
+      return [];
+    }
+
+    const accountIds = accounts.map(a => a.id);
+
+    // Get current month date range
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    // Fetch all data in parallel for efficiency
+    const [balances, balanceHistories, monthlyFlows] = await Promise.all([
+      calculateAccountBalances(accountIds),
+      calculateAccountsBalanceHistory(accountIds, 90),
+      calculateAccountsMonthlyFlow(accountIds, startOfMonth, endOfMonth),
+    ]);
+
+    // Combine all data
+    const enhancedAccounts = accounts.map(account => {
+      const history = balanceHistories.get(account.id) || [];
+      const flow = monthlyFlows.get(account.id) || { income: 0, expense: 0 };
+
+      return {
+        ...account,
+        balance: balances.get(account.id) || 0,
+        balanceHistory: history.map(snapshot => ({
+          date: snapshot.date.toISOString(),
+          balance: snapshot.balance,
+        })),
+        monthlyFlow: {
+          income: flow.income,
+          expense: flow.expense,
+        },
+      };
+    });
+
+    return enhancedAccounts;
   },
 
   /**
