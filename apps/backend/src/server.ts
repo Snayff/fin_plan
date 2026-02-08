@@ -1,6 +1,8 @@
 import 'dotenv/config';
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
+import cookie from '@fastify/cookie';
+import csrf from '@fastify/csrf-protection';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
@@ -27,6 +29,25 @@ async function start() {
     await server.register(cors, {
       origin: config.CORS_ORIGIN.split(','),
       credentials: true,
+    });
+
+    await server.register(cookie, {
+      secret: config.COOKIE_SECRET,
+      parseOptions: {
+        httpOnly: true,
+        secure: config.NODE_ENV === 'production',
+        sameSite: 'strict',
+        path: '/',
+      },
+    });
+
+    await server.register(csrf, {
+      cookieOpts: {
+        httpOnly: false, // Must be false so frontend can read it
+        secure: config.NODE_ENV === 'production',
+        sameSite: 'strict',
+      },
+      sessionPlugin: '@fastify/cookie',
     });
 
     await server.register(helmet, {

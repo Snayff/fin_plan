@@ -48,7 +48,8 @@ export const authService = {
     return apiClient.get<{ user: User }>('/api/auth/me', token);
   },
 
-  async refreshToken(refreshToken: string): Promise<{ accessToken: string }> {
-    return apiClient.post<{ accessToken: string }>('/api/auth/refresh', { refreshToken });
+  async refreshToken(): Promise<{ accessToken: string }> {
+    // No longer pass refreshToken - it's in httpOnly cookie
+    return apiClient.post<{ accessToken: string }>('/api/auth/refresh', {});
   },
 };

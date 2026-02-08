@@ -8,11 +8,65 @@ const envSchema = z.object({
   DATABASE_URL: z.string().url(),
   
   // JWT
-  JWT_SECRET: z.string().min(32),
-  JWT_REFRESH_SECRET: z.string().min(32),
+  JWT_SECRET: z
+    .string()
+    .min(32)
+    .refine(
+      (val) => {
+        if (process.env.NODE_ENV === 'production') {
+          // Reject example/weak secrets in production
+          const weakSecrets = [
+            'your-super-secret',
+            'change-this',
+            'example',
+            'test',
+            'development',
+            'password',
+            'secret',
+          ];
+          return !weakSecrets.some((weak) => val.toLowerCase().includes(weak));
+        }
+        return true;
+      },
+      {
+        message:
+          'JWT_SECRET must be a strong random string in production. Generate with: openssl rand -base64 64',
+      }
+    ),
+  JWT_REFRESH_SECRET: z
+    .string()
+    .min(32)
+    .refine(
+      (val) => {
+        if (process.env.NODE_ENV === 'production') {
+          // Reject example/weak secrets in production
+          const weakSecrets = [
+            'your-super-secret',
+            'change-this',
+            'example',
+            'test',
+            'development',
+            'password',
+            'secret',
+          ];
+          return !weakSecrets.some((weak) => val.toLowerCase().includes(weak));
+        }
+        return true;
+      },
+      {
+        message:
+          'JWT_REFRESH_SECRET must be a strong random string in production. Generate with: openssl rand -base64 64',
+      }
+    ),
   JWT_EXPIRES_IN: z.string().default('15m'),
   JWT_REFRESH_EXPIRES_IN: z.string().default('7d'),
-  
+
+  // Cookie Security
+  COOKIE_SECRET: z.string().min(32),
+
+  // CSRF Protection
+  CSRF_SECRET: z.string().min(32).optional(),
+
   // CORS
   CORS_ORIGIN: z.string().default('http://localhost:3000'),
   

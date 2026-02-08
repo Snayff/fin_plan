@@ -1,11 +1,16 @@
 import { prisma } from '../config/database';
 import type { CategoryType } from '@prisma/client';
+import { pino } from 'pino';
+
+const logger = pino({
+  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+});
 
 /**
  * Seed default categories
  */
 async function seedCategories() {
-  console.log('Seeding default categories...');
+  logger.info('Seeding default categories...');
 
   // Define the exact categories we want - FLAT LIST ONLY (no subcategories)
   const desiredCategories = [
@@ -39,7 +44,7 @@ async function seedCategories() {
   // Delete old system categories that are not in our desired list
   for (const existing of existingCategories) {
     if (!desiredCategoryNames.includes(existing.name)) {
-      console.log(`Removing old category: ${existing.name}`);
+      logger.info(`Removing old category: ${existing.name}`);
       // Delete subcategories first
       await prisma.category.deleteMany({
         where: { parentCategoryId: existing.id },
@@ -69,7 +74,7 @@ async function seedCategories() {
           isSystemCategory: true,
         },
       });
-      console.log(`Updated category: ${category.name}`);
+      logger.info(`Updated category: ${category.name}`);
     } else {
       // Create new category
       await prisma.category.create({
@@ -78,11 +83,11 @@ async function seedCategories() {
           userId: null, // System categories
         },
       });
-      console.log(`Created category: ${category.name}`);
+      logger.info(`Created category: ${category.name}`);
     }
   }
 
-  console.log('✓ Default categories seeded successfully (flat list, no subcategories)');
+  logger.info('✓ Default categories seeded successfully (flat list, no subcategories)');
 }
 
 /**
@@ -91,9 +96,9 @@ async function seedCategories() {
 async function main() {
   try {
     await seedCategories();
-    console.log('\n✓ Database seeding completed successfully');
+    logger.info('\n✓ Database seeding completed successfully');
   } catch (error) {
-    console.error('Error seeding database:', error);
+    logger.error({ err: error }, 'Error seeding database');
     throw error;
   }
 }
@@ -101,7 +106,7 @@ async function main() {
 // Run seed
 main()
   .catch((error) => {
-    console.error(error);
+    logger.error({ err: error }, 'Database seeding failed');
     process.exit(1);
   })
   .finally(async () => {

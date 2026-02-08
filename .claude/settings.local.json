@@ -1,7 +1,16 @@
 {
   "permissions": {
     "allow": [
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npx prisma migrate dev:*)",
+      "Bash(npx prisma migrate resolve:*)",
+      "Bash(npx prisma migrate reset:*)",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"yes\" npx prisma migrate reset:*)",
+      "Bash(docker-compose:*)",
+      "Bash(npm run seed:*)",
+      "Bash(npx tsx:*)",
+      "Bash(npx prisma migrate:*)",
+      "Bash(npm install:*)"
     ]
   }
 }
