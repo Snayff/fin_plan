@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 // Use design tokens for chart colors
 const CHART_COLORS = {
   income: 'hsl(177 95% 39%)',    // Teal (chart-1/success) - vibrant positive
-  expense: 'hsl(177 25% 50%)',   // Muted Teal (chart-2/expense) - discrete, harmonious
+  expense: 'hsl(215 25% 35%)',   // Dark Slate Grey (chart-2/expense) - discrete, harmonious
   grid: 'hsl(230 27% 26%)',      // border color
   text: 'hsl(230 23% 82%)',      // text-secondary
 };

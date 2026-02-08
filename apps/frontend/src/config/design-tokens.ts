@@ -51,9 +51,9 @@ export const primitiveColors = {
   attention: { h: 30, s: 61, l: 70 },          // #E0B084
   attentionSubtle: { h: 30, s: 24, l: 18 },    // #3A3123
   
-  // Expense (Muted Teal - Discrete, Harmonious)
-  expense: { h: 177, s: 25, l: 50 },           // Desaturated teal
-  expenseSubtle: { h: 177, s: 20, l: 25 },     // Very muted teal
+  // Expense (Dark Slate - Discrete, Harmonious)
+  expense: { h: 215, s: 25, l: 35 },           // Dark slate grey
+  expenseSubtle: { h: 215, s: 25, l: 20 },     // Very dark slate grey
   
   // Error (Red - Rare, Explicit Only)
   error: { h: 358, s: 75, l: 59 },             // #E5484D

@@ -49,10 +49,10 @@
     --highlight-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
     --highlight-subtle: 277 28% 17%;     /* #2F2038 - Subtle background */
     
-    /* Expense (Muted Teal - Discrete, Harmonious) */
-    --expense: 177 25% 50%;              /* Muted teal */
+    /* Expense (Dark Slate - Discrete, Harmonious) */
+    --expense: 215 25% 35%;              /* Dark slate grey */
     --expense-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
-    --expense-subtle: 177 20% 25%;       /* Very muted teal */
+    --expense-subtle: 215 25% 20%;       /* Very dark slate grey */
     
     /* Attention/Warning (Magenta - Supportive Emphasis) */
     --warning: 306 44% 40%;              /* #8F3985 - Magenta */
@@ -74,7 +74,7 @@
     
     /* Chart Colors (for Recharts) */
     --chart-1: 177 95% 39%;              /* #07BEB8 - Teal (Income) */
-    --chart-2: 177 25% 50%;              /* Muted Teal (Expenses) */
+    --chart-2: 215 25% 35%;              /* Dark Slate Grey (Expenses) */
     --chart-3: 320 23% 62%;              /* #B38BA3 - Purple/Rose (Brand) */
     --chart-4: 306 44% 40%;              /* #8F3985 - Magenta (Highlight) */
     --chart-5: 25 100% 55%;              /* #FF7A18 - Orange (for CTAs in charts) */

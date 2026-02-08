@@ -232,14 +232,16 @@ export async function calculateAccountsMonthlyFlow(
 
 /**
  * Calculate balance history for multiple accounts efficiently
- * Returns weekly snapshots over the specified period
+ * Returns weekly snapshots over the specified period, starting from account creation or daysBack, whichever is later
  * 
  * @param accountIds - Array of account IDs
+ * @param accountCreationDates - Map of accountId to creation date
  * @param daysBack - Number of days to look back (default 90)
  * @returns Map of accountId to array of balance snapshots
  */
 export async function calculateAccountsBalanceHistory(
   accountIds: string[],
+  accountCreationDates: Map<string, Date>,
   daysBack: number = 90
 ): Promise<Map<string, Array<{ date: Date; balance: number }>>> {
   if (accountIds.length === 0) {
@@ -247,30 +249,45 @@ export async function calculateAccountsBalanceHistory(
   }
 
   const now = new Date();
-  const weeksBack = Math.ceil(daysBack / 7);
-
-  // Generate snapshot dates (weekly)
-  const snapshotDates: Date[] = [];
-  for (let i = weeksBack; i >= 0; i--) {
-    const snapshotDate = new Date(now);
-    snapshotDate.setDate(snapshotDate.getDate() - (i * 7));
-    snapshotDates.push(snapshotDate);
-  }
+  const defaultStartDate = new Date(now);
+  defaultStartDate.setDate(defaultStartDate.getDate() - daysBack);
 
   // Initialize result map
   const historiesMap = new Map<string, Array<{ date: Date; balance: number }>>();
   accountIds.forEach(id => historiesMap.set(id, []));
 
-  // Calculate balance for each account at each snapshot date
-  for (const snapshotDate of snapshotDates) {
-    const balances = await calculateAccountBalances(accountIds, snapshotDate);
+  // Calculate history for each account individually (since they may have different start dates)
+  for (const accountId of accountIds) {
+    const creationDate = accountCreationDates.get(accountId);
+    if (!creationDate) continue;
+
+    // Use the later of: account creation date or 90 days ago
+    const startDate = creationDate > defaultStartDate ? creationDate : defaultStartDate;
     
-    balances.forEach((balance, accountId) => {
+    // Calculate how many weeks from start date to now
+    const daysDiff = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const weeksBack = Math.ceil(daysDiff / 7);
+
+    // Generate snapshot dates (weekly) for this account
+    const snapshotDates: Date[] = [];
+    for (let i = weeksBack; i >= 0; i--) {
+      const snapshotDate = new Date(now);
+      snapshotDate.setDate(snapshotDate.getDate() - (i * 7));
+      
+      // Only include dates on or after the start date
+      if (snapshotDate >= startDate) {
+        snapshotDates.push(snapshotDate);
+      }
+    }
+
+    // Calculate balance at each snapshot date for this account
+    for (const snapshotDate of snapshotDates) {
+      const balance = await calculateAccountBalance(accountId, snapshotDate);
       historiesMap.get(accountId)!.push({
         date: snapshotDate,
         balance,
       });
-    });
+    }
   }
 
   return historiesMap;

@@ -90,7 +90,7 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-sm font-medium text-muted-foreground mb-2">Expenses</div>
-            <div className="text-2xl font-bold text-primary">
+            <div className="text-2xl font-bold text-expense">
               ${summary?.monthlyExpense?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
             </div>
             <div className="text-sm text-text-tertiary mt-1">This Period</div>
@@ -218,7 +218,7 @@ export default function DashboardPage() {
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-medium">
-                        <span className={transaction.type === 'income' ? 'text-success' : 'text-primary'}>
+                        <span className={transaction.type === 'income' ? 'text-success' : 'text-expense'}>
                           {transaction.type === 'income' ? '+' : '-'}$
                           {transaction.amount.toLocaleString('en-US', {
                             minimumFractionDigits: 2,

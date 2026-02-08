@@ -119,12 +119,12 @@ export default function AccountsPage() {
                       })}
                     </p>
                   </div>
-                  <div className="bg-destructive-subtle/20 border border-destructive-subtle rounded-md p-3">
+                  <div className="bg-chart-2-subtle/20 border border-chart-2-subtle rounded-md p-3">
                     <div className="flex items-center gap-1 mb-1">
-                      <ArrowDownIcon className="h-3 w-3 text-destructive" />
-                      <p className="text-xs text-muted-foreground">Outgoing</p>
+                      <ArrowDownIcon className="h-3 w-3 text-chart-2" />
+                      <p className="text-xs text-muted-foreground">Expenses</p>
                     </div>
-                    <p className="text-sm font-semibold text-destructive">
+                    <p className="text-sm font-semibold text-chart-2">
                       {account.currency} {account.monthlyFlow.expense.toLocaleString('en-US', {
                         minimumFractionDigits: 2,
                         maximumFractionDigits: 2,

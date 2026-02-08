@@ -79,6 +79,12 @@ export const accountService = {
 
     const accountIds = accounts.map(a => a.id);
 
+    // Create a map of account IDs to creation dates
+    const accountCreationDates = new Map<string, Date>();
+    accounts.forEach(account => {
+      accountCreationDates.set(account.id, account.createdAt);
+    });
+
     // Get current month date range
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
@@ -87,7 +93,7 @@ export const accountService = {
     // Fetch all data in parallel for efficiency
     const [balances, balanceHistories, monthlyFlows] = await Promise.all([
       calculateAccountBalances(accountIds),
-      calculateAccountsBalanceHistory(accountIds, 90),
+      calculateAccountsBalanceHistory(accountIds, accountCreationDates, 90),
       calculateAccountsMonthlyFlow(accountIds, startOfMonth, endOfMonth),
     ]);
 
