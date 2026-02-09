@@ -52,6 +52,8 @@ services:
       # JWT Secrets (change these in production!)
       JWT_SECRET: your-super-secret-jwt-key-min-32-chars-long-dev
       JWT_REFRESH_SECRET: your-super-secret-refresh-key-min-32-chars-long-dev
+      # Cookie Secret (for @fastify/cookie)
+      COOKIE_SECRET: your-super-secret-cookie-key-min-32-chars-dev
       # CORS
       CORS_ORIGIN: http://localhost:3000
       # Environment
@@ -81,7 +83,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # API URL - points to backend container
+      # API URL - browser accesses backend through localhost (not Docker network)
       VITE_API_URL: http://localhost:3001
       # Development mode
       NODE_ENV: development

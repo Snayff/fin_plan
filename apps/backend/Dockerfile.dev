@@ -16,13 +16,15 @@ COPY packages/shared ./packages/shared/
 # Copy backend package.json
 COPY apps/backend/package*.json ./apps/backend/
 
+# Copy prisma schema BEFORE npm install (needed for postinstall script)
+COPY apps/backend/prisma ./apps/backend/prisma/
+
 # Install all dependencies (including workspace packages)
+# This will trigger postinstall script which runs prisma generate
 RUN npm install
 
-# Copy prisma schema and generate client
-COPY apps/backend/prisma ./apps/backend/prisma/
+# Switch to backend directory
 WORKDIR /workspace/apps/backend
-RUN npx prisma generate
 
 # Copy backend source code
 COPY apps/backend/src ./src/

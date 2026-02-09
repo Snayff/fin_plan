@@ -28,7 +28,7 @@ export class ApiClient {
       credentials: 'include',
     });
     const data = await response.json();
-    this.csrfToken = data.csrfToken;
+    this.csrfToken = data.csrfToken || '';
     return this.csrfToken;
   }
 
@@ -105,6 +105,16 @@ export class ApiClient {
       if ((error as ApiError).statusCode) {
         throw error;
       }
+      
+      // Log the actual error in development for easier debugging
+      if (import.meta.env.DEV) {
+        console.error('Network request failed:', {
+          url,
+          error,
+          message: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
+      
       throw {
         message: 'Network error',
         statusCode: 0,

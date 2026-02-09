@@ -40,15 +40,6 @@
 - Empty state designs for all screens
 - Helpful messaging and CTAs
 
-
-# Account Management
-
-## Account Card (visual for account on Account Screen)
-- name, current value
-- mini chart: value over time
-- incoming this month, outgoing this month
-
-
 # Asset Management
 
 ## Asset Creation
