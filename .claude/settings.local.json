@@ -12,7 +12,8 @@
       "Bash(npx prisma migrate:*)",
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(npx vitest run)"
     ]
   }
 }
