@@ -6,9 +6,6 @@ import type {
   TransactionListResponse,
   TransactionSummary,
 } from '../types';
-import { useAuthStore } from '../stores/authStore';
-
-const getToken = () => useAuthStore.getState().accessToken;
 
 export const transactionService = {
   async getTransactions(filters?: TransactionFilters): Promise<TransactionListResponse> {
@@ -26,13 +23,12 @@ export const transactionService = {
     }
     const query = params.toString();
     return apiClient.get<TransactionListResponse>(
-      `/api/transactions${query ? `?${query}` : ''}`,
-      getToken() || undefined
+      `/api/transactions${query ? `?${query}` : ''}`
     );
   },
 
   async getTransaction(id: string): Promise<{ transaction: Transaction }> {
-    return apiClient.get<{ transaction: Transaction }>(`/api/transactions/${id}`, getToken() || undefined);
+    return apiClient.get<{ transaction: Transaction }>(`/api/transactions/${id}`);
   },
 
   async getTransactionSummary(filters?: Partial<TransactionFilters>): Promise<TransactionSummary> {
@@ -46,23 +42,22 @@ export const transactionService = {
     }
     const query = params.toString();
     return apiClient.get<TransactionSummary>(
-      `/api/transactions/summary${query ? `?${query}` : ''}`,
-      getToken() || undefined
+      `/api/transactions/summary${query ? `?${query}` : ''}`
     );
   },
 
   async createTransaction(data: CreateTransactionInput): Promise<{ transaction: Transaction }> {
-    return apiClient.post<{ transaction: Transaction }>('/api/transactions', data, getToken() || undefined);
+    return apiClient.post<{ transaction: Transaction }>('/api/transactions', data);
   },
 
   async updateTransaction(
     id: string,
     data: Partial<CreateTransactionInput>
   ): Promise<{ transaction: Transaction }> {
-    return apiClient.put<{ transaction: Transaction }>(`/api/transactions/${id}`, data, getToken() || undefined);
+    return apiClient.put<{ transaction: Transaction }>(`/api/transactions/${id}`, data);
   },
 
   async deleteTransaction(id: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/api/transactions/${id}`, getToken() || undefined);
+    return apiClient.delete<{ message: string }>(`/api/transactions/${id}`);
   },
 };

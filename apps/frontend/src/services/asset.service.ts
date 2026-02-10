@@ -8,44 +8,43 @@ import type {
   UpdateAssetInput,
   UpdateAssetValueInput,
 } from '../types';
-import { useAuthStore } from '../stores/authStore';
-
-const getToken = () => useAuthStore.getState().accessToken;
 
 export const assetService = {
-  async getAssets(): Promise<{ assets: Asset[] }> {
-    return apiClient.get<{ assets: Asset[] }>('/api/assets', getToken() || undefined);
+  // Get all assets with enhanced data (value history)
+  async getAssets(): Promise<{ assets: EnhancedAsset[] }> {
+    return apiClient.get<{ assets: EnhancedAsset[] }>('/api/assets');
   },
 
+  // Alias for backward compatibility - both return same enhanced data
   async getEnhancedAssets(): Promise<{ assets: EnhancedAsset[] }> {
-    return apiClient.get<{ assets: EnhancedAsset[] }>('/api/assets?enhanced=true', getToken() || undefined);
+    return this.getAssets();
   },
 
   async getAsset(id: string): Promise<{ asset: Asset }> {
-    return apiClient.get<{ asset: Asset }>(`/api/assets/${id}`, getToken() || undefined);
+    return apiClient.get<{ asset: Asset }>(`/api/assets/${id}`);
   },
 
   async getAssetHistory(id: string): Promise<{ history: AssetValueHistory[] }> {
-    return apiClient.get<{ history: AssetValueHistory[] }>(`/api/assets/${id}/history`, getToken() || undefined);
+    return apiClient.get<{ history: AssetValueHistory[] }>(`/api/assets/${id}/history`);
   },
 
   async createAsset(data: CreateAssetInput): Promise<{ asset: Asset }> {
-    return apiClient.post<{ asset: Asset }>('/api/assets', data, getToken() || undefined);
+    return apiClient.post<{ asset: Asset }>('/api/assets', data);
   },
 
   async updateAsset(id: string, data: UpdateAssetInput): Promise<{ asset: Asset }> {
-    return apiClient.put<{ asset: Asset }>(`/api/assets/${id}`, data, getToken() || undefined);
+    return apiClient.put<{ asset: Asset }>(`/api/assets/${id}`, data);
   },
 
   async updateAssetValue(id: string, data: UpdateAssetValueInput): Promise<{ asset: Asset }> {
-    return apiClient.put<{ asset: Asset }>(`/api/assets/${id}/value`, data, getToken() || undefined);
+    return apiClient.put<{ asset: Asset }>(`/api/assets/${id}/value`, data);
   },
 
   async deleteAsset(id: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/api/assets/${id}`, getToken() || undefined);
+    return apiClient.delete<{ message: string }>(`/api/assets/${id}`);
   },
 
   async getAssetSummary(): Promise<AssetSummary> {
-    return apiClient.get<AssetSummary>('/api/assets/summary', getToken() || undefined);
+    return apiClient.get<AssetSummary>('/api/assets/summary');
   },
 };

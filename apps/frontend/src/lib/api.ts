@@ -28,8 +28,9 @@ export class ApiClient {
       credentials: 'include',
     });
     const data = await response.json();
-    this.csrfToken = data.csrfToken || '';
-    return this.csrfToken;
+    const token = data.csrfToken || '';
+    this.csrfToken = token;
+    return token;
   }
 
   private async request<T>(
@@ -50,13 +51,29 @@ export class ApiClient {
       }
     }
 
+    // Automatically include auth token from store if not explicitly provided and not auth endpoint
+    let authHeaders = {};
+    const isAuthEndpoint = endpoint.startsWith('/api/auth');
+    if (!isAuthEndpoint) {
+      try {
+        const { useAuthStore } = await import('../stores/authStore');
+        const token = useAuthStore.getState().accessToken;
+        if (token) {
+          authHeaders = { Authorization: `Bearer ${token}` };
+        }
+      } catch (error) {
+        // Store not available yet - continue without auth
+      }
+    }
+
     const config: RequestInit = {
       ...options,
       credentials: 'include', // CRITICAL: Send cookies
       headers: {
         'Content-Type': 'application/json',
         ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
-        ...options.headers,
+        ...authHeaders,
+        ...options.headers, // Allow explicit override
       },
     };
 

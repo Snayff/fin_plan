@@ -1,35 +1,34 @@
 import { apiClient } from '../lib/api';
 import type { Account, CreateAccountInput, EnhancedAccount } from '../types';
-import { useAuthStore } from '../stores/authStore';
-
-const getToken = () => useAuthStore.getState().accessToken;
 
 export const accountService = {
-  async getAccounts(): Promise<{ accounts: Account[] }> {
-    return apiClient.get<{ accounts: Account[] }>('/api/accounts', getToken() || undefined);
+  // Get all accounts with enhanced data (balance, history, monthly flow)
+  async getAccounts(): Promise<{ accounts: EnhancedAccount[] }> {
+    return apiClient.get<{ accounts: EnhancedAccount[] }>('/api/accounts');
   },
 
+  // Alias for backward compatibility - both return same enhanced data
   async getEnhancedAccounts(): Promise<{ accounts: EnhancedAccount[] }> {
-    return apiClient.get<{ accounts: EnhancedAccount[] }>('/api/accounts?enhanced=true', getToken() || undefined);
+    return this.getAccounts();
   },
 
   async getAccount(id: string): Promise<{ account: Account }> {
-    return apiClient.get<{ account: Account }>(`/api/accounts/${id}`, getToken() || undefined);
+    return apiClient.get<{ account: Account }>(`/api/accounts/${id}`);
   },
 
   async getAccountSummary(id: string): Promise<any> {
-    return apiClient.get<any>(`/api/accounts/${id}/summary`, getToken() || undefined);
+    return apiClient.get<any>(`/api/accounts/${id}/summary`);
   },
 
   async createAccount(data: CreateAccountInput): Promise<{ account: Account }> {
-    return apiClient.post<{ account: Account }>('/api/accounts', data, getToken() || undefined);
+    return apiClient.post<{ account: Account }>('/api/accounts', data);
   },
 
   async updateAccount(id: string, data: Partial<CreateAccountInput>): Promise<{ account: Account }> {
-    return apiClient.put<{ account: Account }>(`/api/accounts/${id}`, data, getToken() || undefined);
+    return apiClient.put<{ account: Account }>(`/api/accounts/${id}`, data);
   },
 
   async deleteAccount(id: string): Promise<{ message: string }> {
-    return apiClient.delete<{ message: string }>(`/api/accounts/${id}`, getToken() || undefined);
+    return apiClient.delete<{ message: string }>(`/api/accounts/${id}`);
   },
 };
