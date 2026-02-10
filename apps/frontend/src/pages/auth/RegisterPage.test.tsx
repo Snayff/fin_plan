@@ -1,0 +1,112 @@
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { renderWithProviders } from "../../test/helpers/render";
+import { setUnauthenticated } from "../../test/helpers/auth";
+import RegisterPage from "./RegisterPage";
+
+vi.mock("../../stores/authStore", async (importOriginal) => {
+  const actual = (await importOriginal()) as any;
+  return {
+    ...actual,
+    useAuthStore: vi.fn(actual.useAuthStore),
+  };
+});
+
+import { useAuthStore } from "../../stores/authStore";
+
+beforeEach(() => {
+  setUnauthenticated();
+  vi.clearAllMocks();
+});
+
+describe("RegisterPage", () => {
+  it("renders all form fields", () => {
+    renderWithProviders(<RegisterPage />);
+
+    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
+  });
+
+  it("renders create account button", () => {
+    renderWithProviders(<RegisterPage />);
+    expect(screen.getByRole("button", { name: /create account/i })).toBeInTheDocument();
+  });
+
+  it("renders link to login page", () => {
+    renderWithProviders(<RegisterPage />);
+    expect(screen.getByRole("link", { name: /sign in/i })).toHaveAttribute("href", "/login");
+  });
+
+  it("shows error when passwords do not match", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "Test User");
+    await user.type(screen.getByLabelText(/^email$/i), "test@test.com");
+    await user.type(screen.getByLabelText(/^password$/i), "password123456");
+    await user.type(screen.getByLabelText(/confirm password/i), "differentpass12");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
+    });
+  });
+
+  it("shows error when password is too short", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "Test User");
+    await user.type(screen.getByLabelText(/^email$/i), "test@test.com");
+    await user.type(screen.getByLabelText(/^password$/i), "short");
+    await user.type(screen.getByLabelText(/confirm password/i), "short");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/at least 12 characters/i)).toBeInTheDocument();
+    });
+  });
+
+  it("calls register on valid form submit", async () => {
+    const user = userEvent.setup();
+    const registerMock = vi.fn().mockResolvedValue(undefined);
+    useAuthStore.setState({ register: registerMock } as any);
+
+    renderWithProviders(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "Test User");
+    await user.type(screen.getByLabelText(/^email$/i), "test@test.com");
+    await user.type(screen.getByLabelText(/^password$/i), "password123456");
+    await user.type(screen.getByLabelText(/confirm password/i), "password123456");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(registerMock).toHaveBeenCalledWith({
+        name: "Test User",
+        email: "test@test.com",
+        password: "password123456",
+      });
+    });
+  });
+
+  it("displays API error on registration failure", async () => {
+    const user = userEvent.setup();
+    const registerMock = vi.fn().mockRejectedValue({ message: "Email already exists" });
+    useAuthStore.setState({ register: registerMock } as any);
+
+    renderWithProviders(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "Test User");
+    await user.type(screen.getByLabelText(/^email$/i), "test@test.com");
+    await user.type(screen.getByLabelText(/^password$/i), "password123456");
+    await user.type(screen.getByLabelText(/confirm password/i), "password123456");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Email already exists")).toBeInTheDocument();
+    });
+  });
+});
