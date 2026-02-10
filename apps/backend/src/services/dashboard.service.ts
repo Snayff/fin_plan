@@ -134,9 +134,24 @@ export const dashboardService = {
       amount: Number(cs._sum.amount) || 0,
     }));
 
-    // Calculate net worth (simplified - just account balances for now)
-    // In future phases, we'll add assets and liabilities
-    const netWorth = totalBalance;
+    // Get total asset values
+    const assetAgg = await prisma.asset.aggregate({
+      where: { userId },
+      _sum: { currentValue: true },
+      _count: true,
+    });
+    const totalAssets = Number(assetAgg._sum.currentValue) || 0;
+
+    // Get total liability balances
+    const liabilityAgg = await prisma.liability.aggregate({
+      where: { userId },
+      _sum: { currentBalance: true },
+      _count: true,
+    });
+    const totalLiabilities = Number(liabilityAgg._sum.currentBalance) || 0;
+
+    // Calculate net worth: account balances + assets - liabilities
+    const netWorth = totalBalance + totalAssets - totalLiabilities;
 
     return {
       period: {
@@ -145,6 +160,8 @@ export const dashboardService = {
       },
       summary: {
         totalBalance,
+        totalAssets,
+        totalLiabilities,
         netWorth,
         monthlyIncome,
         monthlyExpense,
@@ -201,11 +218,37 @@ export const dashboardService = {
       monthlyDates.map(async (date) => {
         const balances = await calculateAccountBalances(accountIds, date);
         const totalBalance = Array.from(balances.values()).reduce((sum, bal) => sum + bal, 0);
-        
+
+        // Get assets created before or on this date
+        const assetAgg = await prisma.asset.aggregate({
+          where: {
+            userId,
+            createdAt: { lte: date },
+          },
+          _sum: { currentValue: true },
+        });
+        const totalAssets = Number(assetAgg._sum.currentValue) || 0;
+
+        // Get liabilities created before or on this date
+        const liabilityAgg = await prisma.liability.aggregate({
+          where: {
+            userId,
+            createdAt: { lte: date },
+          },
+          _sum: { currentBalance: true },
+        });
+        const totalLiabilities = Number(liabilityAgg._sum.currentBalance) || 0;
+
+        // Calculate net worth for this date
+        const netWorth = totalBalance + totalAssets - totalLiabilities;
+
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         return {
           month: monthKey,
           balance: totalBalance,
+          assets: totalAssets,
+          liabilities: totalLiabilities,
+          netWorth,
         };
       })
     );

@@ -9,6 +9,8 @@ import RegisterPage from "./pages/auth/RegisterPage";
 import DashboardPage from "./pages/DashboardPage";
 import AccountsPage from "./pages/AccountsPage";
 import TransactionsPage from "./pages/TransactionsPage";
+import AssetsPage from "./pages/AssetsPage";
+import LiabilitiesPage from "./pages/LiabilitiesPage";
 import Layout from "./components/layout/Layout";
 
 function App() {
@@ -39,6 +41,8 @@ function App() {
                   <Route path="/dashboard" element={<DashboardPage />} />
                   <Route path="/accounts" element={<AccountsPage />} />
                   <Route path="/transactions" element={<TransactionsPage />} />
+                  <Route path="/assets" element={<AssetsPage />} />
+                  <Route path="/liabilities" element={<LiabilitiesPage />} />
                   <Route path="/" element={<Navigate to="/dashboard" />} />
                 </Routes>
               </Layout>

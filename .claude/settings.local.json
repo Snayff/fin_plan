@@ -10,7 +10,9 @@
       "Bash(npm run seed:*)",
       "Bash(npx tsx:*)",
       "Bash(npx prisma migrate:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

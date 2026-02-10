@@ -66,14 +66,21 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <Card>
           <CardContent className="pt-6">
             <div className="text-sm font-medium text-muted-foreground mb-2">Net Worth</div>
             <div className="text-2xl font-bold text-foreground">
-              ${summary?.netWorth?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+              £{summary?.netWorth?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
             </div>
-            <div className="text-sm text-text-tertiary mt-1">Total Balance</div>
+            <div className="flex items-center gap-4 mt-2 text-xs">
+              <span className="text-success">
+                Assets: £{summary?.totalAssets?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
+              </span>
+              <span className="text-brand">
+                Liabilities: £{summary?.totalLiabilities?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
+              </span>
+            </div>
           </CardContent>
         </Card>
 
@@ -81,7 +88,7 @@ export default function DashboardPage() {
           <CardContent className="pt-6">
             <div className="text-sm font-medium text-muted-foreground mb-2">Income</div>
             <div className="text-2xl font-bold text-success">
-              ${summary?.monthlyIncome?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+              £{summary?.monthlyIncome?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
             </div>
             <div className="text-sm text-text-tertiary mt-1">This Period</div>
           </CardContent>
@@ -91,21 +98,44 @@ export default function DashboardPage() {
           <CardContent className="pt-6">
             <div className="text-sm font-medium text-muted-foreground mb-2">Expenses</div>
             <div className="text-2xl font-bold text-expense">
-              ${summary?.monthlyExpense?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+              £{summary?.monthlyExpense?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
             </div>
             <div className="text-sm text-text-tertiary mt-1">This Period</div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Cash Flow & Balance */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm font-medium text-muted-foreground mb-2">Net Cash Flow</div>
+            <div className={`text-2xl font-bold ${(summary?.netCashFlow || 0) >= 0 ? 'text-success' : 'text-warning'}`}>
+              £{summary?.netCashFlow?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
+            </div>
+            <div className="text-sm text-text-tertiary mt-1">
+              Savings Rate: {summary?.savingsRate || '0'}%
+            </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardContent className="pt-6">
-            <div className="text-sm font-medium text-muted-foreground mb-2">Net Cash Flow</div>
-            <div className={`text-2xl font-bold ${(summary?.netCashFlow || 0) >= 0 ? 'text-success' : 'text-warning'}`}>
-              ${summary?.netCashFlow?.toLocaleString('en-US', { minimumFractionDigits: 2 }) || '0.00'}
+            <div className="text-sm font-medium text-muted-foreground mb-2">Total Assets</div>
+            <div className="text-2xl font-bold text-success">
+              £{summary?.totalAssets?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
             </div>
-            <div className="text-sm text-text-tertiary mt-1">
-              Savings Rate: {summary?.savingsRate || '0'}%
+            <div className="text-sm text-text-tertiary mt-1">Property, investments, etc.</div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-sm font-medium text-muted-foreground mb-2">Total Liabilities</div>
+            <div className="text-2xl font-bold text-brand">
+              £{summary?.totalLiabilities?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
             </div>
+            <div className="text-sm text-text-tertiary mt-1">Loans, mortgages, etc.</div>
           </CardContent>
         </Card>
       </div>

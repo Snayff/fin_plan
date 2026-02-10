@@ -14,6 +14,8 @@ export default function Layout({ children }: LayoutProps) {
     { name: "Dashboard", href: "/dashboard" },
     { name: "Accounts", href: "/accounts" },
     { name: "Transactions", href: "/transactions" },
+    { name: "Assets", href: "/assets" },
+    { name: "Liabilities", href: "/liabilities" },
     { name: "Budget", href: "/budget" },
     { name: "Goals", href: "/goals" },
   ];

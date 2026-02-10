@@ -36,3 +36,35 @@ export {
   type CreateCategoryInput,
   type UpdateCategoryInput,
 } from './category.schemas';
+
+// Asset schemas and types
+export {
+  createAssetSchema,
+  updateAssetSchema,
+  updateAssetValueSchema,
+  AssetTypeEnum,
+  LiquidityTypeEnum,
+  ValueSourceEnum,
+  type AssetType,
+  type LiquidityType,
+  type ValueSource,
+  type CreateAssetInput,
+  type UpdateAssetInput,
+  type UpdateAssetValueInput,
+} from './asset.schemas';
+
+// Liability schemas and types
+export {
+  createLiabilitySchema,
+  updateLiabilitySchema,
+  allocatePaymentSchema,
+  LiabilityTypeEnum,
+  InterestTypeEnum,
+  PaymentFrequencyEnum,
+  type LiabilityType,
+  type InterestType,
+  type PaymentFrequency,
+  type CreateLiabilityInput,
+  type UpdateLiabilityInput,
+  type AllocatePaymentInput,
+} from './liability.schemas';
