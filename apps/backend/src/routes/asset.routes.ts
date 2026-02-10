@@ -8,19 +8,12 @@ import {
 } from '@finplan/shared';
 
 export async function assetRoutes(fastify: FastifyInstance) {
-  // Get all assets for current user with optional enhanced data
+  // Get all assets for current user with value history
   fastify.get('/assets', { preHandler: [authMiddleware] }, async (request, reply) => {
     const userId = request.user!.userId;
-    const { enhanced } = request.query as { enhanced?: string };
 
-    // If enhanced=true, return with value history
-    if (enhanced === 'true') {
-      const assets = await assetService.getUserAssetsWithHistory(userId);
-      return reply.send({ assets });
-    }
-
-    // Otherwise return basic data
-    const assets = await assetService.getUserAssets(userId);
+    // Always return enhanced data (with value history) for consistency
+    const assets = await assetService.getUserAssetsWithHistory(userId);
     return reply.send({ assets });
   });
 

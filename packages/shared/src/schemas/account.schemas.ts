@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 /**
- * Account type enum
+ * Account type enum - matches Prisma AccountType enum
  */
 export const AccountTypeEnum = z.enum([
   'current',
@@ -23,7 +23,7 @@ export const createAccountSchema = z.object({
   type: AccountTypeEnum,
   subtype: z.string().optional(),
   openingBalance: z.number().optional().default(0),
-  currency: z.string().length(3, 'Currency must be 3 characters (ISO 4217)').default('GBP'),
+  currency: z.string().min(1, 'Currency is required').default('GBP'),
   description: z.string().optional(),
   metadata: z
     .object({
@@ -42,7 +42,7 @@ export const updateAccountSchema = z.object({
   name: z.string().min(1, 'Account name cannot be empty').optional(),
   type: AccountTypeEnum.optional(),
   subtype: z.string().optional(),
-  currency: z.string().length(3, 'Currency must be 3 characters (ISO 4217)').optional(),
+  currency: z.string().min(1, 'Currency cannot be empty').optional(),
   isActive: z.boolean().optional(),
   description: z.string().optional(),
   metadata: z
