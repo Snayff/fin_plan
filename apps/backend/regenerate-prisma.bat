@@ -12,7 +12,7 @@ rmdir /s /q "node_modules\.prisma" 2>nul
 
 echo.
 echo Regenerating Prisma client...
-call npx prisma generate
+call bunx prisma generate
 
 echo.
 echo Done! You can now restart your backend server.

@@ -1,27 +1,27 @@
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, mock, beforeEach, beforeAll, afterAll } from "bun:test";
 import type { FastifyInstance } from "fastify";
 import { buildTestApp } from "../test/helpers/fastify";
 import { errorHandler } from "../middleware/errorHandler";
 import { AuthenticationError } from "../utils/errors";
 
-vi.mock("../services/liability.service", () => ({
+mock.module("../services/liability.service", () => ({
   liabilityService: {
-    getUserLiabilities: vi.fn(),
-    getUserLiabilitiesWithPayments: vi.fn(),
-    getLiabilityById: vi.fn(),
-    createLiability: vi.fn(),
-    updateLiability: vi.fn(),
-    deleteLiability: vi.fn(),
-    allocateTransactionToLiability: vi.fn(),
-    removePaymentAllocation: vi.fn(),
-    calculatePayoffProjection: vi.fn(),
-    getUnallocatedPayments: vi.fn(),
-    getLiabilitySummary: vi.fn(),
+    getUserLiabilities: mock(() => {}),
+    getUserLiabilitiesWithPayments: mock(() => {}),
+    getLiabilityById: mock(() => {}),
+    createLiability: mock(() => {}),
+    updateLiability: mock(() => {}),
+    deleteLiability: mock(() => {}),
+    allocateTransactionToLiability: mock(() => {}),
+    removePaymentAllocation: mock(() => {}),
+    calculatePayoffProjection: mock(() => {}),
+    getUnallocatedPayments: mock(() => {}),
+    getLiabilitySummary: mock(() => {}),
   },
 }));
 
-vi.mock("../middleware/auth.middleware", () => ({
-  authMiddleware: vi.fn(),
+mock.module("../middleware/auth.middleware", () => ({
+  authMiddleware: mock(() => {}),
 }));
 
 import { liabilityService } from "../services/liability.service";
@@ -42,7 +42,6 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
-  vi.clearAllMocks();
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {

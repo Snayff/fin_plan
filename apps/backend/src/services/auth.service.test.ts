@@ -1,21 +1,21 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
 import { buildUser } from "../test/fixtures";
 
 // Mock modules BEFORE imports
-vi.mock("../config/database", () => ({
+mock.module("../config/database", () => ({
   prisma: prismaMock,
 }));
 
-vi.mock("../utils/password", () => ({
-  hashPassword: vi.fn().mockResolvedValue("$2b$10$mockedHashValue"),
-  verifyPassword: vi.fn(),
+mock.module("../utils/password", () => ({
+  hashPassword: mock(() => Promise.resolve("$2b$10$mockedHashValue")),
+  verifyPassword: mock(() => {}),
 }));
 
-vi.mock("../utils/jwt", () => ({
-  generateAccessToken: vi.fn().mockReturnValue("mock-access-token"),
-  generateRefreshToken: vi.fn().mockReturnValue("mock-refresh-token"),
-  verifyRefreshToken: vi.fn(),
+mock.module("../utils/jwt", () => ({
+  generateAccessToken: mock(() => "mock-access-token"),
+  generateRefreshToken: mock(() => "mock-refresh-token"),
+  verifyRefreshToken: mock(() => {}),
 }));
 
 import { authService } from "./auth.service";
@@ -24,7 +24,14 @@ import { generateAccessToken, generateRefreshToken, verifyRefreshToken } from ".
 
 beforeEach(() => {
   resetPrismaMocks();
-  vi.clearAllMocks();
+  (hashPassword as any).mockClear();
+  (verifyPassword as any).mockClear();
+  (generateAccessToken as any).mockClear();
+  (generateRefreshToken as any).mockClear();
+  (verifyRefreshToken as any).mockClear();
+  (hashPassword as any).mockResolvedValue("$2b$10$mockedHashValue");
+  (generateAccessToken as any).mockReturnValue("mock-access-token");
+  (generateRefreshToken as any).mockReturnValue("mock-refresh-token");
 });
 
 describe("authService.register", () => {

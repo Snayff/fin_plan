@@ -1,24 +1,24 @@
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, mock, beforeEach, beforeAll, afterAll } from "bun:test";
 import type { FastifyInstance } from "fastify";
 import { buildTestApp } from "../test/helpers/fastify";
 import { errorHandler } from "../middleware/errorHandler";
 import { AuthenticationError } from "../utils/errors";
 
-vi.mock("../services/asset.service", () => ({
+mock.module("../services/asset.service", () => ({
   assetService: {
-    getUserAssetsWithHistory: vi.fn(),
-    getAssetById: vi.fn(),
-    getAssetValueHistory: vi.fn(),
-    createAsset: vi.fn(),
-    updateAsset: vi.fn(),
-    updateAssetValue: vi.fn(),
-    deleteAsset: vi.fn(),
-    getAssetSummary: vi.fn(),
+    getUserAssetsWithHistory: mock(() => {}),
+    getAssetById: mock(() => {}),
+    getAssetValueHistory: mock(() => {}),
+    createAsset: mock(() => {}),
+    updateAsset: mock(() => {}),
+    updateAssetValue: mock(() => {}),
+    deleteAsset: mock(() => {}),
+    getAssetSummary: mock(() => {}),
   },
 }));
 
-vi.mock("../middleware/auth.middleware", () => ({
-  authMiddleware: vi.fn(),
+mock.module("../middleware/auth.middleware", () => ({
+  authMiddleware: mock(() => {}),
 }));
 
 import { assetService } from "../services/asset.service";
@@ -39,7 +39,6 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
-  vi.clearAllMocks();
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {

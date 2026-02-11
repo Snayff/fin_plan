@@ -1,20 +1,19 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
 import { buildAccount, buildTransaction } from "../test/fixtures";
 
-vi.mock("../config/database", () => ({
+mock.module("../config/database", () => ({
   prisma: prismaMock,
 }));
 
-vi.mock("../utils/balance.utils", () => ({
-  calculateAccountBalances: vi.fn().mockResolvedValue(new Map([["acc-1", 5000], ["acc-2", 3000]])),
+mock.module("../utils/balance.utils", () => ({
+  calculateAccountBalances: mock(() => Promise.resolve(new Map([["acc-1", 5000], ["acc-2", 3000]]))),
 }));
 
 import { dashboardService } from "./dashboard.service";
 
 beforeEach(() => {
   resetPrismaMocks();
-  vi.clearAllMocks();
 });
 
 describe("dashboardService.getDashboardSummary", () => {

@@ -6,7 +6,7 @@ echo ====================================
 echo.
 
 echo Step 1: Regenerating Prisma client inside Docker container...
-docker-compose -f docker-compose.dev.yml exec backend npx prisma generate
+docker-compose -f docker-compose.dev.yml exec backend bunx prisma generate
 
 if %ERRORLEVEL% NEQ 0 (
     echo.

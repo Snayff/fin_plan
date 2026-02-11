@@ -22,7 +22,7 @@ sleep 10
 
 echo ""
 echo "[3/3] Running database migrations..."
-docker-compose -f docker-compose.dev.yml exec -T backend npm run db:migrate
+docker-compose -f docker-compose.dev.yml exec -T backend bun run db:migrate
 
 echo ""
 echo "========================================"
@@ -31,8 +31,8 @@ echo "========================================"
 echo ""
 echo "  Frontend:  http://localhost:3000"
 echo "  Backend:   http://localhost:3001"
-echo "  Prisma Studio: Run 'npm run db:studio'"
+echo "  Prisma Studio: Run 'bun run db:studio'"
 echo ""
-echo "  View logs: npm run docker:logs"
-echo "  Stop services: npm run stop (or ./stop-dev.sh)"
+echo "  View logs: bun run docker:logs"
+echo "  Stop services: bun run stop (or ./stop-dev.sh)"
 echo ""

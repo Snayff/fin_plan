@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from "bun:test";
 import { createAssetSchema, updateAssetSchema, updateAssetValueSchema } from "./asset.schemas";
 
 const validAssetInput = {

@@ -1,22 +1,22 @@
-import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from "vitest";
+import { describe, it, expect, mock, beforeEach, beforeAll, afterAll } from "bun:test";
 import type { FastifyInstance } from "fastify";
 import { buildTestApp } from "../test/helpers/fastify";
 import { errorHandler } from "../middleware/errorHandler";
 import { AuthenticationError } from "../utils/errors";
 
-vi.mock("../services/account.service", () => ({
+mock.module("../services/account.service", () => ({
   accountService: {
-    getUserAccountsWithEnhancedData: vi.fn(),
-    getAccountById: vi.fn(),
-    getAccountSummary: vi.fn(),
-    createAccount: vi.fn(),
-    updateAccount: vi.fn(),
-    deleteAccount: vi.fn(),
+    getUserAccountsWithEnhancedData: mock(() => {}),
+    getAccountById: mock(() => {}),
+    getAccountSummary: mock(() => {}),
+    createAccount: mock(() => {}),
+    updateAccount: mock(() => {}),
+    deleteAccount: mock(() => {}),
   },
 }));
 
-vi.mock("../middleware/auth.middleware", () => ({
-  authMiddleware: vi.fn(),
+mock.module("../middleware/auth.middleware", () => ({
+  authMiddleware: mock(() => {}),
 }));
 
 import { accountService } from "../services/account.service";
@@ -37,7 +37,6 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
-  vi.clearAllMocks();
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {

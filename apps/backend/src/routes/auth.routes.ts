@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, RouteShorthandOptions } from 'fastify';
 import { z } from 'zod';
-import * as authService from '../services/auth.service';
+import { authService } from '../services/auth.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { config } from '../config/env';
 

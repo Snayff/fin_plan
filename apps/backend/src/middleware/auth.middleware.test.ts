@@ -1,7 +1,7 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock, beforeEach } from "bun:test";
 
-vi.mock("../utils/jwt", () => ({
-  verifyAccessToken: vi.fn(),
+mock.module("../utils/jwt", () => ({
+  verifyAccessToken: mock(() => {}),
 }));
 
 import { authMiddleware } from "./auth.middleware";
@@ -9,7 +9,7 @@ import { verifyAccessToken } from "../utils/jwt";
 import { AuthenticationError } from "../utils/errors";
 
 beforeEach(() => {
-  vi.clearAllMocks();
+  (verifyAccessToken as any).mockClear();
 });
 
 function buildMockRequest(authHeader?: string) {

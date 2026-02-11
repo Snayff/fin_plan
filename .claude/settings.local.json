@@ -13,7 +13,13 @@
       "Bash(npm install:*)",
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx vitest run)"
+      "Bash(npx vitest run)",
+      "Bash(bun:*)",
+      "Bash(powershell:*)",
+      "Bash(\"C:/Users/Gabriel/.bun/bin/bun.exe\" --version)",
+      "Bash(\"C:/Users/Gabriel/.bun/bin/bun.exe\" run type-check:*)",
+      "Bash(export PATH=\"$PATH:/c/Users/Gabriel/.bun/bin\")",
+      "Bash(/c/Users/Gabriel/.bun/bin/bun test:*)"
     ]
   }
 }

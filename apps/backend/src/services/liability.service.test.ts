@@ -1,18 +1,18 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
 import { buildLiability, buildTransaction, buildLiabilityPayment } from "../test/fixtures";
 
-vi.mock("../config/database", () => ({
+mock.module("../config/database", () => ({
   prisma: prismaMock,
 }));
 
-vi.mock("../utils/liability.utils", () => ({
-  calculateAmortizationSchedule: vi.fn().mockReturnValue([
+mock.module("../utils/liability.utils", () => ({
+  calculateAmortizationSchedule: mock(() => [
     { month: 1, date: "2025-02-01", payment: 898, principal: 315, interest: 583, balance: 199685 },
   ]),
-  calculatePayoffDate: vi.fn().mockReturnValue(new Date("2055-01-01")),
-  calculateTotalInterest: vi.fn().mockReturnValue(123000),
-  validateMinimumPayment: vi.fn().mockReturnValue({ isValid: true }),
+  calculatePayoffDate: mock(() => new Date("2055-01-01")),
+  calculateTotalInterest: mock(() => 123000),
+  validateMinimumPayment: mock(() => ({ isValid: true })),
 }));
 
 import { liabilityService } from "./liability.service";
@@ -21,7 +21,7 @@ import { validateMinimumPayment } from "../utils/liability.utils";
 
 beforeEach(() => {
   resetPrismaMocks();
-  vi.clearAllMocks();
+  (validateMinimumPayment as any).mockClear();
   (validateMinimumPayment as any).mockReturnValue({ isValid: true });
 });
 

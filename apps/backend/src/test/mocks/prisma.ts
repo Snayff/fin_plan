@@ -1,17 +1,17 @@
-import { vi } from "vitest";
+import { mock } from "bun:test";
 
 function buildModelMock() {
   return {
-    findUnique: vi.fn(),
-    findFirst: vi.fn(),
-    findMany: vi.fn(),
-    create: vi.fn(),
-    update: vi.fn(),
-    delete: vi.fn(),
-    deleteMany: vi.fn(),
-    count: vi.fn(),
-    aggregate: vi.fn(),
-    groupBy: vi.fn(),
+    findUnique: mock(() => {}),
+    findFirst: mock(() => {}),
+    findMany: mock(() => {}),
+    create: mock(() => {}),
+    update: mock(() => {}),
+    delete: mock(() => {}),
+    deleteMany: mock(() => {}),
+    count: mock(() => {}),
+    aggregate: mock(() => {}),
+    groupBy: mock(() => {}),
   };
 }
 
@@ -34,8 +34,8 @@ export const prismaMock = {
   forecastScenario: buildModelMock(),
   monteCarloSimulation: buildModelMock(),
   // Interactive transaction support: passes self so tx.model.method() resolves to same mocks
-  $transaction: vi.fn((fn: (tx: any) => any) => fn(prismaMock)),
-  $disconnect: vi.fn(),
+  $transaction: mock((fn: (tx: any) => any) => fn(prismaMock)),
+  $disconnect: mock(() => {}),
 };
 
 /** Reset all mocks on the prisma mock object */

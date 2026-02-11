@@ -1,8 +1,8 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
 import { buildAsset, buildAssetValueHistory } from "../test/fixtures";
 
-vi.mock("../config/database", () => ({
+mock.module("../config/database", () => ({
   prisma: prismaMock,
 }));
 
@@ -11,7 +11,6 @@ import { NotFoundError, ValidationError } from "../utils/errors";
 
 beforeEach(() => {
   resetPrismaMocks();
-  vi.clearAllMocks();
 });
 
 describe("assetService.createAsset", () => {

@@ -1,23 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../test/helpers/render";
 import { setUnauthenticated } from "../../test/helpers/auth";
 import RegisterPage from "./RegisterPage";
-
-vi.mock("../../stores/authStore", async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
-  return {
-    ...actual,
-    useAuthStore: vi.fn(actual.useAuthStore),
-  };
-});
-
 import { useAuthStore } from "../../stores/authStore";
 
 beforeEach(() => {
   setUnauthenticated();
-  vi.clearAllMocks();
 });
 
 describe("RegisterPage", () => {
@@ -72,7 +62,7 @@ describe("RegisterPage", () => {
 
   it("calls register on valid form submit", async () => {
     const user = userEvent.setup();
-    const registerMock = vi.fn().mockResolvedValue(undefined);
+    const registerMock = mock(() => Promise.resolve(undefined));
     useAuthStore.setState({ register: registerMock } as any);
 
     renderWithProviders(<RegisterPage />);
@@ -94,7 +84,7 @@ describe("RegisterPage", () => {
 
   it("displays API error on registration failure", async () => {
     const user = userEvent.setup();
-    const registerMock = vi.fn().mockRejectedValue({ message: "Email already exists" });
+    const registerMock = mock(() => Promise.reject({ message: "Email already exists" }));
     useAuthStore.setState({ register: registerMock } as any);
 
     renderWithProviders(<RegisterPage />);

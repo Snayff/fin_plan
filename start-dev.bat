@@ -21,7 +21,7 @@ timeout /t 10 /nobreak >nul
 
 echo.
 echo [3/3] Running database migrations...
-docker-compose -f docker-compose.dev.yml exec -T backend npm run db:migrate
+docker-compose -f docker-compose.dev.yml exec -T backend bun run db:migrate
 
 echo.
 echo ========================================
@@ -30,8 +30,8 @@ echo ========================================
 echo.
 echo   Frontend:  http://localhost:3000
 echo   Backend:   http://localhost:3001
-echo   Prisma Studio: Run 'npm run db:studio'
+echo   Prisma Studio: Run 'bun run db:studio'
 echo.
-echo   View logs: npm run docker:logs
-echo   Stop services: npm run stop (or run stop-dev.bat)
+echo   View logs: bun run docker:logs
+echo   Stop services: bun run stop (or run stop-dev.bat)
 echo.

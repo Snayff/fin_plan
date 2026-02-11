@@ -1,16 +1,16 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
 import { buildAccount, buildTransaction, buildCategory } from "../test/fixtures";
 
-vi.mock("../config/database", () => ({
+mock.module("../config/database", () => ({
   prisma: prismaMock,
 }));
 
-vi.mock("../utils/balance.utils", () => ({
-  calculateAccountBalance: vi.fn().mockResolvedValue(1000),
-  calculateAccountBalances: vi.fn().mockResolvedValue(new Map([["acc-1", 1000]])),
-  calculateAccountsBalanceHistory: vi.fn().mockResolvedValue(new Map()),
-  calculateAccountsMonthlyFlow: vi.fn().mockResolvedValue(new Map()),
+mock.module("../utils/balance.utils", () => ({
+  calculateAccountBalance: mock(() => Promise.resolve(1000)),
+  calculateAccountBalances: mock(() => Promise.resolve(new Map([["acc-1", 1000]]))),
+  calculateAccountsBalanceHistory: mock(() => Promise.resolve(new Map())),
+  calculateAccountsMonthlyFlow: mock(() => Promise.resolve(new Map())),
 }));
 
 import { accountService } from "./account.service";
@@ -18,7 +18,6 @@ import { NotFoundError, ValidationError } from "../utils/errors";
 
 beforeEach(() => {
   resetPrismaMocks();
-  vi.clearAllMocks();
 });
 
 describe("accountService.getUserAccounts", () => {

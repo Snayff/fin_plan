@@ -1,23 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { renderWithProviders } from "../../test/helpers/render";
 import { setUnauthenticated } from "../../test/helpers/auth";
 import LoginPage from "./LoginPage";
-
-vi.mock("../../stores/authStore", async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
-  return {
-    ...actual,
-    useAuthStore: vi.fn(actual.useAuthStore),
-  };
-});
-
 import { useAuthStore } from "../../stores/authStore";
 
 beforeEach(() => {
   setUnauthenticated();
-  vi.clearAllMocks();
 });
 
 describe("LoginPage", () => {
@@ -40,7 +30,7 @@ describe("LoginPage", () => {
 
   it("calls login on form submit", async () => {
     const user = userEvent.setup();
-    const loginMock = vi.fn().mockResolvedValue(undefined);
+    const loginMock = mock(() => Promise.resolve(undefined));
     useAuthStore.setState({ login: loginMock } as any);
 
     renderWithProviders(<LoginPage />);
@@ -60,7 +50,7 @@ describe("LoginPage", () => {
   it("shows loading state during submission", async () => {
     const user = userEvent.setup();
     let resolveLogin: any;
-    const loginMock = vi.fn().mockImplementation(
+    const loginMock = mock(
       () => new Promise((resolve) => { resolveLogin = resolve; })
     );
     useAuthStore.setState({ login: loginMock } as any);
@@ -78,7 +68,7 @@ describe("LoginPage", () => {
 
   it("displays error message on login failure", async () => {
     const user = userEvent.setup();
-    const loginMock = vi.fn().mockRejectedValue({ message: "Invalid email or password" });
+    const loginMock = mock(() => Promise.reject({ message: "Invalid email or password" }));
     useAuthStore.setState({ login: loginMock } as any);
 
     renderWithProviders(<LoginPage />);

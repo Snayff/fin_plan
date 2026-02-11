@@ -1,9 +1,9 @@
-FROM node:20-alpine
+FROM oven/bun:1-alpine
 
 WORKDIR /workspace
 
 # Copy root package.json and workspace configuration
-COPY package*.json ./
+COPY package.json bun.lockb ./
 COPY turbo.json ./
 COPY tsconfig.json ./
 
@@ -11,10 +11,10 @@ COPY tsconfig.json ./
 COPY packages/shared ./packages/shared/
 
 # Copy frontend package.json
-COPY apps/frontend/package*.json ./apps/frontend/
+COPY apps/frontend/package.json ./apps/frontend/
 
 # Install all dependencies (including workspace packages)
-RUN npm install
+RUN bun install
 
 # Copy frontend source and config files
 WORKDIR /workspace/apps/frontend
@@ -27,4 +27,4 @@ COPY apps/frontend/*.config.* ./
 EXPOSE 3000
 
 # Development command with hot reload
-CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]
+CMD ["bun", "run", "dev", "--", "--host", "0.0.0.0"]

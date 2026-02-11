@@ -1,12 +1,12 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { useAuthStore } from "./authStore";
 import { setAuthenticated, setUnauthenticated, mockUser } from "../test/helpers/auth";
 
-vi.mock("../services/auth.service", () => ({
+mock.module("../services/auth.service", () => ({
   authService: {
-    login: vi.fn(),
-    register: vi.fn(),
-    logout: vi.fn(),
+    login: mock(() => {}),
+    register: mock(() => {}),
+    logout: mock(() => {}),
   },
 }));
 
@@ -14,7 +14,6 @@ import { authService } from "../services/auth.service";
 
 beforeEach(() => {
   setUnauthenticated();
-  vi.clearAllMocks();
 });
 
 describe("useAuthStore", () => {
