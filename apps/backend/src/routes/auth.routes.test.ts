@@ -176,7 +176,7 @@ describe("POST /api/auth/login", () => {
     });
 
     expect(response.statusCode).toBe(401);
-    expect(response.json().error.code).toBe("AUTHENTICATION_ERROR");
+    expect(response.json().error.code).toBe("AUTH_ERROR");
   });
 });
 
