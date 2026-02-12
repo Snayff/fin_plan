@@ -19,7 +19,9 @@
       "Bash(\"C:/Users/Gabriel/.bun/bin/bun.exe\" --version)",
       "Bash(\"C:/Users/Gabriel/.bun/bin/bun.exe\" run type-check:*)",
       "Bash(export PATH=\"$PATH:/c/Users/Gabriel/.bun/bin\")",
-      "Bash(/c/Users/Gabriel/.bun/bin/bun test:*)"
+      "Bash(/c/Users/Gabriel/.bun/bin/bun test:*)",
+      "Bash(docker ps:*)",
+      "Bash(timeout:*)"
     ]
   }
 }
