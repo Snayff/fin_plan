@@ -21,7 +21,8 @@
       "Bash(export PATH=\"$PATH:/c/Users/Gabriel/.bun/bin\")",
       "Bash(/c/Users/Gabriel/.bun/bin/bun test:*)",
       "Bash(docker ps:*)",
-      "Bash(timeout:*)"
+      "Bash(timeout:*)",
+      "Bash(dir:*)"
     ]
   }
 }

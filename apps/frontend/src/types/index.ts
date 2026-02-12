@@ -140,6 +140,35 @@ export interface TransactionFilters {
   orderDir?: 'asc' | 'desc';
 }
 
+// ---- Generic filter system types ----
+
+export type FilterFieldType = 'search' | 'select' | 'boolean-select';
+
+export interface FilterOption {
+  value: string;
+  label: string;
+}
+
+export interface FilterFieldConfig {
+  key: string;
+  label: string;
+  type: FilterFieldType;
+  placeholder?: string;
+  options?: FilterOption[];
+  allLabel?: string;
+  /** For client-side search: which string fields to match against */
+  matchFields?: string[];
+  /** For client-side select/boolean-select: which field to match */
+  matchField?: string;
+}
+
+export interface FilterBarConfig {
+  entityName: string;
+  fields: FilterFieldConfig[];
+}
+
+export type FilterValues = Record<string, string | number | boolean | undefined>;
+
 export interface TransactionListResponse {
   transactions: Transaction[];
   pagination: {

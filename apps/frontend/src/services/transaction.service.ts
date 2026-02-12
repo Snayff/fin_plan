@@ -27,6 +27,10 @@ export const transactionService = {
     );
   },
 
+  async getAllTransactions(): Promise<TransactionListResponse> {
+    return apiClient.get<TransactionListResponse>('/api/transactions?limit=10000');
+  },
+
   async getTransaction(id: string): Promise<{ transaction: Transaction }> {
     return apiClient.get<{ transaction: Transaction }>(`/api/transactions/${id}`);
   },

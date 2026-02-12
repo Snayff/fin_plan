@@ -8,6 +8,9 @@ import AssetForm from '../components/assets/AssetForm';
 import AssetEditForm from '../components/assets/AssetEditForm';
 import UpdateAssetValueModal from '../components/assets/UpdateAssetValueModal';
 import AssetValueHistoryChart from '../components/charts/AssetValueHistoryChart';
+import FilterBar from '../components/filters/FilterBar';
+import { useClientFilters } from '../hooks/useClientFilters';
+import { assetFilterConfig } from '../config/filter-configs';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -41,10 +44,23 @@ export default function AssetsPage() {
 
   const assets = data?.assets || [];
 
-  // Calculate summary stats
-  const totalValue = assets.reduce((sum, asset) => sum + asset.currentValue, 0);
-  const totalAssets = assets.length;
-  const totalGain = assets.reduce((sum, asset) => sum + (asset.totalGain || 0), 0);
+  const {
+    filteredItems: filteredAssets,
+    filters,
+    setFilter,
+    clearFilters,
+    activeFilterCount,
+    totalCount,
+    filteredCount,
+  } = useClientFilters({
+    items: assets,
+    fields: assetFilterConfig.fields,
+  });
+
+  // Calculate summary stats from filtered data
+  const totalValue = filteredAssets.reduce((sum, asset) => sum + asset.currentValue, 0);
+  const totalAssets = filteredAssets.length;
+  const totalGain = filteredAssets.reduce((sum, asset) => sum + (asset.totalGain || 0), 0);
 
   if (isLoading) {
     return (
@@ -92,8 +108,18 @@ export default function AssetsPage() {
         </Button>
       </div>
 
+      <FilterBar
+        config={assetFilterConfig}
+        filters={filters}
+        onFilterChange={setFilter}
+        onClearAll={clearFilters}
+        activeFilterCount={activeFilterCount}
+        totalCount={totalCount}
+        filteredCount={filteredCount}
+      />
+
       {/* Summary Cards */}
-      {assets.length > 0 && (
+      {filteredAssets.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
@@ -144,9 +170,16 @@ export default function AssetsPage() {
             </Button>
           </CardContent>
         </Card>
+      ) : filteredAssets.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground mb-4">No assets match your filters.</p>
+            <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {assets.map((asset) => (
+          {filteredAssets.map((asset) => (
             <Card key={asset.id}>
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">

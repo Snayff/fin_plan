@@ -7,11 +7,14 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AccountForm from '../components/accounts/AccountForm';
 import AccountEditForm from '../components/accounts/AccountEditForm';
 import MiniAccountChart from '../components/charts/MiniAccountChart';
+import FilterBar from '../components/filters/FilterBar';
+import { useClientFilters } from '../hooks/useClientFilters';
+import { accountFilterConfig } from '../config/filter-configs';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import type { Account, EnhancedAccount } from '../types';
-import { ArrowUpIcon, ArrowDownIcon } from 'lucide-react';
+import type { Account } from '../types';
+import { ArrowUpIcon, ArrowDownIcon, WalletIcon, LayoutListIcon, TrendingUpIcon } from 'lucide-react';
 
 export default function AccountsPage() {
   const queryClient = useQueryClient();
@@ -38,6 +41,25 @@ export default function AccountsPage() {
   });
 
   const accounts = data?.accounts || [];
+
+  const {
+    filteredItems: filteredAccounts,
+    filters,
+    setFilter,
+    clearFilters,
+    activeFilterCount,
+    totalCount,
+    filteredCount,
+  } = useClientFilters({
+    items: accounts,
+    fields: accountFilterConfig.fields,
+  });
+
+  const totalBalance = filteredAccounts.reduce((sum, a) => sum + a.balance, 0);
+  const activeCount = filteredAccounts.filter(a => a.isActive).length;
+  const netMonthlyFlow = filteredAccounts.reduce(
+    (sum, a) => sum + (a.monthlyFlow.income - a.monthlyFlow.expense), 0
+  );
 
   if (isLoading) {
     return (
@@ -66,6 +88,55 @@ export default function AccountsPage() {
         </Button>
       </div>
 
+      <FilterBar
+        config={accountFilterConfig}
+        filters={filters}
+        onFilterChange={setFilter}
+        onClearAll={clearFilters}
+        activeFilterCount={activeFilterCount}
+        totalCount={totalCount}
+        filteredCount={filteredCount}
+      />
+
+      {/* Summary Cards */}
+      {filteredAccounts.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <WalletIcon className="h-4 w-4 text-success" />
+                <p className="text-sm text-muted-foreground">Total Balance</p>
+              </div>
+              <p className="text-2xl font-bold text-success">
+                £{totalBalance.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <LayoutListIcon className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Active Accounts</p>
+              </div>
+              <p className="text-2xl font-bold text-foreground">
+                {activeCount}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Net Monthly Flow</p>
+              </div>
+              <p className={`text-2xl font-bold ${netMonthlyFlow >= 0 ? 'text-success' : 'text-expense'}`}>
+                £{netMonthlyFlow.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {accounts.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
@@ -75,9 +146,16 @@ export default function AccountsPage() {
             </Button>
           </CardContent>
         </Card>
+      ) : filteredAccounts.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground mb-4">No accounts match your filters.</p>
+            <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {accounts.map((account) => (
+          {filteredAccounts.map((account) => (
             <Card key={account.id}>
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">

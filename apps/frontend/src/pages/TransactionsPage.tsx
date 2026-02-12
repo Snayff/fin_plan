@@ -1,27 +1,41 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { transactionService } from '../services/transaction.service';
+import { accountService } from '../services/account.service';
+import { categoryService } from '../services/category.service';
 import { showSuccess, showError } from '../lib/toast';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import TransactionForm from '../components/transactions/TransactionForm';
-import TransactionFilters from '../components/transactions/TransactionFilters';
+import FilterBar from '../components/filters/FilterBar';
+import { useClientFilters } from '../hooks/useClientFilters';
+import { buildTransactionFilterConfig } from '../config/filter-configs';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
-import type { Transaction, TransactionFilters as Filters } from '../types';
+import type { Transaction } from '../types';
 import { format } from 'date-fns';
+import { ArrowUpIcon, ArrowDownIcon, TrendingUpIcon } from 'lucide-react';
 
 export default function TransactionsPage() {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
-  const [filters, setFilters] = useState<Filters>({});
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['transactions', filters],
-    queryFn: () => transactionService.getTransactions(filters),
+    queryKey: ['transactions'],
+    queryFn: () => transactionService.getAllTransactions(),
+  });
+
+  const { data: accountsData } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => accountService.getAccounts(),
+  });
+
+  const { data: categoriesData } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => categoryService.getCategories(),
   });
 
   const deleteMutation = useMutation({
@@ -39,6 +53,35 @@ export default function TransactionsPage() {
   });
 
   const transactions = data?.transactions || [];
+  const accounts = accountsData?.accounts || [];
+  const categories = categoriesData?.categories || [];
+
+  const filterConfig = useMemo(
+    () => buildTransactionFilterConfig(accounts, categories),
+    [accounts, categories]
+  );
+
+  const {
+    filteredItems: filteredTransactions,
+    filters,
+    setFilter,
+    clearFilters,
+    activeFilterCount,
+    totalCount,
+    filteredCount,
+  } = useClientFilters({
+    items: transactions,
+    fields: filterConfig.fields,
+  });
+
+  // Summary stats from filtered data
+  const totalIncome = filteredTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const totalExpenses = filteredTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const netCashFlow = totalIncome - totalExpenses;
 
   if (isLoading) {
     return (
@@ -67,19 +110,71 @@ export default function TransactionsPage() {
         </Button>
       </div>
 
-      <TransactionFilters onFilterChange={setFilters} currentFilters={filters} />
+      <FilterBar
+        config={filterConfig}
+        filters={filters}
+        onFilterChange={setFilter}
+        onClearAll={clearFilters}
+        activeFilterCount={activeFilterCount}
+        totalCount={totalCount}
+        filteredCount={filteredCount}
+      />
+
+      {/* Summary Cards */}
+      {filteredTransactions.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <ArrowUpIcon className="h-4 w-4 text-success" />
+                <p className="text-sm text-muted-foreground">Total Income</p>
+              </div>
+              <p className="text-2xl font-bold text-success">
+                £{totalIncome.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <ArrowDownIcon className="h-4 w-4 text-expense" />
+                <p className="text-sm text-muted-foreground">Total Expenses</p>
+              </div>
+              <p className="text-2xl font-bold text-expense">
+                £{totalExpenses.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 mb-1">
+                <TrendingUpIcon className="h-4 w-4 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">Net Cash Flow</p>
+              </div>
+              <p className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-success' : 'text-expense'}`}>
+                £{netCashFlow.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {transactions.length === 0 ? (
         <Card>
           <CardContent className="p-12 text-center">
             <p className="text-muted-foreground mb-4">
-              {Object.keys(filters).length > 0 
-                ? 'No transactions match your filters.'
-                : 'No transactions yet. Create your first transaction to get started.'}
+              No transactions yet. Create your first transaction to get started.
             </p>
             <Button onClick={() => setIsCreateModalOpen(true)}>
               Create Transaction
             </Button>
+          </CardContent>
+        </Card>
+      ) : filteredTransactions.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground mb-4">No transactions match your filters.</p>
+            <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>
           </CardContent>
         </Card>
       ) : (
@@ -109,7 +204,7 @@ export default function TransactionsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {transactions.map((transaction) => (
+                {filteredTransactions.map((transaction) => (
                   <tr key={transaction.id} className="hover:bg-muted/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-foreground">
                       {format(new Date(transaction.date), 'MMM d, yyyy')}
@@ -124,7 +219,7 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm">
                       {transaction.category ? (
-                        <Badge 
+                        <Badge
                           variant="outline"
                           style={{
                             backgroundColor: `${transaction.category.color}20`,
@@ -143,8 +238,8 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
                       <span className={transaction.type === 'income' ? 'text-success' : 'text-expense'}>
-                        {transaction.type === 'income' ? '+' : '-'}$
-                        {transaction.amount.toLocaleString('en-US', {
+                        {transaction.type === 'income' ? '+' : '-'}£
+                        {transaction.amount.toLocaleString('en-GB', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -216,8 +311,8 @@ export default function TransactionsPage() {
                 Are you sure you want to delete this transaction?
               </p>
               <p className="mt-2 text-sm font-medium">
-                {deletingTransaction.description} - $
-                {deletingTransaction.amount.toLocaleString('en-US', {
+                {deletingTransaction.description} - £
+                {deletingTransaction.amount.toLocaleString('en-GB', {
                   minimumFractionDigits: 2,
                 })}
               </p>

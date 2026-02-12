@@ -8,6 +8,9 @@ import LiabilityForm from '../components/liabilities/LiabilityForm';
 import LiabilityEditForm from '../components/liabilities/LiabilityEditForm';
 import AllocatePaymentModal from '../components/liabilities/AllocatePaymentModal';
 import PayoffProjectionModal from '../components/liabilities/PayoffProjectionModal';
+import FilterBar from '../components/filters/FilterBar';
+import { useClientFilters } from '../hooks/useClientFilters';
+import { liabilityFilterConfig } from '../config/filter-configs';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -43,11 +46,23 @@ export default function LiabilitiesPage() {
 
   const liabilities = data?.liabilities || [];
 
-  // Calculate summary stats
-  const totalDebt = liabilities.reduce((sum, liability) => sum + liability.currentBalance, 0);
-  const totalLiabilities = liabilities.length;
-  const monthlyMinimumPayment = liabilities.reduce((sum, liability) => {
-    // Convert payment frequency to monthly
+  const {
+    filteredItems: filteredLiabilities,
+    filters,
+    setFilter,
+    clearFilters,
+    activeFilterCount,
+    totalCount,
+    filteredCount,
+  } = useClientFilters({
+    items: liabilities,
+    fields: liabilityFilterConfig.fields,
+  });
+
+  // Calculate summary stats from filtered data
+  const totalDebt = filteredLiabilities.reduce((sum, liability) => sum + liability.currentBalance, 0);
+  const totalLiabilities = filteredLiabilities.length;
+  const monthlyMinimumPayment = filteredLiabilities.reduce((sum, liability) => {
     const multiplier = liability.paymentFrequency === 'monthly' ? 1 :
                        liability.paymentFrequency === 'biweekly' ? 2.17 : 4.33;
     return sum + (liability.minimumPayment * multiplier);
@@ -99,8 +114,18 @@ export default function LiabilitiesPage() {
         </Button>
       </div>
 
+      <FilterBar
+        config={liabilityFilterConfig}
+        filters={filters}
+        onFilterChange={setFilter}
+        onClearAll={clearFilters}
+        activeFilterCount={activeFilterCount}
+        totalCount={totalCount}
+        filteredCount={filteredCount}
+      />
+
       {/* Summary Cards */}
-      {liabilities.length > 0 && (
+      {filteredLiabilities.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
@@ -147,9 +172,16 @@ export default function LiabilitiesPage() {
             </Button>
           </CardContent>
         </Card>
+      ) : filteredLiabilities.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground mb-4">No liabilities match your filters.</p>
+            <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {liabilities.map((liability) => (
+          {filteredLiabilities.map((liability) => (
             <Card key={liability.id}>
               <CardContent className="p-6">
                 <div className="flex justify-between items-start mb-4">
