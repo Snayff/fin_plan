@@ -108,6 +108,45 @@ export const liabilityFilterConfig: FilterBarConfig = {
   ],
 };
 
+export const goalFilterConfig: FilterBarConfig = {
+  entityName: 'goals',
+  fields: [
+    {
+      key: 'search',
+      label: 'Search goals',
+      type: 'search',
+      placeholder: 'Search goals...',
+      matchFields: ['name', 'description'],
+    },
+    {
+      key: 'type',
+      label: 'Goal type',
+      type: 'select',
+      allLabel: 'All Types',
+      matchField: 'type',
+      options: enumToOptions([
+        'savings', 'debt_payoff', 'net_worth', 'purchase', 'investment', 'income',
+      ]),
+    },
+    {
+      key: 'status',
+      label: 'Status',
+      type: 'select',
+      allLabel: 'All Statuses',
+      matchField: 'status',
+      options: enumToOptions(['active', 'completed', 'archived']),
+    },
+    {
+      key: 'priority',
+      label: 'Priority',
+      type: 'select',
+      allLabel: 'All Priorities',
+      matchField: 'priority',
+      options: enumToOptions(['high', 'medium', 'low']),
+    },
+  ],
+};
+
 export function buildTransactionFilterConfig(
   accounts: Array<{ id: string; name: string }>,
   categories: Array<{ id: string; name: string; parentCategoryId: string | null }>,
