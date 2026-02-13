@@ -19,6 +19,13 @@ import type {
   CreateLiabilityInput as SharedCreateLiabilityInput,
   UpdateLiabilityInput as SharedUpdateLiabilityInput,
   AllocatePaymentInput as SharedAllocatePaymentInput,
+  GoalType as SharedGoalType,
+  Priority as SharedPriority,
+  GoalStatus as SharedGoalStatus,
+  CreateGoalInput as SharedCreateGoalInput,
+  UpdateGoalInput as SharedUpdateGoalInput,
+  CreateGoalContributionInput as SharedCreateGoalContributionInput,
+  LinkTransactionToGoalInput as SharedLinkTransactionToGoalInput,
 } from '@finplan/shared';
 
 // Re-export for backward compatibility
@@ -41,6 +48,13 @@ export type PaymentFrequency = SharedPaymentFrequency;
 export type CreateLiabilityInput = SharedCreateLiabilityInput;
 export type UpdateLiabilityInput = SharedUpdateLiabilityInput;
 export type AllocatePaymentInput = SharedAllocatePaymentInput;
+export type GoalType = SharedGoalType;
+export type Priority = SharedPriority;
+export type GoalStatus = SharedGoalStatus;
+export type CreateGoalInput = SharedCreateGoalInput;
+export type UpdateGoalInput = SharedUpdateGoalInput;
+export type CreateGoalContributionInput = SharedCreateGoalContributionInput;
+export type LinkTransactionToGoalInput = SharedLinkTransactionToGoalInput;
 
 export interface Account {
   id: string;
@@ -345,4 +359,69 @@ export interface TrendData {
   income?: number;
   expense?: number;
   net?: number;
+}
+
+// Goal types
+export interface Goal {
+  id: string;
+  userId: string;
+  name: string;
+  description: string | null;
+  type: GoalType;
+  targetAmount: number;
+  currentAmount: number;
+  targetDate: string | null;
+  priority: Priority;
+  status: GoalStatus;
+  icon: string | null;
+  linkedAccountId: string | null;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+  linkedAccount?: Account;
+}
+
+export interface GoalContribution {
+  id: string;
+  goalId: string;
+  transactionId: string | null;
+  amount: number;
+  date: string;
+  notes: string | null;
+  transaction?: {
+    id: string;
+    name: string | null;
+    amount: number;
+    date: string;
+    type?: TransactionType;
+  };
+}
+
+export interface EnhancedGoal extends Goal {
+  contributions: GoalContribution[];
+  progressPercentage: number;
+  daysRemaining: number | null;
+  averageMonthlyContribution: number;
+  projectedCompletionDate: string | null;
+  recommendedMonthlyContribution: number | null;
+  isOnTrack: boolean;
+}
+
+export interface GoalSummary {
+  totalSaved: number;
+  totalTarget: number;
+  activeGoals: number;
+  completedGoals: number;
+  byType: Array<{
+    type: GoalType;
+    saved: number;
+    target: number;
+    count: number;
+  }>;
+  byPriority: Array<{
+    priority: Priority;
+    saved: number;
+    target: number;
+    count: number;
+  }>;
 }
