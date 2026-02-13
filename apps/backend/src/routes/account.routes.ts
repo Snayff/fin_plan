@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { accountService } from '../services/account.service';
+import { auditService } from '../services/audit.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { createAccountSchema, updateAccountSchema } from '@finplan/shared';
 
@@ -56,7 +57,9 @@ export async function accountRoutes(fastify: FastifyInstance) {
       const validatedData = createAccountSchema.parse(request.body);
 
       const account = await accountService.createAccount(userId, validatedData);
-      
+
+      auditService.log({ userId, action: 'ACCOUNT_CREATED', resource: 'account', resourceId: account.id, ipAddress: request.ip });
+
       return reply.status(201).send({ account });
     }
   );
@@ -87,7 +90,9 @@ export async function accountRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
 
       const result = await accountService.deleteAccount(id, userId);
-      
+
+      auditService.log({ userId, action: 'ACCOUNT_DELETED', resource: 'account', resourceId: id, ipAddress: request.ip });
+
       return reply.send(result);
     }
   );

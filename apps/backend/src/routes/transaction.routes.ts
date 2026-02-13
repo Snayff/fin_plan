@@ -93,7 +93,9 @@ export async function transactionRoutes(fastify: FastifyInstance) {
       const validatedData = createTransactionSchema.parse(request.body);
 
       const transaction = await transactionService.createTransaction(userId, validatedData);
-      
+
+      auditService.log({ userId, action: 'TRANSACTION_CREATED', resource: 'transaction', resourceId: transaction.id, ipAddress: request.ip });
+
       return reply.status(201).send({ transaction });
     }
   );
@@ -124,7 +126,9 @@ export async function transactionRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
 
       const result = await transactionService.deleteTransaction(id, userId);
-      
+
+      auditService.log({ userId, action: 'TRANSACTION_DELETED', resource: 'transaction', resourceId: id, ipAddress: request.ip });
+
       return reply.send(result);
     }
   );
