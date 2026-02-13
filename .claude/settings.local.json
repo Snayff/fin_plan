@@ -22,7 +22,11 @@
       "Bash(/c/Users/Gabriel/.bun/bin/bun test:*)",
       "Bash(docker ps:*)",
       "Bash(timeout:*)",
-      "Bash(dir:*)"
+      "Bash(dir:*)",
+      "Bash(npx prisma generate:*)",
+      "Bash(bunx prisma generate:*)",
+      "Bash(bunx prisma migrate dev:*)",
+      "Bash(bunx tsc:*)"
     ]
   }
 }
