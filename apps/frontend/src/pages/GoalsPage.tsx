@@ -134,15 +134,18 @@ export default function GoalsPage() {
         <Button onClick={() => setIsCreateModalOpen(true)}>+ Add Goal</Button>
       </div>
 
-      <FilterBar
-        config={goalFilterConfig}
-        filters={filters}
-        onFilterChange={setFilter}
-        onClearAll={clearFilters}
-        activeFilterCount={activeFilterCount}
-        totalCount={totalCount}
-        filteredCount={filteredCount}
-      />
+      {/* Only show filter bar if there are goals */}
+      {goals.length > 0 && (
+        <FilterBar
+          config={goalFilterConfig}
+          filters={filters}
+          onFilterChange={setFilter}
+          onClearAll={clearFilters}
+          activeFilterCount={activeFilterCount}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+        />
+      )}
 
       {/* Summary Cards */}
       {filteredGoals.length > 0 && (

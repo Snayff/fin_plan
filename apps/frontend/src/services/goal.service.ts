@@ -4,55 +4,112 @@ import type {
   UpdateGoalInput,
   CreateGoalContributionInput,
   LinkTransactionToGoalInput,
+  EnhancedGoal,
+  Goal,
+  GoalContribution,
 } from '../types';
+
+interface GoalsResponse {
+  goals: EnhancedGoal[];
+}
+
+interface GoalResponse {
+  goal: Goal;
+}
+
+interface ContributionsResponse {
+  contributions: GoalContribution[];
+}
+
+interface GoalActionResponse {
+  contribution?: GoalContribution;
+  goal: Goal;
+}
+
+interface DeleteResponse {
+  message: string;
+}
+
+interface GoalSummaryResponse {
+  totalSaved: number;
+  totalTarget: number;
+  activeGoals: number;
+  completedGoals: number;
+  byType: Array<{
+    type: string;
+    saved: number;
+    target: number;
+    count: number;
+  }>;
+  byPriority: Array<{
+    priority: string;
+    saved: number;
+    target: number;
+    count: number;
+  }>;
+}
 
 export const goalService = {
   /**
    * Get all goals with progress data
    */
-  getGoals: () => apiClient.get('/api/goals').then((res: any) => res.data),
+  async getGoals(): Promise<GoalsResponse> {
+    return apiClient.get<GoalsResponse>('/api/goals');
+  },
 
   /**
    * Get a single goal by ID
    */
-  getGoalById: (id: string) => apiClient.get(`/api/goals/${id}`).then((res: any) => res.data),
+  async getGoalById(id: string): Promise<GoalResponse> {
+    return apiClient.get<GoalResponse>(`/api/goals/${id}`);
+  },
 
   /**
    * Get contribution history for a goal
    */
-  getGoalContributions: (id: string) =>
-    apiClient.get(`/api/goals/${id}/contributions`).then((res: any) => res.data),
+  async getGoalContributions(id: string): Promise<ContributionsResponse> {
+    return apiClient.get<ContributionsResponse>(`/api/goals/${id}/contributions`);
+  },
 
   /**
    * Create a new goal
    */
-  createGoal: (data: CreateGoalInput) => apiClient.post('/api/goals', data).then((res: any) => res.data),
+  async createGoal(data: CreateGoalInput): Promise<GoalResponse> {
+    return apiClient.post<GoalResponse>('/api/goals', data);
+  },
 
   /**
    * Update goal properties
    */
-  updateGoal: (id: string, data: UpdateGoalInput) =>
-    apiClient.put(`/api/goals/${id}`, data).then((res: any) => res.data),
+  async updateGoal(id: string, data: UpdateGoalInput): Promise<GoalResponse> {
+    return apiClient.put<GoalResponse>(`/api/goals/${id}`, data);
+  },
 
   /**
    * Add a manual contribution to a goal
    */
-  addContribution: (goalId: string, data: CreateGoalContributionInput) =>
-    apiClient.post(`/api/goals/${goalId}/contributions`, data).then((res: any) => res.data),
+  async addContribution(goalId: string, data: CreateGoalContributionInput): Promise<GoalActionResponse> {
+    return apiClient.post<GoalActionResponse>(`/api/goals/${goalId}/contributions`, data);
+  },
 
   /**
    * Link an existing transaction to a goal as a contribution
    */
-  linkTransaction: (goalId: string, data: LinkTransactionToGoalInput) =>
-    apiClient.post(`/api/goals/${goalId}/link-transaction`, data).then((res: any) => res.data),
+  async linkTransaction(goalId: string, data: LinkTransactionToGoalInput): Promise<GoalActionResponse> {
+    return apiClient.post<GoalActionResponse>(`/api/goals/${goalId}/link-transaction`, data);
+  },
 
   /**
    * Delete a goal
    */
-  deleteGoal: (id: string) => apiClient.delete(`/api/goals/${id}`).then((res: any) => res.data),
+  async deleteGoal(id: string): Promise<DeleteResponse> {
+    return apiClient.delete<DeleteResponse>(`/api/goals/${id}`);
+  },
 
   /**
    * Get goal summary statistics
    */
-  getSummary: () => apiClient.get('/api/goals/summary').then((res: any) => res.data),
+  async getSummary(): Promise<GoalSummaryResponse> {
+    return apiClient.get<GoalSummaryResponse>('/api/goals/summary');
+  },
 };
