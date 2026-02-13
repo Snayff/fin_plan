@@ -169,6 +169,7 @@ model Goal {
   targetDate      DateTime?          @map("target_date")
   priority        Priority           @default(medium)
   status          GoalStatus         @default(active)
+  icon            String?
   linkedAccountId String?            @map("linked_account_id")
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")
