@@ -1,8 +1,27 @@
-import type { FastifyInstance, FastifyReply, RouteShorthandOptions } from 'fastify';
+import type { FastifyInstance, FastifyReply, FastifyRequest, RouteShorthandOptions } from 'fastify';
 import { z } from 'zod';
 import { authService } from '../services/auth.service';
+import { auditService } from '../services/audit.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { config } from '../config/env';
+import { blacklistToken } from '../utils/tokenBlacklist';
+import { decodeToken } from '../utils/jwt';
+
+function requestContext(request: FastifyRequest) {
+  return { ipAddress: request.ip, userAgent: request.headers['user-agent'] };
+}
+
+/** Blacklist the access token from the current request so it can't be reused after logout. */
+function blacklistCurrentToken(request: FastifyRequest): void {
+  const authHeader = request.headers.authorization;
+  if (!authHeader) return;
+  const token = authHeader.split(' ')[1];
+  if (!token) return;
+  const payload = decodeToken(token);
+  if (payload?.jti) {
+    blacklistToken(payload.jti);
+  }
+}
 
 const registerSchema = z.object({
   email: z.string().email(),
@@ -83,6 +102,14 @@ export async function authRoutes(fastify: FastifyInstance) {
     const body = registerSchema.parse(request.body);
     const result = await authService.register(body);
 
+    auditService.log({
+      userId: result.user.id,
+      action: 'REGISTER',
+      resource: 'user',
+      resourceId: result.user.id,
+      ...requestContext(request),
+    });
+
     // Set refresh token in httpOnly cookie
     setRefreshTokenCookie(reply, result.refreshToken);
 
@@ -97,13 +124,35 @@ export async function authRoutes(fastify: FastifyInstance) {
    */
   fastify.post('/login', loginOpts, async (request, reply) => {
     const body = loginSchema.parse(request.body);
-    const result = await authService.login(body);
+    const ctx = requestContext(request);
 
-    // Set refresh token in httpOnly cookie
-    setRefreshTokenCookie(reply, result.refreshToken);
+    try {
+      const result = await authService.login({
+        ...body,
+        ...ctx,
+      });
 
-    // Return response with BOTH formats for backward compatibility
-    return reply.status(200).send(result);
+      auditService.log({
+        userId: result.user.id,
+        action: 'LOGIN_SUCCESS',
+        resource: 'session',
+        ...ctx,
+      });
+
+      // Set refresh token in httpOnly cookie
+      setRefreshTokenCookie(reply, result.refreshToken);
+
+      // Return response with BOTH formats for backward compatibility
+      return reply.status(200).send(result);
+    } catch (error) {
+      auditService.log({
+        action: 'LOGIN_FAILED',
+        resource: 'session',
+        metadata: { email: body.email },
+        ...ctx,
+      });
+      throw error;
+    }
   });
 
   /**
@@ -149,14 +198,20 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
     }
 
-    const result = await authService.refreshAccessToken(refreshToken);
+    const ctx = requestContext(request);
+    const result = await authService.refreshAccessToken(refreshToken, ctx);
 
-    // Refresh the cookie if it was used
-    if (request.cookies.refreshToken) {
-      setRefreshTokenCookie(reply, refreshToken);
-    }
+    auditService.log({
+      action: 'TOKEN_REFRESH',
+      resource: 'session',
+      ...ctx,
+    });
 
-    return reply.status(200).send(result);
+    // Always set the rotated refresh token as a new cookie
+    setRefreshTokenCookie(reply, result.refreshToken);
+
+    // Only return the access token to the client
+    return reply.status(200).send({ accessToken: result.accessToken });
   });
 
   /**
@@ -173,9 +228,80 @@ export async function authRoutes(fastify: FastifyInstance) {
    * Logout user - clears refresh token cookie
    */
   fastify.post('/logout', { preHandler: authMiddleware }, async (request, reply) => {
+    const userId = request.user!.userId;
+
+    // Blacklist the current access token so it can't be reused
+    blacklistCurrentToken(request);
+
+    // Revoke all refresh tokens for this user
+    await authService.revokeAllUserTokens(userId);
+
+    auditService.log({
+      userId,
+      action: 'LOGOUT',
+      resource: 'session',
+      ...requestContext(request),
+    });
+
     // Clear refresh token cookie
     clearRefreshTokenCookie(reply);
 
     return reply.status(200).send({ message: 'Logged out successfully' });
+  });
+
+  /**
+   * GET /api/auth/sessions
+   * List active sessions for the current user
+   */
+  fastify.get('/sessions', { preHandler: authMiddleware }, async (request, reply) => {
+    const userId = request.user!.userId;
+    const sessions = await authService.getUserSessions(userId);
+    return reply.send({ sessions });
+  });
+
+  /**
+   * DELETE /api/auth/sessions/:familyId
+   * Revoke a specific session
+   */
+  fastify.delete('/sessions/:familyId', { preHandler: authMiddleware }, async (request, reply) => {
+    const userId = request.user!.userId;
+    const { familyId } = request.params as { familyId: string };
+
+    const revoked = await authService.revokeSession(familyId, userId);
+    if (!revoked) {
+      return reply.status(404).send({
+        error: { message: 'Session not found', code: 'NOT_FOUND', statusCode: 404 },
+      });
+    }
+
+    auditService.log({
+      userId,
+      action: 'SESSION_REVOKED',
+      resource: 'session',
+      resourceId: familyId,
+      ...requestContext(request),
+    });
+
+    return reply.send({ message: 'Session revoked' });
+  });
+
+  /**
+   * DELETE /api/auth/sessions
+   * Revoke all sessions (logout everywhere)
+   */
+  fastify.delete('/sessions', { preHandler: authMiddleware }, async (request, reply) => {
+    const userId = request.user!.userId;
+
+    await authService.revokeAllUserTokens(userId);
+
+    auditService.log({
+      userId,
+      action: 'ALL_SESSIONS_REVOKED',
+      resource: 'session',
+      ...requestContext(request),
+    });
+
+    clearRefreshTokenCookie(reply);
+    return reply.send({ message: 'All sessions revoked' });
   });
 }
