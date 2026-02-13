@@ -68,3 +68,21 @@ export {
   type UpdateLiabilityInput,
   type AllocatePaymentInput,
 } from './liability.schemas';
+
+// Goal schemas and types
+export {
+  createGoalSchema,
+  updateGoalSchema,
+  createGoalContributionSchema,
+  linkTransactionToGoalSchema,
+  GoalTypeEnum,
+  PriorityEnum,
+  GoalStatusEnum,
+  type GoalType,
+  type Priority,
+  type GoalStatus,
+  type CreateGoalInput,
+  type UpdateGoalInput,
+  type CreateGoalContributionInput,
+  type LinkTransactionToGoalInput,
+} from './goal.schemas';
