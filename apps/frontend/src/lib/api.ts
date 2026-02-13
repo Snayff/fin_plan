@@ -40,15 +40,10 @@ export class ApiClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
-    // Get CSRF token for state-changing requests
+    // Get CSRF token for all state-changing requests (including auth endpoints)
     let csrfToken: string | undefined;
     if (['POST', 'PUT', 'DELETE'].includes(options.method || 'GET')) {
-      try {
-        csrfToken = await this.fetchCsrfToken();
-      } catch (error) {
-        // CSRF fetch failed - continue without it for auth endpoints
-        // Auth endpoints don't need CSRF yet (legacy support)
-      }
+      csrfToken = await this.fetchCsrfToken();
     }
 
     // Automatically include auth token from store if not explicitly provided and not auth endpoint

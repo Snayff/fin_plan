@@ -39,6 +39,8 @@ export default function GoalForm({ onSuccess, onCancel }: GoalFormProps) {
   const { data: accountsData } = useQuery({
     queryKey: ['accounts'],
     queryFn: () => accountService.getAccounts(),
+    retry: 2, // Retry failed requests (helps with token refresh)
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 
   const createMutation = useMutation({
