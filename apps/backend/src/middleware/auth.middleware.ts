@@ -1,5 +1,6 @@
 import type { FastifyRequest, FastifyReply } from 'fastify';
 import { verifyAccessToken } from '../utils/jwt';
+import { isTokenBlacklisted } from '../utils/tokenBlacklist';
 import { AuthenticationError } from '../utils/errors';
 
 /**
@@ -23,6 +24,11 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
 
     // Verify token
     const payload = verifyAccessToken(token);
+
+    // Check if this token has been revoked (e.g., on logout)
+    if (payload.jti && isTokenBlacklisted(payload.jti)) {
+      throw new AuthenticationError('Token has been revoked');
+    }
 
     // Attach user info to request
     (request as any).user = payload;
