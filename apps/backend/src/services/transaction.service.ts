@@ -58,7 +58,18 @@ export const transactionService = {
     filters: TransactionFilters = {},
     options: { limit?: number; offset?: number; orderBy?: string; orderDir?: 'asc' | 'desc' } = {}
   ) {
-    const { limit = 50, offset = 0, orderBy = 'date', orderDir = 'desc' } = options;
+    const ALLOWED_ORDER_FIELDS = ['date', 'amount', 'name', 'type', 'createdAt'];
+    const ALLOWED_ORDER_DIRS = ['asc', 'desc'];
+
+    const {
+      limit = 50,
+      offset = 0,
+      orderBy: rawOrderBy = 'date',
+      orderDir: rawOrderDir = 'desc',
+    } = options;
+
+    const orderBy = ALLOWED_ORDER_FIELDS.includes(rawOrderBy) ? rawOrderBy : 'date';
+    const orderDir = ALLOWED_ORDER_DIRS.includes(rawOrderDir) ? rawOrderDir : 'desc';
 
     // Build where clause
     const where: Prisma.TransactionWhereInput = {
