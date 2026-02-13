@@ -1,9 +1,11 @@
 import jwt, { type SignOptions } from 'jsonwebtoken';
+import { createHash, randomUUID } from 'crypto';
 import { config } from '../config/env';
 
 export interface JwtPayload {
   userId: string;
   email: string;
+  jti?: string;
 }
 
 export interface RefreshTokenPayload {
@@ -15,7 +17,7 @@ export interface RefreshTokenPayload {
  * Generate an access token
  */
 export function generateAccessToken(payload: JwtPayload): string {
-  return jwt.sign(payload, config.JWT_SECRET, {
+  return jwt.sign({ ...payload, jti: randomUUID() }, config.JWT_SECRET, {
     expiresIn: config.JWT_EXPIRES_IN as any,
   });
 }
@@ -69,4 +71,18 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
 export function decodeToken(token: string): JwtPayload | null {
   const decoded = jwt.decode(token);
   return decoded as JwtPayload | null;
+}
+
+/**
+ * Hash a refresh token for secure storage (SHA-256)
+ */
+export function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+/**
+ * Generate a unique family ID for refresh token rotation tracking
+ */
+export function generateTokenFamily(): string {
+  return randomUUID();
 }
