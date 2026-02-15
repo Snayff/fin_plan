@@ -1,19 +1,25 @@
-import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { goalService } from '../../services/goal.service';
-import { accountService } from '../../services/account.service';
-import type { GoalType, Priority, CreateGoalInput } from '../../types';
+import type {
+  Goal,
+  GoalType,
+  Priority,
+  GoalStatus,
+  CreateGoalInput,
+  UpdateGoalInput,
+} from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 
 interface GoalFormProps {
+  goal?: Goal;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-// Predefined icons for goal types
-const GOAL_ICONS = {
+const GOAL_TYPE_ICONS: Record<GoalType, string> = {
   savings: '💰',
   debt_payoff: '💳',
   net_worth: '📈',
@@ -22,29 +28,51 @@ const GOAL_ICONS = {
   income: '💵',
 };
 
-export default function GoalForm({ onSuccess, onCancel }: GoalFormProps) {
+const GOAL_ICON_OPTIONS = Array.from(
+  new Set([...Object.values(GOAL_TYPE_ICONS), '🎯', '🏠', '🚗', '✈️', '🎓', '🧳', '🔧', '📚'])
+);
+
+interface GoalFormState {
+  name: string;
+  description: string;
+  type: GoalType;
+  targetAmount: string | number;
+  targetDate: string;
+  priority: Priority;
+  status: GoalStatus;
+  icon: string;
+}
+
+function getInitialFormData(goal?: Goal): GoalFormState {
+  return {
+    name: goal?.name ?? '',
+    description: goal?.description ?? '',
+    type: (goal?.type as GoalType) ?? 'savings',
+    targetAmount: goal?.targetAmount ?? '',
+    targetDate: goal?.targetDate ? (goal.targetDate.split('T')[0] ?? '') : '',
+    priority: (goal?.priority as Priority) ?? 'medium',
+    status: (goal?.status as GoalStatus) ?? 'active',
+    icon: goal?.icon ?? GOAL_TYPE_ICONS[goal?.type as GoalType] ?? '🎯',
+  };
+}
+
+export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
   const queryClient = useQueryClient();
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    type: 'savings' as GoalType,
-    targetAmount: '' as string | number,
-    targetDate: '',
-    priority: 'medium' as Priority,
-    icon: '💰',
-    linkedAccountId: '',
-  });
+  const isEditMode = Boolean(goal);
+  const [formData, setFormData] = useState<GoalFormState>(() => getInitialFormData(goal));
 
-  // Fetch accounts for the dropdown
-  const { data: accountsData } = useQuery({
-    queryKey: ['accounts'],
-    queryFn: () => accountService.getAccounts(),
-    retry: 2, // Retry failed requests (helps with token refresh)
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  });
+  useEffect(() => {
+    setFormData(getInitialFormData(goal));
+  }, [goal]);
 
-  const createMutation = useMutation({
-    mutationFn: (data: CreateGoalInput) => goalService.createGoal(data),
+  const submitMutation = useMutation({
+    mutationFn: (data: CreateGoalInput | UpdateGoalInput) => {
+      if (isEditMode && goal) {
+        return goalService.updateGoal(goal.id, data as UpdateGoalInput);
+      }
+
+      return goalService.createGoal(data as CreateGoalInput);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
@@ -54,6 +82,22 @@ export default function GoalForm({ onSuccess, onCancel }: GoalFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (isEditMode) {
+      const submitData: UpdateGoalInput = {
+        name: formData.name,
+        description: formData.description || undefined,
+        type: formData.type,
+        targetAmount: Number(formData.targetAmount),
+        targetDate: formData.targetDate || undefined,
+        priority: formData.priority,
+        status: formData.status,
+        icon: formData.icon,
+      };
+      submitMutation.mutate(submitData);
+      return;
+    }
+
     const submitData: CreateGoalInput = {
       name: formData.name,
       description: formData.description || undefined,
@@ -62,19 +106,16 @@ export default function GoalForm({ onSuccess, onCancel }: GoalFormProps) {
       targetDate: formData.targetDate || undefined,
       priority: formData.priority,
       icon: formData.icon,
-      linkedAccountId: formData.linkedAccountId || undefined,
     };
-    createMutation.mutate(submitData);
+
+    submitMutation.mutate(submitData);
   };
 
-  const accounts = accountsData?.accounts || [];
-
-  // Update icon when type changes
   const handleTypeChange = (newType: GoalType) => {
     setFormData({
       ...formData,
       type: newType,
-      icon: GOAL_ICONS[newType] || '🎯',
+      icon: GOAL_TYPE_ICONS[newType] || '🎯',
     });
   };
 
@@ -103,46 +144,47 @@ export default function GoalForm({ onSuccess, onCancel }: GoalFormProps) {
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="type">Goal Type *</Label>
-          <select
-            id="type"
-            required
-            value={formData.type}
-            onChange={(e) => handleTypeChange(e.target.value as GoalType)}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <option value="savings">Savings</option>
-            <option value="debt_payoff">Debt Payoff</option>
-            <option value="net_worth">Net Worth</option>
-            <option value="purchase">Purchase</option>
-            <option value="investment">Investment</option>
-            <option value="income">Income</option>
-          </select>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="type">Goal Type *</Label>
+        <select
+          id="type"
+          required
+          value={formData.type}
+          onChange={(e) => handleTypeChange(e.target.value as GoalType)}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <option value="savings">Savings</option>
+          <option value="debt_payoff">Debt Payoff</option>
+          <option value="net_worth">Net Worth</option>
+          <option value="purchase">Purchase</option>
+          <option value="investment">Investment</option>
+          <option value="income">Income</option>
+        </select>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="icon">Icon</Label>
-          <div className="flex items-center gap-2">
-            <div className="text-3xl">{formData.icon}</div>
-            <select
-              id="icon"
-              value={formData.icon}
-              onChange={(e) => setFormData({ ...formData, icon: e.target.value })}
-              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-            >
-              {Object.entries(GOAL_ICONS).map(([type, icon]) => (
-                <option key={type} value={icon}>
-                  {icon} {type.replace('_', ' ')}
-                </option>
-              ))}
-              <option value="🎯">🎯 Target</option>
-              <option value="🏠">🏠 Home</option>
-              <option value="🚗">🚗 Vehicle</option>
-              <option value="✈️">✈️ Travel</option>
-              <option value="🎓">🎓 Education</option>
-            </select>
+      <div className="space-y-2">
+        <Label>Icon</Label>
+        <div className="flex items-center gap-3">
+          <div className="text-3xl leading-none" aria-hidden="true">
+            {formData.icon}
+          </div>
+          <div className="grid grid-cols-8 gap-2">
+            {GOAL_ICON_OPTIONS.map((icon) => {
+              const isSelected = formData.icon === icon;
+              return (
+                <button
+                  key={icon}
+                  type="button"
+                  aria-label={`Select ${icon} icon`}
+                  onClick={() => setFormData({ ...formData, icon })}
+                  className={`h-9 w-9 rounded-md border text-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${
+                    isSelected ? 'border-primary bg-primary/10' : 'border-input hover:bg-muted'
+                  }`}
+                >
+                  <span aria-hidden="true">{icon}</span>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -162,6 +204,11 @@ export default function GoalForm({ onSuccess, onCancel }: GoalFormProps) {
             placeholder="0.00"
           />
         </div>
+        {goal && (
+          <p className="text-xs text-muted-foreground">
+            Current progress: £{goal.currentAmount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+          </p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -172,52 +219,51 @@ export default function GoalForm({ onSuccess, onCancel }: GoalFormProps) {
           value={formData.targetDate}
           onChange={(e) => setFormData({ ...formData, targetDate: e.target.value })}
         />
-        <p className="text-xs text-muted-foreground">
-          When do you want to achieve this goal?
-        </p>
+        {!isEditMode && (
+          <p className="text-xs text-muted-foreground">When do you want to achieve this goal?</p>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="priority">Priority *</Label>
-        <select
-          id="priority"
-          required
-          value={formData.priority}
-          onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <option value="high">High Priority</option>
-          <option value="medium">Medium Priority</option>
-          <option value="low">Low Priority</option>
-        </select>
-        <p className="text-xs text-muted-foreground">
-          High priority goals appear first
-        </p>
+      <div className={`grid gap-4 ${isEditMode ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        <div className="space-y-2">
+          <Label htmlFor="priority">Priority *</Label>
+          <select
+            id="priority"
+            required
+            value={formData.priority}
+            onChange={(e) => setFormData({ ...formData, priority: e.target.value as Priority })}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value="high">High Priority</option>
+            <option value="medium">Medium Priority</option>
+            <option value="low">Low Priority</option>
+          </select>
+          {!isEditMode && (
+            <p className="text-xs text-muted-foreground">High priority goals appear first</p>
+          )}
+        </div>
+
+        {isEditMode && (
+          <div className="space-y-2">
+            <Label htmlFor="status">Status *</Label>
+            <select
+              id="status"
+              required
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value as GoalStatus })}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <option value="active">Active</option>
+              <option value="completed">Completed</option>
+              <option value="archived">Archived</option>
+            </select>
+          </div>
+        )}
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="linkedAccountId">Linked Account (Optional)</Label>
-        <select
-          id="linkedAccountId"
-          value={formData.linkedAccountId}
-          onChange={(e) => setFormData({ ...formData, linkedAccountId: e.target.value })}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <option value="">None</option>
-          {accounts.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-muted-foreground">
-          Link to a savings account for tracking
-        </p>
-      </div>
-
-      {createMutation.error && (
+      {submitMutation.error && (
         <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
-          {(createMutation.error as Error).message}
+          {(submitMutation.error as Error).message}
         </div>
       )}
 
@@ -227,8 +273,14 @@ export default function GoalForm({ onSuccess, onCancel }: GoalFormProps) {
             Cancel
           </Button>
         )}
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending ? 'Creating...' : 'Create Goal'}
+        <Button type="submit" disabled={submitMutation.isPending}>
+          {submitMutation.isPending
+            ? isEditMode
+              ? 'Updating...'
+              : 'Creating...'
+            : isEditMode
+              ? 'Update Goal'
+              : 'Create Goal'}
         </Button>
       </div>
     </form>

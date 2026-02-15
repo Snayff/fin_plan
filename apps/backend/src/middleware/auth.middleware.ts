@@ -6,7 +6,7 @@ import { AuthenticationError } from '../utils/errors';
 /**
  * Auth middleware to verify JWT token and attach user to request
  */
-export async function authMiddleware(request: FastifyRequest, reply: FastifyReply) {
+export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
   try {
     // Get token from Authorization header
     const authHeader = request.headers.authorization;
@@ -23,15 +23,26 @@ export async function authMiddleware(request: FastifyRequest, reply: FastifyRepl
     }
 
     // Verify token
-    const payload = verifyAccessToken(token);
+    const payload = verifyAccessToken(token) as any;
+
+    // Backward compatibility / hardening:
+    // some older tokens may use `id` or `sub` instead of `userId`
+    const resolvedUserId = payload.userId || payload.id || payload.sub;
+    if (!resolvedUserId || typeof resolvedUserId !== 'string') {
+      throw new AuthenticationError('Invalid token payload');
+    }
 
     // Check if this token has been revoked (e.g., on logout)
     if (payload.jti && isTokenBlacklisted(payload.jti)) {
       throw new AuthenticationError('Token has been revoked');
     }
 
-    // Attach user info to request
-    (request as any).user = payload;
+    // Attach normalized user info to request
+    (request as any).user = {
+      ...payload,
+      userId: resolvedUserId,
+      email: payload.email || '',
+    };
   } catch (error) {
     if (error instanceof AuthenticationError) {
       throw error;

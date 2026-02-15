@@ -3,9 +3,8 @@ import { createAssetSchema, updateAssetSchema, updateAssetValueSchema } from "./
 
 const validAssetInput = {
   name: "Investment Property",
-  type: "real_estate" as const,
+  type: "housing" as const,
   currentValue: 250000,
-  liquidityType: "illiquid" as const,
 };
 
 describe("createAssetSchema", () => {
@@ -20,7 +19,6 @@ describe("createAssetSchema", () => {
       purchaseValue: 200000,
       purchaseDate: "2020-06-15",
       expectedGrowthRate: 3.0,
-      accountId: "550e8400-e29b-41d4-a716-446655440000",
       metadata: { location: "London" },
     });
     expect(result.success).toBe(true);
@@ -80,15 +78,10 @@ describe("createAssetSchema", () => {
   });
 
   it("accepts all valid asset types", () => {
-    for (const type of ["real_estate", "investment", "vehicle", "business", "personal_property", "crypto"]) {
+    for (const type of ["housing", "investment", "vehicle", "business", "personal_property", "crypto"]) {
       const result = createAssetSchema.safeParse({ ...validAssetInput, type });
       expect(result.success).toBe(true);
     }
-  });
-
-  it("validates liquidityType enum", () => {
-    const result = createAssetSchema.safeParse({ ...validAssetInput, liquidityType: "invalid" });
-    expect(result.success).toBe(false);
   });
 
   it("transforms purchaseDate Date to ISO string", () => {
@@ -100,17 +93,9 @@ describe("createAssetSchema", () => {
     }
   });
 
-  it("accepts missing accountId (field omitted)", () => {
-    const result = createAssetSchema.safeParse(validAssetInput);
+  it("accepts depreciation growth rates", () => {
+    const result = createAssetSchema.safeParse({ ...validAssetInput, expectedGrowthRate: -12.5 });
     expect(result.success).toBe(true);
-    if (result.success) {
-      expect(result.data.accountId).toBeUndefined();
-    }
-  });
-
-  it("validates accountId is UUID when provided", () => {
-    const result = createAssetSchema.safeParse({ ...validAssetInput, accountId: "not-a-uuid" });
-    expect(result.success).toBe(false);
   });
 });
 

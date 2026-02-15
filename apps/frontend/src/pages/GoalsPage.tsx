@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goalService } from '../services/goal.service';
 import { showSuccess, showError } from '../lib/toast';
+import { formatCurrency } from '../lib/utils';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import GoalForm from '../components/goals/GoalForm';
-import GoalEditForm from '../components/goals/GoalEditForm';
 import GoalContributionModal from '../components/goals/GoalContributionModal';
 import FilterBar from '../components/filters/FilterBar';
 import { useClientFilters } from '../hooks/useClientFilters';
@@ -16,7 +16,6 @@ import { Badge } from '../components/ui/badge';
 import type { Goal, EnhancedGoal } from '../types';
 import {
   TrendingUpIcon,
-  TrendingDownIcon,
   TargetIcon,
   CheckCircle2Icon,
   AlertCircleIcon,
@@ -76,6 +75,10 @@ export default function GoalsPage() {
   const totalTarget = filteredGoals.reduce((sum, goal) => sum + goal.targetAmount, 0);
   const activeGoals = filteredGoals.filter((g) => g.status === 'active').length;
   const onTrackGoals = filteredGoals.filter((g) => g.isOnTrack && g.status === 'active').length;
+  const needsAttentionGoals = filteredGoals.filter((goal) => {
+    if (goal.status !== 'active' || !goal.targetDate) return false;
+    return new Date(goal.targetDate).getTime() < Date.now();
+  }).length;
 
   if (isLoading) {
     return (
@@ -94,12 +97,6 @@ export default function GoalsPage() {
       </div>
     );
   }
-
-  const formatCurrency = (value: number) =>
-    `£${value.toLocaleString('en-GB', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
 
   const getPriorityBadgeColor = (priority: string) => {
     switch (priority) {
@@ -193,7 +190,7 @@ export default function GoalsPage() {
                 <p className="text-sm text-muted-foreground">Needs Attention</p>
               </div>
               <p className="text-2xl font-bold text-muted-foreground">
-                {filteredGoals.filter((g) => !g.isOnTrack && g.status === 'active').length}
+                {needsAttentionGoals}
               </p>
               <p className="text-xs text-muted-foreground mt-1">Behind schedule</p>
             </CardContent>
@@ -400,7 +397,7 @@ export default function GoalsPage() {
       {/* Edit Modal */}
       {editingGoal && (
         <Modal isOpen={true} onClose={() => setEditingGoal(null)} title="Edit Goal">
-          <GoalEditForm
+          <GoalForm
             goal={editingGoal}
             onSuccess={() => setEditingGoal(null)}
             onCancel={() => setEditingGoal(null)}

@@ -11,7 +11,6 @@ export interface CreateGoalInput {
   targetDate?: string | Date;
   priority?: Priority;
   icon?: string;
-  linkedAccountId?: string;
   metadata?: {
     milestones?: Array<{
       percentage: number;
@@ -31,7 +30,6 @@ export interface UpdateGoalInput {
   priority?: Priority;
   status?: GoalStatus;
   icon?: string;
-  linkedAccountId?: string;
   metadata?: Record<string, any>;
 }
 
@@ -61,16 +59,6 @@ export const goalService = {
       throw new ValidationError('Target amount must be non-negative');
     }
 
-    // If linkedAccountId provided, verify it exists and belongs to user
-    if (data.linkedAccountId) {
-      const account = await prisma.account.findFirst({
-        where: { id: data.linkedAccountId, userId },
-      });
-      if (!account) {
-        throw new NotFoundError('Account not found');
-      }
-    }
-
     // Set default milestones if not provided
     const metadata = data.metadata || {};
     if (!metadata.milestones) {
@@ -91,7 +79,6 @@ export const goalService = {
         targetDate: data.targetDate ? new Date(data.targetDate) : null,
         priority: data.priority || 'medium',
         icon: data.icon,
-        linkedAccountId: data.linkedAccountId,
         metadata,
       },
     });
@@ -105,9 +92,6 @@ export const goalService = {
   async getGoalById(goalId: string, userId: string) {
     const goal = await prisma.goal.findFirst({
       where: { id: goalId, userId },
-      include: {
-        linkedAccount: true,
-      },
     });
 
     if (!goal) {
@@ -127,9 +111,6 @@ export const goalService = {
         { priority: 'asc' }, // high first (alphabetically)
         { createdAt: 'desc' },
       ],
-      include: {
-        linkedAccount: true,
-      },
     });
 
     return goals;
@@ -146,7 +127,6 @@ export const goalService = {
         { createdAt: 'desc' },
       ],
       include: {
-        linkedAccount: true,
         contributions: {
           orderBy: { date: 'desc' },
           include: {
@@ -293,7 +273,6 @@ export const goalService = {
     if (data.priority !== undefined) updateData.priority = data.priority;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.icon !== undefined) updateData.icon = data.icon;
-    if (data.linkedAccountId !== undefined) updateData.linkedAccountId = data.linkedAccountId;
 
     // Merge metadata if provided
     if (data.metadata !== undefined) {
@@ -304,9 +283,6 @@ export const goalService = {
     const goal = await prisma.goal.update({
       where: { id: goalId },
       data: updateData,
-      include: {
-        linkedAccount: true,
-      },
     });
 
     return goal;

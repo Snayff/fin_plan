@@ -16,9 +16,8 @@ beforeEach(() => {
 describe("assetService.createAsset", () => {
   const validInput = {
     name: "Property",
-    type: "real_estate" as any,
+    type: "housing" as any,
     currentValue: 250000,
-    liquidityType: "illiquid" as any,
   };
 
   it("creates asset and initial value history entry via $transaction", async () => {
@@ -30,6 +29,13 @@ describe("assetService.createAsset", () => {
 
     expect(prismaMock.$transaction).toHaveBeenCalled();
     expect(prismaMock.asset.create).toHaveBeenCalled();
+    expect(prismaMock.asset.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          liquidityType: "illiquid",
+        }),
+      })
+    );
     expect(prismaMock.assetValueHistory.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
@@ -50,13 +56,6 @@ describe("assetService.createAsset", () => {
       "Current value must be non-negative"
     );
   });
-
-  it("verifies accountId belongs to user when provided", async () => {
-    prismaMock.account.findFirst.mockResolvedValue(null);
-    await expect(
-      assetService.createAsset("user-1", { ...validInput, accountId: "acc-1" })
-    ).rejects.toThrow(NotFoundError);
-  });
 });
 
 describe("assetService.getAssetById", () => {
@@ -70,6 +69,48 @@ describe("assetService.getAssetById", () => {
   it("throws NotFoundError when not found", async () => {
     prismaMock.asset.findFirst.mockResolvedValue(null);
     await expect(assetService.getAssetById("missing", "user-1")).rejects.toThrow(NotFoundError);
+  });
+});
+
+describe("assetService.getUserAssetsWithHistory", () => {
+  it("falls back to raw query and normalizes legacy real_estate type", async () => {
+    const prismaEnumError = new Error("Value 'real_estate' not found in enum 'AssetType'");
+    prismaMock.asset.findMany.mockRejectedValue(prismaEnumError);
+    prismaMock.$queryRaw.mockResolvedValue([
+      {
+        id: "asset-legacy-1",
+        user_id: "user-1",
+        name: "Legacy Property",
+        type: "real_estate",
+        current_value: "250000",
+        purchase_value: "200000",
+        purchase_date: new Date("2020-06-15T00:00:00Z"),
+        expected_growth_rate: "3",
+        liquidity_type: "illiquid",
+        metadata: {},
+        created_at: new Date("2025-01-01T00:00:00Z"),
+        updated_at: new Date("2025-01-02T00:00:00Z"),
+      },
+    ]);
+    prismaMock.assetValueHistory.findMany.mockResolvedValue([]);
+
+    const result = await assetService.getUserAssetsWithHistory("user-1");
+
+    expect(prismaMock.$queryRaw).toHaveBeenCalled();
+    expect(result).toHaveLength(1);
+    expect(result[0].type).toBe("housing");
+    expect(result[0].currentValue).toBe(250000);
+    expect(result[0].purchaseValue).toBe(200000);
+  });
+
+  it("rethrows non-legacy Prisma errors", async () => {
+    const dbError = new Error("Database connection interrupted");
+    prismaMock.asset.findMany.mockRejectedValue(dbError);
+
+    await expect(assetService.getUserAssetsWithHistory("user-1")).rejects.toThrow(
+      "Database connection interrupted"
+    );
+    expect(prismaMock.$queryRaw).not.toHaveBeenCalled();
   });
 });
 
@@ -119,7 +160,7 @@ describe("assetService.deleteAsset", () => {
 describe("assetService.getAssetSummary", () => {
   it("returns correct totals and gain calculations", async () => {
     prismaMock.asset.findMany.mockResolvedValue([
-      buildAsset({ currentValue: 300000, purchaseValue: 200000, type: "real_estate" }),
+      buildAsset({ currentValue: 300000, purchaseValue: 200000, type: "housing" }),
       buildAsset({ currentValue: 50000, purchaseValue: 40000, type: "investment" }),
     ]);
 

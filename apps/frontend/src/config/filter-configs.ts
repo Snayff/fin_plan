@@ -63,7 +63,7 @@ export const assetFilterConfig: FilterBarConfig = {
       allLabel: 'All Types',
       matchField: 'type',
       options: enumToOptions([
-        'real_estate', 'investment', 'vehicle', 'business', 'personal_property', 'crypto',
+        'housing', 'investment', 'vehicle', 'business', 'personal_property', 'crypto',
       ]),
     },
     {

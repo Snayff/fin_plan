@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { liabilityService } from '../../services/liability.service';
-import { accountService } from '../../services/account.service';
-import type { LiabilityType, InterestType, PaymentFrequency, CreateLiabilityInput } from '../../types';
+import type { LiabilityType, InterestType, CreateLiabilityInput } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -18,20 +17,11 @@ export default function LiabilityForm({ onSuccess, onCancel }: LiabilityFormProp
     name: '',
     type: 'personal_loan' as LiabilityType,
     currentBalance: '' as string | number,
-    originalAmount: '' as string | number,
     interestRate: '' as string | number,
     interestType: 'fixed' as InterestType,
-    minimumPayment: '' as string | number,
-    paymentFrequency: 'monthly' as PaymentFrequency,
-    payoffDate: '',
-    accountId: '',
+    openDate: '',
+    termEndDate: '',
     lender: '',
-  });
-
-  // Fetch accounts for the dropdown
-  const { data: accountsData } = useQuery({
-    queryKey: ['accounts'],
-    queryFn: () => accountService.getAccounts(),
   });
 
   const createMutation = useMutation({
@@ -49,32 +39,20 @@ export default function LiabilityForm({ onSuccess, onCancel }: LiabilityFormProp
       name: formData.name,
       type: formData.type,
       currentBalance: Number(formData.currentBalance),
-      originalAmount: Number(formData.originalAmount),
       interestRate: Number(formData.interestRate),
       interestType: formData.interestType,
-      minimumPayment: Number(formData.minimumPayment),
-      paymentFrequency: formData.paymentFrequency,
-      payoffDate: formData.payoffDate || undefined,
-      accountId: formData.accountId || undefined,
+      openDate: formData.openDate,
+      termEndDate: formData.termEndDate,
       metadata: formData.lender ? { lender: formData.lender } : undefined,
     };
     createMutation.mutate(submitData);
   };
 
-  const accounts = accountsData?.accounts || [];
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="name">Liability Name *</Label>
-        <Input
-          type="text"
-          id="name"
-          required
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          placeholder="e.g., Mortgage, Car Loan, Credit Card"
-        />
+        <Input id="name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
       </div>
 
       <div className="space-y-2">
@@ -84,7 +62,7 @@ export default function LiabilityForm({ onSuccess, onCancel }: LiabilityFormProp
           required
           value={formData.type}
           onChange={(e) => setFormData({ ...formData, type: e.target.value as LiabilityType })}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
         >
           <option value="mortgage">Mortgage</option>
           <option value="auto_loan">Auto Loan</option>
@@ -96,57 +74,14 @@ export default function LiabilityForm({ onSuccess, onCancel }: LiabilityFormProp
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="originalAmount">Original Amount *</Label>
-        <div className="relative">
-          <span className="absolute left-3 top-2 text-muted-foreground">£</span>
-          <Input
-            type="number"
-            id="originalAmount"
-            step="0.01"
-            required
-            value={formData.originalAmount}
-            onChange={(e) => setFormData({ ...formData, originalAmount: e.target.value })}
-            className="pl-8"
-            placeholder="0.00"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">
-          The total amount initially borrowed
-        </p>
-      </div>
-
-      <div className="space-y-2">
         <Label htmlFor="currentBalance">Current Balance *</Label>
-        <div className="relative">
-          <span className="absolute left-3 top-2 text-muted-foreground">£</span>
-          <Input
-            type="number"
-            id="currentBalance"
-            step="0.01"
-            required
-            value={formData.currentBalance}
-            onChange={(e) => setFormData({ ...formData, currentBalance: e.target.value })}
-            className="pl-8"
-            placeholder="0.00"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">
-          The remaining amount owed
-        </p>
+        <Input type="number" id="currentBalance" step="0.01" required value={formData.currentBalance} onChange={(e) => setFormData({ ...formData, currentBalance: e.target.value })} />
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="interestRate">Interest Rate (%) *</Label>
-          <Input
-            type="number"
-            id="interestRate"
-            step="0.01"
-            required
-            value={formData.interestRate}
-            onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })}
-            placeholder="0.00"
-          />
+          <Input type="number" id="interestRate" step="0.01" required value={formData.interestRate} onChange={(e) => setFormData({ ...formData, interestRate: e.target.value })} />
         </div>
 
         <div className="space-y-2">
@@ -156,7 +91,7 @@ export default function LiabilityForm({ onSuccess, onCancel }: LiabilityFormProp
             required
             value={formData.interestType}
             onChange={(e) => setFormData({ ...formData, interestType: e.target.value as InterestType })}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
           >
             <option value="fixed">Fixed</option>
             <option value="variable">Variable</option>
@@ -166,94 +101,23 @@ export default function LiabilityForm({ onSuccess, onCancel }: LiabilityFormProp
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="minimumPayment">Minimum Payment *</Label>
-          <div className="relative">
-            <span className="absolute left-3 top-2 text-muted-foreground">£</span>
-            <Input
-              type="number"
-              id="minimumPayment"
-              step="0.01"
-              required
-              value={formData.minimumPayment}
-              onChange={(e) => setFormData({ ...formData, minimumPayment: e.target.value })}
-              className="pl-8"
-              placeholder="0.00"
-            />
-          </div>
+          <Label htmlFor="openDate">Open Date *</Label>
+          <Input type="date" id="openDate" required value={formData.openDate} onChange={(e) => setFormData({ ...formData, openDate: e.target.value })} />
         </div>
-
         <div className="space-y-2">
-          <Label htmlFor="paymentFrequency">Payment Frequency *</Label>
-          <select
-            id="paymentFrequency"
-            required
-            value={formData.paymentFrequency}
-            onChange={(e) => setFormData({ ...formData, paymentFrequency: e.target.value as PaymentFrequency })}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          >
-            <option value="monthly">Monthly</option>
-            <option value="biweekly">Biweekly</option>
-            <option value="weekly">Weekly</option>
-          </select>
+          <Label htmlFor="termEndDate">Term End Date *</Label>
+          <Input type="date" id="termEndDate" required value={formData.termEndDate} onChange={(e) => setFormData({ ...formData, termEndDate: e.target.value })} />
         </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="payoffDate">Target Payoff Date (Optional)</Label>
-        <Input
-          type="date"
-          id="payoffDate"
-          value={formData.payoffDate}
-          onChange={(e) => setFormData({ ...formData, payoffDate: e.target.value })}
-        />
       </div>
 
       <div className="space-y-2">
         <Label htmlFor="lender">Lender (Optional)</Label>
-        <Input
-          type="text"
-          id="lender"
-          value={formData.lender}
-          onChange={(e) => setFormData({ ...formData, lender: e.target.value })}
-          placeholder="e.g., Bank of England, Nationwide"
-        />
+        <Input id="lender" value={formData.lender} onChange={(e) => setFormData({ ...formData, lender: e.target.value })} />
       </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="accountId">Linked Account (Optional)</Label>
-        <select
-          id="accountId"
-          value={formData.accountId}
-          onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <option value="">None</option>
-          {accounts.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </select>
-        <p className="text-xs text-muted-foreground">
-          Link payments from this account
-        </p>
-      </div>
-
-      {createMutation.error && (
-        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
-          {(createMutation.error as Error).message}
-        </div>
-      )}
 
       <div className="flex justify-end space-x-3 pt-4">
-        {onCancel && (
-          <Button type="button" onClick={onCancel} variant="secondary">
-            Cancel
-          </Button>
-        )}
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending ? 'Creating...' : 'Create Liability'}
-        </Button>
+        {onCancel && <Button type="button" onClick={onCancel} variant="secondary">Cancel</Button>}
+        <Button type="submit" disabled={createMutation.isPending}>{createMutation.isPending ? 'Creating...' : 'Create Liability'}</Button>
       </div>
     </form>
   );

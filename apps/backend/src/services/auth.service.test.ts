@@ -15,6 +15,8 @@ mock.module("../utils/password", () => ({
 mock.module("../utils/jwt", () => ({
   generateAccessToken: mock(() => "mock-access-token"),
   generateRefreshToken: mock(() => "mock-refresh-token"),
+  hashToken: mock(() => "mock-refresh-token-hash"),
+  generateTokenFamily: mock(() => "mock-family-id"),
   verifyRefreshToken: mock(() => {}),
 }));
 
@@ -32,6 +34,9 @@ beforeEach(() => {
   (hashPassword as any).mockResolvedValue("$2b$10$mockedHashValue");
   (generateAccessToken as any).mockReturnValue("mock-access-token");
   (generateRefreshToken as any).mockReturnValue("mock-refresh-token");
+  prismaMock.refreshToken.create.mockResolvedValue({ id: "rt-1" } as any);
+  prismaMock.refreshToken.update.mockResolvedValue({ id: "rt-1", isRevoked: true } as any);
+  prismaMock.refreshToken.updateMany.mockResolvedValue({ count: 1 } as any);
 });
 
 describe("authService.register", () => {
@@ -164,6 +169,13 @@ describe("authService.refreshAccessToken", () => {
   it("returns new access token for valid refresh token", async () => {
     const user = buildUser();
     (verifyRefreshToken as any).mockReturnValue({ userId: user.id });
+    prismaMock.refreshToken.findUnique.mockResolvedValue({
+      id: "rt-1",
+      userId: user.id,
+      familyId: "mock-family-id",
+      isRevoked: false,
+      expiresAt: new Date(Date.now() + 60_000),
+    });
     prismaMock.user.findUnique.mockResolvedValue(user);
 
     const result = await authService.refreshAccessToken("valid-refresh-token");

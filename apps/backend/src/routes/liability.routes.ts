@@ -4,7 +4,6 @@ import { authMiddleware } from '../middleware/auth.middleware';
 import {
   createLiabilitySchema,
   updateLiabilitySchema,
-  allocatePaymentSchema,
 } from '@finplan/shared';
 
 export async function liabilityRoutes(fastify: FastifyInstance) {
@@ -13,9 +12,9 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     const userId = request.user!.userId;
     const { enhanced } = request.query as { enhanced?: string };
 
-    // If enhanced=true, return with payment history
+    // If enhanced=true, return with forecast data
     if (enhanced === 'true') {
-      const liabilities = await liabilityService.getUserLiabilitiesWithPayments(userId);
+      const liabilities = await liabilityService.getUserLiabilitiesWithForecast(userId);
       return reply.send({ liabilities });
     }
 
@@ -33,38 +32,13 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     return reply.send({ liability });
   });
 
-  // Get payment history for a liability
-  fastify.get('/liabilities/:id/payments', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
-    const { id } = request.params as { id: string };
-
-    // Get enhanced data which includes payments
-    const liabilities = await liabilityService.getUserLiabilitiesWithPayments(userId);
-    const liability = liabilities.find(l => l.id === id);
-
-    if (!liability) {
-      return reply.status(404).send({ error: 'Liability not found' });
-    }
-
-    return reply.send({ payments: liability.payments });
-  });
-
-  // Get payoff projection for a liability
+  // Get projection for a liability
   fastify.get('/liabilities/:id/projection', { preHandler: [authMiddleware] }, async (request, reply) => {
     const userId = request.user!.userId;
     const { id } = request.params as { id: string };
 
-    const projection = await liabilityService.calculatePayoffProjection(id, userId);
+    const projection = await liabilityService.calculateLiabilityProjection(id, userId);
     return reply.send({ projection });
-  });
-
-  // Get unallocated expense transactions
-  fastify.get('/liabilities/:id/unallocated', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
-    const { id } = request.params as { id: string };
-
-    const transactions = await liabilityService.getUnallocatedPayments(userId, id);
-    return reply.send({ transactions });
   });
 
   // Create new liability
@@ -86,31 +60,6 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     return reply.send({ liability });
   });
 
-  // Allocate transaction to liability payment
-  fastify.post('/liabilities/:id/allocate', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
-    const { id } = request.params as { id: string };
-    const validatedData = allocatePaymentSchema.parse(request.body);
-
-    const payment = await liabilityService.allocateTransactionToLiability(
-      validatedData.transactionId,
-      id,
-      userId,
-      validatedData.principalAmount,
-      validatedData.interestAmount
-    );
-
-    return reply.status(201).send({ payment });
-  });
-
-  // Remove payment allocation
-  fastify.delete('/liabilities/payments/:paymentId', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
-    const { paymentId } = request.params as { paymentId: string };
-
-    const result = await liabilityService.removePaymentAllocation(paymentId, userId);
-    return reply.send(result);
-  });
 
   // Delete liability
   fastify.delete('/liabilities/:id', { preHandler: [authMiddleware] }, async (request, reply) => {

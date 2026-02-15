@@ -3,6 +3,15 @@ import { AssetType, LiquidityType, ValueSource } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { subDays } from 'date-fns';
 
+const ASSET_LIQUIDITY_BY_TYPE: Record<AssetType, LiquidityType> = {
+  housing: 'illiquid',
+  investment: 'liquid',
+  vehicle: 'illiquid',
+  business: 'illiquid',
+  personal_property: 'illiquid',
+  crypto: 'liquid',
+};
+
 export interface CreateAssetInput {
   name: string;
   type: AssetType;
@@ -10,8 +19,6 @@ export interface CreateAssetInput {
   purchaseValue?: number;
   purchaseDate?: string | Date;
   expectedGrowthRate?: number;
-  liquidityType: LiquidityType;
-  accountId?: string;
   metadata?: {
     location?: string;
     ticker?: string;
@@ -26,7 +33,6 @@ export interface UpdateAssetInput {
   purchaseValue?: number;
   purchaseDate?: string | Date;
   expectedGrowthRate?: number;
-  liquidityType?: LiquidityType;
   metadata?: Record<string, any>;
 }
 
@@ -37,6 +43,73 @@ export interface UpdateAssetValueInput {
 }
 
 export const assetService = {
+  /**
+   * Detect Prisma enum deserialization errors caused by legacy/stale enum values
+   * (e.g. `real_estate` after rename to `housing`).
+   */
+  isLegacyAssetTypeEnumError(error: unknown): boolean {
+    if (!(error instanceof Error)) return false;
+    const message = error.message || '';
+    return (
+      message.includes("Value 'real_estate' not found in enum") ||
+      message.includes('Value \"real_estate\" not found in enum') ||
+      (message.includes('not found in enum') && message.includes('AssetType'))
+    );
+  },
+
+  /**
+   * Fallback query for assets when Prisma enum decoding fails.
+   * Reads enum as text and normalizes legacy values for API consumers.
+   */
+  async getUserAssetsRawWithLegacyTypeSupport(userId: string) {
+    const rows = await prisma.$queryRaw<Array<{
+      id: string;
+      user_id: string;
+      name: string;
+      type: string;
+      current_value: number | string;
+      purchase_value: number | string | null;
+      purchase_date: Date | null;
+      expected_growth_rate: number | string;
+      liquidity_type: string;
+      metadata: unknown;
+      created_at: Date;
+      updated_at: Date;
+    }>>`
+      SELECT
+        id,
+        user_id,
+        name,
+        type::text AS type,
+        current_value,
+        purchase_value,
+        purchase_date,
+        expected_growth_rate,
+        liquidity_type::text AS liquidity_type,
+        metadata,
+        created_at,
+        updated_at
+      FROM assets
+      WHERE user_id = ${userId}
+      ORDER BY created_at DESC
+    `;
+
+    return rows.map((row) => ({
+      id: row.id,
+      userId: row.user_id,
+      name: row.name,
+      type: row.type === 'real_estate' ? 'housing' : row.type,
+      currentValue: Number(row.current_value),
+      purchaseValue: row.purchase_value === null ? null : Number(row.purchase_value),
+      purchaseDate: row.purchase_date,
+      expectedGrowthRate: Number(row.expected_growth_rate),
+      liquidityType: row.liquidity_type,
+      metadata: (row.metadata as Record<string, any>) || {},
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    }));
+  },
+
   /**
    * Create a new asset with initial value history entry
    */
@@ -50,16 +123,6 @@ export const assetService = {
       throw new ValidationError('Current value must be non-negative');
     }
 
-    // If accountId provided, verify it exists and belongs to user
-    if (data.accountId) {
-      const account = await prisma.account.findFirst({
-        where: { id: data.accountId, userId },
-      });
-      if (!account) {
-        throw new NotFoundError('Account not found');
-      }
-    }
-
     // Use transaction to create asset and initial history entry atomically
     const result = await prisma.$transaction(async (tx) => {
       const asset = await tx.asset.create({
@@ -71,8 +134,7 @@ export const assetService = {
           purchaseValue: data.purchaseValue,
           purchaseDate: data.purchaseDate ? new Date(data.purchaseDate) : null,
           expectedGrowthRate: data.expectedGrowthRate ?? 0,
-          liquidityType: data.liquidityType,
-          accountId: data.accountId,
+          liquidityType: ASSET_LIQUIDITY_BY_TYPE[data.type],
           metadata: data.metadata || {},
         },
       });
@@ -126,10 +188,21 @@ export const assetService = {
    * - Calculated gains
    */
   async getUserAssetsWithHistory(userId: string, daysBack: number = 90) {
-    const assets = await prisma.asset.findMany({
-      where: { userId },
-      orderBy: [{ createdAt: 'desc' }],
-    });
+    let assets = await prisma.asset
+      .findMany({
+        where: { userId },
+        orderBy: [{ createdAt: 'desc' }],
+      })
+      .catch(async (error) => {
+        if (!this.isLegacyAssetTypeEnumError(error)) {
+          throw error;
+        }
+
+        console.warn(
+          '[assetService] Falling back to raw asset query due to legacy AssetType enum values. Consider running migrations to normalize enum values.'
+        );
+        return this.getUserAssetsRawWithLegacyTypeSupport(userId);
+      });
 
     if (assets.length === 0) {
       return [];
@@ -215,7 +288,7 @@ export const assetService = {
       updateData.purchaseDate = data.purchaseDate ? new Date(data.purchaseDate) : null;
     }
     if (data.expectedGrowthRate !== undefined) updateData.expectedGrowthRate = data.expectedGrowthRate;
-    if (data.liquidityType !== undefined) updateData.liquidityType = data.liquidityType;
+    if (data.type !== undefined) updateData.liquidityType = ASSET_LIQUIDITY_BY_TYPE[data.type];
 
     // Merge metadata if provided
     if (data.metadata !== undefined) {

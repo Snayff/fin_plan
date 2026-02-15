@@ -4,7 +4,7 @@ import { z } from 'zod';
  * Asset type enum
  */
 export const AssetTypeEnum = z.enum([
-  'real_estate',
+  'housing',
   'investment',
   'vehicle',
   'business',
@@ -44,12 +44,6 @@ export const createAssetSchema = z.object({
     .min(-100, 'Growth rate cannot be less than -100%')
     .max(1000, 'Growth rate cannot exceed 1000%')
     .default(0),
-  liquidityType: LiquidityTypeEnum,
-  accountId: z
-    .string()
-    .uuid('Invalid account ID')
-    .optional()
-    .transform((val) => (val === '' ? undefined : val)),
   metadata: z
     .object({
       location: z.string().optional(),
@@ -77,7 +71,6 @@ export const updateAssetSchema = z.object({
     .min(-100, 'Growth rate cannot be less than -100%')
     .max(1000, 'Growth rate cannot exceed 1000%')
     .optional(),
-  liquidityType: LiquidityTypeEnum.optional(),
   metadata: z.record(z.any()).optional(),
 });
 

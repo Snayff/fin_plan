@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { assetService } from '../services/asset.service';
 import { showSuccess, showError } from '../lib/toast';
+import { formatCurrency } from '../lib/utils';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AssetForm from '../components/assets/AssetForm';
@@ -80,12 +81,6 @@ export default function AssetsPage() {
     );
   }
 
-  const formatCurrency = (value: number) =>
-    `£${value.toLocaleString('en-GB', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    })}`;
-
   const getLiquidityBadgeColor = (liquidityType: string) => {
     switch (liquidityType) {
       case 'liquid':
@@ -108,15 +103,18 @@ export default function AssetsPage() {
         </Button>
       </div>
 
-      <FilterBar
-        config={assetFilterConfig}
-        filters={filters}
-        onFilterChange={setFilter}
-        onClearAll={clearFilters}
-        activeFilterCount={activeFilterCount}
-        totalCount={totalCount}
-        filteredCount={filteredCount}
-      />
+      {/* Only show filter bar if there are assets */}
+      {assets.length > 0 && (
+        <FilterBar
+          config={assetFilterConfig}
+          filters={filters}
+          onFilterChange={setFilter}
+          onClearAll={clearFilters}
+          activeFilterCount={activeFilterCount}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+        />
+      )}
 
       {/* Summary Cards */}
       {filteredAssets.length > 0 && (

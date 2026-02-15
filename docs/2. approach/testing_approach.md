@@ -1,188 +1,165 @@
-# Testing Strategy
+# Testing Approach (Current State)
 
-## Overview
+Last updated: 2026-02-14
 
-The test suite is structured in four layers that map to the application's architecture. Tests are co-located with source files (`*.test.ts` next to the module they test) and use factory fixtures for data isolation. The entire suite runs without any external services — no database, no Redis, no network.
+This document reflects the **current implemented testing strategy** in the repository.
 
-**Current state:** 377 tests across 24 test files, all passing.
+## 1) Test Runner and Tooling
 
-| Package | Files | Tests | What's covered |
-|---------|-------|-------|----------------|
-| Backend | 16 | 240 | Utils, services, middleware, routes |
-| Shared | 5 | 107 | Zod validation schemas |
-| Frontend | 3 | 30 | Zustand store, auth pages |
+The codebase uses **Bun test** as the active test runner across packages.
 
-## Test Layers
+- Backend: `apps/backend` uses Bun tests with a custom isolated runner
+- Frontend: `apps/frontend` uses Bun tests + happy-dom + Testing Library
+- Shared package: `packages/shared` uses Bun tests for schema validation
 
-### Layer 1: Pure Unit Tests
+Root execution is orchestrated through Turborepo:
 
-**Backend utilities** (`apps/backend/src/utils/*.test.ts`)
+- `bun run test` (root) → `turbo run test`
 
-Tests for functions with no dependencies on Prisma, Fastify, or external services. These are the fastest tests and catch regressions in core business logic.
+---
 
-- `liability.utils.test.ts` — 45 tests covering amortization schedules, interest calculations, payoff projections, minimum payment validation, and boundary values (zero balances, 0% interest, single-payment payoff)
-- `jwt.test.ts` — 14 tests for token generation, verification, expiry, and decode
-- `password.test.ts` — 5 tests for bcrypt hashing and verification
-- `balance.utils.test.ts` — 5 tests for the `endOfDay` date utility
-- `errors.test.ts` — 20 tests for all custom error classes (status codes, error codes, inheritance)
+## 2) Test Layers Used Today
 
-**Shared schemas** (`packages/shared/src/schemas/*.test.ts`)
+## Layer A — Utility / Pure Unit Tests
 
-Tests for Zod schemas that are shared between frontend and backend. These validate that schemas accept valid input, reject invalid input, apply defaults, and run refinements/transforms correctly.
+Files in `apps/backend/src/utils/*.test.ts` cover pure logic and helper functions:
 
-- `liability.schemas.test.ts` — 30 tests (create, update, allocate payment schemas)
-- `asset.schemas.test.ts` — 26 tests (create, update, update value schemas)
-- `transaction.schemas.test.ts` — 21 tests (create, update with UUID and enum validation)
-- `category.schemas.test.ts` — 16 tests (color hex validation, defaults)
-- `account.schemas.test.ts` — 14 tests (type enum, openingBalance default, currency default)
+- JWT helper behavior
+- password hashing helpers
+- error class behavior
+- liability math/projection utilities
+- date helpers
 
-### Layer 2: Service Tests
+These tests are the fastest and are intended to catch core logic regressions quickly.
 
-**Backend services** (`apps/backend/src/services/*.test.ts`)
+## Layer B — Shared Schema Contract Tests
 
-Each service test file mocks Prisma (via `src/test/mocks/prisma.ts`) and any utility dependencies, then verifies the service's business logic — data flow, error handling, transaction boundaries.
+Files in `packages/shared/src/schemas/*.test.ts` validate Zod schemas that are consumed by both frontend and backend.
 
-- `auth.service.test.ts` — 16 tests: registration (hashing, token generation, email normalisation, conflict detection), login (credential validation), token refresh
-- `account.service.test.ts` — 16 tests: CRUD, `$transaction` for opening balance, soft vs hard delete, account summary aggregation
-- `liability.service.test.ts` — 18 tests: creation with payment validation, transaction allocation (expense-only check, amount tolerance of +/-0.01), payment removal with balance restoration, weighted average interest in summaries
-- `asset.service.test.ts` — 14 tests: creation with initial value history entry, value updates, summary with gain calculations (handles null purchaseValue)
-- `transaction.service.test.ts` — 14 tests: dynamic filter building, pagination, account ownership verification, category validation
-- `dashboard.service.test.ts` — 7 tests: net worth (accounts + assets - liabilities), savings rate, trend data
+Coverage pattern:
 
-**Middleware** (`apps/backend/src/middleware/auth.middleware.test.ts`)
+- valid payload acceptance
+- invalid payload rejection
+- enum constraints
+- defaults/transforms/coercion behavior
 
-- 6 tests: valid token attaches user to request, missing header, invalid format, expired/invalid tokens
+This is a key anti-regression layer for API contract consistency.
 
-### Layer 3: Frontend Tests
+## Layer C — Backend Service Tests
 
-**Stores** (`apps/frontend/src/stores/authStore.test.ts`)
+Files in `apps/backend/src/services/*.test.ts` verify business rules with **mocked Prisma**.
 
-- 17 tests for the Zustand auth store: initial state, login (loading states, success, error propagation), logout (state clearing, API call, graceful failure handling), token updates
+Current pattern:
 
-**Pages** (`apps/frontend/src/pages/auth/*.test.tsx`)
+- `mock.module("../config/database", () => ({ prisma: prismaMock }))`
+- optional mocks for utility dependencies
+- `resetPrismaMocks()` in `beforeEach`
+- success path + validation + not-found/error paths
+- transaction boundary checks (`$transaction` behavior)
 
-- `LoginPage.test.tsx` — 6 tests: renders fields, form submission calls store, loading state, error display
-- `RegisterPage.test.tsx` — 7 tests: renders all fields, client-side password validation (mismatch, too short), successful registration, API error display
+## Layer D — Backend Route Tests
 
-### Layer 4: Route Integration Tests
+Files in `apps/backend/src/routes/*.test.ts` are lightweight integration-style HTTP tests via Fastify `inject()`.
 
-**Routes** (`apps/backend/src/routes/*.test.ts`)
+These tests typically mock:
 
-These tests use Fastify's `inject()` method to make HTTP requests against a lightweight test app. The service layer is fully mocked — these tests verify HTTP concerns: status codes, request validation (real Zod schemas from `@finplan/shared`), auth enforcement, response shapes, and cookie handling.
+- service module
+- auth middleware behavior
 
-- `auth.routes.test.ts` — 19 tests: register (201, validation, cookie setting), login (200, validation, credential errors), /me (auth enforcement, 404), refresh (body and cookie token sources, missing token), logout (cookie clearing, auth enforcement)
-- `account.routes.test.ts` — 10 tests: CRUD with schema defaults verification, auth enforcement, validation errors for invalid type/missing name
-- `liability.routes.test.ts` — 15 tests: CRUD, payment allocation with UUID validation, payoff projection, summary, auth enforcement, negative balance/rate bounds validation
-- `asset.routes.test.ts` — 16 tests: CRUD, value update with source/date passthrough, history with daysBack query parameter (default 90), summary, auth enforcement, validation for negative values/invalid types
+And verify:
 
-## Test Infrastructure
+- status codes
+- auth enforcement
+- request validation behavior (via real route schemas)
+- response shape and cookie behavior where applicable
 
-### Configuration
+## Layer E — Frontend State/UI Tests
 
-Each package has its own `vitest.config.ts`:
+Current frontend tests are focused and intentional:
 
-- **Backend** (`apps/backend/vitest.config.ts`): Node environment, path aliases for `@/` and `@finplan/shared`, setup file for env vars, v8 coverage provider
-- **Shared** (`packages/shared/vitest.config.ts`): Minimal config with `globals: true`
-- **Frontend** (`apps/frontend/vitest.config.ts`): jsdom environment, path aliases, setup file for DOM mocks
+- Zustand auth store behavior
+- auth page rendering + interactions
 
-### Setup Files
+Helpers:
 
-**Backend** (`apps/backend/src/test/setup.ts`): Sets `process.env` variables before any module loads. This is critical because `config/env.ts` validates environment variables at import time using Zod — if env vars aren't set before the config module is imported, validation fails.
+- `renderWithProviders()` for QueryClient + router wrappers
+- `src/test/setup.ts` with happy-dom registration and global mocks
 
-**Frontend** (`apps/frontend/src/test/setup.ts`): Imports `@testing-library/jest-dom` matchers, stubs `fetch`, sets `VITE_API_URL`, and mocks `window.location`.
+---
 
-### Prisma Mock (`apps/backend/src/test/mocks/prisma.ts`)
+## 3) Backend Test Infrastructure
 
-A deep mock of PrismaClient where every model has mocked `findUnique`, `findMany`, `create`, `update`, `delete`, `aggregate`, and `count` methods. The `$transaction` mock passes itself as the `tx` argument to callbacks, so `tx.model.method()` resolves to the same mocks as `prisma.model.method()`. A `resetPrismaMocks()` function clears all mocks between tests.
+### Isolated test execution
 
-### Factory Fixtures (`apps/backend/src/test/fixtures/index.ts`)
+`apps/backend/scripts/run-tests.ts` executes each backend test file in a separate Bun process.
 
-Builder functions that produce test data with sensible defaults and auto-incrementing IDs: `buildUser()`, `buildAccount()`, `buildTransaction()`, `buildAsset()`, `buildLiability()`, `buildLiabilityPayment()`, `buildAssetValueHistory()`, `buildCategory()`. Each accepts an overrides object for customisation.
+Reason: Bun `mock.module()` patches global module cache; per-file process isolation prevents cross-file mock leakage.
 
-### Fastify Test Helper (`apps/backend/src/test/helpers/fastify.ts`)
+### Shared Prisma mock
 
-`buildTestApp()` creates a lightweight Fastify instance with only the cookie plugin registered. Rate limiting, CSRF protection, and helmet are skipped so tests run fast and deterministically. Route tests register the error handler and specific route plugins on this app, then use `app.inject()` for requests.
+`apps/backend/src/test/mocks/prisma.ts` provides deep model mocks + `$transaction` callback support.
 
-### Frontend Test Helpers
+### Fixture builders
 
-- `renderWithProviders()` (`apps/frontend/src/test/helpers/render.tsx`): Wraps components in `QueryClientProvider` + `MemoryRouter`
-- `setAuthenticated()` / `setUnauthenticated()` (`apps/frontend/src/test/helpers/auth.ts`): Directly set Zustand store state for testing authenticated/unauthenticated scenarios
+`apps/backend/src/test/fixtures/index.ts` provides reusable data factories (user/account/transaction/asset/liability/category/etc.).
 
-## Running Tests
+### Fastify helper
+
+`apps/backend/src/test/helpers/fastify.ts` builds a minimal Fastify app for route tests (cookie plugin only, no heavy production plugins).
+
+---
+
+## 4) Commands (Current)
 
 ```bash
-# Run all tests across the monorepo
-npx turbo test
+# All packages
+bun run test
 
-# Run tests for a specific package
-cd apps/backend && npx vitest run
-cd apps/frontend && npx vitest run
-cd packages/shared && npx vitest run
+# Backend (isolated file runner)
+cd apps/backend && bun run test
 
-# Watch mode (re-runs on file changes)
-cd apps/backend && npx vitest
+# Backend single file
+cd apps/backend && bun run test:file src/services/goal.service.test.ts
 
-# Run a specific test file
-cd apps/backend && npx vitest run src/services/auth.service.test.ts
+# Shared package
+cd packages/shared && bun test
 
-# Run with coverage
-cd apps/backend && npx vitest run --coverage
+# Frontend package
+cd apps/frontend && bun test --preload ./src/test/setup.ts
 ```
 
-## Writing New Tests
+---
 
-### Adding a backend service test
+## 5) Conventions for Adding New Tests
 
-1. Create `src/services/<name>.service.test.ts` next to the service file
-2. Mock Prisma: `vi.mock("../config/database", () => ({ prisma: prismaMock }));`
-3. Import and use `prismaMock` from `../test/mocks/prisma`
-4. Import fixtures from `../test/fixtures` and use `buildXxx()` to create test data
-5. Call `resetPrismaMocks()` in `beforeEach`
-6. Mock any utility dependencies with `vi.mock()`
-7. Test success paths, error paths, and edge cases
+### Backend service test
 
-### Adding a route integration test
+1. Create `*.service.test.ts` beside the service
+2. Mock Prisma via `mock.module`
+3. Reset mocks in `beforeEach`
+4. Cover success + validation + ownership/not-found + edge cases
+5. Assert transaction behavior for multi-step writes
 
-1. Create `src/routes/<name>.routes.test.ts` next to the route file
-2. Mock the service module (return mock functions for each method)
-3. Mock `../middleware/auth.middleware` with a `vi.fn()` that checks for Bearer tokens
-4. In `beforeAll`: build test app, register error handler, register routes with prefix, call `app.ready()`
-5. Test: valid requests (correct status + response shape), validation failures (400), auth enforcement (401), service error propagation
+### Backend route test
 
-### Adding a frontend component test
+1. Create `*.routes.test.ts` beside the route
+2. Mock service and auth middleware
+3. Use `buildTestApp()` + `app.inject()`
+4. Assert auth, validation errors, response status/body
 
-1. Create `<Component>.test.tsx` next to the component
-2. Use `renderWithProviders()` from `src/test/helpers/render`
-3. Use `@testing-library/user-event` for interactions (type, click)
-4. Mock `fetch` or Zustand store methods as needed
-5. Assert on visible text, form behaviour, and navigation
+### Shared schema test
 
-### Adding a shared schema test
+1. Create `*.schemas.test.ts` beside schema file
+2. Use `safeParse` for validation assertions
+3. Cover required/optional/enum/bounds/transforms
 
-1. Create `src/schemas/<name>.schemas.test.ts` next to the schema file
-2. Test with `schema.parse()` for valid input and `schema.safeParse()` for invalid input
-3. Cover: required fields, optional fields, defaults, type coercion, refinements, transforms, boundary values
+---
 
-## Regression Detection
+## 6) Current Gaps / Next Priorities
 
-The test suite catches regressions through several mechanisms:
+1. Expand frontend coverage beyond auth/store into feature pages and components.
+2. Add real DB integration tests (e.g., Testcontainers/Postgres) for Prisma query correctness.
+3. Add E2E tests for critical journeys (registration → account → transaction → dashboard).
+4. Add CI quality gates for test, lint, and type-check on PR.
 
-- **Financial calculation boundary tests**: Zero balances, 0% interest rates, single-payment payoffs, and edge cases in amortization ensure calculation changes are immediately caught
-- **Schema validation tests**: Any change to Zod schemas (field additions, type changes, removed defaults) breaks the corresponding test
-- **Service contract tests**: Mock return values define the expected interface between services and their dependencies — refactoring a service that changes its Prisma queries or error handling will fail these tests
-- **Route integration tests with real schemas**: Request bodies are validated by the actual Zod schemas from `@finplan/shared`, so schema changes that break API contracts are caught even when the service layer is mocked
-- **Auth enforcement tests**: Every protected route has a "returns 401 without auth" test, so accidentally removing `authMiddleware` from a route is caught
-
-## Future Roadmap
-
-These areas are not yet implemented but are natural next steps:
-
-**More frontend coverage**: Dashboard components, account/liability/asset CRUD pages, protected route guards, React Query cache behaviour.
-
-**E2E tests (Playwright)**: Critical user journeys — registration through first transaction, liability creation through payment allocation, dashboard data accuracy. These would run against a real backend with a test database.
-
-**CI pipeline (GitHub Actions)**: Run linting, type checking, and the full test suite on every pull request. Run E2E tests on merges to main.
-
-**Database integration tests (Testcontainers)**: Spin up a real PostgreSQL instance to test Prisma queries, migrations, and transaction isolation without mocks.
-
-**Performance testing**: Load testing with k6 for API endpoints handling large datasets (10,000+ transactions, complex aggregations).
+This layered approach already provides good protection for business rules and API contracts, while leaving room for stronger end-to-end confidence.

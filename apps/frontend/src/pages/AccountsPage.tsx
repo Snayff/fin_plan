@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountService } from '../services/account.service';
 import { showSuccess, showError } from '../lib/toast';
+import { formatCurrency } from '../lib/utils';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AccountForm from '../components/accounts/AccountForm';
@@ -88,15 +89,18 @@ export default function AccountsPage() {
         </Button>
       </div>
 
-      <FilterBar
-        config={accountFilterConfig}
-        filters={filters}
-        onFilterChange={setFilter}
-        onClearAll={clearFilters}
-        activeFilterCount={activeFilterCount}
-        totalCount={totalCount}
-        filteredCount={filteredCount}
-      />
+      {/* Only show filter bar if there are accounts */}
+      {accounts.length > 0 && (
+        <FilterBar
+          config={accountFilterConfig}
+          filters={filters}
+          onFilterChange={setFilter}
+          onClearAll={clearFilters}
+          activeFilterCount={activeFilterCount}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+        />
+      )}
 
       {/* Summary Cards */}
       {filteredAccounts.length > 0 && (
@@ -108,7 +112,7 @@ export default function AccountsPage() {
                 <p className="text-sm text-muted-foreground">Total Balance</p>
               </div>
               <p className="text-2xl font-bold text-success">
-                £{totalBalance.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(totalBalance)}
               </p>
             </CardContent>
           </Card>
@@ -130,7 +134,7 @@ export default function AccountsPage() {
                 <p className="text-sm text-muted-foreground">Net Monthly Flow</p>
               </div>
               <p className={`text-2xl font-bold ${netMonthlyFlow >= 0 ? 'text-success' : 'text-expense'}`}>
-                £{netMonthlyFlow.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(netMonthlyFlow)}
               </p>
             </CardContent>
           </Card>
@@ -171,10 +175,7 @@ export default function AccountsPage() {
                 <div className="mb-4">
                   <p className="text-sm text-muted-foreground mb-1">Current Balance</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {account.currency} {account.balance.toLocaleString('en-US', {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    })}
+                    {formatCurrency(account.balance, account.currency)}
                   </p>
                 </div>
 
@@ -191,10 +192,7 @@ export default function AccountsPage() {
                       <p className="text-xs text-muted-foreground">Incoming</p>
                     </div>
                     <p className="text-sm font-semibold text-success">
-                      {account.currency} {account.monthlyFlow.income.toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {formatCurrency(account.monthlyFlow.income, account.currency)}
                     </p>
                   </div>
                   <div className="bg-chart-2-subtle/20 border border-chart-2-subtle rounded-md p-3">
@@ -203,10 +201,7 @@ export default function AccountsPage() {
                       <p className="text-xs text-muted-foreground">Expenses</p>
                     </div>
                     <p className="text-sm font-semibold text-chart-2">
-                      {account.currency} {account.monthlyFlow.expense.toLocaleString('en-US', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
+                      {formatCurrency(account.monthlyFlow.expense, account.currency)}
                     </p>
                   </div>
                 </div>

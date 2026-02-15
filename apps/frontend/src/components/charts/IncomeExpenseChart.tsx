@@ -39,7 +39,7 @@ export default function IncomeExpenseChart({ data }: IncomeExpenseChartProps) {
         <YAxis
           stroke={CHART_COLORS.text}
           style={{ fontSize: '12px' }}
-          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          tickFormatter={(value) => `£${(value / 1000).toFixed(0)}k`}
         />
         <Tooltip
           contentStyle={{
@@ -50,7 +50,7 @@ export default function IncomeExpenseChart({ data }: IncomeExpenseChartProps) {
             color: 'hsl(230 29% 96%)',
           }}
           labelFormatter={(date) => format(new Date(date), 'MMMM yyyy')}
-          formatter={(value: number) => `$${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+          formatter={(value: number) => `£${value.toLocaleString('en-GB', { minimumFractionDigits: 2 })}`}
         />
         <Legend />
         <Bar dataKey="income" fill={CHART_COLORS.income} name="Income" radius={[4, 4, 0, 0]} />

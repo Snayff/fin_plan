@@ -15,10 +15,8 @@ import type {
   UpdateAssetValueInput as SharedUpdateAssetValueInput,
   LiabilityType as SharedLiabilityType,
   InterestType as SharedInterestType,
-  PaymentFrequency as SharedPaymentFrequency,
   CreateLiabilityInput as SharedCreateLiabilityInput,
   UpdateLiabilityInput as SharedUpdateLiabilityInput,
-  AllocatePaymentInput as SharedAllocatePaymentInput,
   GoalType as SharedGoalType,
   Priority as SharedPriority,
   GoalStatus as SharedGoalStatus,
@@ -44,10 +42,8 @@ export type UpdateAssetInput = SharedUpdateAssetInput;
 export type UpdateAssetValueInput = SharedUpdateAssetValueInput;
 export type LiabilityType = SharedLiabilityType;
 export type InterestType = SharedInterestType;
-export type PaymentFrequency = SharedPaymentFrequency;
 export type CreateLiabilityInput = SharedCreateLiabilityInput;
 export type UpdateLiabilityInput = SharedUpdateLiabilityInput;
-export type AllocatePaymentInput = SharedAllocatePaymentInput;
 export type GoalType = SharedGoalType;
 export type Priority = SharedPriority;
 export type GoalStatus = SharedGoalStatus;
@@ -103,6 +99,7 @@ export interface Transaction {
   id: string;
   userId: string;
   accountId: string;
+  liabilityId?: string | null;
   date: string;
   amount: number;
   type: TransactionType;
@@ -130,6 +127,11 @@ export interface Transaction {
     type: CategoryType;
     color: string;
   };
+  liability?: {
+    id: string;
+    name: string;
+    type: LiabilityType;
+  } | null;
   subcategory?: {
     id: string;
     name: string;
@@ -217,7 +219,6 @@ export interface Asset {
   purchaseDate: string | null;
   expectedGrowthRate: number;
   liquidityType: LiquidityType;
-  accountId: string | null;
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;
@@ -257,59 +258,56 @@ export interface Liability {
   name: string;
   type: LiabilityType;
   currentBalance: number;
-  originalAmount: number;
   interestRate: number;
   interestType: InterestType;
-  minimumPayment: number;
-  paymentFrequency: PaymentFrequency;
-  payoffDate: string | null;
-  accountId: string | null;
+  openDate: string;
+  termEndDate: string;
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface LiabilityPayment {
-  id: string;
-  liabilityId: string;
-  transactionId: string;
-  principalAmount: number;
-  interestAmount: number;
-  paymentDate: string;
-  createdAt: string;
-  transaction?: Transaction;
-}
-
 export interface EnhancedLiability extends Liability {
-  payments: LiabilityPayment[];
-  totalPaid: number;
-  totalInterestPaid: number;
-  projectedPayoffDate: string | null;
+  transactions: Array<{
+    id: string;
+    date: string;
+    amount: number;
+    name: string | null;
+  }>;
+  monthsRemaining: number;
+  projectedBalanceAtTermEnd: number;
+  projectedInterestAccrued: number;
+  projectedTransactionImpact: number;
+  projectionSchedule: ProjectionEntry[];
 }
 
-export interface AmortizationEntry {
-  month: number;
+export interface ProjectionEntry {
   date: string;
-  payment: number;
-  principal: number;
-  interest: number;
   balance: number;
+  accruedInterest: number;
+  paymentApplied: number;
+  interestPaid: number;
+  principalPaid: number;
 }
 
 export interface PayoffProjection {
+  liabilityId: string;
   currentBalance: number;
-  monthlyPayment: number;
   interestRate: number;
-  projectedPayoffDate: string | null;
-  totalInterestToPay: number;
-  schedule: AmortizationEntry[];
+  openDate: string;
+  termEndDate: string;
+  monthsRemaining: number;
+  projectedBalanceAtTermEnd: number;
+  projectedInterestAccrued: number;
+  projectedTransactionImpact: number;
+  totalInterestPaidByTransactions: number;
+  totalPrincipalPaidByTransactions: number;
+  schedule: ProjectionEntry[];
 }
 
 export interface LiabilitySummary {
   totalDebt: number;
-  totalLiabilities: number;
-  monthlyMinimumPayment: number;
-  weightedAverageInterestRate: number;
+  totalInterestRate: number;
   byType: Array<{
     type: LiabilityType;
     balance: number;
@@ -374,11 +372,9 @@ export interface Goal {
   priority: Priority;
   status: GoalStatus;
   icon: string | null;
-  linkedAccountId: string | null;
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;
-  linkedAccount?: Account;
 }
 
 export interface GoalContribution {

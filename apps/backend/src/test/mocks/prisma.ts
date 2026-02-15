@@ -7,6 +7,7 @@ function buildModelMock() {
     findMany: mock(() => {}),
     create: mock(() => {}),
     update: mock(() => {}),
+    updateMany: mock(() => {}),
     delete: mock(() => {}),
     deleteMany: mock(() => {}),
     count: mock(() => {}),
@@ -16,6 +17,8 @@ function buildModelMock() {
 }
 
 export const prismaMock = {
+  auditLog: buildModelMock(),
+  refreshToken: buildModelMock(),
   user: buildModelMock(),
   account: buildModelMock(),
   transaction: buildModelMock(),
@@ -23,7 +26,6 @@ export const prismaMock = {
   asset: buildModelMock(),
   assetValueHistory: buildModelMock(),
   liability: buildModelMock(),
-  liabilityPayment: buildModelMock(),
   budget: buildModelMock(),
   budgetItem: buildModelMock(),
   goal: buildModelMock(),
@@ -35,6 +37,7 @@ export const prismaMock = {
   monteCarloSimulation: buildModelMock(),
   // Interactive transaction support: passes self so tx.model.method() resolves to same mocks
   $transaction: mock((fn: (tx: any) => any) => fn(prismaMock)),
+  $queryRaw: mock(() => {}),
   $disconnect: mock(() => {}),
 };
 

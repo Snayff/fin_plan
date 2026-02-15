@@ -41,11 +41,6 @@ export const createGoalSchema = z.object({
     .transform((val) => (val ? (typeof val === 'string' ? val : val.toISOString()) : undefined)),
   priority: PriorityEnum.default('medium'),
   icon: z.string().max(50).optional(),
-  linkedAccountId: z
-    .string()
-    .uuid('Invalid account ID')
-    .optional()
-    .transform((val) => (val === '' ? undefined : val)),
   metadata: z
     .object({
       milestones: z
@@ -78,11 +73,6 @@ export const updateGoalSchema = z.object({
   priority: PriorityEnum.optional(),
   status: GoalStatusEnum.optional(),
   icon: z.string().max(50).optional(),
-  linkedAccountId: z
-    .string()
-    .uuid('Invalid account ID')
-    .optional()
-    .transform((val) => (val === '' ? undefined : val)),
   metadata: z.record(z.any()).optional(),
 });
 

@@ -6,10 +6,7 @@ import { createRequire } from 'module'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 const require = createRequire(import.meta.url)
-
-// Resolve plugin from workspace root for monorepo compatibility
-const workspaceRoot = path.resolve(__dirname, '../..')
-const tailwindAnimate = require(path.join(workspaceRoot, 'node_modules/tailwindcss-animate/index.js'))
+const tailwindAnimate = require('tailwindcss-animate')
 
 export default {
   darkMode: ["class"],

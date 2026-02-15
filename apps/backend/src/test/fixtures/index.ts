@@ -59,6 +59,7 @@ export function buildTransaction(overrides: Record<string, any> = {}) {
     id,
     userId: "user-1",
     accountId: "account-1",
+    liabilityId: null,
     categoryId: null,
     subcategoryId: null,
     date: new Date("2025-01-15T12:00:00Z"),
@@ -85,13 +86,12 @@ export function buildAsset(overrides: Record<string, any> = {}) {
     id,
     userId: "user-1",
     name: "Test Property",
-    type: "real_estate" as const,
+    type: "housing" as const,
     currentValue: 250000,
     purchaseValue: 200000,
     purchaseDate: new Date("2020-06-15T00:00:00Z"),
     expectedGrowthRate: 3.0,
     liquidityType: "illiquid" as const,
-    accountId: null,
     metadata: {},
     createdAt: new Date("2025-01-01T00:00:00Z"),
     updatedAt: new Date("2025-01-01T00:00:00Z"),
@@ -107,30 +107,13 @@ export function buildLiability(overrides: Record<string, any> = {}) {
     name: "Test Mortgage",
     type: "mortgage" as const,
     currentBalance: 200000,
-    originalAmount: 250000,
     interestRate: 3.5,
     interestType: "fixed" as const,
-    minimumPayment: 898,
-    paymentFrequency: "monthly" as const,
-    payoffDate: null,
-    accountId: null,
+    openDate: new Date("2020-01-01T00:00:00Z"),
+    termEndDate: new Date("2055-01-01T00:00:00Z"),
     metadata: {},
     createdAt: new Date("2025-01-01T00:00:00Z"),
     updatedAt: new Date("2025-01-01T00:00:00Z"),
-    ...overrides,
-  };
-}
-
-export function buildLiabilityPayment(overrides: Record<string, any> = {}) {
-  const id = nextId();
-  return {
-    id,
-    liabilityId: "liability-1",
-    transactionId: "transaction-1",
-    principalAmount: 500,
-    interestAmount: 398,
-    date: new Date("2025-02-01T00:00:00Z"),
-    createdAt: new Date("2025-02-01T00:00:00Z"),
     ...overrides,
   };
 }

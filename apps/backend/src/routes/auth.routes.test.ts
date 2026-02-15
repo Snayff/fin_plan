@@ -10,6 +10,9 @@ mock.module("../services/auth.service", () => {
     login: mock(() => {}),
     findUserById: mock(() => {}),
     refreshAccessToken: mock(() => {}),
+    revokeAllUserTokens: mock(() => Promise.resolve()),
+    getUserSessions: mock(() => Promise.resolve([])),
+    revokeSession: mock(() => Promise.resolve(true)),
   };
   return { ...fns, authService: fns };
 });

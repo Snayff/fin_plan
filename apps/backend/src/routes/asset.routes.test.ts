@@ -52,7 +52,7 @@ const authHeaders = { authorization: "Bearer valid-token" };
 const mockAsset = {
   id: "asset-1",
   name: "Investment Property",
-  type: "real_estate",
+  type: "housing",
   currentValue: 250000,
   purchaseValue: 200000,
   liquidityType: "illiquid",
@@ -144,9 +144,8 @@ describe("GET /api/assets/:id/history", () => {
 describe("POST /api/assets", () => {
   const validPayload = {
     name: "Investment Property",
-    type: "real_estate",
+    type: "housing",
     currentValue: 250000,
-    liquidityType: "illiquid",
   };
 
   it("returns 201 with valid input", async () => {

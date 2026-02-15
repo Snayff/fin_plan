@@ -1,10 +1,10 @@
 import { prisma } from '../config/database';
 import type { CategoryType } from '@prisma/client';
-import { pino } from 'pino';
 
-const logger = pino({
-  level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
-});
+const logger = {
+  info: console.log,
+  error: console.error,
+};
 
 /**
  * Seed default categories

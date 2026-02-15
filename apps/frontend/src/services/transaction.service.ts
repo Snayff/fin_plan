@@ -7,6 +7,25 @@ import type {
   TransactionSummary,
 } from '../types';
 
+function toAmountNumber(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function normalizeTransaction(transaction: Transaction): Transaction {
+  return {
+    ...transaction,
+    amount: toAmountNumber(transaction.amount),
+  };
+}
+
+function normalizeTransactionListResponse(response: TransactionListResponse): TransactionListResponse {
+  return {
+    ...response,
+    transactions: response.transactions.map(normalizeTransaction),
+  };
+}
+
 export const transactionService = {
   async getTransactions(filters?: TransactionFilters): Promise<TransactionListResponse> {
     const params = new URLSearchParams();
@@ -22,17 +41,20 @@ export const transactionService = {
       });
     }
     const query = params.toString();
-    return apiClient.get<TransactionListResponse>(
+    const response = await apiClient.get<TransactionListResponse>(
       `/api/transactions${query ? `?${query}` : ''}`
     );
+    return normalizeTransactionListResponse(response);
   },
 
   async getAllTransactions(): Promise<TransactionListResponse> {
-    return apiClient.get<TransactionListResponse>('/api/transactions?limit=10000');
+    const response = await apiClient.get<TransactionListResponse>('/api/transactions?limit=10000');
+    return normalizeTransactionListResponse(response);
   },
 
   async getTransaction(id: string): Promise<{ transaction: Transaction }> {
-    return apiClient.get<{ transaction: Transaction }>(`/api/transactions/${id}`);
+    const response = await apiClient.get<{ transaction: Transaction }>(`/api/transactions/${id}`);
+    return { transaction: normalizeTransaction(response.transaction) };
   },
 
   async getTransactionSummary(filters?: Partial<TransactionFilters>): Promise<TransactionSummary> {
@@ -51,14 +73,16 @@ export const transactionService = {
   },
 
   async createTransaction(data: CreateTransactionInput): Promise<{ transaction: Transaction }> {
-    return apiClient.post<{ transaction: Transaction }>('/api/transactions', data);
+    const response = await apiClient.post<{ transaction: Transaction }>('/api/transactions', data);
+    return { transaction: normalizeTransaction(response.transaction) };
   },
 
   async updateTransaction(
     id: string,
     data: Partial<CreateTransactionInput>
   ): Promise<{ transaction: Transaction }> {
-    return apiClient.put<{ transaction: Transaction }>(`/api/transactions/${id}`, data);
+    const response = await apiClient.put<{ transaction: Transaction }>(`/api/transactions/${id}`, data);
+    return { transaction: normalizeTransaction(response.transaction) };
   },
 
   async deleteTransaction(id: string): Promise<{ message: string }> {

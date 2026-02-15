@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent } from './card';
-import { cn } from '../../lib/utils';
 
 export interface AchievementProps {
   title: string;

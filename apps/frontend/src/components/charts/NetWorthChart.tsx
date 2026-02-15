@@ -1,5 +1,6 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { format } from 'date-fns';
+import { enGB } from 'date-fns/locale';
 
 // Use design tokens for chart colors
 const CHART_COLORS = {
@@ -30,14 +31,14 @@ export default function NetWorthChart({ data }: NetWorthChartProps) {
         <CartesianGrid strokeDasharray="3 3" stroke={CHART_COLORS.grid} />
         <XAxis
           dataKey="date"
-          tickFormatter={(date) => format(new Date(date), 'MMM d')}
+          tickFormatter={(date) => format(new Date(date), 'MMM yyyy', { locale: enGB })}
           stroke={CHART_COLORS.text}
           style={{ fontSize: '12px' }}
         />
         <YAxis
           stroke={CHART_COLORS.text}
           style={{ fontSize: '12px' }}
-          tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+          tickFormatter={(value) => `£${(value / 1000).toFixed(0)}k`}
         />
         <Tooltip
           contentStyle={{
@@ -47,8 +48,8 @@ export default function NetWorthChart({ data }: NetWorthChartProps) {
             fontSize: '12px',
             color: 'hsl(230 29% 96%)',
           }}
-          labelFormatter={(date) => format(new Date(date), 'MMM d, yyyy')}
-          formatter={(value: number) => [`$${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`, 'Net Worth']}
+          labelFormatter={(date) => format(new Date(date), 'MMMM yyyy', { locale: enGB })}
+          formatter={(value: number) => [`£${value.toLocaleString('en-GB', { minimumFractionDigits: 2 })}`, 'Net Worth']}
         />
         <Line
           type="monotone"

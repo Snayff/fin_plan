@@ -1,4 +1,4 @@
-import jwt, { type SignOptions } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
 import { createHash, randomUUID } from 'crypto';
 import { config } from '../config/env';
 

@@ -20,6 +20,7 @@ describe("createTransactionSchema", () => {
   it("accepts valid input with all optional fields", () => {
     const result = createTransactionSchema.safeParse({
       ...validTransactionInput,
+      liabilityId: validUUID,
       categoryId: validUUID,
       subcategoryId: validUUID,
       description: "Weekly groceries",
@@ -41,6 +42,11 @@ describe("createTransactionSchema", () => {
 
   it("rejects non-UUID accountId", () => {
     const result = createTransactionSchema.safeParse({ ...validTransactionInput, accountId: "not-uuid" });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects non-UUID liabilityId", () => {
+    const result = createTransactionSchema.safeParse({ ...validTransactionInput, liabilityId: "not-uuid" });
     expect(result.success).toBe(false);
   });
 

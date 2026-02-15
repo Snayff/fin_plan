@@ -85,7 +85,7 @@ async function start() {
 
     // WebSocket route for sync (placeholder for Phase 1)
     server.register(async (fastify) => {
-      fastify.get('/ws/sync', { websocket: true }, (socket, req) => {
+      fastify.get('/ws/sync', { websocket: true }, (socket, _req) => {
         socket.on('message', (message: Buffer) => {
           // Sync logic will be implemented here
           server.log.info(`Received WebSocket message: ${message.toString()}`);

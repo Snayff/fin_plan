@@ -8,11 +8,10 @@ const CHART_COLORS = {
 
 interface PayoffProjectionChartProps {
   data: Array<{
-    month: number;
     date: string;
     balance: number;
-    principal: number;
-    interest: number;
+    principalPaid: number;
+    interestPaid: number;
   }>;
 }
 

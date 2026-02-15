@@ -218,7 +218,7 @@ export async function authRoutes(fastify: FastifyInstance) {
    * GET /api/auth/csrf-token
    * Get CSRF token for state-changing requests
    */
-  fastify.get('/csrf-token', async (request, reply) => {
+  fastify.get('/csrf-token', async (_request, reply) => {
     const token = await reply.generateCsrf();
     return reply.send({ csrfToken: token });
   });

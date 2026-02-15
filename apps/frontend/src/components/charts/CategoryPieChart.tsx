@@ -42,7 +42,7 @@ export default function CategoryPieChart({ data }: CategoryPieChartProps) {
             fontSize: '12px',
             color: 'hsl(230 29% 96%)',
           }}
-          formatter={(value: number) => `$${value.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+          formatter={(value: number) => `£${value.toLocaleString('en-GB', { minimumFractionDigits: 2 })}`}
         />
         <Legend />
       </PieChart>

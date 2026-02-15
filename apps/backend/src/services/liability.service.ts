@@ -1,27 +1,17 @@
 import { prisma } from '../config/database';
-import { LiabilityType, InterestType, PaymentFrequency } from '@prisma/client';
+import { LiabilityType, InterestType } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../utils/errors';
-import {
-  calculateAmortizationSchedule,
-  calculatePayoffDate,
-  calculateTotalInterest,
-  validateMinimumPayment,
-} from '../utils/liability.utils';
 
 export interface CreateLiabilityInput {
   name: string;
   type: LiabilityType;
   currentBalance: number;
-  originalAmount: number;
   interestRate: number;
   interestType: InterestType;
-  minimumPayment: number;
-  paymentFrequency: PaymentFrequency;
-  payoffDate?: string | Date;
-  accountId?: string;
+  openDate: string | Date;
+  termEndDate: string | Date;
   metadata?: {
     lender?: string;
-    accountNumber?: string;
     notes?: string;
   };
 }
@@ -30,21 +20,126 @@ export interface UpdateLiabilityInput {
   name?: string;
   type?: LiabilityType;
   currentBalance?: number;
-  originalAmount?: number;
   interestRate?: number;
   interestType?: InterestType;
-  minimumPayment?: number;
-  paymentFrequency?: PaymentFrequency;
-  payoffDate?: string | Date;
+  openDate?: string | Date;
+  termEndDate?: string | Date;
   metadata?: Record<string, any>;
 }
 
+type LiabilityForecastPoint = {
+  date: string;
+  balance: number;
+  accruedInterest: number;
+  paymentApplied: number;
+  interestPaid: number;
+  principalPaid: number;
+};
+
+function daysBetween(from: Date, to: Date) {
+  return Math.max(0, (to.getTime() - from.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function round2(value: number) {
+  return Number(value.toFixed(2));
+}
+
+function simulateProjection(
+  currentBalance: number,
+  annualRate: number,
+  startDate: Date,
+  termEndDate: Date,
+  payments: Array<{ date: Date; amount: number }>
+) {
+  let principal = currentBalance;
+  let accruedInterest = 0;
+  let totalInterestAccrued = 0;
+  let totalInterestPaid = 0;
+  let totalPrincipalPaid = 0;
+  let totalPaymentApplied = 0;
+  let cursor = new Date(startDate);
+
+  const points: LiabilityForecastPoint[] = [
+    {
+      date: cursor.toISOString(),
+      balance: round2(principal),
+      accruedInterest: 0,
+      paymentApplied: 0,
+      interestPaid: 0,
+      principalPaid: 0,
+    },
+  ];
+
+  const dailyRate = annualRate / 100 / 365;
+  const paymentEvents = payments
+    .filter((p) => p.amount > 0)
+    .sort((a, b) => a.date.getTime() - b.date.getTime())
+    .filter((p) => p.date.getTime() >= startDate.getTime() && p.date.getTime() <= termEndDate.getTime());
+
+  for (const payment of paymentEvents) {
+    const paymentDate = payment.date;
+    const days = daysBetween(cursor, paymentDate);
+    if (days > 0 && principal > 0) {
+      const accrued = principal * dailyRate * days;
+      accruedInterest += accrued;
+      totalInterestAccrued += accrued;
+    }
+
+    let remainingPayment = payment.amount;
+    const paidToInterest = Math.min(remainingPayment, accruedInterest);
+    accruedInterest -= paidToInterest;
+    remainingPayment -= paidToInterest;
+    totalInterestPaid += paidToInterest;
+
+    const paidToPrincipal = Math.min(remainingPayment, principal);
+    principal -= paidToPrincipal;
+    totalPrincipalPaid += paidToPrincipal;
+
+    const applied = paidToInterest + paidToPrincipal;
+    totalPaymentApplied += applied;
+
+    cursor = paymentDate;
+
+    points.push({
+      date: cursor.toISOString(),
+      balance: round2(principal),
+      accruedInterest: round2(accruedInterest),
+      paymentApplied: round2(applied),
+      interestPaid: round2(paidToInterest),
+      principalPaid: round2(paidToPrincipal),
+    });
+  }
+
+  const finalDays = daysBetween(cursor, termEndDate);
+  if (finalDays > 0 && principal > 0) {
+    const accrued = principal * dailyRate * finalDays;
+    accruedInterest += accrued;
+    totalInterestAccrued += accrued;
+  }
+
+  const projectedBalanceAtTermEnd = principal + accruedInterest;
+
+  points.push({
+    date: termEndDate.toISOString(),
+    balance: round2(projectedBalanceAtTermEnd),
+    accruedInterest: round2(accruedInterest),
+    paymentApplied: 0,
+    interestPaid: 0,
+    principalPaid: 0,
+  });
+
+  return {
+    projectedBalanceAtTermEnd: round2(projectedBalanceAtTermEnd),
+    projectedInterestAccrued: round2(totalInterestAccrued),
+    projectedTransactionImpact: round2(totalPaymentApplied),
+    totalInterestPaid: round2(totalInterestPaid),
+    totalPrincipalPaid: round2(totalPrincipalPaid),
+    schedule: points,
+  };
+}
+
 export const liabilityService = {
-  /**
-   * Create a new liability
-   */
   async createLiability(userId: string, data: CreateLiabilityInput) {
-    // Validate required fields
     if (!data.name || data.name.trim().length === 0) {
       throw new ValidationError('Liability name is required');
     }
@@ -53,55 +148,28 @@ export const liabilityService = {
       throw new ValidationError('Current balance must be non-negative');
     }
 
-    if (data.minimumPayment < 0) {
-      throw new ValidationError('Minimum payment must be non-negative');
+    const openDate = new Date(data.openDate);
+    const termEndDate = new Date(data.termEndDate);
+
+    if (termEndDate.getTime() < openDate.getTime()) {
+      throw new ValidationError('Term end date must be on or after open date');
     }
 
-    // Validate minimum payment is sufficient
-    const validation = validateMinimumPayment(data.currentBalance, data.interestRate, data.minimumPayment);
-    if (!validation.isValid) {
-      throw new ValidationError(validation.message || 'Invalid minimum payment');
-    }
-
-    // If accountId provided, verify it exists and belongs to user
-    if (data.accountId) {
-      const account = await prisma.account.findFirst({
-        where: { id: data.accountId, userId },
-      });
-      if (!account) {
-        throw new NotFoundError('Account not found');
-      }
-    }
-
-    // Calculate payoff date if not provided
-    let calculatedPayoffDate = data.payoffDate ? new Date(data.payoffDate) : null;
-    if (!calculatedPayoffDate && data.currentBalance > 0 && data.minimumPayment > 0) {
-      calculatedPayoffDate = calculatePayoffDate(data.currentBalance, data.interestRate, data.minimumPayment);
-    }
-
-    const liability = await prisma.liability.create({
+    return prisma.liability.create({
       data: {
         userId,
         name: data.name.trim(),
         type: data.type,
         currentBalance: data.currentBalance,
-        originalAmount: data.originalAmount,
         interestRate: data.interestRate,
         interestType: data.interestType,
-        minimumPayment: data.minimumPayment,
-        paymentFrequency: data.paymentFrequency,
-        payoffDate: calculatedPayoffDate,
-        accountId: data.accountId,
+        openDate,
+        termEndDate,
         metadata: data.metadata || {},
       },
     });
-
-    return liability;
   },
 
-  /**
-   * Get a single liability by ID with ownership check
-   */
   async getLiabilityById(liabilityId: string, userId: string) {
     const liability = await prisma.liability.findFirst({
       where: { id: liabilityId, userId },
@@ -111,92 +179,81 @@ export const liabilityService = {
       throw new NotFoundError('Liability not found');
     }
 
-    return liability;
+    return {
+      ...liability,
+      currentBalance: Number(liability.currentBalance),
+      interestRate: Number(liability.interestRate),
+    };
   },
 
-  /**
-   * Get all liabilities for a user
-   */
   async getUserLiabilities(userId: string) {
     const liabilities = await prisma.liability.findMany({
       where: { userId },
       orderBy: [{ createdAt: 'desc' }],
     });
 
-    return liabilities;
+    return liabilities.map((liability) => ({
+      ...liability,
+      currentBalance: Number(liability.currentBalance),
+      interestRate: Number(liability.interestRate),
+    }));
   },
 
-  /**
-   * Get all liabilities for a user with enhanced data:
-   * - Payment history
-   * - Total paid, total interest paid
-   * - Projected payoff date
-   */
-  async getUserLiabilitiesWithPayments(userId: string) {
+  async getUserLiabilitiesWithForecast(userId: string) {
     const liabilities = await prisma.liability.findMany({
       where: { userId },
       orderBy: [{ createdAt: 'desc' }],
       include: {
-        payments: {
-          orderBy: { date: 'desc' },
-          include: {
-            transaction: {
-              select: {
-                id: true,
-                date: true,
-                amount: true,
-                name: true,
-              },
-            },
+        transactions: {
+          where: { type: 'expense' },
+          select: {
+            id: true,
+            date: true,
+            amount: true,
+            name: true,
           },
+          orderBy: { date: 'asc' },
         },
       },
     });
 
-    // Enrich with calculated data
-    const enhancedLiabilities = liabilities.map(liability => {
-      const totalPaid = liability.payments.reduce(
-        (sum, p) => sum + Number(p.principalAmount) + Number(p.interestAmount),
-        0
-      );
-      const totalInterestPaid = liability.payments.reduce((sum, p) => sum + Number(p.interestAmount), 0);
+    return liabilities.map((liability) => {
+      const currentBalance = Number(liability.currentBalance);
+      const interestRate = Number(liability.interestRate);
+      const now = new Date();
+      const termEndDate = new Date(liability.termEndDate);
 
-      // Calculate projected payoff date if not set
-      let projectedPayoffDate = liability.payoffDate?.toISOString() || null;
-      if (!projectedPayoffDate && Number(liability.currentBalance) > 0 && Number(liability.minimumPayment) > 0) {
-        const payoffDate = calculatePayoffDate(
-          Number(liability.currentBalance),
-          Number(liability.interestRate),
-          Number(liability.minimumPayment)
-        );
-        projectedPayoffDate = payoffDate?.toISOString() || null;
-      }
+      const projection = simulateProjection(
+        currentBalance,
+        interestRate,
+        now,
+        termEndDate,
+        liability.transactions.map((t) => ({ date: new Date(t.date), amount: Number(t.amount) }))
+      );
+
+      const monthsRemaining = Math.max(
+        0,
+        Math.ceil((termEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30.4375))
+      );
 
       return {
         ...liability,
-        currentBalance: Number(liability.currentBalance),
-        originalAmount: Number(liability.originalAmount),
-        interestRate: Number(liability.interestRate),
-        minimumPayment: Number(liability.minimumPayment),
-        payments: liability.payments.map(p => ({
-          ...p,
-          principalAmount: Number(p.principalAmount),
-          interestAmount: Number(p.interestAmount),
+        currentBalance,
+        interestRate,
+        transactions: liability.transactions.map((t) => ({
+          ...t,
+          amount: Number(t.amount),
         })),
-        totalPaid,
-        totalInterestPaid,
-        projectedPayoffDate,
+        monthsRemaining,
+        projectedBalanceAtTermEnd: projection.projectedBalanceAtTermEnd,
+        projectedInterestAccrued: projection.projectedInterestAccrued,
+        projectedTransactionImpact: projection.projectedTransactionImpact,
+        projectionSchedule: projection.schedule,
       };
     });
-
-    return enhancedLiabilities;
   },
 
-  /**
-   * Update liability properties
-   */
   async updateLiability(liabilityId: string, userId: string, data: UpdateLiabilityInput) {
-    // Verify liability exists and belongs to user
     const existingLiability = await prisma.liability.findFirst({
       where: { id: liabilityId, userId },
     });
@@ -205,26 +262,26 @@ export const liabilityService = {
       throw new NotFoundError('Liability not found');
     }
 
-    // Validate provided fields
     if (data.name !== undefined && data.name.trim().length === 0) {
       throw new ValidationError('Liability name cannot be empty');
     }
 
-    // Build update data
+    const openDate = data.openDate ? new Date(data.openDate) : existingLiability.openDate;
+    const termEndDate = data.termEndDate ? new Date(data.termEndDate) : existingLiability.termEndDate;
+
+    if (termEndDate.getTime() < openDate.getTime()) {
+      throw new ValidationError('Term end date must be on or after open date');
+    }
+
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name.trim();
     if (data.type !== undefined) updateData.type = data.type;
     if (data.currentBalance !== undefined) updateData.currentBalance = data.currentBalance;
-    if (data.originalAmount !== undefined) updateData.originalAmount = data.originalAmount;
     if (data.interestRate !== undefined) updateData.interestRate = data.interestRate;
     if (data.interestType !== undefined) updateData.interestType = data.interestType;
-    if (data.minimumPayment !== undefined) updateData.minimumPayment = data.minimumPayment;
-    if (data.paymentFrequency !== undefined) updateData.paymentFrequency = data.paymentFrequency;
-    if (data.payoffDate !== undefined) {
-      updateData.payoffDate = data.payoffDate ? new Date(data.payoffDate) : null;
-    }
+    if (data.openDate !== undefined) updateData.openDate = new Date(data.openDate);
+    if (data.termEndDate !== undefined) updateData.termEndDate = new Date(data.termEndDate);
 
-    // Merge metadata if provided
     if (data.metadata !== undefined) {
       const existingMeta = (existingLiability.metadata as Record<string, any>) || {};
       updateData.metadata = { ...existingMeta, ...data.metadata };
@@ -235,15 +292,14 @@ export const liabilityService = {
       data: updateData,
     });
 
-    return liability;
+    return {
+      ...liability,
+      currentBalance: Number(liability.currentBalance),
+      interestRate: Number(liability.interestRate),
+    };
   },
 
-  /**
-   * Delete a liability
-   * Payment allocations are automatically deleted due to cascade
-   */
   async deleteLiability(liabilityId: string, userId: string) {
-    // Verify liability exists and belongs to user
     const liability = await prisma.liability.findFirst({
       where: { id: liabilityId, userId },
     });
@@ -259,213 +315,50 @@ export const liabilityService = {
     return { message: 'Liability deleted successfully' };
   },
 
-  /**
-   * Allocate a transaction to a liability payment
-   */
-  async allocateTransactionToLiability(
-    transactionId: string,
-    liabilityId: string,
-    userId: string,
-    principalAmount: number,
-    interestAmount: number
-  ) {
-    // Verify transaction exists and belongs to user
-    const transaction = await prisma.transaction.findFirst({
-      where: { id: transactionId, userId },
-    });
-
-    if (!transaction) {
-      throw new NotFoundError('Transaction not found');
-    }
-
-    // Verify transaction is an expense
-    if (transaction.type !== 'expense') {
-      throw new ValidationError('Only expense transactions can be allocated to liability payments');
-    }
-
-    // Verify transaction is not already allocated
-    const existingPayment = await prisma.liabilityPayment.findFirst({
-      where: { transactionId },
-    });
-
-    if (existingPayment) {
-      throw new ValidationError('Transaction is already allocated to a liability payment');
-    }
-
-    // Verify liability exists and belongs to user
+  async calculateLiabilityProjection(liabilityId: string, userId: string) {
     const liability = await prisma.liability.findFirst({
       where: { id: liabilityId, userId },
-    });
-
-    if (!liability) {
-      throw new NotFoundError('Liability not found');
-    }
-
-    // Validate principal + interest = transaction amount (with small tolerance)
-    const transactionAmount = Number(transaction.amount);
-    const totalPayment = principalAmount + interestAmount;
-    const tolerance = 0.01;
-
-    if (Math.abs(totalPayment - transactionAmount) > tolerance) {
-      throw new ValidationError(
-        `Principal + interest (${totalPayment.toFixed(2)}) must equal transaction amount (${transactionAmount.toFixed(2)})`
-      );
-    }
-
-    // Use transaction to create payment and update balance atomically
-    const result = await prisma.$transaction(async (tx) => {
-      // Create liability payment record
-      const payment = await tx.liabilityPayment.create({
-        data: {
-          liabilityId,
-          transactionId,
-          principalAmount,
-          interestAmount,
-          date: transaction.date,
-        },
-      });
-
-      // Update liability balance (reduce by principal only)
-      await tx.liability.update({
-        where: { id: liabilityId },
-        data: {
-          currentBalance: {
-            decrement: principalAmount,
-          },
-        },
-      });
-
-      return payment;
-    });
-
-    return result;
-  },
-
-  /**
-   * Remove payment allocation and restore balance
-   */
-  async removePaymentAllocation(paymentId: string, userId: string) {
-    // Get payment with liability ownership check
-    const payment = await prisma.liabilityPayment.findFirst({
-      where: {
-        id: paymentId,
-        liability: { userId },
-      },
-      include: { liability: true },
-    });
-
-    if (!payment) {
-      throw new NotFoundError('Payment allocation not found');
-    }
-
-    const principalAmount = Number(payment.principalAmount);
-
-    // Use transaction to delete payment and restore balance atomically
-    await prisma.$transaction(async (tx) => {
-      // Delete payment allocation
-      await tx.liabilityPayment.delete({
-        where: { id: paymentId },
-      });
-
-      // Restore liability balance (add back principal)
-      await tx.liability.update({
-        where: { id: payment.liabilityId },
-        data: {
-          currentBalance: {
-            increment: principalAmount,
-          },
-        },
-      });
-    });
-
-    return { message: 'Payment allocation removed successfully' };
-  },
-
-  /**
-   * Get unallocated expense transactions for a liability
-   */
-  async getUnallocatedPayments(userId: string, liabilityId?: string) {
-    // Verify liability if provided
-    if (liabilityId) {
-      const liability = await prisma.liability.findFirst({
-        where: { id: liabilityId, userId },
-      });
-      if (!liability) {
-        throw new NotFoundError('Liability not found');
-      }
-    }
-
-    // Get all expense transactions not in LiabilityPayment table
-    const allocatedTransactionIds = await prisma.liabilityPayment.findMany({
-      select: { transactionId: true },
-    });
-
-    const allocatedIds = allocatedTransactionIds.map(p => p.transactionId);
-
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        userId,
-        type: 'expense',
-        id: { notIn: allocatedIds },
-      },
-      orderBy: { date: 'desc' },
       include: {
-        account: { select: { name: true } },
-        category: { select: { name: true, color: true } },
+        transactions: {
+          where: { type: 'expense' },
+          select: { id: true, date: true, amount: true, name: true },
+          orderBy: { date: 'asc' },
+        },
       },
-    });
-
-    return transactions;
-  },
-
-  /**
-   * Calculate payoff projection (amortization schedule)
-   */
-  async calculatePayoffProjection(liabilityId: string, userId: string) {
-    const liability = await prisma.liability.findFirst({
-      where: { id: liabilityId, userId },
     });
 
     if (!liability) {
       throw new NotFoundError('Liability not found');
     }
 
-    const currentBalance = Number(liability.currentBalance);
-    const interestRate = Number(liability.interestRate);
-    const minimumPayment = Number(liability.minimumPayment);
-
-    if (currentBalance <= 0) {
-      return {
-        liabilityId,
-        currentBalance: 0,
-        monthlyPayment: minimumPayment,
-        interestRate,
-        projectedPayoffDate: null,
-        totalInterestToPay: 0,
-        schedule: [],
-      };
-    }
-
-    // Calculate amortization schedule
-    const schedule = calculateAmortizationSchedule(currentBalance, interestRate, minimumPayment);
-
-    const totalInterestToPay = calculateTotalInterest(currentBalance, interestRate, minimumPayment);
-    const projectedPayoffDate = calculatePayoffDate(currentBalance, interestRate, minimumPayment);
+    const now = new Date();
+    const projection = simulateProjection(
+      Number(liability.currentBalance),
+      Number(liability.interestRate),
+      now,
+      new Date(liability.termEndDate),
+      liability.transactions.map((t) => ({ date: new Date(t.date), amount: Number(t.amount) }))
+    );
 
     return {
       liabilityId,
-      currentBalance,
-      monthlyPayment: minimumPayment,
-      interestRate,
-      projectedPayoffDate: projectedPayoffDate?.toISOString() || null,
-      totalInterestToPay,
-      schedule,
+      currentBalance: Number(liability.currentBalance),
+      interestRate: Number(liability.interestRate),
+      openDate: liability.openDate.toISOString(),
+      termEndDate: liability.termEndDate.toISOString(),
+      monthsRemaining: Math.max(
+        0,
+        Math.ceil((new Date(liability.termEndDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30.4375))
+      ),
+      projectedBalanceAtTermEnd: projection.projectedBalanceAtTermEnd,
+      projectedInterestAccrued: projection.projectedInterestAccrued,
+      projectedTransactionImpact: projection.projectedTransactionImpact,
+      totalInterestPaidByTransactions: projection.totalInterestPaid,
+      totalPrincipalPaidByTransactions: projection.totalPrincipalPaid,
+      schedule: projection.schedule,
     };
   },
 
-  /**
-   * Get liability summary statistics for a user
-   */
   async getLiabilitySummary(userId: string) {
     const liabilities = await prisma.liability.findMany({
       where: { userId },
@@ -475,27 +368,22 @@ export const liabilityService = {
       return {
         totalDebt: 0,
         byType: [],
-        monthlyMinimumPayment: 0,
         totalInterestRate: 0,
       };
     }
 
     let totalDebt = 0;
-    let totalMinimumPayment = 0;
     let weightedInterestSum = 0;
 
     const byTypeMap = new Map<LiabilityType, { balance: number; count: number }>();
 
-    liabilities.forEach(liability => {
+    liabilities.forEach((liability) => {
       const balance = Number(liability.currentBalance);
-      const minPayment = Number(liability.minimumPayment);
       const rate = Number(liability.interestRate);
 
       totalDebt += balance;
-      totalMinimumPayment += minPayment;
       weightedInterestSum += balance * rate;
 
-      // Group by type
       const existing = byTypeMap.get(liability.type) || { balance: 0, count: 0 };
       byTypeMap.set(liability.type, {
         balance: existing.balance + balance,
@@ -503,7 +391,6 @@ export const liabilityService = {
       });
     });
 
-    // Calculate weighted average interest rate
     const totalInterestRate = totalDebt > 0 ? weightedInterestSum / totalDebt : 0;
 
     const byType = Array.from(byTypeMap.entries()).map(([type, data]) => ({
@@ -515,14 +402,10 @@ export const liabilityService = {
     return {
       totalDebt,
       byType,
-      monthlyMinimumPayment: totalMinimumPayment,
       totalInterestRate,
     };
   },
 
-  /**
-   * Calculate total liability value as of a specific date
-   */
   async calculateTotalLiabilityValue(userId: string, asOfDate: Date = new Date()) {
     const liabilities = await prisma.liability.findMany({
       where: {
@@ -531,7 +414,6 @@ export const liabilityService = {
       },
     });
 
-    const total = liabilities.reduce((sum, liability) => sum + Number(liability.currentBalance), 0);
-    return total;
+    return liabilities.reduce((sum, liability) => sum + Number(liability.currentBalance), 0);
   },
 };

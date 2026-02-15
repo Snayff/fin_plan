@@ -4,6 +4,7 @@ import { transactionService } from '../services/transaction.service';
 import { accountService } from '../services/account.service';
 import { categoryService } from '../services/category.service';
 import { showSuccess, showError } from '../lib/toast';
+import { formatCurrency } from '../lib/utils';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import TransactionForm from '../components/transactions/TransactionForm';
@@ -16,6 +17,11 @@ import { Badge } from '../components/ui/badge';
 import type { Transaction } from '../types';
 import { format } from 'date-fns';
 import { ArrowUpIcon, ArrowDownIcon, TrendingUpIcon } from 'lucide-react';
+
+function toAmountNumber(value: unknown): number {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+}
 
 export default function TransactionsPage() {
   const queryClient = useQueryClient();
@@ -56,6 +62,13 @@ export default function TransactionsPage() {
   const accounts = accountsData?.accounts || [];
   const categories = categoriesData?.categories || [];
 
+  // Defensive normalization: backend should send numbers, but coerce here too
+  // so summary cards never concatenate strings.
+  const normalizedTransactions = useMemo(
+    () => transactions.map((t) => ({ ...t, amount: toAmountNumber(t.amount) })),
+    [transactions]
+  );
+
   const filterConfig = useMemo(
     () => buildTransactionFilterConfig(accounts, categories),
     [accounts, categories]
@@ -70,17 +83,17 @@ export default function TransactionsPage() {
     totalCount,
     filteredCount,
   } = useClientFilters({
-    items: transactions,
+    items: normalizedTransactions,
     fields: filterConfig.fields,
   });
 
   // Summary stats from filtered data
   const totalIncome = filteredTransactions
     .filter(t => t.type === 'income')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + toAmountNumber(t.amount), 0);
   const totalExpenses = filteredTransactions
     .filter(t => t.type === 'expense')
-    .reduce((sum, t) => sum + t.amount, 0);
+    .reduce((sum, t) => sum + toAmountNumber(t.amount), 0);
   const netCashFlow = totalIncome - totalExpenses;
 
   if (isLoading) {
@@ -110,15 +123,18 @@ export default function TransactionsPage() {
         </Button>
       </div>
 
-      <FilterBar
-        config={filterConfig}
-        filters={filters}
-        onFilterChange={setFilter}
-        onClearAll={clearFilters}
-        activeFilterCount={activeFilterCount}
-        totalCount={totalCount}
-        filteredCount={filteredCount}
-      />
+      {/* Only show filter bar if there are transactions */}
+      {transactions.length > 0 && (
+        <FilterBar
+          config={filterConfig}
+          filters={filters}
+          onFilterChange={setFilter}
+          onClearAll={clearFilters}
+          activeFilterCount={activeFilterCount}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+        />
+      )}
 
       {/* Summary Cards */}
       {filteredTransactions.length > 0 && (
@@ -130,7 +146,7 @@ export default function TransactionsPage() {
                 <p className="text-sm text-muted-foreground">Total Income</p>
               </div>
               <p className="text-2xl font-bold text-success">
-                £{totalIncome.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(totalIncome)}
               </p>
             </CardContent>
           </Card>
@@ -141,7 +157,7 @@ export default function TransactionsPage() {
                 <p className="text-sm text-muted-foreground">Total Expenses</p>
               </div>
               <p className="text-2xl font-bold text-expense">
-                £{totalExpenses.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(totalExpenses)}
               </p>
             </CardContent>
           </Card>
@@ -152,7 +168,7 @@ export default function TransactionsPage() {
                 <p className="text-sm text-muted-foreground">Net Cash Flow</p>
               </div>
               <p className={`text-2xl font-bold ${netCashFlow >= 0 ? 'text-success' : 'text-expense'}`}>
-                £{netCashFlow.toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                {formatCurrency(netCashFlow)}
               </p>
             </CardContent>
           </Card>
@@ -187,7 +203,7 @@ export default function TransactionsPage() {
                     Date
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                    Description
+                    Name
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">
                     Category
@@ -211,7 +227,10 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-foreground">
                       <div>
-                        <div className="font-medium">{transaction.description}</div>
+                        <div className="font-medium">{transaction.name || transaction.description || 'Unnamed transaction'}</div>
+                        {transaction.description && transaction.description !== transaction.name && (
+                          <div className="text-xs text-muted-foreground mt-1">{transaction.description}</div>
+                        )}
                         {transaction.memo && (
                           <div className="text-xs text-text-tertiary mt-1">{transaction.memo}</div>
                         )}
@@ -238,11 +257,7 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium">
                       <span className={transaction.type === 'income' ? 'text-success' : 'text-expense'}>
-                        {transaction.type === 'income' ? '+' : '-'}£
-                        {transaction.amount.toLocaleString('en-GB', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+                        {transaction.type === 'income' ? '+' : '-'}{formatCurrency(transaction.amount).replace('£', '')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right space-x-3">
@@ -311,10 +326,7 @@ export default function TransactionsPage() {
                 Are you sure you want to delete this transaction?
               </p>
               <p className="mt-2 text-sm font-medium">
-                {deletingTransaction.description} - £
-                {deletingTransaction.amount.toLocaleString('en-GB', {
-                  minimumFractionDigits: 2,
-                })}
+                {deletingTransaction.description} - {formatCurrency(deletingTransaction.amount)}
               </p>
               <p className="mt-2 text-sm text-muted-foreground">
                 This action cannot be undone and will update your account balance.

@@ -57,16 +57,12 @@ export {
 export {
   createLiabilitySchema,
   updateLiabilitySchema,
-  allocatePaymentSchema,
   LiabilityTypeEnum,
   InterestTypeEnum,
-  PaymentFrequencyEnum,
   type LiabilityType,
   type InterestType,
-  type PaymentFrequency,
   type CreateLiabilityInput,
   type UpdateLiabilityInput,
-  type AllocatePaymentInput,
 } from './liability.schemas';
 
 // Goal schemas and types

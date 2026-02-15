@@ -13,6 +13,16 @@ export default function DashboardPage() {
     queryFn: () => dashboardService.getSummary(),
   });
 
+  const { data: netWorthTrendResponse } = useQuery({
+    queryKey: ['dashboard-net-worth-trend', 6],
+    queryFn: () => dashboardService.getNetWorthTrend(6),
+  });
+
+  const { data: incomeExpenseTrendResponse } = useQuery({
+    queryKey: ['dashboard-income-expense-trend', 6],
+    queryFn: () => dashboardService.getIncomeExpenseTrend(6),
+  });
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -43,18 +53,48 @@ export default function DashboardPage() {
     color: item.category?.color || '#gray',
   }));
 
-  // Mock data for charts (replace with real data from backend when available)
-  const netWorthData = [
-    { date: '2024-01-01', netWorth: summary?.netWorth || 0 },
-  ];
+  const netWorthData =
+    (() => {
+      const mapped =
+        netWorthTrendResponse?.trend?.map((point) => ({
+          date: `${point.month}-01`,
+          netWorth: point.netWorth || 0,
+          balance: point.balance || 0,
+          assets: point.assets || 0,
+          liabilities: point.liabilities || 0,
+        })) || [];
 
-  const incomeExpenseData = [
-    { 
-      date: data?.period?.startDate || new Date().toISOString(), 
-      income: summary?.monthlyIncome || 0, 
-      expense: summary?.monthlyExpense || 0 
-    },
-  ];
+      const firstMeaningfulIndex = mapped.findIndex(
+        (point) =>
+          point.netWorth !== 0 || point.balance !== 0 || point.assets !== 0 || point.liabilities !== 0
+      );
+
+      const trimmed = firstMeaningfulIndex >= 0 ? mapped.slice(firstMeaningfulIndex) : mapped;
+
+      if (trimmed.length > 0) {
+        return trimmed.map(({ date, netWorth }) => ({ date, netWorth }));
+      }
+
+      return [
+        {
+          date: data?.period?.startDate || new Date().toISOString(),
+          netWorth: summary?.netWorth || 0,
+        },
+      ];
+    })();
+
+  const incomeExpenseData =
+    incomeExpenseTrendResponse?.trend?.map((point) => ({
+      date: `${point.month}-01`,
+      income: point.income || 0,
+      expense: point.expense || 0,
+    })) || [
+      {
+        date: data?.period?.startDate || new Date().toISOString(),
+        income: summary?.monthlyIncome || 0,
+        expense: summary?.monthlyExpense || 0,
+      },
+    ];
 
   return (
     <div className="p-6">
@@ -180,7 +220,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-right">
                       <div className="font-medium text-foreground">
-                        {account.currency} {account.balance.toLocaleString('en-US', {
+                        {account.currency} {account.balance.toLocaleString('en-GB', {
                           minimumFractionDigits: 2,
                           maximumFractionDigits: 2,
                         })}
@@ -231,7 +271,7 @@ export default function DashboardPage() {
                   {recentTransactions.map((transaction) => (
                     <tr key={transaction.id} className="hover:bg-muted/50 transition-colors">
                       <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
-                        {format(new Date(transaction.date), 'MMM d')}
+                        {format(new Date(transaction.date), 'd MMM')}
                       </td>
                       <td className="px-4 py-3 text-sm text-foreground">
                         {transaction.description}
@@ -249,8 +289,8 @@ export default function DashboardPage() {
                       </td>
                       <td className="px-4 py-3 text-sm text-right font-medium">
                         <span className={transaction.type === 'income' ? 'text-success' : 'text-expense'}>
-                          {transaction.type === 'income' ? '+' : '-'}$
-                          {transaction.amount.toLocaleString('en-US', {
+                          {transaction.type === 'income' ? '+' : '-'}£
+                          {transaction.amount.toLocaleString('en-GB', {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
                           })}

@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 
 export interface CreateTransactionInput {
   accountId: string;
+  liabilityId?: string;
   date: Date | string;
   amount: number;
   type: TransactionType;
@@ -23,6 +24,7 @@ export interface CreateTransactionInput {
 
 export interface UpdateTransactionInput {
   accountId?: string;
+  liabilityId?: string;
   date?: Date | string;
   amount?: number;
   type?: TransactionType;
@@ -47,6 +49,16 @@ export interface TransactionFilters {
   maxAmount?: number;
   search?: string;
   tags?: string[];
+}
+
+/**
+ * Helper function to convert Decimal fields to numbers in transaction objects
+ */
+function normalizeTransaction(transaction: any) {
+  return {
+    ...transaction,
+    amount: Number(transaction.amount),
+  };
 }
 
 export const transactionService = {
@@ -144,6 +156,13 @@ export const transactionService = {
             color: true,
           },
         },
+        liability: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
         subcategory: {
           select: {
             id: true,
@@ -158,7 +177,7 @@ export const transactionService = {
     });
 
     return {
-      transactions,
+      transactions: transactions.map(normalizeTransaction),
       pagination: {
         total,
         limit,
@@ -190,6 +209,13 @@ export const transactionService = {
             color: true,
           },
         },
+        liability: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
         subcategory: {
           select: {
             id: true,
@@ -204,7 +230,7 @@ export const transactionService = {
       throw new NotFoundError('Transaction not found');
     }
 
-    return transaction;
+    return normalizeTransaction(transaction);
   },
 
   /**
@@ -252,6 +278,21 @@ export const transactionService = {
       }
     }
 
+    // Verify liability exists if provided
+    if (data.liabilityId) {
+      if (data.type !== 'expense') {
+        throw new ValidationError('Liability can only be linked to expense transactions');
+      }
+
+      const liability = await prisma.liability.findFirst({
+        where: { id: data.liabilityId, userId },
+      });
+
+      if (!liability) {
+        throw new NotFoundError('Liability not found');
+      }
+    }
+
     // Verify subcategory if provided
     if (data.subcategoryId) {
       const subcategory = await prisma.category.findUnique({
@@ -268,6 +309,7 @@ export const transactionService = {
       data: {
         userId,
         accountId: data.accountId,
+        liabilityId: data.liabilityId || null,
         date: new Date(data.date),
         amount: data.amount,
         type: data.type,
@@ -299,6 +341,13 @@ export const transactionService = {
             color: true,
           },
         },
+        liability: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
         subcategory: {
           select: {
             id: true,
@@ -309,7 +358,7 @@ export const transactionService = {
       },
     });
 
-    return transaction;
+    return normalizeTransaction(transaction);
   },
 
   /**
@@ -350,6 +399,23 @@ export const transactionService = {
       }
     }
 
+    const resultingType = data.type ?? existing.type;
+    const resultingLiabilityId = data.liabilityId === undefined ? existing.liabilityId : data.liabilityId || null;
+
+    if (resultingLiabilityId) {
+      if (resultingType !== 'expense') {
+        throw new ValidationError('Liability can only be linked to expense transactions');
+      }
+
+      const liability = await prisma.liability.findFirst({
+        where: { id: resultingLiabilityId, userId },
+      });
+
+      if (!liability) {
+        throw new NotFoundError('Liability not found');
+      }
+    }
+
     if (data.subcategoryId) {
       const subcategory = await prisma.category.findUnique({
         where: { id: data.subcategoryId },
@@ -363,6 +429,7 @@ export const transactionService = {
     // Build update data
     const updateData: any = {};
     if (data.accountId !== undefined) updateData.accountId = data.accountId;
+    if (data.liabilityId !== undefined) updateData.liabilityId = data.liabilityId || null;
     if (data.date !== undefined) updateData.date = new Date(data.date);
     if (data.amount !== undefined) updateData.amount = data.amount;
     if (data.type !== undefined) updateData.type = data.type;
@@ -399,6 +466,13 @@ export const transactionService = {
             color: true,
           },
         },
+        liability: {
+          select: {
+            id: true,
+            name: true,
+            type: true,
+          },
+        },
         subcategory: {
           select: {
             id: true,
@@ -409,7 +483,7 @@ export const transactionService = {
       },
     });
 
-    return transaction;
+    return normalizeTransaction(transaction);
   },
 
   /**

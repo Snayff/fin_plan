@@ -1,4 +1,4 @@
-import { render, type RenderOptions } from "@testing-library/react";
+import { render, type RenderOptions, type RenderResult } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { MemoryRouter } from "react-router-dom";
 import type { ReactNode } from "react";
@@ -31,7 +31,7 @@ function createWrapper({ initialEntries = ["/"], queryClient }: WrapperOptions =
 export function renderWithProviders(
   ui: ReactNode,
   options?: WrapperOptions & Omit<RenderOptions, "wrapper">
-) {
+): RenderResult {
   const { initialEntries, queryClient, ...renderOptions } = options || {};
   return render(ui, {
     wrapper: createWrapper({ initialEntries, queryClient }),

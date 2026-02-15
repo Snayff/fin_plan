@@ -72,9 +72,9 @@ export default function PayoffProjectionModal({ liability, onClose }: PayoffProj
             <CalendarIcon className="h-3 w-3 text-muted-foreground" />
             <p className="text-xs text-muted-foreground">Payoff Date</p>
           </div>
-          <p className="text-sm font-bold text-foreground">
-            {projection.projectedPayoffDate
-              ? new Date(projection.projectedPayoffDate).toLocaleDateString('en-GB', {
+            <p className="text-sm font-bold text-foreground">
+            {projection.termEndDate
+              ? new Date(projection.termEndDate).toLocaleDateString('en-GB', {
                   month: 'short',
                   year: 'numeric',
                 })
@@ -87,7 +87,7 @@ export default function PayoffProjectionModal({ liability, onClose }: PayoffProj
             <p className="text-xs text-muted-foreground">Total Interest</p>
           </div>
           <p className="text-sm font-bold text-foreground">
-            {formatCurrency(projection.totalInterestToPay)}
+            {formatCurrency(projection.projectedInterestAccrued)}
           </p>
         </div>
       </div>
@@ -110,7 +110,7 @@ export default function PayoffProjectionModal({ liability, onClose }: PayoffProj
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/20">
-                  <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium">Month</th>
+                  <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium">#</th>
                   <th className="px-3 py-2 text-left text-xs text-muted-foreground font-medium">Date</th>
                   <th className="px-3 py-2 text-right text-xs text-muted-foreground font-medium">Payment</th>
                   <th className="px-3 py-2 text-right text-xs text-muted-foreground font-medium">Principal</th>
@@ -119,18 +119,18 @@ export default function PayoffProjectionModal({ liability, onClose }: PayoffProj
                 </tr>
               </thead>
               <tbody>
-                {displaySchedule.map((entry) => (
-                  <tr key={entry.month} className="border-b border-border last:border-0 hover:bg-muted/10">
-                    <td className="px-3 py-2 text-foreground">{entry.month}</td>
+                {displaySchedule.map((entry, index) => (
+                  <tr key={`${entry.date}-${index}`} className="border-b border-border last:border-0 hover:bg-muted/10">
+                    <td className="px-3 py-2 text-foreground">{index + 1}</td>
                     <td className="px-3 py-2 text-foreground">
                       {new Date(entry.date).toLocaleDateString('en-GB', {
                         month: 'short',
                         year: 'numeric',
                       })}
                     </td>
-                    <td className="px-3 py-2 text-right text-foreground">{formatCurrency(entry.payment)}</td>
-                    <td className="px-3 py-2 text-right text-success">{formatCurrency(entry.principal)}</td>
-                    <td className="px-3 py-2 text-right text-muted-foreground">{formatCurrency(entry.interest)}</td>
+                    <td className="px-3 py-2 text-right text-foreground">{formatCurrency(entry.paymentApplied)}</td>
+                    <td className="px-3 py-2 text-right text-success">{formatCurrency(entry.principalPaid)}</td>
+                    <td className="px-3 py-2 text-right text-muted-foreground">{formatCurrency(entry.interestPaid)}</td>
                     <td className="px-3 py-2 text-right text-foreground font-medium">{formatCurrency(entry.balance)}</td>
                   </tr>
                 ))}
@@ -154,10 +154,10 @@ export default function PayoffProjectionModal({ liability, onClose }: PayoffProj
         </div>
       )}
 
-      {/* Monthly Payment Info */}
+      {/* Forecast summary */}
       <div className="bg-success-subtle/10 border border-success-subtle rounded-md p-3">
-        <p className="text-xs text-muted-foreground mb-1">Monthly payment of</p>
-        <p className="text-lg font-bold text-success">{formatCurrency(projection.monthlyPayment)}</p>
+        <p className="text-xs text-muted-foreground mb-1">Forecast balance at term end</p>
+        <p className="text-lg font-bold text-success">{formatCurrency(projection.projectedBalanceAtTermEnd)}</p>
       </div>
 
       {onClose && (

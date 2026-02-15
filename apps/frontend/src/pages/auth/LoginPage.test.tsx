@@ -14,18 +14,18 @@ describe("LoginPage", () => {
   it("renders email and password fields", () => {
     renderWithProviders(<LoginPage />);
 
-    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeTruthy();
+    expect(screen.getByLabelText(/password/i)).toBeTruthy();
   });
 
   it("renders sign in button", () => {
     renderWithProviders(<LoginPage />);
-    expect(screen.getByRole("button", { name: /sign in/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /sign in/i })).toBeTruthy();
   });
 
   it("renders link to register page", () => {
     renderWithProviders(<LoginPage />);
-    expect(screen.getByRole("link", { name: /sign up/i })).toHaveAttribute("href", "/register");
+    expect(screen.getByRole("link", { name: /sign up/i }).getAttribute("href")).toBe("/register");
   });
 
   it("calls login on form submit", async () => {
@@ -61,7 +61,7 @@ describe("LoginPage", () => {
     await user.type(screen.getByLabelText(/password/i), "password123456");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
-    expect(screen.getByRole("button", { name: /signing in/i })).toBeDisabled();
+    expect((screen.getByRole("button", { name: /signing in/i }) as HTMLButtonElement).disabled).toBe(true);
 
     resolveLogin();
   });
@@ -78,7 +78,7 @@ describe("LoginPage", () => {
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Invalid email or password")).toBeInTheDocument();
+      expect(screen.getByText("Invalid email or password")).toBeTruthy();
     });
   });
 });

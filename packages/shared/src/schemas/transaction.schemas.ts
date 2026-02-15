@@ -11,6 +11,13 @@ export const RecurrenceTypeEnum = z.enum(['none', 'weekly', 'monthly', 'yearly']
  */
 export const createTransactionSchema = z.object({
   accountId: z.string().min(1, 'Account is required').uuid('Invalid account ID'),
+  liabilityId: z
+    .string()
+    .transform((val) => (val === '' ? undefined : val))
+    .optional()
+    .refine((val) => !val || z.string().uuid().safeParse(val).success, {
+      message: 'Invalid liability ID',
+    }),
   date: z.string().min(1, 'Transaction date is required').or(z.date()),
   amount: z.number({
     required_error: 'Amount is required',
@@ -67,6 +74,13 @@ export const updateTransactionSchema = z.object({
     .optional()
     .refine((val) => !val || z.string().uuid().safeParse(val).success, {
       message: 'Invalid account ID',
+    }),
+  liabilityId: z
+    .string()
+    .transform((val) => (val === '' ? undefined : val))
+    .optional()
+    .refine((val) => !val || z.string().uuid().safeParse(val).success, {
+      message: 'Invalid liability ID',
     }),
   date: z.string().or(z.date()).optional(),
   amount: z

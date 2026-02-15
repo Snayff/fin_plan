@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { assetService } from '../../services/asset.service';
-import { accountService } from '../../services/account.service';
 import type { AssetType, LiquidityType, CreateAssetInput } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -12,6 +11,15 @@ interface AssetFormProps {
   onCancel?: () => void;
 }
 
+const ASSET_LIQUIDITY_BY_TYPE: Record<AssetType, LiquidityType> = {
+  housing: 'illiquid',
+  investment: 'liquid',
+  vehicle: 'illiquid',
+  business: 'illiquid',
+  personal_property: 'illiquid',
+  crypto: 'liquid',
+};
+
 export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
@@ -21,14 +29,6 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
     purchaseValue: '' as string | number,
     purchaseDate: '',
     expectedGrowthRate: 0,
-    liquidityType: 'liquid' as LiquidityType,
-    accountId: '',
-  });
-
-  // Fetch accounts for the dropdown
-  const { data: accountsData } = useQuery({
-    queryKey: ['accounts'],
-    queryFn: () => accountService.getAccounts(),
   });
 
   const createMutation = useMutation({
@@ -49,13 +49,10 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
       purchaseValue: formData.purchaseValue === '' ? undefined : Number(formData.purchaseValue),
       purchaseDate: formData.purchaseDate || undefined,
       expectedGrowthRate: formData.expectedGrowthRate,
-      liquidityType: formData.liquidityType,
-      accountId: formData.accountId || undefined,
     };
     createMutation.mutate(submitData);
   };
-
-  const accounts = accountsData?.accounts || [];
+  const derivedLiquidityType = ASSET_LIQUIDITY_BY_TYPE[formData.type];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -80,7 +77,7 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
           onChange={(e) => setFormData({ ...formData, type: e.target.value as AssetType })}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <option value="real_estate">Real Estate</option>
+          <option value="housing">Housing</option>
           <option value="investment">Investment</option>
           <option value="vehicle">Vehicle</option>
           <option value="business">Business</option>
@@ -141,47 +138,22 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
           type="number"
           id="expectedGrowthRate"
           step="0.1"
+          min={-100}
+          max={1000}
           value={formData.expectedGrowthRate}
           onChange={(e) => setFormData({ ...formData, expectedGrowthRate: Number(e.target.value) })}
           placeholder="0"
         />
         <p className="text-xs text-muted-foreground">
-          Annual expected growth rate percentage
+          Annual expected growth rate percentage (can be negative for depreciation)
         </p>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="liquidityType">Liquidity Type *</Label>
-        <select
-          id="liquidityType"
-          required
-          value={formData.liquidityType}
-          onChange={(e) => setFormData({ ...formData, liquidityType: e.target.value as LiquidityType })}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <option value="liquid">Liquid (easily converted to cash)</option>
-          <option value="semi_liquid">Semi-Liquid (takes time to convert)</option>
-          <option value="illiquid">Illiquid (difficult to convert)</option>
-        </select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="accountId">Linked Account (Optional)</Label>
-        <select
-          id="accountId"
-          value={formData.accountId}
-          onChange={(e) => setFormData({ ...formData, accountId: e.target.value })}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <option value="">None</option>
-          {accounts.map((account) => (
-            <option key={account.id} value={account.id}>
-              {account.name}
-            </option>
-          ))}
-        </select>
+        <Label>Liquidity Type</Label>
+        <Input value={derivedLiquidityType.replace('_', ' ')} disabled className="capitalize bg-muted" />
         <p className="text-xs text-muted-foreground">
-          Link this asset to an account for tracking
+          Liquidity is set automatically based on asset type
         </p>
       </div>
 

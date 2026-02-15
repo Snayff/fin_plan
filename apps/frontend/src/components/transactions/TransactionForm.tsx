@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { transactionService } from '../../services/transaction.service';
 import { accountService } from '../../services/account.service';
 import { categoryService } from '../../services/category.service';
+import { liabilityService } from '../../services/liability.service';
 import { showSuccess, showError } from '../../lib/toast';
 import type { TransactionType, CreateTransactionInput, Transaction } from '../../types';
 import { format } from 'date-fns';
@@ -22,6 +23,7 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
 
   const [formData, setFormData] = useState({
     accountId: transaction?.accountId || '',
+    liabilityId: transaction?.liabilityId || '',
     date: transaction ? format(new Date(transaction.date), 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd'),
     amount: transaction?.amount || 0,
     type: transaction?.type || ('expense' as TransactionType),
@@ -41,6 +43,11 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
   const { data: categoriesData, isLoading: isLoadingCategories, error: categoriesError } = useQuery({
     queryKey: ['categories'],
     queryFn: () => categoryService.getCategories(),
+  });
+
+  const { data: liabilitiesData, isLoading: isLoadingLiabilities, error: liabilitiesError } = useQuery({
+    queryKey: ['liabilities'],
+    queryFn: () => liabilityService.getLiabilities(),
   });
 
   const createMutation = useMutation({
@@ -74,6 +81,7 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
 
   const accounts = accountsData?.accounts || [];
   const categories = categoriesData?.categories || [];
+  const liabilities = liabilitiesData?.liabilities || [];
 
   // Filter categories by type
   const filteredCategories = categories.filter(cat => cat.type === formData.type);
@@ -91,6 +99,7 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
     const submitData = {
       ...formData,
       date: new Date(formData.date).toISOString(),
+      liabilityId: formData.liabilityId || undefined,
       categoryId: formData.categoryId || undefined,
       description: formData.description || undefined,
       recurrence_end_date: formData.recurrence_end_date || undefined,
@@ -106,7 +115,7 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
   const mutation = isEditing ? updateMutation : createMutation;
 
   // Show loading state while fetching data
-  if (isLoadingAccounts || isLoadingCategories) {
+  if (isLoadingAccounts || isLoadingCategories || isLoadingLiabilities) {
     return (
       <div className="flex items-center justify-center py-8">
         <div className="text-center">
@@ -118,13 +127,14 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
   }
 
   // Show error state if data fetching failed
-  if (accountsError || categoriesError) {
+  if (accountsError || categoriesError || liabilitiesError) {
     return (
       <div className="py-8">
         <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
           <p className="font-medium mb-1">Failed to load form data</p>
           {accountsError && <p>Accounts: {(accountsError as Error).message}</p>}
           {categoriesError && <p>Categories: {(categoriesError as Error).message}</p>}
+          {liabilitiesError && <p>Liabilities: {(liabilitiesError as Error).message}</p>}
         </div>
         {onCancel && (
           <div className="mt-4 flex justify-end">
@@ -187,7 +197,14 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
           id="type"
           required
           value={formData.type}
-          onChange={(e) => setFormData({ ...formData, type: e.target.value as TransactionType, categoryId: '' })}
+          onChange={(e) =>
+            setFormData({
+              ...formData,
+              type: e.target.value as TransactionType,
+              categoryId: '',
+              liabilityId: '',
+            })
+          }
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <option value="expense">Expense</option>
@@ -258,6 +275,26 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
           ))}
         </select>
       </div>
+
+      {formData.type === 'expense' && (
+        <div className="space-y-2">
+          <Label htmlFor="liabilityId">Related Liability</Label>
+          <select
+            id="liabilityId"
+            value={formData.liabilityId || ''}
+            onChange={(e) => setFormData({ ...formData, liabilityId: e.target.value })}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value="">None</option>
+            {liabilities.map((liability) => (
+              <option key={liability.id} value={liability.id}>
+                {liability.name}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">Link this expense to a liability for projection impact.</p>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="recurrence">Recurrence</Label>

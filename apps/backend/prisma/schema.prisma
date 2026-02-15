@@ -79,9 +79,6 @@ model Account {
   metadata     Json?         @default("{}")
   description  String?
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  asset        Asset?
-  goals        Goal[]
-  liability    Liability?
   transactions Transaction[]
 
   @@index([userId, isActive])
@@ -92,6 +89,7 @@ model Transaction {
   id                  String             @id @default(uuid())
   userId              String             @map("user_id")
   accountId           String             @map("account_id")
+  liabilityId         String?            @map("liability_id")
   date                DateTime
   amount              Decimal            @db.Decimal(15, 2)
   type                TransactionType
@@ -109,9 +107,9 @@ model Transaction {
   recurrence          RecurrenceType     @default(none)
   recurrence_end_date DateTime?
   goalContributions   GoalContribution[]
-  liabilityPayments   LiabilityPayment[]
   account             Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
   category            Category?          @relation("TransactionCategory", fields: [categoryId], references: [id])
+  liability           Liability?         @relation(fields: [liabilityId], references: [id], onDelete: SetNull)
   recurringRule       RecurringRule?     @relation(fields: [recurringRuleId], references: [id])
   subcategory         Category?          @relation("TransactionSubcategory", fields: [subcategoryId], references: [id])
   user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -205,12 +203,10 @@ model Goal {
   priority        Priority           @default(medium)
   status          GoalStatus         @default(active)
   icon            String?
-  linkedAccountId String?            @map("linked_account_id")
   createdAt       DateTime           @default(now()) @map("created_at")
   updatedAt       DateTime           @updatedAt @map("updated_at")
   metadata        Json?              @default("{}")
   contributions   GoalContribution[]
-  linkedAccount   Account?           @relation(fields: [linkedAccountId], references: [id])
   user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, status])
@@ -240,12 +236,10 @@ model Asset {
   purchaseDate       DateTime?           @map("purchase_date")
   expectedGrowthRate Decimal             @default(0) @map("expected_growth_rate") @db.Decimal(5, 2)
   liquidityType      LiquidityType       @map("liquidity_type")
-  accountId          String?             @unique @map("account_id")
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
   metadata           Json?               @default("{}")
   valueHistory       AssetValueHistory[]
-  account            Account?            @relation(fields: [accountId], references: [id])
   user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("assets")
@@ -268,34 +262,17 @@ model Liability {
   name             String
   type             LiabilityType
   currentBalance   Decimal            @map("current_balance") @db.Decimal(15, 2)
-  originalAmount   Decimal            @map("original_amount") @db.Decimal(15, 2)
   interestRate     Decimal            @map("interest_rate") @db.Decimal(5, 2)
   interestType     InterestType       @map("interest_type")
-  minimumPayment   Decimal            @map("minimum_payment") @db.Decimal(15, 2)
-  paymentFrequency PaymentFrequency   @map("payment_frequency")
-  payoffDate       DateTime?          @map("payoff_date")
-  accountId        String?            @unique @map("account_id")
+  openDate         DateTime           @map("open_date")
+  termEndDate      DateTime           @map("term_end_date")
   createdAt        DateTime           @default(now()) @map("created_at")
   updatedAt        DateTime           @updatedAt @map("updated_at")
   metadata         Json?              @default("{}")
-  account          Account?           @relation(fields: [accountId], references: [id])
+  transactions     Transaction[]
   user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  payments         LiabilityPayment[]
 
   @@map("liabilities")
-}
-
-model LiabilityPayment {
-  id              String      @id @default(uuid())
-  liabilityId     String      @map("liability_id")
-  transactionId   String      @map("transaction_id")
-  principalAmount Decimal     @map("principal_amount") @db.Decimal(15, 2)
-  interestAmount  Decimal     @map("interest_amount") @db.Decimal(15, 2)
-  date            DateTime
-  liability       Liability   @relation(fields: [liabilityId], references: [id], onDelete: Cascade)
-  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
-
-  @@map("liability_payments")
 }
 
 model Forecast {
@@ -416,7 +393,7 @@ enum GoalStatus {
 }
 
 enum AssetType {
-  real_estate
+  housing
   investment
   vehicle
   business
@@ -448,12 +425,6 @@ enum LiabilityType {
 enum InterestType {
   fixed
   variable
-}
-
-enum PaymentFrequency {
-  monthly
-  biweekly
-  weekly
 }
 
 enum DeviceType {

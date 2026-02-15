@@ -14,20 +14,20 @@ describe("RegisterPage", () => {
   it("renders all form fields", () => {
     renderWithProviders(<RegisterPage />);
 
-    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^email$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/full name/i)).toBeTruthy();
+    expect(screen.getByLabelText(/^email$/i)).toBeTruthy();
+    expect(screen.getByLabelText(/^password$/i)).toBeTruthy();
+    expect(screen.getByLabelText(/confirm password/i)).toBeTruthy();
   });
 
   it("renders create account button", () => {
     renderWithProviders(<RegisterPage />);
-    expect(screen.getByRole("button", { name: /create account/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /create account/i })).toBeTruthy();
   });
 
   it("renders link to login page", () => {
     renderWithProviders(<RegisterPage />);
-    expect(screen.getByRole("link", { name: /sign in/i })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: /sign in/i }).getAttribute("href")).toBe("/login");
   });
 
   it("shows error when passwords do not match", async () => {
@@ -41,7 +41,7 @@ describe("RegisterPage", () => {
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Passwords do not match")).toBeInTheDocument();
+      expect(screen.getByText("Passwords do not match")).toBeTruthy();
     });
   });
 
@@ -56,7 +56,7 @@ describe("RegisterPage", () => {
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
     await waitFor(() => {
-      expect(screen.getByText(/at least 12 characters/i)).toBeInTheDocument();
+      expect(screen.getByText(/at least 12 characters/i)).toBeTruthy();
     });
   });
 
@@ -96,7 +96,7 @@ describe("RegisterPage", () => {
     await user.click(screen.getByRole("button", { name: /create account/i }));
 
     await waitFor(() => {
-      expect(screen.getByText("Email already exists")).toBeInTheDocument();
+      expect(screen.getByText("Email already exists")).toBeTruthy();
     });
   });
 });

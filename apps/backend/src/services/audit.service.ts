@@ -1,11 +1,12 @@
 import { prisma } from '../config/database';
+import type { Prisma } from '@prisma/client';
 
 export interface AuditLogEntry {
   userId?: string;
   action: string;
   resource?: string;
   resourceId?: string;
-  metadata?: Record<string, unknown>;
+  metadata?: Prisma.InputJsonValue;
   ipAddress?: string;
   userAgent?: string;
 }
