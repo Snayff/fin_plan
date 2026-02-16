@@ -82,3 +82,17 @@ export {
   type CreateGoalContributionInput,
   type LinkTransactionToGoalInput,
 } from './goal.schemas';
+
+// Budget schemas and types
+export {
+  createBudgetSchema,
+  updateBudgetSchema,
+  addBudgetItemSchema,
+  updateBudgetItemSchema,
+  BudgetPeriodEnum,
+  type BudgetPeriod,
+  type CreateBudgetInput,
+  type UpdateBudgetInput,
+  type AddBudgetItemInput,
+  type UpdateBudgetItemInput,
+} from './budget.schemas';

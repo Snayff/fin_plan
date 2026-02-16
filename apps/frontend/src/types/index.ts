@@ -24,6 +24,11 @@ import type {
   UpdateGoalInput as SharedUpdateGoalInput,
   CreateGoalContributionInput as SharedCreateGoalContributionInput,
   LinkTransactionToGoalInput as SharedLinkTransactionToGoalInput,
+  BudgetPeriod as SharedBudgetPeriod,
+  CreateBudgetInput as SharedCreateBudgetInput,
+  UpdateBudgetInput as SharedUpdateBudgetInput,
+  AddBudgetItemInput as SharedAddBudgetItemInput,
+  UpdateBudgetItemInput as SharedUpdateBudgetItemInput,
 } from '@finplan/shared';
 
 // Re-export for backward compatibility
@@ -51,6 +56,11 @@ export type CreateGoalInput = SharedCreateGoalInput;
 export type UpdateGoalInput = SharedUpdateGoalInput;
 export type CreateGoalContributionInput = SharedCreateGoalContributionInput;
 export type LinkTransactionToGoalInput = SharedLinkTransactionToGoalInput;
+export type BudgetPeriod = SharedBudgetPeriod;
+export type CreateBudgetInput = SharedCreateBudgetInput;
+export type UpdateBudgetInput = SharedUpdateBudgetInput;
+export type AddBudgetItemInput = SharedAddBudgetItemInput;
+export type UpdateBudgetItemInput = SharedUpdateBudgetItemInput;
 
 export interface Account {
   id: string;
@@ -420,4 +430,65 @@ export interface GoalSummary {
     target: number;
     count: number;
   }>;
+}
+
+// Budget types
+export interface BudgetItem {
+  id: string;
+  budgetId: string;
+  categoryId: string;
+  allocatedAmount: number;
+  carryover: boolean;
+  rolloverAmount: number | null;
+  notes: string | null;
+  category: {
+    id: string;
+    name: string;
+    color: string | null;
+    icon: string | null;
+  };
+}
+
+export interface BudgetSummary {
+  id: string;
+  name: string;
+  period: BudgetPeriod;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  totalAllocated: number;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CategoryBudgetGroup {
+  categoryId: string;
+  categoryName: string;
+  categoryColor: string | null;
+  categoryIcon: string | null;
+  items: BudgetItem[];
+  allocated: number;
+  spent: number;
+  remaining: number;
+  percentUsed: number;
+  isOverBudget: boolean;
+}
+
+export interface EnhancedBudget {
+  id: string;
+  userId: string;
+  name: string;
+  period: BudgetPeriod;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  categoryGroups: CategoryBudgetGroup[];
+  expectedIncome: number;
+  totalAllocated: number;
+  totalSpent: number;
+  totalRemaining: number;
+  unallocated: number;
 }

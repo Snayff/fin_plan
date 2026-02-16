@@ -148,3 +148,33 @@ export function buildCategory(overrides: Record<string, any> = {}) {
     ...overrides,
   };
 }
+
+export function buildBudget(overrides: Record<string, any> = {}) {
+  const id = nextId();
+  return {
+    id,
+    userId: "user-1",
+    name: "Monthly Budget",
+    period: "monthly" as const,
+    startDate: new Date("2025-01-01T00:00:00Z"),
+    endDate: new Date("2025-01-31T23:59:59Z"),
+    isActive: true,
+    createdAt: new Date("2025-01-01T00:00:00Z"),
+    updatedAt: new Date("2025-01-01T00:00:00Z"),
+    ...overrides,
+  };
+}
+
+export function buildBudgetItem(overrides: Record<string, any> = {}) {
+  const id = nextId();
+  return {
+    id,
+    budgetId: "budget-1",
+    categoryId: "category-1",
+    allocatedAmount: 500,
+    carryover: false,
+    rolloverAmount: null,
+    notes: null,
+    ...overrides,
+  };
+}

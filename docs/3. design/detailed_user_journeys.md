@@ -10,14 +10,14 @@
 **Journey Steps:**
 
 **Option A: Traditional Flow**
-1. User navigates to **Income** screen (via main navigation)
-2. Screen displays list of existing income streams (if any)
+1. User navigates to **Transactions** screen (via main navigation)
+2. Screen displays existing transactions, optionally filtered to income
 3. User clicks **"+ New Income"** button (top-right)
 
 **Option B: Command Palette (Quick Entry)**
 1. User presses **Ctrl+K** (or Cmd+K on Mac) from anywhere in the app
 2. Command palette opens
-3. User types "add income" or selects "New Income" from suggestions
+3. User types "new transaction" or selects the income quick action from suggestions
 4. Quick entry form appears with 3 essential fields
 4. Modal/form appears with the following fields:
    - **Name*** (text): e.g., "Monthly Salary", "Freelance Project"
@@ -31,7 +31,6 @@
        - **Start Date** (date picker)
        - **End Date** (optional date picker) OR **Number of Occurrences** (number input)
    - **Description** (text area, optional): Additional notes
-   - **Tags** (multi-select, optional): Add relevant tags
 5. User fills in required fields (marked with *)
 6. User clicks **"Save"** button
 7. System validates input:
@@ -41,7 +40,7 @@
 
 **Progressive Disclosure in Action:**
 - Initial form shows only: Amount*, Category*, Date*
-- "Show more options" link expands to reveal: Account, Recurring settings, Description, Tags
+- "Show more options" link expands to reveal: Account, Recurring settings, Description
 - Smart defaults auto-fill last-used values
 
 **Alternative Flows:**
@@ -56,8 +55,8 @@
 **User Goal:** Record a new expense or recurring bill
 
 **Journey Steps:**
-1. User navigates to **Expenses** screen (via main navigation)
-2. Screen displays list of existing expenses organized by category or date
+1. User navigates to **Transactions** screen (via main navigation)
+2. Screen displays existing transactions, optionally filtered to expenses
 3. User clicks **"+ New Expense"** button (top-right)
 4. Modal/form appears with the following fields:
    - **Name*** (text): e.g., "Groceries", "Electric Bill", "Netflix Subscription"
@@ -73,8 +72,6 @@
        - **Start Date** (date picker)
        - **End Date** (optional) OR **Number of Occurrences** (optional)
    - **Description** (text area, optional): Additional notes
-   - **Tags** (multi-select, optional): For cross-category tracking
-   - **Attach Receipt** (file upload, optional): Upload receipt image/PDF
 5. User fills in required fields
 6. User clicks **"Save"** button
 7. System validates and saves:
@@ -146,16 +143,13 @@
 5. User selects account type (e.g., "Checking")
 6. Form appears with fields appropriate to account type:
    - **Account Name*** (text): e.g., "Chase Checking", "Emergency Savings"
-   - **Financial Institution** (text, optional): e.g., "Chase Bank"
    - **Current Balance*** (currency): Starting balance
    - **Currency*** (dropdown): USD, EUR, GBP, etc.
-   - **Account Number** (text, optional, encrypted): Last 4 digits for reference
    - **Type-Specific Fields**:
      - For Credit: Credit Limit, Interest Rate
      - For Savings: Interest Rate, Goal (if applicable)
-     - For Loan: Original Amount, Interest Rate, Payment Frequency
+     - For Loan: Interest Rate
    - **Notes** (text area, optional): Additional details
-   - **Account Color** (color picker): For visual identification
 7. User fills in required fields
 8. User clicks **"Save"** button
 9. System creates account:
@@ -163,10 +157,6 @@
    - Redirects to Accounts screen
    - New account appears with balance
    - Account is now available for transaction selection
-
-**Alternative Flows:**
-- **Import from Template**: Select common account types with pre-filled defaults
-- **Set as Default**: Mark this account as default for income/expenses
 
 ---
 
@@ -331,10 +321,6 @@
    - **Purchase Price** (currency, optional): For cost basis
    - **Expected Annual Growth Rate** (percentage, optional): e.g., 5%
    - **Liquidity Type** (dropdown): Liquid, Semi-Liquid, Illiquid
-   - **Type-Specific Fields**:
-     - Real Estate: Address, Property Type, Mortgage Details
-     - Investments: Ticker Symbol, Number of Shares, Dividend Yield
-     - Vehicle: Make, Model, Year, VIN
    - **Notes** (text area, optional)
 7. User fills in fields
 8. User clicks **"Save"**
@@ -342,9 +328,7 @@
 10. System shows updated net worth with this asset included
 
 **Features:**
-- **Automatic Valuation**: Option to link to APIs for market values
 - **Value History**: Track value changes over time
-- **Income Generation**: Link dividend/rental income to this asset
 
 ---
 
@@ -366,27 +350,16 @@
 5. Form appears:
    - **Loan Name*** (text): e.g., "Federal Student Loan"
    - **Current Balance*** (currency): Amount owed now
-   - **Original Amount** (currency, optional): Initial loan amount
    - **Interest Rate*** (percentage): e.g., 4.5%
    - **Interest Type** (dropdown): Fixed, Variable
-   - **Minimum Payment*** (currency): Required monthly payment
-   - **Payment Frequency** (dropdown): Monthly, Bi-weekly, etc.
    - **Loan Start Date** (date picker, optional)
-   - **Loan Term** (number, optional): In months
    - **Lender** (text, optional): Name of lending institution
 6. User fills in fields
 7. System calculates:
    - Projected payoff date
-   - Total interest to be paid
-   - Amortization schedule preview
 8. User clicks **"Save"**
 9. Debt appears in liabilities list
 10. Net worth updates to reflect liability
-
-**Features:**
-- **Payoff Calculator**: See impact of extra payments
-- **Payment Tracking**: Link payments to this debt
-- **Debt Payoff Goal**: Auto-generate goal to eliminate debt
 
 ---
 
@@ -737,4 +710,6 @@
 9. Both devices now show in device list:
    - Web Browser (Desktop) - Last sync: Just now
    - Mobile Browser (iPhone) - Last sync: Just now
+
+
 

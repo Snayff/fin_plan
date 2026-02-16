@@ -14,6 +14,7 @@ import { dashboardRoutes } from './routes/dashboard.routes';
 import { assetRoutes } from './routes/asset.routes';
 import { liabilityRoutes } from './routes/liability.routes';
 import { goalRoutes } from './routes/goal.routes';
+import { budgetRoutes } from './routes/budget.routes';
 import { errorHandler } from './middleware/errorHandler';
 
 const server = Fastify({
@@ -82,6 +83,7 @@ async function start() {
     server.register(assetRoutes, { prefix: '/api' });
     server.register(liabilityRoutes, { prefix: '/api' });
     server.register(goalRoutes, { prefix: '/api' });
+    server.register(budgetRoutes, { prefix: '/api' });
 
     // WebSocket route for sync (placeholder for Phase 1)
     server.register(async (fastify) => {
