@@ -12,6 +12,8 @@ import TransactionsPage from "./pages/TransactionsPage";
 import AssetsPage from "./pages/AssetsPage";
 import LiabilitiesPage from "./pages/LiabilitiesPage";
 import GoalsPage from "./pages/GoalsPage";
+import BudgetsPage from "./pages/BudgetsPage";
+import BudgetDetailPage from "./pages/BudgetDetailPage";
 import Layout from "./components/layout/Layout";
 
 function App() {
@@ -44,6 +46,8 @@ function App() {
                   <Route path="/transactions" element={<TransactionsPage />} />
                   <Route path="/assets" element={<AssetsPage />} />
                   <Route path="/liabilities" element={<LiabilitiesPage />} />
+                  <Route path="/budget" element={<BudgetsPage />} />
+                  <Route path="/budget/:id" element={<BudgetDetailPage />} />
                   <Route path="/goals" element={<GoalsPage />} />
                   <Route path="/" element={<Navigate to="/dashboard" />} />
                 </Routes>
