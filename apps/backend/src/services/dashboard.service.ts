@@ -30,8 +30,8 @@ export const dashboardService = {
       ? await calculateAccountBalances(accountIds)
       : new Map<string, number>();
 
-    // Calculate total balance
-    const totalBalance = Array.from(balances.values()).reduce((sum, balance) => sum + balance, 0);
+    // Calculate total cash from account balances
+    const totalCash = Array.from(balances.values()).reduce((sum, balance) => sum + balance, 0);
 
     // Get transaction summary for the period
     const [incomeAgg, expenseAgg] = await Promise.all([
@@ -150,8 +150,8 @@ export const dashboardService = {
     });
     const totalLiabilities = Number(liabilityAgg._sum.currentBalance) || 0;
 
-    // Calculate net worth: account balances + assets - liabilities
-    const netWorth = totalBalance + totalAssets - totalLiabilities;
+    // Calculate net worth consistently: cash + assets - liabilities
+    const netWorth = totalCash + totalAssets - totalLiabilities;
 
     return {
       period: {
@@ -159,7 +159,8 @@ export const dashboardService = {
         endDate,
       },
       summary: {
-        totalBalance,
+        totalBalance: totalCash,
+        totalCash,
         totalAssets,
         totalLiabilities,
         netWorth,
@@ -217,7 +218,7 @@ export const dashboardService = {
     const trendData = await Promise.all(
       monthlyDates.map(async (date) => {
         const balances = await calculateAccountBalances(accountIds, date);
-        const totalBalance = Array.from(balances.values()).reduce((sum, bal) => sum + bal, 0);
+        const totalCash = Array.from(balances.values()).reduce((sum, bal) => sum + bal, 0);
 
         // Get assets created before or on this date
         const assetAgg = await prisma.asset.aggregate({
@@ -239,13 +240,14 @@ export const dashboardService = {
         });
         const totalLiabilities = Number(liabilityAgg._sum.currentBalance) || 0;
 
-        // Calculate net worth for this date
-        const netWorth = totalBalance + totalAssets - totalLiabilities;
+        // Calculate net worth consistently: cash + assets - liabilities
+        const netWorth = totalCash + totalAssets - totalLiabilities;
 
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         return {
           month: monthKey,
-          balance: totalBalance,
+          balance: totalCash,
+          cash: totalCash,
           assets: totalAssets,
           liabilities: totalLiabilities,
           netWorth,

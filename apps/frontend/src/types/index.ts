@@ -333,6 +333,7 @@ export interface DashboardSummary {
   };
   summary: {
     totalBalance: number;
+    totalCash: number;
     totalAssets: number;
     totalLiabilities: number;
     netWorth: number;
@@ -361,6 +362,7 @@ export interface DashboardSummary {
 export interface TrendData {
   month: string;
   balance?: number;
+  cash?: number;
   assets?: number;
   liabilities?: number;
   netWorth?: number;

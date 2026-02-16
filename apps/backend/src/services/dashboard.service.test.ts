@@ -17,7 +17,7 @@ beforeEach(() => {
 });
 
 describe("dashboardService.getDashboardSummary", () => {
-  it("returns net worth as accounts + assets - liabilities", async () => {
+  it("returns net worth as cash + assets - liabilities", async () => {
     prismaMock.account.findMany.mockResolvedValue([
       buildAccount({ id: "acc-1" }),
       buildAccount({ id: "acc-2" }),
@@ -40,12 +40,16 @@ describe("dashboardService.getDashboardSummary", () => {
 
     const result = await dashboardService.getDashboardSummary("user-1");
 
-    // totalBalance = 5000 + 3000 = 8000
+    // totalCash = 5000 + 3000 = 8000
     expect(result.summary.totalBalance).toBe(8000);
+    expect(result.summary.totalCash).toBe(8000);
     expect(result.summary.totalAssets).toBe(100000);
     expect(result.summary.totalLiabilities).toBe(50000);
-    // netWorth = 8000 + 100000 - 50000 = 58000
+    // netWorth = cash + assets - liabilities = 8000 + 100000 - 50000 = 58000
     expect(result.summary.netWorth).toBe(58000);
+    expect(result.summary.netWorth).toBe(
+      result.summary.totalCash + result.summary.totalAssets - result.summary.totalLiabilities
+    );
   });
 
   it("calculates savings rate correctly", async () => {
@@ -117,10 +121,12 @@ describe("dashboardService.getNetWorthTrend", () => {
 
     expect(result.length).toBeGreaterThan(0);
     expect(result[0]).toHaveProperty("month");
+    expect(result[0]).toHaveProperty("cash");
     expect(result[0]).toHaveProperty("balance");
     expect(result[0]).toHaveProperty("assets");
     expect(result[0]).toHaveProperty("liabilities");
     expect(result[0]).toHaveProperty("netWorth");
+    expect(result[0].netWorth).toBe((result[0].cash || 0) + (result[0].assets || 0) - (result[0].liabilities || 0));
   });
 });
 

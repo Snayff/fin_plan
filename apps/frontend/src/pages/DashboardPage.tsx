@@ -46,6 +46,11 @@ export default function DashboardPage() {
   const recentTransactions = data?.recentTransactions || [];
   const topCategories = data?.topCategories || [];
 
+  const totalCash = summary?.totalCash ?? summary?.totalBalance ?? 0;
+  const totalAssets = summary?.totalAssets || 0;
+  const totalLiabilities = summary?.totalLiabilities || 0;
+  const calculatedNetWorth = totalCash + totalAssets - totalLiabilities;
+
   // Prepare chart data
   const categoryChartData = topCategories.map((item) => ({
     name: item.category?.name || 'Unknown',
@@ -58,15 +63,15 @@ export default function DashboardPage() {
       const mapped =
         netWorthTrendResponse?.trend?.map((point) => ({
           date: `${point.month}-01`,
-          netWorth: point.netWorth || 0,
-          balance: point.balance || 0,
+          cash: point.cash ?? point.balance ?? 0,
           assets: point.assets || 0,
           liabilities: point.liabilities || 0,
+          netWorth: point.netWorth ?? (point.cash ?? point.balance ?? 0) + (point.assets || 0) - (point.liabilities || 0),
         })) || [];
 
       const firstMeaningfulIndex = mapped.findIndex(
         (point) =>
-          point.netWorth !== 0 || point.balance !== 0 || point.assets !== 0 || point.liabilities !== 0
+          point.netWorth !== 0 || point.cash !== 0 || point.assets !== 0 || point.liabilities !== 0
       );
 
       const trimmed = firstMeaningfulIndex >= 0 ? mapped.slice(firstMeaningfulIndex) : mapped;
@@ -78,7 +83,7 @@ export default function DashboardPage() {
       return [
         {
           date: data?.period?.startDate || new Date().toISOString(),
-          netWorth: summary?.netWorth || 0,
+          netWorth: calculatedNetWorth,
         },
       ];
     })();
@@ -111,14 +116,20 @@ export default function DashboardPage() {
           <CardContent className="pt-6">
             <div className="text-sm font-medium text-muted-foreground mb-2">Net Worth</div>
             <div className="text-2xl font-bold text-foreground">
-              £{summary?.netWorth?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
+              £{calculatedNetWorth.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
             </div>
-            <div className="flex items-center gap-4 mt-2 text-xs">
-              <span className="text-success">
-                Assets: £{summary?.totalAssets?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
+            <div className="text-xs text-text-tertiary mt-2">Cash + Assets - Liabilities</div>
+            <div className="flex items-center gap-2 mt-1 text-xs flex-wrap">
+              <span className="text-primary">
+                Cash: £{totalCash.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
               </span>
+              <span className="text-text-tertiary">+</span>
+              <span className="text-success">
+                Assets: £{totalAssets.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+              </span>
+              <span className="text-text-tertiary">-</span>
               <span className="text-brand">
-                Liabilities: £{summary?.totalLiabilities?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
+                Liabilities: £{totalLiabilities.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
               </span>
             </div>
           </CardContent>
