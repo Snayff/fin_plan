@@ -72,8 +72,22 @@ export default function LiabilitiesPage() {
         />
       )}
 
-      {filteredLiabilities.length === 0 ? (
-        <Card><CardContent className="p-8 text-center text-muted-foreground">No liabilities found.</CardContent></Card>
+      {liabilities.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground mb-4">
+              No liabilities yet. Create your first liability to start tracking what you owe.
+            </p>
+            <Button onClick={() => setIsCreateModalOpen(true)}>Create Liability</Button>
+          </CardContent>
+        </Card>
+      ) : filteredLiabilities.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <p className="text-muted-foreground mb-4">No liabilities match your filters.</p>
+            <Button variant="ghost" onClick={clearFilters}>Clear filters</Button>
+          </CardContent>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredLiabilities.map((liability) => (
