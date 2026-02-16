@@ -30,9 +30,11 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
     categoryId: transaction?.categoryId || '',
     name: transaction?.name || '',
     description: transaction?.description || '',
-    recurrence: transaction?.recurrence || 'none',
-    recurrence_end_date: transaction?.recurrence_end_date || '',
   });
+
+  // For generated transactions: track edit scope
+  const [updateScope, setUpdateScope] = useState<'this_only' | 'all' | 'all_forward'>('all');
+  const isGeneratedTransaction = transaction?.isGenerated || false;
 
   // Fetch accounts and categories
   const { data: accountsData, isLoading: isLoadingAccounts, error: accountsError } = useQuery({
@@ -65,12 +67,13 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: Partial<CreateTransactionInput>) => 
-      transactionService.updateTransaction(transaction!.id, data),
+    mutationFn: (data: { transaction: Partial<CreateTransactionInput>; updateScope?: string }) =>
+      transactionService.updateTransaction(transaction!.id, data.transaction, data.updateScope),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['recurringRules'] });
       showSuccess('Transaction updated successfully!');
       onSuccess?.();
     },
@@ -95,18 +98,20 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const submitData = {
       ...formData,
       date: new Date(formData.date).toISOString(),
       liabilityId: formData.liabilityId || undefined,
       categoryId: formData.categoryId || undefined,
       description: formData.description || undefined,
-      recurrence_end_date: formData.recurrence_end_date || undefined,
     };
 
     if (isEditing) {
-      updateMutation.mutate(submitData);
+      updateMutation.mutate({
+        transaction: submitData,
+        updateScope: isGeneratedTransaction ? updateScope : undefined,
+      });
     } else {
       createMutation.mutate(submitData);
     }
@@ -296,34 +301,72 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
         </div>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="recurrence">Recurrence</Label>
-        <select
-          id="recurrence"
-          value={formData.recurrence || 'none'}
-          onChange={(e) => setFormData({ ...formData, recurrence: e.target.value as any })}
-          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-        >
-          <option value="none">None</option>
-          <option value="weekly">Weekly</option>
-          <option value="monthly">Monthly</option>
-          <option value="yearly">Yearly</option>
-        </select>
-      </div>
+      {/* Edit Scope for Generated Transactions */}
+      {isEditing && isGeneratedTransaction && (
+        <div className="space-y-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-md">
+          <div className="flex items-center space-x-2 text-blue-700 dark:text-blue-300">
+            <svg
+              className="w-5 h-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+            <span className="font-medium text-sm">This is a recurring transaction</span>
+          </div>
 
-      {formData.recurrence && formData.recurrence !== 'none' && (
-        <div className="space-y-2">
-          <Label htmlFor="recurrence_end_date">
-            End Date <span className="text-muted-foreground font-normal text-xs">(Optional - leave blank for indefinite)</span>
-          </Label>
-          <Input
-            type="date"
-            id="recurrence_end_date"
-            value={formData.recurrence_end_date || ''}
-            onChange={(e) => setFormData({ ...formData, recurrence_end_date: e.target.value })}
-            placeholder="Leave blank for indefinite recurrence"
-          />
-          <p className="text-xs text-muted-foreground mt-1">Leave blank if the transaction should recur indefinitely</p>
+          <div className="space-y-2">
+            <Label className="text-sm font-medium">Apply changes to:</Label>
+            <div className="space-y-2">
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="updateScope"
+                  value="this_only"
+                  checked={updateScope === 'this_only'}
+                  onChange={(e) => setUpdateScope(e.target.value as any)}
+                  className="text-primary"
+                />
+                <span className="text-sm">
+                  <strong>This one only</strong> - Override just this instance
+                </span>
+              </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="updateScope"
+                  value="all"
+                  checked={updateScope === 'all'}
+                  onChange={(e) => setUpdateScope(e.target.value as any)}
+                  className="text-primary"
+                />
+                <span className="text-sm">
+                  <strong>All transactions</strong> - Update recurring rule and sync all instances (Default)
+                </span>
+              </label>
+
+              <label className="flex items-center space-x-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="updateScope"
+                  value="all_forward"
+                  checked={updateScope === 'all_forward'}
+                  onChange={(e) => setUpdateScope(e.target.value as any)}
+                  className="text-primary"
+                />
+                <span className="text-sm">
+                  <strong>All going forward</strong> - Update rule and sync from this date forward
+                </span>
+              </label>
+            </div>
+          </div>
         </div>
       )}
 

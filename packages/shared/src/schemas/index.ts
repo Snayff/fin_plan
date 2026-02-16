@@ -17,6 +17,22 @@ export {
   type UpdateTransactionInput,
 } from './transaction.schemas';
 
+// Recurring transaction schemas and types
+export {
+  createRecurringRuleSchema,
+  updateRecurringRuleSchema,
+  previewOccurrencesSchema,
+  templateTransactionSchema,
+  RecurringFrequencyEnum,
+  UpdateScopeEnum,
+  type RecurringFrequency,
+  type UpdateScope,
+  type TemplateTransaction,
+  type CreateRecurringRuleInput,
+  type UpdateRecurringRuleInput,
+  type PreviewOccurrencesInput,
+} from './recurring.schemas';
+
 // Account schemas and types
 export {
   createAccountSchema,

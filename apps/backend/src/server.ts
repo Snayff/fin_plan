@@ -10,6 +10,7 @@ import { authRoutes } from './routes/auth.routes';
 import { accountRoutes } from './routes/account.routes';
 import { categoryRoutes } from './routes/category.routes';
 import { transactionRoutes } from './routes/transaction.routes';
+import { recurringRoutes } from './routes/recurring.routes';
 import { dashboardRoutes } from './routes/dashboard.routes';
 import { assetRoutes } from './routes/asset.routes';
 import { liabilityRoutes } from './routes/liability.routes';
@@ -79,6 +80,7 @@ async function start() {
     server.register(accountRoutes, { prefix: '/api' });
     server.register(categoryRoutes, { prefix: '/api' });
     server.register(transactionRoutes, { prefix: '/api' });
+    server.register(recurringRoutes, { prefix: '/api' });
     server.register(dashboardRoutes, { prefix: '/api' });
     server.register(assetRoutes, { prefix: '/api' });
     server.register(liabilityRoutes, { prefix: '/api' });

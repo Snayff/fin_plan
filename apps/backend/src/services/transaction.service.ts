@@ -2,6 +2,14 @@ import { prisma } from '../config/database';
 import { TransactionType, RecurrenceType } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../utils/errors';
 import { Prisma } from '@prisma/client';
+import {
+  detectOverrides,
+  trackOverride,
+  syncRecurringRule,
+  clearOverrides,
+} from './recurring.service';
+
+type UpdateScope = 'this_only' | 'all' | 'all_forward';
 
 export interface CreateTransactionInput {
   accountId: string;
@@ -362,12 +370,22 @@ export const transactionService = {
   },
 
   /**
-   * Update a transaction
+   * Update a transaction with optional recurring rule sync
+   * @param updateScope - How to handle updates for generated transactions:
+   *   - 'this_only': Override this transaction only (default for generated)
+   *   - 'all': Update recurring rule and sync ALL transactions
+   *   - 'all_forward': Update recurring rule and sync from this date forward
    */
-  async updateTransaction(transactionId: string, userId: string, data: UpdateTransactionInput) {
-    // Get existing transaction
+  async updateTransaction(
+    transactionId: string,
+    userId: string,
+    data: UpdateTransactionInput,
+    updateScope?: UpdateScope
+  ) {
+    // Get existing transaction with recurring rule
     const existing = await prisma.transaction.findFirst({
       where: { id: transactionId, userId },
+      include: { recurringRule: true },
     });
 
     if (!existing) {
@@ -400,11 +418,16 @@ export const transactionService = {
     }
 
     const resultingType = data.type ?? existing.type;
-    const resultingLiabilityId = data.liabilityId === undefined ? existing.liabilityId : data.liabilityId || null;
+    const resultingLiabilityId =
+      data.liabilityId === undefined
+        ? existing.liabilityId
+        : data.liabilityId || null;
 
     if (resultingLiabilityId) {
       if (resultingType !== 'expense') {
-        throw new ValidationError('Liability can only be linked to expense transactions');
+        throw new ValidationError(
+          'Liability can only be linked to expense transactions'
+        );
       }
 
       const liability = await prisma.liability.findFirst({
@@ -429,57 +452,167 @@ export const transactionService = {
     // Build update data
     const updateData: any = {};
     if (data.accountId !== undefined) updateData.accountId = data.accountId;
-    if (data.liabilityId !== undefined) updateData.liabilityId = data.liabilityId || null;
+    if (data.liabilityId !== undefined)
+      updateData.liabilityId = data.liabilityId || null;
     if (data.date !== undefined) updateData.date = new Date(data.date);
     if (data.amount !== undefined) updateData.amount = data.amount;
     if (data.type !== undefined) updateData.type = data.type;
-    if (data.categoryId !== undefined) updateData.categoryId = data.categoryId || null;
-    if (data.subcategoryId !== undefined) updateData.subcategoryId = data.subcategoryId || null;
+    if (data.categoryId !== undefined)
+      updateData.categoryId = data.categoryId || null;
+    if (data.subcategoryId !== undefined)
+      updateData.subcategoryId = data.subcategoryId || null;
     if (data.name !== undefined) updateData.name = data.name.trim();
-    if (data.description !== undefined) updateData.description = data.description?.trim() || null;
+    if (data.description !== undefined)
+      updateData.description = data.description?.trim() || null;
     if (data.memo !== undefined) updateData.memo = data.memo?.trim() || null;
     if (data.tags !== undefined) updateData.tags = data.tags;
-    if (data.recurrence !== undefined) updateData.recurrence = data.recurrence;
-    if (data.recurrence_end_date !== undefined) updateData.recurrence_end_date = data.recurrence_end_date ? new Date(data.recurrence_end_date) : null;
+    if (data.recurrence !== undefined)
+      updateData.recurrence = data.recurrence;
+    if (data.recurrence_end_date !== undefined)
+      updateData.recurrence_end_date = data.recurrence_end_date
+        ? new Date(data.recurrence_end_date)
+        : null;
     if (data.metadata !== undefined) {
       const existingMeta = (existing.metadata as Record<string, any>) || {};
       updateData.metadata = { ...existingMeta, ...data.metadata };
     }
 
-    // Update transaction
+    // Handle recurring transaction updates
+    if (existing.isGenerated && existing.recurringRuleId && updateScope) {
+      const recurringRule = existing.recurringRule!;
+
+      if (updateScope === 'this_only') {
+        // Track overrides for this transaction only
+        const overriddenFields = await detectOverrides(transactionId, updateData);
+
+        for (const field of overriddenFields) {
+          const originalValue = (recurringRule.templateTransaction as any)[field];
+          const newValue = updateData[field];
+          await trackOverride(transactionId, field, originalValue, newValue);
+        }
+
+        // Update only this transaction
+        const transaction = await prisma.transaction.update({
+          where: { id: transactionId },
+          data: updateData,
+          include: {
+            account: { select: { id: true, name: true, type: true } },
+            category: {
+              select: { id: true, name: true, type: true, color: true },
+            },
+            liability: { select: { id: true, name: true, type: true } },
+            subcategory: { select: { id: true, name: true, color: true } },
+          },
+        });
+
+        return normalizeTransaction(transaction);
+      } else if (updateScope === 'all') {
+        // Update recurring rule template and sync ALL transactions
+        const templateUpdates: any = {};
+        if (data.amount !== undefined) templateUpdates.amount = data.amount;
+        if (data.categoryId !== undefined) templateUpdates.categoryId = data.categoryId;
+        if (data.subcategoryId !== undefined) templateUpdates.subcategoryId = data.subcategoryId;
+        if (data.description !== undefined) templateUpdates.description = data.description;
+        if (data.memo !== undefined) templateUpdates.memo = data.memo;
+        if (data.tags !== undefined) templateUpdates.tags = data.tags;
+        if (data.liabilityId !== undefined) templateUpdates.liabilityId = data.liabilityId;
+        if (data.name !== undefined) templateUpdates.name = data.name;
+
+        // Update recurring rule template
+        const currentTemplate = recurringRule.templateTransaction as any;
+        const newTemplate = { ...currentTemplate, ...templateUpdates };
+
+        await prisma.recurringRule.update({
+          where: { id: recurringRule.id },
+          data: {
+            templateTransaction: newTemplate,
+            version: recurringRule.version + 1,
+          },
+        });
+
+        // Clear all overrides
+        await clearOverrides(recurringRule.id, 'all');
+
+        // Sync all transactions
+        await syncRecurringRule(recurringRule.id, templateUpdates, 'all');
+
+        // Return updated transaction
+        const transaction = await prisma.transaction.findUnique({
+          where: { id: transactionId },
+          include: {
+            account: { select: { id: true, name: true, type: true } },
+            category: {
+              select: { id: true, name: true, type: true, color: true },
+            },
+            liability: { select: { id: true, name: true, type: true } },
+            subcategory: { select: { id: true, name: true, color: true } },
+          },
+        });
+
+        return normalizeTransaction(transaction!);
+      } else if (updateScope === 'all_forward') {
+        // Update recurring rule template and sync from this date forward
+        const templateUpdates: any = {};
+        if (data.amount !== undefined) templateUpdates.amount = data.amount;
+        if (data.categoryId !== undefined) templateUpdates.categoryId = data.categoryId;
+        if (data.subcategoryId !== undefined) templateUpdates.subcategoryId = data.subcategoryId;
+        if (data.description !== undefined) templateUpdates.description = data.description;
+        if (data.memo !== undefined) templateUpdates.memo = data.memo;
+        if (data.tags !== undefined) templateUpdates.tags = data.tags;
+        if (data.liabilityId !== undefined) templateUpdates.liabilityId = data.liabilityId;
+        if (data.name !== undefined) templateUpdates.name = data.name;
+
+        // Update recurring rule template
+        const currentTemplate = recurringRule.templateTransaction as any;
+        const newTemplate = { ...currentTemplate, ...templateUpdates };
+
+        await prisma.recurringRule.update({
+          where: { id: recurringRule.id },
+          data: {
+            templateTransaction: newTemplate,
+            version: recurringRule.version + 1,
+          },
+        });
+
+        // Clear overrides from this date forward
+        await clearOverrides(recurringRule.id, 'from_date', existing.date);
+
+        // Sync transactions from this date forward
+        await syncRecurringRule(
+          recurringRule.id,
+          templateUpdates,
+          'from_date',
+          existing.date
+        );
+
+        // Return updated transaction
+        const transaction = await prisma.transaction.findUnique({
+          where: { id: transactionId },
+          include: {
+            account: { select: { id: true, name: true, type: true } },
+            category: {
+              select: { id: true, name: true, type: true, color: true },
+            },
+            liability: { select: { id: true, name: true, type: true } },
+            subcategory: { select: { id: true, name: true, color: true } },
+          },
+        });
+
+        return normalizeTransaction(transaction!);
+      }
+    }
+
+    // Normal update (non-recurring or no updateScope specified)
     const transaction = await prisma.transaction.update({
       where: { id: transactionId },
       data: updateData,
       include: {
-        account: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-          },
-        },
+        account: { select: { id: true, name: true, type: true } },
         category: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-            color: true,
-          },
+          select: { id: true, name: true, type: true, color: true },
         },
-        liability: {
-          select: {
-            id: true,
-            name: true,
-            type: true,
-          },
-        },
-        subcategory: {
-          select: {
-            id: true,
-            name: true,
-            color: true,
-          },
-        },
+        liability: { select: { id: true, name: true, type: true } },
+        subcategory: { select: { id: true, name: true, color: true } },
       },
     });
 

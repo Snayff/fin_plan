@@ -188,6 +188,17 @@ export function buildTransactionFilterConfig(
           label: c.parentCategoryId ? `  ↳ ${c.name}` : c.name,
         })),
       },
+      {
+        key: 'isGenerated',
+        label: 'Recurring',
+        type: 'boolean-select',
+        allLabel: 'All Transactions',
+        matchField: 'isGenerated',
+        options: [
+          { value: 'true', label: 'Recurring only' },
+          { value: 'false', label: 'One-time only' },
+        ],
+      },
     ],
   };
 }

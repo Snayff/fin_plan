@@ -26,7 +26,8 @@
       "Bash(npx prisma generate:*)",
       "Bash(bunx prisma generate:*)",
       "Bash(bunx prisma migrate dev:*)",
-      "Bash(bunx tsc:*)"
+      "Bash(bunx tsc:*)",
+      "Bash(ls:*)"
     ]
   }
 }

@@ -16,7 +16,7 @@ import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import type { Transaction } from '../types';
 import { format } from 'date-fns';
-import { ArrowUpIcon, ArrowDownIcon, TrendingUpIcon } from 'lucide-react';
+import { ArrowUpIcon, ArrowDownIcon, TrendingUpIcon, RepeatIcon } from 'lucide-react';
 
 function toAmountNumber(value: unknown): number {
   const parsed = Number(value);
@@ -29,9 +29,20 @@ export default function TransactionsPage() {
   const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [deletingTransaction, setDeletingTransaction] = useState<Transaction | null>(null);
 
-  const { data, isLoading, error } = useQuery({
+  const { data, isLoading, error, refetch, isFetching } = useQuery({
     queryKey: ['transactions'],
-    queryFn: () => transactionService.getAllTransactions(),
+    queryFn: () => transactionService.getAllTransactions(1000),
+    retry: (failureCount, error) => {
+      const statusCode = (error as { statusCode?: number } | undefined)?.statusCode;
+
+      // Do not retry client-side validation/auth issues.
+      if (statusCode !== undefined && statusCode >= 400 && statusCode < 500) {
+        return false;
+      }
+
+      // Retry transient errors (network/5xx) up to 2 times.
+      return failureCount < 2;
+    },
   });
 
   const { data: accountsData } = useQuery({
@@ -107,8 +118,12 @@ export default function TransactionsPage() {
   if (error) {
     return (
       <div className="p-6">
-        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md">
-          Error loading transactions: {(error as Error).message}
+        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md space-y-3">
+          <p className="font-medium">Unable to load transactions right now.</p>
+          <p className="text-sm">{(error as Error).message}</p>
+          <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
+            {isFetching ? 'Retrying...' : 'Retry'}
+          </Button>
         </div>
       </div>
     );
@@ -227,7 +242,28 @@ export default function TransactionsPage() {
                     </td>
                     <td className="px-6 py-4 text-sm text-foreground">
                       <div>
-                        <div className="font-medium">{transaction.name || transaction.description || 'Unnamed transaction'}</div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium">{transaction.name || transaction.description || 'Unnamed transaction'}</span>
+                          {transaction.isGenerated && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                              title="Generated from recurring rule"
+                            >
+                              <RepeatIcon className="h-3 w-3 mr-1 inline" />
+                              Recurring
+                            </Badge>
+                          )}
+                          {transaction.isGenerated && transaction.overriddenFields && transaction.overriddenFields.length > 0 && (
+                            <Badge
+                              variant="outline"
+                              className="text-xs bg-amber-50 text-amber-700 border-amber-200"
+                              title={`Edited fields: ${transaction.overriddenFields.join(', ')}`}
+                            >
+                              Edited
+                            </Badge>
+                          )}
+                        </div>
                         {transaction.description && transaction.description !== transaction.name && (
                           <div className="text-xs text-muted-foreground mt-1">{transaction.description}</div>
                         )}

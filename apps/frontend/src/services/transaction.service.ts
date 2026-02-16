@@ -47,8 +47,9 @@ export const transactionService = {
     return normalizeTransactionListResponse(response);
   },
 
-  async getAllTransactions(): Promise<TransactionListResponse> {
-    const response = await apiClient.get<TransactionListResponse>('/api/transactions?limit=10000');
+  async getAllTransactions(limit = 1000): Promise<TransactionListResponse> {
+    const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.min(limit, 5000)) : 1000;
+    const response = await apiClient.get<TransactionListResponse>(`/api/transactions?limit=${safeLimit}`);
     return normalizeTransactionListResponse(response);
   },
 
@@ -79,9 +80,13 @@ export const transactionService = {
 
   async updateTransaction(
     id: string,
-    data: Partial<CreateTransactionInput>
+    data: Partial<CreateTransactionInput>,
+    updateScope?: string
   ): Promise<{ transaction: Transaction }> {
-    const response = await apiClient.put<{ transaction: Transaction }>(`/api/transactions/${id}`, data);
+    const url = updateScope
+      ? `/api/transactions/${id}?updateScope=${updateScope}`
+      : `/api/transactions/${id}`;
+    const response = await apiClient.put<{ transaction: Transaction }>(url, data);
     return { transaction: normalizeTransaction(response.transaction) };
   },
 

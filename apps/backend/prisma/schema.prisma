@@ -86,37 +86,56 @@ model Account {
 }
 
 model Transaction {
-  id                  String             @id @default(uuid())
-  userId              String             @map("user_id")
-  accountId           String             @map("account_id")
-  liabilityId         String?            @map("liability_id")
+  id                  String                  @id @default(uuid())
+  userId              String                  @map("user_id")
+  accountId           String                  @map("account_id")
+  liabilityId         String?                 @map("liability_id")
   date                DateTime
-  amount              Decimal            @db.Decimal(15, 2)
+  amount              Decimal                 @db.Decimal(15, 2)
   type                TransactionType
-  categoryId          String?            @map("category_id")
-  subcategoryId       String?            @map("subcategory_id")
+  categoryId          String?                 @map("category_id")
+  subcategoryId       String?                 @map("subcategory_id")
   description         String?
   memo                String?
-  tags                String[]           @default([])
-  isRecurring         Boolean            @default(false) @map("is_recurring")
-  recurringRuleId     String?            @map("recurring_rule_id")
-  createdAt           DateTime           @default(now()) @map("created_at")
-  updatedAt           DateTime           @updatedAt @map("updated_at")
-  metadata            Json?              @default("{}")
+  tags                String[]                @default([])
+  isRecurring         Boolean                 @default(false) @map("is_recurring")
+  recurringRuleId     String?                 @map("recurring_rule_id")
+  isGenerated         Boolean                 @default(false) @map("is_generated")
+  overriddenFields    String[]                @default([]) @map("overridden_fields")
+  generatedAt         DateTime?               @map("generated_at")
+  createdAt           DateTime                @default(now()) @map("created_at")
+  updatedAt           DateTime                @updatedAt @map("updated_at")
+  metadata            Json?                   @default("{}")
   name                String?
-  recurrence          RecurrenceType     @default(none)
+  recurrence          RecurrenceType          @default(none)
   recurrence_end_date DateTime?
   goalContributions   GoalContribution[]
-  account             Account            @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category            Category?          @relation("TransactionCategory", fields: [categoryId], references: [id])
-  liability           Liability?         @relation(fields: [liabilityId], references: [id], onDelete: SetNull)
-  recurringRule       RecurringRule?     @relation(fields: [recurringRuleId], references: [id])
-  subcategory         Category?          @relation("TransactionSubcategory", fields: [subcategoryId], references: [id])
-  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  overrides           TransactionOverride[]
+  account             Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category            Category?               @relation("TransactionCategory", fields: [categoryId], references: [id])
+  liability           Liability?              @relation(fields: [liabilityId], references: [id], onDelete: SetNull)
+  recurringRule       RecurringRule?          @relation(fields: [recurringRuleId], references: [id])
+  subcategory         Category?               @relation("TransactionSubcategory", fields: [subcategoryId], references: [id])
+  user                User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId, date])
   @@index([userId, categoryId, date])
+  @@index([recurringRuleId, date])
   @@map("transactions")
+}
+
+model TransactionOverride {
+  id              String      @id @default(uuid())
+  transactionId   String      @map("transaction_id")
+  fieldName       String      @map("field_name")
+  originalValue   Json        @map("original_value")
+  overriddenValue Json        @map("overridden_value")
+  createdAt       DateTime    @default(now()) @map("created_at")
+  transaction     Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+
+  @@unique([transactionId, fieldName])
+  @@index([transactionId])
+  @@map("transaction_overrides")
 }
 
 model Category {
@@ -153,11 +172,14 @@ model RecurringRule {
   lastGeneratedDate   DateTime?          @map("last_generated_date")
   isActive            Boolean            @default(true) @map("is_active")
   templateTransaction Json               @map("template_transaction")
+  version             Int                @default(1)
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
   user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions        Transaction[]
 
+  @@index([userId, isActive])
+  @@index([startDate, endDate])
   @@map("recurring_rules")
 }
 

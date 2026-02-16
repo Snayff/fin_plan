@@ -7,6 +7,12 @@ import type {
   TransactionType as SharedTransactionType,
   RecurrenceType as SharedRecurrenceType,
   CreateTransactionInput as SharedCreateTransactionInput,
+  RecurringFrequency as SharedRecurringFrequency,
+  UpdateScope as SharedUpdateScope,
+  TemplateTransaction as SharedTemplateTransaction,
+  CreateRecurringRuleInput as SharedCreateRecurringRuleInput,
+  UpdateRecurringRuleInput as SharedUpdateRecurringRuleInput,
+  PreviewOccurrencesInput as SharedPreviewOccurrencesInput,
   AssetType as SharedAssetType,
   LiquidityType as SharedLiquidityType,
   ValueSource as SharedValueSource,
@@ -39,6 +45,12 @@ export type CreateCategoryInput = SharedCreateCategoryInput;
 export type TransactionType = SharedTransactionType;
 export type RecurrenceType = SharedRecurrenceType;
 export type CreateTransactionInput = SharedCreateTransactionInput;
+export type RecurringFrequency = SharedRecurringFrequency;
+export type UpdateScope = SharedUpdateScope;
+export type TemplateTransaction = SharedTemplateTransaction;
+export type CreateRecurringRuleInput = SharedCreateRecurringRuleInput;
+export type UpdateRecurringRuleInput = SharedUpdateRecurringRuleInput;
+export type PreviewOccurrencesInput = SharedPreviewOccurrencesInput;
 export type AssetType = SharedAssetType;
 export type LiquidityType = SharedLiquidityType;
 export type ValueSource = SharedValueSource;
@@ -105,6 +117,22 @@ export interface Category {
 }
 
 
+export interface RecurringRule {
+  id: string;
+  userId: string;
+  frequency: RecurringFrequency;
+  interval: number;
+  startDate: string;
+  endDate: string | null;
+  occurrences: number | null;
+  lastGeneratedDate: string | null;
+  isActive: boolean;
+  templateTransaction: TemplateTransaction;
+  version: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Transaction {
   id: string;
   userId: string;
@@ -121,6 +149,9 @@ export interface Transaction {
   tags: string[];
   isRecurring: boolean;
   recurringRuleId: string | null;
+  isGenerated: boolean;
+  overriddenFields: string[];
+  generatedAt: string | null;
   recurrence: RecurrenceType;
   recurrence_end_date: string | null;
   metadata: Record<string, any>;

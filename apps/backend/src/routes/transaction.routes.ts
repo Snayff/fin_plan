@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { transactionService } from '../services/transaction.service';
 import { auditService } from '../services/audit.service';
 import { authMiddleware } from '../middleware/auth.middleware';
-import { createTransactionSchema, updateTransactionSchema } from '@finplan/shared';
+import { createTransactionSchema, updateTransactionSchema, UpdateScopeEnum } from '@finplan/shared';
 
 const ALLOWED_ORDER_FIELDS = ['date', 'amount', 'name', 'type', 'createdAt'] as const;
 const ALLOWED_ORDER_DIRS = ['asc', 'desc'] as const;
@@ -114,11 +114,29 @@ export async function transactionRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user!.userId;
       const { id } = request.params as { id: string };
+      const { updateScope } = request.query as { updateScope?: string };
 
       // Validate request body
       const validatedData = updateTransactionSchema.parse(request.body);
 
-      const transaction = await transactionService.updateTransaction(id, userId, validatedData);
+      // Validate updateScope if provided
+      let validatedScope: 'this_only' | 'all' | 'all_forward' | undefined;
+      if (updateScope) {
+        const scopeResult = UpdateScopeEnum.safeParse(updateScope);
+        if (!scopeResult.success) {
+          return reply.status(400).send({
+            error: 'Invalid updateScope. Must be one of: this_only, all, all_forward',
+          });
+        }
+        validatedScope = scopeResult.data;
+      }
+
+      const transaction = await transactionService.updateTransaction(
+        id,
+        userId,
+        validatedData,
+        validatedScope
+      );
 
       return reply.send({ transaction });
     }
