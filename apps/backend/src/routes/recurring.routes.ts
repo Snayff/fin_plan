@@ -42,8 +42,8 @@ export async function recurringRoutes(fastify: FastifyInstance) {
         validatedData.frequency,
         validatedData.interval,
         validatedData.startDate,
-        validatedData.endDate,
-        validatedData.occurrences,
+        validatedData.endDate ?? null,
+        validatedData.occurrences ?? null,
         validatedData.limit
       );
       return reply.send({ occurrences: dates });

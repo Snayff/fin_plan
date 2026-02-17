@@ -52,7 +52,7 @@ export const assetService = {
     const message = error.message || '';
     return (
       message.includes("Value 'real_estate' not found in enum") ||
-      message.includes('Value \"real_estate\" not found in enum') ||
+      message.includes('Value "real_estate" not found in enum') ||
       (message.includes('not found in enum') && message.includes('AssetType'))
     );
   },
@@ -188,7 +188,7 @@ export const assetService = {
    * - Calculated gains
    */
   async getUserAssetsWithHistory(userId: string, daysBack: number = 90) {
-    let assets = await prisma.asset
+    const assets = await prisma.asset
       .findMany({
         where: { userId },
         orderBy: [{ createdAt: 'desc' }],

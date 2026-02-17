@@ -56,7 +56,7 @@ export class ApiClient {
         if (token) {
           authHeaders = { Authorization: `Bearer ${token}` };
         }
-      } catch (error) {
+      } catch {
         // Store not available yet - continue without auth
       }
     }

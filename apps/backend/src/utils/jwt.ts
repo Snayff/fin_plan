@@ -39,10 +39,10 @@ export function verifyAccessToken(token: string): JwtPayload {
     return jwt.verify(token, config.JWT_SECRET) as JwtPayload;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new Error('Token expired');
+      throw new Error('Token expired', { cause: error });
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      throw new Error('Invalid token');
+      throw new Error('Invalid token', { cause: error });
     }
     throw error;
   }
@@ -56,10 +56,10 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
     return jwt.verify(token, config.JWT_REFRESH_SECRET) as RefreshTokenPayload;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new Error('Refresh token expired');
+      throw new Error('Refresh token expired', { cause: error });
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      throw new Error('Invalid refresh token');
+      throw new Error('Invalid refresh token', { cause: error });
     }
     throw error;
   }

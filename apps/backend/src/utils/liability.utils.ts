@@ -68,7 +68,7 @@ export function calculateAmortizationSchedule(
 
   const schedule: AmortizationEntry[] = [];
   let remainingBalance = balance;
-  let currentDate = startDate;
+  let currentDate: Date;
   let month = 0;
 
   const monthlyRate = annualRate / 12 / 100;

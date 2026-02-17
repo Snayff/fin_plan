@@ -28,11 +28,13 @@
     "db:studio": "cd apps/backend && bun run db:studio"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "bun-types": "^1.3.9",
     "eslint": "^9.19.0",
     "prettier": "^3.4.2",
     "turbo": "^2.3.4",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.56.0"
   },
   "engines": {
     "bun": ">=1.3.9"

@@ -33,19 +33,6 @@ interface TemplateTransaction {
   metadata?: Record<string, any>;
 }
 
-interface GeneratedTransaction extends TemplateTransaction {
-  id: string;
-  date: Date;
-  userId: string;
-  recurringRuleId: string;
-  isGenerated: boolean;
-  isRecurring: boolean;
-  overriddenFields: string[];
-  generatedAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
 export interface CreateRecurringRuleInput {
   frequency: RecurringFrequency;
   interval?: number;
@@ -246,7 +233,7 @@ export async function materializeHistoricalTransactions(
 
   // Filter out dates that already exist
   const toCreate = transactions.filter(
-    (t) => !existingDates.has(t.date!.toISOString())
+    (t) => !existingDates.has(new Date(t.date!).toISOString())
   );
 
   if (toCreate.length === 0) {

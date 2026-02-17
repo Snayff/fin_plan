@@ -86,7 +86,7 @@ function validateEnv(): Env {
   } catch (error) {
     if (error instanceof z.ZodError) {
       const missingVars = error.errors.map((err) => err.path.join('.')).join(', ');
-      throw new Error(`Missing or invalid environment variables: ${missingVars}`);
+      throw new Error(`Missing or invalid environment variables: ${missingVars}`, { cause: error });
     }
     throw error;
   }

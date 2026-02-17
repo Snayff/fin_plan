@@ -91,7 +91,7 @@ export default function RecurringRuleForm({
           limit: 5,
         });
         setPreview(result.occurrences);
-      } catch (error) {
+      } catch {
         // Silently fail preview
         setPreview([]);
       }
@@ -152,11 +152,11 @@ export default function RecurringRuleForm({
     const recurringRuleData: CreateRecurringRuleInput = {
       frequency: formData.frequency,
       interval: formData.interval,
-      startDate: formData.startDate,
+      startDate: new Date(formData.startDate),
       endDate: formData.useOccurrences
         ? undefined
         : formData.endDate
-        ? formData.endDate
+        ? new Date(formData.endDate)
         : undefined,
       occurrences: formData.useOccurrences ? formData.occurrences : undefined,
       isActive: true,
