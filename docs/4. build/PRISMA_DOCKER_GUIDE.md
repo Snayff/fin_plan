@@ -46,7 +46,7 @@ If you need to fix it manually:
 
 ```bash
 # Step 1: Regenerate Prisma client inside Docker container
-docker-compose -f docker-compose.dev.yml exec backend npx prisma generate
+docker-compose -f docker-compose.dev.yml exec backend bunx prisma generate
 
 # Step 2: Restart the backend service
 docker-compose -f docker-compose.dev.yml restart backend
@@ -84,7 +84,7 @@ The backend `package.json` now includes a `postinstall` script that automaticall
 }
 ```
 
-This means whenever you run `npm install` (even inside Docker), the Prisma client will be regenerated automatically.
+This means whenever you run `bun install` (even inside Docker), the Prisma client will be regenerated automatically.
 
 ### When to Regenerate
 
@@ -102,7 +102,7 @@ You need to regenerate the Prisma client whenever you:
 1. Make changes to `apps/backend/prisma/schema.prisma`
 2. Create and run migration (optional for dev):
    ```bash
-   docker-compose -f docker-compose.dev.yml exec backend npx prisma migrate dev --name your_migration_name
+   docker-compose -f docker-compose.dev.yml exec backend bunx prisma migrate dev --name your_migration_name
    ```
 3. Run the helper script to regenerate Prisma client:
    ```bash
@@ -129,7 +129,7 @@ git pull origin main
 
 ```bash
 # Create migration inside Docker
-docker-compose -f docker-compose.dev.yml exec backend npx prisma migrate dev --name add_new_feature
+docker-compose -f docker-compose.dev.yml exec backend bunx prisma migrate dev --name add_new_feature
 
 # Regenerate client
 ./regenerate-prisma-docker.bat  # or .sh
@@ -174,7 +174,7 @@ docker-compose -f docker-compose.dev.yml up -d
 
 **Solution**: Run migrations inside Docker
 ```bash
-docker-compose -f docker-compose.dev.yml exec backend npx prisma migrate deploy
+docker-compose -f docker-compose.dev.yml exec backend bunx prisma migrate deploy
 ```
 
 ## Technical Details
@@ -206,7 +206,7 @@ You could remove the named volume from `docker-compose.dev.yml`:
 **However**, this will:
 - ❌ Significantly slow down development (especially on Windows/Mac)
 - ❌ Cause more issues than it solves
-- ❌ Make npm installs inside Docker painfully slow
+- ❌ Make bun installs inside Docker painfully slow
 
 ## Summary
 

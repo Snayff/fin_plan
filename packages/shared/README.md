@@ -156,19 +156,19 @@ import {
 
 ```bash
 cd packages/shared
-npm run build
+bun run build
 ```
 
 ### Type Checking
 
 ```bash
-npm run type-check
+bun run type-check
 ```
 
 ### Making Changes
 
 1. Update the schema in `packages/shared/src/schemas/`
-2. Run `npm run build` to rebuild the package
+2. Run `bun run build` to rebuild the package
 3. Both frontend and backend will automatically use the updated validation
 
 **Important**: After making changes to schemas, you may need to restart the dev servers for the changes to be reflected.
@@ -192,7 +192,7 @@ packages/shared/
 ## Best Practices
 
 1. **Always update schemas here first** - Don't duplicate validation logic in apps
-2. **Build after changes** - Run `npm run build` after schema updates
+2. **Build after changes** - Run `bun run build` after schema updates
 3. **Use types, not just schemas** - Import types for TypeScript support
 4. **Test validation** - Schema changes affect both apps, so test thoroughly
 5. **Document requirements** - Add JSDoc comments for complex validations
@@ -201,13 +201,13 @@ packages/shared/
 
 ### "Cannot find module '@finplan/shared'"
 
-1. Ensure you've run `npm install` in the root directory
-2. Build the shared package: `cd packages/shared && npm run build`
+1. Ensure you've run `bun install` in the root directory
+2. Build the shared package: `cd packages/shared && bun run build`
 3. Restart your dev server
 
 ### Type errors after updating schemas
 
-1. Rebuild the shared package: `cd packages/shared && npm run build`
+1. Rebuild the shared package: `cd packages/shared && bun run build`
 2. Restart TypeScript server in VS Code (Cmd/Ctrl + Shift + P > "TypeScript: Restart TS Server")
 
 ### Changes not reflecting

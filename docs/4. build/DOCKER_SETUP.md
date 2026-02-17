@@ -42,20 +42,20 @@ chmod +x start-dev.sh stop-dev.sh
 ./stop-dev.sh
 ```
 
-### Option 2: Using NPM Scripts
+### Option 2: Using Bun Scripts
 
 ```bash
 # Start all services in background
-npm run start
+bun run start
 
 # Stop all services
-npm run stop
+bun run stop
 
 # Restart all services
-npm run restart
+bun run restart
 
 # View logs from all services
-npm run docker:logs
+bun run docker:logs
 
 # View logs from specific service
 docker-compose -f docker-compose.dev.yml logs -f backend
@@ -95,7 +95,7 @@ The Docker Compose setup includes 4 services:
    - Health checks
 
 3. **Backend** (port 3001)
-   - Node.js API server
+   - Bun API server
    - Hot reload on code changes
    - Auto-connects to PostgreSQL and Redis
 
@@ -121,7 +121,7 @@ The first time you run the services, Docker will build the images. This takes 2-
 
 ```bash
 # Build all containers
-npm run docker:build
+bun run docker:build
 
 # Or
 docker-compose -f docker-compose.dev.yml build
@@ -137,27 +137,27 @@ After the initial build, starting/stopping is much faster (5-10 seconds).
 
 ```bash
 # Run migrations (services must be running)
-npm run db:migrate
+bun run db:migrate
 
 # Or directly:
-docker-compose -f docker-compose.dev.yml exec backend npm run db:migrate
+docker-compose -f docker-compose.dev.yml exec backend bun run db:migrate
 ```
 
 ### Seeding the Database
 
 ```bash
 # Seed default categories
-npm run db:seed
+bun run db:seed
 
 # Or directly:
-docker-compose -f docker-compose.dev.yml exec backend npm run db:seed
+docker-compose -f docker-compose.dev.yml exec backend bun run db:seed
 ```
 
 ### Accessing Prisma Studio
 
 ```bash
 # Open Prisma Studio (runs on host, not in container)
-npm run db:studio
+bun run db:studio
 
 # Opens at http://localhost:5555
 ```
@@ -166,7 +166,7 @@ npm run db:studio
 
 ```bash
 # All services
-npm run docker:logs
+bun run docker:logs
 
 # Specific service
 docker-compose -f docker-compose.dev.yml logs -f backend
@@ -179,7 +179,7 @@ docker-compose -f docker-compose.dev.yml logs -f redis
 
 ```bash
 # Restart all services
-npm run docker:restart
+bun run docker:restart
 
 # Restart specific service
 docker-compose -f docker-compose.dev.yml restart backend
@@ -188,31 +188,31 @@ docker-compose -f docker-compose.dev.yml restart frontend
 
 ### Rebuilding After Dependency Changes
 
-If you add/update npm packages in `package.json`:
+If you add/update dependencies in `package.json`:
 
 ```bash
 # Rebuild containers
-npm run docker:build
+bun run docker:build
 
 # Or rebuild specific service
 docker-compose -f docker-compose.dev.yml build backend
 docker-compose -f docker-compose.dev.yml build frontend
 
 # Then restart
-npm run restart
+bun run restart
 ```
 
 ### Clean Slate (Reset Everything)
 
 ```bash
 # Stop and remove all data
-npm run docker:clean
+bun run docker:clean
 
 # Or
 docker-compose -f docker-compose.dev.yml down -v
 
 # Then start fresh
-npm run start
+bun run start
 ```
 
 ---
@@ -259,7 +259,7 @@ docker-compose -f docker-compose.dev.yml restart frontend
 
 # Or rebuild
 docker-compose -f docker-compose.dev.yml build frontend
-npm run restart
+bun run restart
 ```
 
 ### Database Connection Issues
@@ -276,7 +276,7 @@ docker-compose -f docker-compose.dev.yml logs backend
 # Verify DATABASE_URL is correct in docker-compose.dev.yml
 ```
 
-### Node Modules Issues
+### Dependencies Issues
 
 If you get module not found errors:
 
@@ -286,7 +286,7 @@ docker-compose -f docker-compose.dev.yml build --no-cache backend
 docker-compose -f docker-compose.dev.yml build --no-cache frontend
 
 # Restart
-npm run restart
+bun run restart
 ```
 
 ### Can't Connect to Frontend/Backend
@@ -394,7 +394,7 @@ For production, you'll need:
 
 1. **Start your day:**
    ```bash
-   npm run start
+   bun run start
    # Wait ~10 seconds
    # Open http://localhost:3000
    ```
@@ -405,12 +405,12 @@ For production, you'll need:
 
 3. **View logs when debugging:**
    ```bash
-   npm run docker:logs
+   bun run docker:logs
    ```
 
 4. **End your day:**
    ```bash
-   npm run stop
+   bun run stop
    ```
 
 ### Performance Tips
@@ -423,7 +423,7 @@ For production, you'll need:
 ### When to Rebuild
 
 Rebuild containers when:
-- ✅ You add/remove npm packages
+- ✅ You add/remove dependencies
 - ✅ You change `Dockerfile.dev`
 - ✅ You change Prisma schema (then also run migrations)
 - ❌ Not needed for regular code changes (hot reload handles it)
@@ -442,14 +442,14 @@ Rebuild containers when:
 
 **Old Workflow:**
 ```bash
-Terminal 1: npm run docker:dev
-Terminal 2: cd apps/backend && npm run dev
-Terminal 3: cd apps/frontend && npm run dev
+Terminal 1: bun run start
+Terminal 2: cd apps/backend && bun run dev
+Terminal 3: cd apps/frontend && bun run dev
 ```
 
 **New Workflow:**
 ```bash
-npm run start
+bun run start
 # Everything just works! 🚀
 ```
 

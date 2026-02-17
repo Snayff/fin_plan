@@ -138,10 +138,10 @@ Phase 1 has been successfully implemented with all core backend authentication, 
 
 ```bash
 # Install dependencies
-npm install
+bun install
 
 # Start Docker services (PostgreSQL + Redis)
-npm run docker:dev
+bun run start
 
 # Setup backend environment
 cd apps/backend
@@ -149,13 +149,13 @@ cp .env.example .env
 # Edit .env if needed (defaults work for local development)
 
 # Generate Prisma client
-npx prisma generate
+bunx prisma generate
 
 # Run database migrations
-npm run db:migrate
+bun run db:migrate
 
 # Seed default categories
-npm run db:seed
+bun run db:seed
 
 # Return to root
 cd ../..
@@ -165,7 +165,7 @@ cd ../..
 
 ```bash
 # Start both frontend and backend
-npm run dev
+bun run dev
 
 # Frontend: http://localhost:3000
 # Backend: http://localhost:3001
@@ -205,14 +205,14 @@ curl http://localhost:3001/api/auth/me \
 ```bash
 # View database in Prisma Studio
 cd apps/backend
-npm run db:studio
+bun run db:studio
 # Opens at http://localhost:5555
 
 # Reset database (WARNING: Deletes all data)
-npm run db:migrate reset
+cd apps/backend && bunx prisma migrate reset
 
 # Create new migration after schema changes
-npm run db:migrate
+bun run db:migrate
 ```
 
 ---
@@ -405,8 +405,8 @@ All required environment variables are documented in `apps/backend/.env.example`
 After modifying `prisma/schema.prisma`:
 ```bash
 cd apps/backend
-npm run db:migrate
-npx prisma generate
+bun run db:migrate
+bunx prisma generate
 ```
 
 ### Adding New API Endpoints
@@ -418,7 +418,7 @@ npx prisma generate
 ### Common Issues
 
 **"Database connection failed"**
-- Ensure Docker containers are running: `npm run docker:dev`
+- Ensure Docker containers are running: `bun run start`
 - Check `DATABASE_URL` in `.env`
 
 **"JWT secret too short"**
@@ -576,10 +576,10 @@ All core infrastructure is in place for Phase 2 development. The authentication 
 ### 1. Start Everything
 ```bash
 # Terminal 1: Database
-npm run docker:dev
+bun run start
 
 # Terminal 2: Backend (already running)
-cd apps/backend && npm run dev
+cd apps/backend && bun run dev
 
 # Terminal 3: Frontend (already running at http://localhost:3000)
 # Your app is live!
@@ -700,7 +700,7 @@ onSuccess: () => queryClient.invalidateQueries(['accounts'])
 ## 🔧 Technologies Used
 
 **Backend Stack:**
-- Node.js + TypeScript
+- Bun + TypeScript
 - Fastify (web framework)
 - Prisma ORM (database)
 - PostgreSQL (database)
@@ -1304,7 +1304,7 @@ const [formData, setFormData] = useState<CreateTransactionInput>({
 ### Making Schema Changes
 
 1. **Edit schema** in `packages/shared/src/schemas/`
-2. **Rebuild package**: `cd packages/shared && npm run build`
+2. **Rebuild package**: `cd packages/shared && bun run build`
 3. **Restart dev servers** (backend & frontend pick up changes)
 
 That's it! Both apps now use the updated validation automatically.
@@ -1320,7 +1320,7 @@ That's it! Both apps now use the updated validation automatically.
 
 To verify the solution:
 
-1. **Start the backend**: `npm run dev` (in root)
+1. **Start the backend**: `bun run dev` (in root)
 2. **Start the frontend**: The dev server will use the shared schemas
 3. **Create a transaction**: Fill out all required fields including `name`
 4. **Verify**: Transaction should create successfully without validation errors
@@ -1591,7 +1591,7 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 ## Testing the Implementation
 
 ### Quick Visual Test
-1. Start dev server: `npm run dev` (in apps/frontend)
+1. Start dev server: `bun run dev` (in apps/frontend)
 2. Navigate to Dashboard
 3. Check:
    - ✅ Dark background (#191D32)
