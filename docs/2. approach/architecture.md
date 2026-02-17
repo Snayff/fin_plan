@@ -25,7 +25,7 @@ The project is organized as a Bun/Turborepo monorepo:
 
 ### Stack
 
-- Runtime/tooling: Node.js-compatible runtime with **Bun** scripts
+- Runtime/tooling: **Bun** runtime with Bun scripts
 - Framework: **Fastify**
 - Database access: **Prisma** + PostgreSQL
 - Validation: **Zod** (largely via `@finplan/shared`)
