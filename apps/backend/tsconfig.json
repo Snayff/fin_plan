@@ -13,7 +13,7 @@
       "@finplan/shared": ["../../packages/shared/src"]
     }
   },
-  "include": ["src/**/*", "../../packages/shared/src/**/*"],
+  "include": ["src/**/*"],
   "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/test/**/*"],
   "references": [
     { "path": "../../packages/shared" }
