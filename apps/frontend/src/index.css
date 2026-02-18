@@ -1,0 +1,243 @@
+/* Import Inter font for high x-height and excellent accessibility */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Dark mode only - our primary theme */
+    --background: 230 31% 15%;           /* #191D32 - Background */
+    --foreground: 230 29% 96%;           /* #F2F3F7 - Primary Text */
+    
+    /* Cards & Surfaces */
+    --card: 230 27% 19%;                 /* #22263D - Surface */
+    --card-foreground: 230 29% 96%;      /* #F2F3F7 - Primary Text */
+    
+    /* Popovers & Overlays */
+    --popover: 230 27% 19%;              /* #22263D - Surface */
+    --popover-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
+    
+    /* Primary Action (Orange - Focus & Momentum) */
+    --primary: 25 100% 55%;              /* #FF7A18 - Primary Action */
+    --primary-foreground: 230 29% 96%;   /* #F2F3F7 - Text on primary */
+    --primary-hover: 25 88% 49%;         /* #E66D15 - Hover state */
+    --primary-subtle: 25 32% 17%;        /* #3B2A1E - Subtle background */
+    
+    /* Secondary Actions (Muted) */
+    --secondary: 230 27% 26%;            /* #2F3452 - Border/Muted */
+    --secondary-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
+    
+    /* Muted/Disabled */
+    --muted: 230 27% 26%;                /* #2F3452 - Border */
+    --muted-foreground: 230 20% 67%;     /* #9DA1B8 - Tertiary Text */
+    
+    /* Accent (Brand - Purple/Rose) */
+    --accent: 320 23% 62%;               /* #B38BA3 - Brand Primary */
+    --accent-foreground: 230 29% 96%;    /* #F2F3F7 - Primary Text */
+    --accent-subtle: 270 20% 22%;        /* #3A2F44 - Brand Subtle */
+    
+    /* Progress/Success (Teal - Calm Positive) */
+    --success: 177 95% 39%;              /* #07BEB8 - Progress */
+    --success-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
+    --success-hover: 177 95% 35%;        /* #06A9A3 - Hover */
+    --success-subtle: 190 38% 20%;       /* #1F3F46 - Subtle background */
+    
+    /* Highlight (Magenta - Supportive Emphasis) */
+    --highlight: 306 44% 40%;            /* #8F3985 - Highlight */
+    --highlight-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
+    --highlight-subtle: 277 28% 17%;     /* #2F2038 - Subtle background */
+    
+    /* Expense (Dark Slate - Discrete, Harmonious) */
+    --expense: 215 25% 35%;              /* Dark slate grey */
+    --expense-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
+    --expense-subtle: 215 25% 20%;       /* Very dark slate grey */
+    
+    /* Attention/Warning (Magenta - Supportive Emphasis) */
+    --warning: 306 44% 40%;              /* #8F3985 - Magenta */
+    --warning-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
+    --warning-subtle: 277 28% 17%;       /* #2F2038 - Subtle background */
+    
+    /* Destructive/Error (Red - Rare, Explicit Only) */
+    --destructive: 358 75% 59%;          /* #E5484D - Error */
+    --destructive-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
+    --destructive-subtle: 350 33% 19%;   /* #402024 - Subtle background */
+    
+    /* Borders & Inputs */
+    --border: 230 27% 26%;               /* #2F3452 - Border */
+    --input: 230 27% 26%;                /* #2F3452 - Input border */
+    --ring: 25 100% 55%;                 /* #FF7A18 - Focus ring (orange) */
+    
+    /* Border Radius */
+    --radius: 0.5rem;                    /* 8px - default */
+    
+    /* Chart Colors (for Recharts) */
+    --chart-1: 177 95% 39%;              /* #07BEB8 - Teal (Income) */
+    --chart-2: 215 25% 35%;              /* Dark Slate Grey (Expenses) */
+    --chart-3: 320 23% 62%;              /* #B38BA3 - Purple/Rose (Brand) */
+    --chart-4: 306 44% 40%;              /* #8F3985 - Magenta (Highlight) */
+    --chart-5: 25 100% 55%;              /* #FF7A18 - Orange (for CTAs in charts) */
+    
+    /* Text Hierarchy - Additional tokens */
+    --text-secondary: 230 23% 82%;       /* #C7CAD9 - Secondary Text */
+    --text-tertiary: 230 20% 67%;        /* #9DA1B8 - Tertiary Text */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-size: 16px; /* Larger base for accessibility */
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* High contrast focus indicators for accessibility */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+  
+  /* Heading styles with proper hierarchy */
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold text-foreground;
+    line-height: 1.25;
+  }
+  
+  h1 { @apply text-3xl; }
+  h2 { @apply text-2xl; }
+  h3 { @apply text-xl; }
+  h4 { @apply text-lg; }
+  h5 { @apply text-base; }
+  h6 { @apply text-sm; }
+  
+  /* Respect reduced motion preferences */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Custom utility classes for design system */
+  .text-secondary {
+    color: hsl(var(--text-secondary));
+  }
+  
+  .text-tertiary {
+    color: hsl(var(--text-tertiary));
+  }
+  
+  /* Success utilities */
+  .bg-success {
+    background-color: hsl(var(--success));
+  }
+  
+  .text-success {
+    color: hsl(var(--success));
+  }
+  
+  .bg-success-subtle {
+    background-color: hsl(var(--success-subtle));
+  }
+  
+  /* Highlight utilities */
+  .bg-highlight {
+    background-color: hsl(var(--highlight));
+  }
+  
+  .text-highlight {
+    color: hsl(var(--highlight));
+  }
+  
+  .bg-highlight-subtle {
+    background-color: hsl(var(--highlight-subtle));
+  }
+  
+  /* Warning utilities */
+  .bg-warning {
+    background-color: hsl(var(--warning));
+  }
+  
+  .text-warning {
+    color: hsl(var(--warning));
+  }
+  
+  .bg-warning-subtle {
+    background-color: hsl(var(--warning-subtle));
+  }
+  
+  /* Expense utilities */
+  .bg-expense {
+    background-color: hsl(var(--expense));
+  }
+  
+  .text-expense {
+    color: hsl(var(--expense));
+  }
+  
+  .bg-expense-subtle {
+    background-color: hsl(var(--expense-subtle));
+  }
+  
+  /* Achievement animation */
+  @keyframes achievement {
+    0% {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+    50% {
+      transform: scale(1.05);
+    }
+    100% {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+  
+  .animate-achievement {
+    animation: achievement 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  }
+  
+  /* Pulse animation for attention */
+  @keyframes pulse-subtle {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.8;
+    }
+  }
+  
+  .animate-pulse-subtle {
+    animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+  
+  /* Slide in from bottom (for toasts/notifications) */
+  @keyframes slide-in-bottom {
+    from {
+      transform: translateY(100%);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .animate-slide-in-bottom {
+    animation: slide-in-bottom 250ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(bunx prisma migrate dev:*)",
+      "Bash(bunx prisma migrate resolve:*)",
+      "Bash(bunx prisma migrate reset:*)",
+      "Bash(PRISMA_USER_CONSENT_FOR_DANGEROUS_AI_ACTION=\"yes\" bunx prisma migrate reset:*)",
+      "Bash(docker-compose:*)",
+      "Bash(bun run db:seed:*)",
+      "Bash(bunx tsx:*)",
+      "Bash(bunx prisma migrate:*)",
+      "Bash(bun install:*)",
+      "Bash(bun run build:*)",
+      "Bash(bunx tsc:*)",
+      "Bash(bunx vitest run)",
+      "Bash(bun:*)",
+      "Bash(powershell:*)",
+      "Bash(\"C:/Users/Gabriel/.bun/bin/bun.exe\" --version)",
+      "Bash(\"C:/Users/Gabriel/.bun/bin/bun.exe\" run type-check:*)",
+      "Bash(export PATH=\"$PATH:/c/Users/Gabriel/.bun/bin\")",
+      "Bash(/c/Users/Gabriel/.bun/bin/bun test:*)",
+      "Bash(docker ps:*)",
+      "Bash(timeout:*)",
+      "Bash(dir:*)",
+      "Bash(bunx prisma generate:*)",
+      "Bash(ls:*)"
+    ]
+  }
+}

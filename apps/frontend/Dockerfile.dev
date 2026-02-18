@@ -1,0 +1,30 @@
+FROM oven/bun:1-alpine
+
+WORKDIR /workspace
+
+# Copy root package.json and workspace configuration
+COPY package.json bun.lock ./
+COPY turbo.json ./
+COPY tsconfig.json ./
+
+# Copy shared package
+COPY packages/shared ./packages/shared/
+
+# Copy frontend package.json
+COPY apps/frontend/package.json ./apps/frontend/
+
+# Install all dependencies (including workspace packages)
+RUN bun install
+
+# Copy frontend source and config files
+WORKDIR /workspace/apps/frontend
+COPY apps/frontend/src ./src/
+COPY apps/frontend/*.html ./
+COPY apps/frontend/tsconfig*.json ./
+COPY apps/frontend/*.config.* ./
+
+# Expose Vite dev server port
+EXPOSE 3000
+
+# Development command with hot reload
+CMD ["bun", "run", "dev", "--", "--host", "0.0.0.0"]

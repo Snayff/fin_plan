@@ -1,0 +1,46 @@
+{
+  "name": "@finplan/backend",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --watch src/server.ts",
+    "build": "tsc",
+    "start": "bun src/server.ts",
+    "test": "bun scripts/run-tests.ts",
+    "test:file": "bun test --preload ./src/test/setup.ts",
+    "lint": "eslint src/ --max-warnings 0",
+    "type-check": "tsc --noEmit",
+    "db:migrate": "prisma migrate dev",
+    "db:seed": "bun src/db/seed.ts",
+    "db:studio": "prisma studio",
+    "db:push": "prisma db push",
+    "postinstall": "prisma generate",
+    "prisma:generate": "prisma generate"
+  },
+  "dependencies": {
+    "@fastify/cookie": "^10.0.1",
+    "@fastify/cors": "^10.0.1",
+    "@fastify/csrf-protection": "^7.1.0",
+    "@fastify/helmet": "^12.0.1",
+    "@fastify/rate-limit": "^10.1.1",
+    "@fastify/websocket": "^11.0.1",
+    "@finplan/shared": "*",
+    "@prisma/client": "^6.3.0",
+    "@trpc/server": "^11.0.0",
+    "date-fns": "^4.1.0",
+    "fastify": "^5.2.1",
+    "ioredis": "^5.4.2",
+    "jsonwebtoken": "^9.0.2",
+    "rrule": "^2.8.1",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.7",
+    "@types/node": "^22.10.5",
+    "@types/supertest": "^6.0.2",
+    "prisma": "^6.3.0",
+    "supertest": "^7.0.0",
+    "typescript": "^5.7.3"
+  }
+}
