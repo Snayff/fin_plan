@@ -1,224 +1,145 @@
-# @finplan/shared
+# FinPlan: Run Locally with Docker in 10 Minutes
 
-Shared validation schemas and types for the FinPlan monorepo.
+## What You'll Do
 
-## Overview
+- Open the FinPlan frontend at `http://localhost:3000`
+- Reach the backend API at `http://localhost:3001`
+- Run the full local stack: frontend + backend + Postgres + Redis
 
-This package provides a **single source of truth** for validation logic and types that are used across both the backend and frontend applications. By centralizing validation schemas using Zod, we ensure that frontend and backend validations never fall out of sync.
+## Prerequisites
 
-## Benefits
+- Git
+- Docker Desktop (installed and running)
+- Bun (optional, only for script shortcuts like `bun run start`)
 
-- ✅ **Single Source of Truth**: Define validation once, use everywhere
-- ✅ **Type Safety**: Automatic TypeScript types inferred from Zod schemas
-- ✅ **Consistent Validation**: Same rules on frontend and backend
-- ✅ **Better DX**: Changes to validation automatically propagate to both apps
-- ✅ **Reduced Bugs**: No more drift between frontend/backend validations
+## 1) Clone the Repo
 
-## Installation
-
-The package is automatically linked in the monorepo via workspace dependencies.
-
-**Backend** (`apps/backend/package.json`):
-```json
-{
-  "dependencies": {
-    "@finplan/shared": "*"
-  }
-}
-```
-
-**Frontend** (`apps/frontend/package.json`):
-```json
-{
-  "dependencies": {
-    "@finplan/shared": "*"
-  }
-}
-```
-
-## Usage
-
-### Backend (Fastify Routes)
-
-```typescript
-import { createTransactionSchema, updateTransactionSchema } from '@finplan/shared';
-
-export async function transactionRoutes(fastify: FastifyInstance) {
-  fastify.post('/transactions', async (request, reply) => {
-    // Validate request body using shared schema
-    const validatedData = createTransactionSchema.parse(request.body);
-    
-    // Use validatedData (fully typed!)
-    const transaction = await transactionService.createTransaction(userId, validatedData);
-    
-    return reply.status(201).send({ transaction });
-  });
-}
-```
-
-### Frontend (Forms & Types)
-
-```typescript
-import type { CreateTransactionInput, TransactionType } from '@finplan/shared';
-import { createTransactionSchema } from '@finplan/shared';
-
-// Use the type for your form state
-const [formData, setFormData] = useState<CreateTransactionInput>({
-  accountId: '',
-  date: format(new Date(), 'yyyy-MM-dd'),
-  amount: 0,
-  type: 'expense',
-  name: '',
-  // ... other fields
-});
-
-// Optionally validate on the client-side too
-const handleSubmit = (e: React.FormEvent) => {
-  e.preventDefault();
-  
-  try {
-    // Client-side validation (optional but recommended)
-    const validated = createTransactionSchema.parse(formData);
-    
-    // Submit to backend
-    createMutation.mutate(validated);
-  } catch (error) {
-    // Handle validation errors
-    console.error('Validation failed:', error);
-  }
-};
-```
-
-## Available Schemas
-
-### Transaction Schemas
-
-```typescript
-import {
-  createTransactionSchema,
-  updateTransactionSchema,
-  TransactionTypeEnum,
-  RecurrenceTypeEnum,
-  type TransactionType,
-  type RecurrenceType,
-  type CreateTransactionInput,
-  type UpdateTransactionInput,
-} from '@finplan/shared';
-```
-
-**Create Transaction:**
-- `accountId`: UUID (required)
-- `date`: string or Date (required)
-- `amount`: positive number (required)
-- `type`: 'income' | 'expense' | 'transfer' (required)
-- `name`: non-empty string (required)
-- `categoryId`: UUID (optional)
-- `subcategoryId`: UUID (optional)
-- `description`: string (optional)
-- `memo`: string (optional)
-- `tags`: string[] (optional)
-- `recurrence`: RecurrenceType (optional)
-- `recurrence_end_date`: string (optional - leave blank for indefinite)
-- `metadata`: Record<string, any> (optional)
-
-### Account Schemas
-
-```typescript
-import {
-  createAccountSchema,
-  updateAccountSchema,
-  AccountTypeEnum,
-  type AccountType,
-  type CreateAccountInput,
-  type UpdateAccountInput,
-} from '@finplan/shared';
-```
-
-**Account Types:**
-- `current`, `savings`, `isa`, `stocks_and_shares_isa`, `credit`, `investment`, `loan`, `asset`, `liability`
-
-### Category Schemas
-
-```typescript
-import {
-  createCategorySchema,
-  updateCategorySchema,
-  CategoryTypeEnum,
-  type CategoryType,
-  type CreateCategoryInput,
-  type UpdateCategoryInput,
-} from '@finplan/shared';
-```
-
-## Development
-
-### Building the Package
+### Bun Script Path (Recommended)
 
 ```bash
-cd packages/shared
-bun run build
+git clone https://github.com/Snayff/fin_plan.git
+cd fin_plan
 ```
 
-### Type Checking
+### Docker Compose Fallback
 
 ```bash
-bun run type-check
+git clone https://github.com/Snayff/fin_plan.git
+cd fin_plan
 ```
 
-### Making Changes
+## 2) Build Docker Images
 
-1. Update the schema in `packages/shared/src/schemas/`
-2. Run `bun run build` to rebuild the package
-3. Both frontend and backend will automatically use the updated validation
+### Bun Script Path (Recommended)
 
-**Important**: After making changes to schemas, you may need to restart the dev servers for the changes to be reflected.
-
-## Architecture
-
-```
-packages/shared/
-├── src/
-│   ├── schemas/
-│   │   ├── transaction.schemas.ts  # Transaction validation
-│   │   ├── account.schemas.ts      # Account validation
-│   │   ├── category.schemas.ts     # Category validation
-│   │   └── index.ts                # Re-exports
-│   └── index.ts                     # Main entry point
-├── package.json
-├── tsconfig.json
-└── README.md
+```bash
+bun run docker:build
 ```
 
-## Best Practices
+### Docker Compose Fallback
 
-1. **Always update schemas here first** - Don't duplicate validation logic in apps
-2. **Build after changes** - Run `bun run build` after schema updates
-3. **Use types, not just schemas** - Import types for TypeScript support
-4. **Test validation** - Schema changes affect both apps, so test thoroughly
-5. **Document requirements** - Add JSDoc comments for complex validations
+```bash
+docker compose -f docker-compose.dev.yml build
+```
+
+If `docker compose` is unavailable on your machine, use `docker-compose` instead.
+
+## 3) Start the Stack
+
+### Bun Script Path (Recommended)
+
+```bash
+bun run start
+```
+
+### Docker Compose Fallback
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+```
+
+## 4) Initialize the Database (Required)
+
+### Bun Script Path (Recommended)
+
+```bash
+bun run db:migrate
+bun run db:seed
+```
+
+### Docker Compose Fallback
+
+```bash
+docker compose -f docker-compose.dev.yml exec backend bun run db:migrate
+docker compose -f docker-compose.dev.yml exec backend bun run db:seed
+```
+
+## 5) Verify It's Running
+
+1. Open `http://localhost:3000` in your browser.
+2. Open `http://localhost:3001/health`.
+3. You should see JSON that includes `"status":"ok"` (with timestamp/uptime fields).
+
+## Daily Commands
+
+| Task | Bun command (primary) | Docker Compose fallback |
+| --- | --- | --- |
+| Start | `bun run start` | `docker compose -f docker-compose.dev.yml up -d` |
+| Stop | `bun run stop` | `docker compose -f docker-compose.dev.yml down` |
+| Restart | `bun run restart` | `docker compose -f docker-compose.dev.yml restart` |
+| Logs | `bun run docker:logs` | `docker compose -f docker-compose.dev.yml logs -f` |
+| Rebuild images | `bun run docker:build` | `docker compose -f docker-compose.dev.yml build` |
+| Clean/reset (removes volumes and local DB data) | `bun run docker:clean` | `docker compose -f docker-compose.dev.yml down -v` |
+| Run migrations | `bun run db:migrate` | `docker compose -f docker-compose.dev.yml exec backend bun run db:migrate` |
+| Seed database | `bun run db:seed` | `docker compose -f docker-compose.dev.yml exec backend bun run db:seed` |
 
 ## Troubleshooting
 
-### "Cannot find module '@finplan/shared'"
+### 1) Docker daemon not running
 
-1. Ensure you've run `bun install` in the root directory
-2. Build the shared package: `cd packages/shared && bun run build`
-3. Restart your dev server
+Start Docker Desktop, wait until it's fully up, then retry `bun run start` (or the compose `up` command).
 
-### Type errors after updating schemas
+### 2) Port already in use
 
-1. Rebuild the shared package: `cd packages/shared && bun run build`
-2. Restart TypeScript server in VS Code (Cmd/Ctrl + Shift + P > "TypeScript: Restart TS Server")
+Another process is using `3000`, `3001`, `5432`, or `6379`. Stop conflicting processes, then restart the stack.
 
-### Changes not reflecting
+### 3) DB schema errors
 
-1. Rebuild shared package
-2. Clear any build caches
-3. Restart dev servers for both frontend and backend
+Run database setup again in order:
 
-## Future Enhancements
+```bash
+bun run db:migrate
+bun run db:seed
+```
 
-- Add runtime validation helpers for common patterns
-- Add schema composition utilities
-- Add custom error formatting
-- Consider adding react-hook-form resolvers
+### 4) Hot reload not updating
+
+Restart containers:
+
+```bash
+bun run docker:restart
+```
+
+Or restart services with Docker Compose.
+
+## About @finplan/shared (for contributors)
+
+`@finplan/shared` is the monorepo package that centralizes Zod schemas and shared TypeScript types used by both backend and frontend so validation stays consistent across the stack.
+
+```typescript
+import { createTransactionSchema, type CreateTransactionInput } from '@finplan/shared';
+```
+
+Schemas live in `packages/shared/src/schemas`.
+
+When you change shared schemas, rebuild this package:
+
+```bash
+cd packages/shared && bun run build
+```
+
+## More Docs
+
+- [Quick Start](../../QUICK_START.md)
+- [Docker Setup](../../docs/4.%20build/DOCKER_SETUP.md)
+- [Prisma Docker Guide](../../docs/4.%20build/PRISMA_DOCKER_GUIDE.md)
