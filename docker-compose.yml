@@ -1,5 +1,5 @@
 services:
-  # Backend API -- not exposed to host; nginx proxies to it internally
+  # Backend API -- not exposed to host; Traefik proxies to frontend which proxies to it internally
   backend:
     build:
       context: .
@@ -16,9 +16,9 @@ services:
       - coolify
     restart: unless-stopped
 
-  # Frontend -- nginx serves built Vite output and proxies /api + /ws to backend
-  # No host port binding: Coolify's Caddy proxy already owns port 80/443 on the
-  # host and routes to this container based on the configured FQDN.
+  # Frontend -- nginx serves built Vite output and proxies /api + /ws to backend.
+  # Traefik labels explicitly set the upstream port (3000) so Coolify's auto-inject
+  # cannot override it with the default port 80.
   frontend:
     build:
       context: .
@@ -30,6 +30,11 @@ services:
     networks:
       - coolify
     restart: unless-stopped
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.finplan-frontend.rule=Host(`finplan.snaith.io`)"
+      - "traefik.http.routers.finplan-frontend.entrypoints=http"
+      - "traefik.http.services.finplan-frontend.loadbalancer.server.port=3000"
 
 networks:
   coolify:
