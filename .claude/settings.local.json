@@ -24,7 +24,14 @@
       "Bash(timeout:*)",
       "Bash(dir:*)",
       "Bash(bunx prisma generate:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(/c/Users/Gabriel/Documents/Dev/fin_plan/apps/backend/Dockerfile:*)",
+      "Bash(git -C \"/c/Users/Gabriel/Documents/Dev/fin_plan\" add apps/backend/Dockerfile)",
+      "Bash(git -C:*)",
+      "Bash(\"c:/Users/Gabriel/Documents/Dev/fin_plan/docker-compose.yml\":*)",
+      "Bash(docker build:*)",
+      "Bash(docker compose:*)",
+      "WebFetch(domain:coolify.io)"
     ]
   }
 }
