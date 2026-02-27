@@ -14,15 +14,16 @@ export default defineConfig({
     port: 3000,
     host: '0.0.0.0', // Listen on all interfaces for Docker
     hmr: {
-      clientPort: 3000, // Browser connects to this port on localhost
+      host: 'localhost',
+      clientPort: 3000,
     },
     proxy: {
       "/api": {
-        target: "http://localhost:3001",
+        target: process.env.BACKEND_URL || "http://localhost:3001",
         changeOrigin: true,
       },
       "/ws": {
-        target: "ws://localhost:3001",
+        target: (process.env.BACKEND_URL || "ws://localhost:3001").replace(/^http/, "ws"),
         ws: true,
       },
     },

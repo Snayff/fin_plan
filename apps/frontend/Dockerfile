@@ -1,0 +1,42 @@
+# -- Stage 1: Build ------------------------------------------------------------
+FROM oven/bun:1-alpine AS builder
+
+WORKDIR /workspace
+
+# Copy workspace-level config first (layer cache: these change rarely)
+COPY package.json bun.lock ./
+COPY turbo.json ./
+COPY tsconfig.json ./
+
+# Copy shared package (used by frontend via @finplan/shared alias)
+COPY packages/shared ./packages/shared/
+
+# Copy frontend package.json so bun install resolves its deps
+COPY apps/frontend/package.json ./apps/frontend/
+
+# Install all workspace dependencies (--production=false ensures devDeps are
+# installed even if NODE_ENV=production is injected by the build environment)
+RUN bun install --production=false
+
+# Copy frontend source and config files
+WORKDIR /workspace/apps/frontend
+COPY apps/frontend/src ./src/
+COPY apps/frontend/*.html ./
+COPY apps/frontend/tsconfig*.json ./
+COPY apps/frontend/*.config.* ./
+
+# Build -- runs `tsc && vite build`, output goes to /workspace/apps/frontend/dist
+RUN bun run build
+
+# -- Stage 2: Serve ------------------------------------------------------------
+FROM nginx:alpine
+
+# Copy built static files
+COPY --from=builder /workspace/apps/frontend/dist /usr/share/nginx/html
+
+# Replace default nginx config with ours (proxy rules + SPA fallback)
+COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+# nginx starts automatically via the base image CMD
