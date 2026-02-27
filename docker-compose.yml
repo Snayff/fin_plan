@@ -13,7 +13,7 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN}
       NODE_ENV: production
     networks:
-      - finplan-network
+      - coolify
     restart: unless-stopped
 
   # Frontend -- nginx serves built Vite output and proxies /api + /ws to backend
@@ -28,9 +28,9 @@ services:
     depends_on:
       - backend
     networks:
-      - finplan-network
+      - coolify
     restart: unless-stopped
 
 networks:
-  finplan-network:
-    driver: bridge
+  coolify:
+    external: true
