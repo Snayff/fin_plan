@@ -17,12 +17,14 @@ services:
     restart: unless-stopped
 
   # Frontend -- nginx serves built Vite output and proxies /api + /ws to backend
+  # No host port binding: Coolify's Caddy proxy already owns port 80/443 on the
+  # host and routes to this container based on the configured FQDN.
   frontend:
     build:
       context: .
       dockerfile: apps/frontend/Dockerfile
-    ports:
-      - "80:80"
+    expose:
+      - "3000"
     depends_on:
       - backend
     networks:

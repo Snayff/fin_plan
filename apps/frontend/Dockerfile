@@ -43,6 +43,6 @@ COPY --from=builder /workspace/apps/frontend/dist /usr/share/nginx/html
 # Replace default nginx config with ours (proxy rules + SPA fallback)
 COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-EXPOSE 80
+EXPOSE 3000
 
 # nginx starts automatically via the base image CMD
