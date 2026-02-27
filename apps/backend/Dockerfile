@@ -18,9 +18,9 @@ COPY apps/backend/package.json ./apps/backend/
 COPY apps/backend/prisma ./apps/backend/prisma/
 
 # Install all deps; postinstall runs `prisma generate` automatically
-# --production=false ensures devDeps (prisma CLI) are installed even if
-# NODE_ENV=production is injected by the build environment
-RUN bun install --production=false
+# Override NODE_ENV so devDeps (prisma CLI) are installed even if
+# Coolify injects NODE_ENV=production at build time
+RUN NODE_ENV=development bun install
 
 # Switch to backend dir for remaining COPY steps
 WORKDIR /workspace/apps/backend

@@ -14,9 +14,9 @@ COPY packages/shared ./packages/shared/
 # Copy frontend package.json so bun install resolves its deps
 COPY apps/frontend/package.json ./apps/frontend/
 
-# Install all workspace dependencies (--production=false ensures devDeps are
-# installed even if NODE_ENV=production is injected by the build environment)
-RUN bun install --production=false
+# Install all workspace dependencies; override NODE_ENV so devDeps are always
+# installed even if Coolify injects NODE_ENV=production at build time
+RUN NODE_ENV=development bun install
 
 # Copy frontend source and config files
 WORKDIR /workspace/apps/frontend
