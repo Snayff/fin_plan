@@ -22,6 +22,11 @@ COPY apps/backend/prisma ./apps/backend/prisma/
 # Coolify injects NODE_ENV=production at build time
 RUN NODE_ENV=development bun install
 
+# Build shared package so @finplan/shared resolves at runtime
+# (packages/shared/dist/ is gitignored and won't be in the build context)
+WORKDIR /workspace/packages/shared
+RUN bun run build
+
 # Switch to backend dir for remaining COPY steps
 WORKDIR /workspace/apps/backend
 
