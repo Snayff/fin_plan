@@ -58,14 +58,12 @@ services:
       CORS_ORIGIN: http://localhost:3000
       # Environment
       NODE_ENV: development
-    command: sh -c "bunx prisma generate && bun --watch src/server.ts"
+    command: sh -c "cd /workspace && bun install && cd /workspace/apps/backend && bunx prisma generate && bun --watch src/server.ts"
     volumes:
       # Mount source code for hot reload
       - ./apps/backend/src:/workspace/apps/backend/src
       - ./apps/backend/prisma:/workspace/apps/backend/prisma
       - ./packages/shared/src:/workspace/packages/shared/src
-      # Prevent overwriting node_modules
-      - backend_node_modules:/workspace/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -84,8 +82,8 @@ services:
     ports:
       - "3000:3000"
     environment:
-      # API URL - browser accesses backend through localhost (not Docker network)
-      VITE_API_URL: http://localhost:3001
+      # Vite proxy target - server-side, uses Docker network hostname
+      BACKEND_URL: http://backend:3001
       # Development mode
       NODE_ENV: development
     volumes:
@@ -96,8 +94,6 @@ services:
       - ./apps/frontend/tailwind.config.js:/workspace/apps/frontend/tailwind.config.js
       - ./apps/frontend/postcss.config.js:/workspace/apps/frontend/postcss.config.js
       - ./packages/shared/src:/workspace/packages/shared/src
-      # Prevent overwriting node_modules
-      - frontend_node_modules:/workspace/node_modules
     depends_on:
       - backend
     networks:
@@ -107,8 +103,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
-  backend_node_modules:
-  frontend_node_modules:
 
 networks:
   finplan-network:
