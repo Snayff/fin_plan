@@ -25,7 +25,13 @@ COPY apps/frontend/*.html ./
 COPY apps/frontend/tsconfig*.json ./
 COPY apps/frontend/*.config.* ./
 
+# Build shared package first so tsc can resolve @finplan/shared types
+# (packages/shared/dist/ is gitignored and won't be in the build context)
+WORKDIR /workspace/packages/shared
+RUN bun run build
+
 # Build -- runs `tsc && vite build`, output goes to /workspace/apps/frontend/dist
+WORKDIR /workspace/apps/frontend
 RUN bun run build
 
 # -- Stage 2: Serve ------------------------------------------------------------
