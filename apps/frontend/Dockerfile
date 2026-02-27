@@ -14,8 +14,9 @@ COPY packages/shared ./packages/shared/
 # Copy frontend package.json so bun install resolves its deps
 COPY apps/frontend/package.json ./apps/frontend/
 
-# Install all workspace dependencies
-RUN bun install
+# Install all workspace dependencies (--production=false ensures devDeps are
+# installed even if NODE_ENV=production is injected by the build environment)
+RUN bun install --production=false
 
 # Copy frontend source and config files
 WORKDIR /workspace/apps/frontend

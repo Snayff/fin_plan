@@ -18,7 +18,9 @@ COPY apps/backend/package.json ./apps/backend/
 COPY apps/backend/prisma ./apps/backend/prisma/
 
 # Install all deps; postinstall runs `prisma generate` automatically
-RUN bun install
+# --production=false ensures devDeps (prisma CLI) are installed even if
+# NODE_ENV=production is injected by the build environment
+RUN bun install --production=false
 
 # Switch to backend dir for remaining COPY steps
 WORKDIR /workspace/apps/backend
