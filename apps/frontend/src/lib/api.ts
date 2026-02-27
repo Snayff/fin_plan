@@ -40,12 +40,6 @@ export class ApiClient {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
-    // Get CSRF token for all state-changing requests (including auth endpoints)
-    let csrfToken: string | undefined;
-    if (['POST', 'PUT', 'DELETE'].includes(options.method || 'GET')) {
-      csrfToken = await this.fetchCsrfToken();
-    }
-
     // Automatically include auth token from store if not explicitly provided and not auth endpoint
     let authHeaders = {};
     const isAuthEndpoint = endpoint.startsWith('/api/auth');
@@ -61,18 +55,24 @@ export class ApiClient {
       }
     }
 
-    const config: RequestInit = {
-      ...options,
-      credentials: 'include', // CRITICAL: Send cookies
-      headers: {
-        'Content-Type': 'application/json',
-        ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
-        ...authHeaders,
-        ...options.headers, // Allow explicit override
-      },
-    };
-
     try {
+      // Get CSRF token for all state-changing requests (including auth endpoints)
+      let csrfToken: string | undefined;
+      if (['POST', 'PUT', 'DELETE'].includes(options.method || 'GET')) {
+        csrfToken = await this.fetchCsrfToken();
+      }
+
+      const config: RequestInit = {
+        ...options,
+        credentials: 'include', // CRITICAL: Send cookies
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
+          ...authHeaders,
+          ...options.headers, // Allow explicit override
+        },
+      };
+
       const response = await fetch(url, config);
       const data = await response.json();
 
