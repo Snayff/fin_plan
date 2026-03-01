@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "bun --watch src/server.ts",
+    "dev": "bunx prisma migrate deploy && bun src/db/seed.ts && bun --watch src/server.ts",
     "build": "tsc",
     "start": "bun src/server.ts",
     "test": "bun scripts/run-tests.ts",

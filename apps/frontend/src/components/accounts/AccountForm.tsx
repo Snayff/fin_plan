@@ -1,24 +1,30 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountService } from '../../services/account.service';
-import type { AccountType, CreateAccountInput } from '../../types';
+import { showSuccess, showError } from '../../lib/toast';
+import { ACCOUNT_TYPE_OPTIONS } from '../../lib/utils';
+import type { Account, AccountType, CreateAccountInput } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 
 interface AccountFormProps {
+  account?: Account;
   onSuccess?: () => void;
   onCancel?: () => void;
 }
 
-export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
+export default function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) {
+  const isEditing = !!account;
   const queryClient = useQueryClient();
+
   const [formData, setFormData] = useState({
-    name: '',
-    type: 'current' as AccountType,
+    name: account?.name ?? '',
+    type: (account?.type ?? 'current') as AccountType,
+    description: account?.description ?? '',
     openingBalance: '' as string | number,
-    currency: 'GBP',
-    description: '',
+    currency: account?.currency ?? 'GBP',
+    isActive: account?.isActive ?? true,
   });
 
   const createMutation = useMutation({
@@ -27,18 +33,47 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       onSuccess?.();
     },
+    onError: (error: Error) => {
+      showError(error.message || 'Failed to create account');
+    },
   });
+
+  const updateMutation = useMutation({
+    mutationFn: (data: Partial<CreateAccountInput> & { isActive?: boolean }) =>
+      accountService.updateAccount(account!.id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+      showSuccess('Account updated successfully!');
+      onSuccess?.();
+    },
+    onError: (error: Error) => {
+      showError(error.message || 'Failed to update account');
+    },
+  });
+
+  const isPending = createMutation.isPending || updateMutation.isPending;
+  const error = createMutation.error || updateMutation.error;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const submitData: CreateAccountInput = {
-      name: formData.name,
-      type: formData.type,
-      currency: formData.currency,
-      description: formData.description,
-      openingBalance: formData.openingBalance === '' ? 0 : Number(formData.openingBalance),
-    };
-    createMutation.mutate(submitData);
+    if (isEditing) {
+      updateMutation.mutate({
+        name: formData.name,
+        type: formData.type,
+        description: formData.description,
+        currency: formData.currency,
+        isActive: formData.isActive,
+      });
+    } else {
+      createMutation.mutate({
+        name: formData.name,
+        type: formData.type,
+        currency: formData.currency,
+        description: formData.description,
+        openingBalance: formData.openingBalance === '' ? 0 : Number(formData.openingBalance),
+      });
+    }
   };
 
   return (
@@ -60,7 +95,7 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
         <Input
           type="text"
           id="description"
-          value={formData.description || ''}
+          value={formData.description}
           onChange={(e) => setFormData({ ...formData, description: e.target.value })}
           placeholder="Optional description"
         />
@@ -75,46 +110,79 @@ export default function AccountForm({ onSuccess, onCancel }: AccountFormProps) {
           onChange={(e) => setFormData({ ...formData, type: e.target.value as AccountType })}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
-          <option value="current">Current</option>
-          <option value="savings">Savings</option>
-          <option value="isa">ISA</option>
-          <option value="stocks_and_shares_isa">Stocks and Shares ISA</option>
+          {ACCOUNT_TYPE_OPTIONS.map((opt) => (
+            <option key={opt.value} value={opt.value}>
+              {opt.label}
+            </option>
+          ))}
         </select>
       </div>
 
       <div className="space-y-2">
-        <Label htmlFor="openingBalance">Opening Balance</Label>
-        <div className="relative">
-          <span className="absolute left-3 top-2 text-muted-foreground">£</span>
-          <Input
-            type="number"
-            id="openingBalance"
-            step="0.01"
-            value={formData.openingBalance}
-            onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
-            className="pl-8"
-            placeholder="0.00"
-          />
-        </div>
-        <p className="text-xs text-muted-foreground">
-          Can be negative for credit cards or loans (e.g., -1000 for £1000 debt). Leave empty to default to 0.
-        </p>
+        <Label htmlFor="currency">Currency *</Label>
+        <Input
+          type="text"
+          id="currency"
+          required
+          maxLength={3}
+          value={formData.currency}
+          onChange={(e) => setFormData({ ...formData, currency: e.target.value.toUpperCase() })}
+          placeholder="GBP"
+        />
       </div>
 
-      {createMutation.error && (
+      {!isEditing && (
+        <div className="space-y-2">
+          <Label htmlFor="openingBalance">Opening Balance</Label>
+          <div className="relative">
+            <span className="absolute left-3 top-2 text-muted-foreground">£</span>
+            <Input
+              type="number"
+              id="openingBalance"
+              step="0.01"
+              value={formData.openingBalance}
+              onChange={(e) => setFormData({ ...formData, openingBalance: e.target.value })}
+              className="pl-8"
+              placeholder="0.00"
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Can be negative for credit cards or loans (e.g., -1000 for £1000 debt). Leave empty to default to 0.
+          </p>
+        </div>
+      )}
+
+      {isEditing && (
+        <div className="flex items-center space-x-2">
+          <input
+            type="checkbox"
+            id="isActive"
+            checked={formData.isActive}
+            onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+            className="h-4 w-4 rounded border-input focus:ring-2 focus:ring-ring focus:ring-offset-2"
+          />
+          <Label htmlFor="isActive" className="font-normal cursor-pointer">
+            Account is active
+          </Label>
+        </div>
+      )}
+
+      {error && (
         <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
-          {(createMutation.error as Error).message}
+          {(error as Error).message}
         </div>
       )}
 
       <div className="flex justify-end space-x-3 pt-4">
         {onCancel && (
-          <Button type="button" onClick={onCancel} variant="secondary">
+          <Button type="button" onClick={onCancel} variant="secondary" disabled={isPending}>
             Cancel
           </Button>
         )}
-        <Button type="submit" disabled={createMutation.isPending}>
-          {createMutation.isPending ? 'Creating...' : 'Create Account'}
+        <Button type="submit" disabled={isPending}>
+          {isPending
+            ? isEditing ? 'Updating...' : 'Creating...'
+            : isEditing ? 'Update Account' : 'Create Account'}
         </Button>
       </div>
     </form>
