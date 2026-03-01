@@ -21,3 +21,13 @@ export function formatCurrency(value: number, currency: string = '£'): string {
     maximumFractionDigits: 2,
   })}`;
 }
+
+const CURRENCY_SYMBOLS: Record<string, string> = {
+  GBP: '£',
+  USD: '$',
+  EUR: '€',
+};
+
+export function getCurrencySymbol(currency: string): string {
+  return CURRENCY_SYMBOLS[currency.toUpperCase()] ?? currency;
+}

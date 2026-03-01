@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountService } from '../services/account.service';
 import { showSuccess, showError } from '../lib/toast';
-import { formatCurrency } from '../lib/utils';
+import { formatCurrency, getCurrencySymbol } from '../lib/utils';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AccountForm from '../components/accounts/AccountForm';
@@ -175,7 +175,7 @@ export default function AccountsPage() {
                 <div className="mb-4">
                   <p className="text-sm text-muted-foreground mb-1">Current Balance</p>
                   <p className="text-2xl font-bold text-foreground">
-                    {formatCurrency(account.balance, account.currency)}
+                    {formatCurrency(account.balance, getCurrencySymbol(account.currency))}
                   </p>
                 </div>
 
@@ -192,7 +192,7 @@ export default function AccountsPage() {
                       <p className="text-xs text-muted-foreground">Incoming</p>
                     </div>
                     <p className="text-sm font-semibold text-success">
-                      {formatCurrency(account.monthlyFlow.income, account.currency)}
+                      {formatCurrency(account.monthlyFlow.income, getCurrencySymbol(account.currency))}
                     </p>
                   </div>
                   <div className="bg-chart-2-subtle/20 border border-chart-2-subtle rounded-md p-3">
@@ -201,7 +201,7 @@ export default function AccountsPage() {
                       <p className="text-xs text-muted-foreground">Expenses</p>
                     </div>
                     <p className="text-sm font-semibold text-chart-2">
-                      {formatCurrency(account.monthlyFlow.expense, account.currency)}
+                      {formatCurrency(account.monthlyFlow.expense, getCurrencySymbol(account.currency))}
                     </p>
                   </div>
                 </div>
