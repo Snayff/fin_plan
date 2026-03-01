@@ -37,4 +37,4 @@ COPY apps/backend/tsconfig.json ./
 EXPOSE 3001
 
 # At startup: migrate the database (idempotent), then start the server
-CMD ["sh", "-c", "bunx prisma migrate deploy && bun src/server.ts"]
+CMD ["sh", "-c", "bunx prisma migrate deploy && bun src/db/seed.ts && bun src/server.ts"]
