@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
 import type { ApiError } from "../../lib/api";
+import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -44,13 +45,13 @@ export default function LoginPage() {
             <label htmlFor="email" className="block text-sm font-medium text-foreground">
               Email
             </label>
-            <input
+            <Input
               id="email"
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="mt-1"
               placeholder="you@example.com"
             />
           </div>
@@ -59,13 +60,13 @@ export default function LoginPage() {
             <label htmlFor="password" className="block text-sm font-medium text-foreground">
               Password
             </label>
-            <input
+            <Input
               id="password"
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="mt-1 block w-full px-3 py-2 border border-input rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="mt-1"
               placeholder="••••••••"
             />
           </div>
