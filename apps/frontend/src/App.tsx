@@ -15,9 +15,20 @@ import GoalsPage from "./pages/GoalsPage";
 import BudgetsPage from "./pages/BudgetsPage";
 import BudgetDetailPage from "./pages/BudgetDetailPage";
 import Layout from "./components/layout/Layout";
+import DesignPage from "./pages/DesignPage";
 
 function App() {
   const { isAuthenticated } = useAuthStore();
+
+  // Design reference: bypass React Router v7 entirely for this dev-only page
+  if (import.meta.env.DEV && window.location.pathname.startsWith('/design')) {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Toaster />
+        <DesignPage />
+      </QueryClientProvider>
+    );
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
