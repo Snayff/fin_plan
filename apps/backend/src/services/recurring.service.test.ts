@@ -282,7 +282,7 @@ describe('RecurringService', () => {
         frequency: 'monthly' as RecurringFrequency,
         interval: 1,
         startDate: new Date('2026-01-01'),
-        endDate: null,
+        endDate: new Date('2026-02-01'),
         occurrences: null,
         isActive: true,
         templateTransaction: {

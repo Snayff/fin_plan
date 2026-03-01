@@ -58,7 +58,7 @@ services:
       CORS_ORIGIN: http://localhost:3000
       # Environment
       NODE_ENV: development
-    command: sh -c "cd /workspace && bun install && cd /workspace/apps/backend && bunx prisma generate && bun --watch src/server.ts"
+    command: sh -c "cd /workspace && bun install && cd /workspace/apps/backend && bunx prisma migrate deploy && bun src/db/seed.ts && bun --watch src/server.ts"
     volumes:
       # Mount source code for hot reload
       - ./apps/backend/src:/workspace/apps/backend/src

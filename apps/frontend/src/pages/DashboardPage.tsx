@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { dashboardService } from '../services/dashboard.service';
+import { formatCurrency, getCurrencySymbol } from '../lib/utils';
 import { format } from 'date-fns';
 import NetWorthChart from '../components/charts/NetWorthChart';
 import IncomeExpenseChart from '../components/charts/IncomeExpenseChart';
@@ -231,10 +232,7 @@ export default function DashboardPage() {
                     </div>
                     <div className="text-right">
                       <div className="font-medium text-foreground">
-                        {account.currency} {account.balance.toLocaleString('en-GB', {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        })}
+                        {formatCurrency(account.balance, getCurrencySymbol(account.currency))}
                       </div>
                     </div>
                   </div>
