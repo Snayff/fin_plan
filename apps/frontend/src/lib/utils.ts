@@ -31,3 +31,15 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
 export function getCurrencySymbol(currency: string): string {
   return CURRENCY_SYMBOLS[currency.toUpperCase()] ?? currency;
 }
+
+export const ACCOUNT_TYPE_OPTIONS = [
+  { value: 'current',                label: 'Current' },
+  { value: 'savings',                label: 'Savings' },
+  { value: 'isa',                    label: 'ISA' },
+  { value: 'stocks_and_shares_isa',  label: 'Stocks & Shares ISA' },
+  { value: 'credit',                 label: 'Credit Card' },
+  { value: 'investment',             label: 'Investment' },
+  { value: 'loan',                   label: 'Loan' },
+  { value: 'asset',                  label: 'Asset' },
+  { value: 'liability',              label: 'Liability' },
+] as const;

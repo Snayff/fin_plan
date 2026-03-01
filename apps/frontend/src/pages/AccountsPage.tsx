@@ -6,7 +6,6 @@ import { formatCurrency, getCurrencySymbol } from '../lib/utils';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import AccountForm from '../components/accounts/AccountForm';
-import AccountEditForm from '../components/accounts/AccountEditForm';
 import MiniAccountChart from '../components/charts/MiniAccountChart';
 import FilterBar from '../components/filters/FilterBar';
 import { useClientFilters } from '../hooks/useClientFilters';
@@ -249,7 +248,7 @@ export default function AccountsPage() {
           onClose={() => setEditingAccount(null)}
           title="Edit Account"
         >
-          <AccountEditForm
+          <AccountForm
             account={editingAccount}
             onSuccess={() => setEditingAccount(null)}
             onCancel={() => setEditingAccount(null)}
