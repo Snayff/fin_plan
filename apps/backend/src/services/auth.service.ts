@@ -13,12 +13,28 @@ export interface RegisterInput {
 export interface LoginInput {
   email: string;
   password: string;
+  rememberMe?: boolean;
 }
 
 export interface AuthResponse {
   user: Omit<User, 'passwordHash'>;
   accessToken: string;
   refreshToken: string;
+}
+
+const IDLE_SESSION_TIMEOUT_MS = 7 * 24 * 60 * 60 * 1000;
+const ABSOLUTE_SESSION_TIMEOUT_MS = 30 * 24 * 60 * 60 * 1000;
+
+function calculateSessionExpiries(now: Date, sessionExpiresAt?: Date) {
+  const absoluteExpiry = sessionExpiresAt ?? new Date(now.getTime() + ABSOLUTE_SESSION_TIMEOUT_MS);
+  const idleExpiryCandidate = new Date(now.getTime() + IDLE_SESSION_TIMEOUT_MS);
+  const idleExpiry =
+    idleExpiryCandidate.getTime() > absoluteExpiry.getTime() ? absoluteExpiry : idleExpiryCandidate;
+
+  return {
+    expiresAt: idleExpiry,
+    sessionExpiresAt: absoluteExpiry,
+  };
 }
 
 export const authService = {
@@ -76,13 +92,17 @@ export const authService = {
     const refreshToken = generateRefreshToken({ userId: user.id });
 
     // Store refresh token with family tracking
+    const now = new Date();
+    const { expiresAt, sessionExpiresAt } = calculateSessionExpiries(now);
     const familyId = generateTokenFamily();
     await prisma.refreshToken.create({
       data: {
         userId: user.id,
         tokenHash: hashToken(refreshToken),
         familyId,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        expiresAt,
+        sessionExpiresAt,
+        rememberMe: false,
       },
     });
 
@@ -100,7 +120,7 @@ export const authService = {
    * Login user
    */
   async login(input: LoginInput & { ipAddress?: string; userAgent?: string }): Promise<AuthResponse> {
-    const { email, password, ipAddress, userAgent } = input;
+    const { email, password, rememberMe = false, ipAddress, userAgent } = input;
 
     // Validate input
     if (!email || !password) {
@@ -128,13 +148,17 @@ export const authService = {
     const refreshToken = generateRefreshToken({ userId: user.id });
 
     // Store refresh token with family tracking
+    const now = new Date();
+    const { expiresAt, sessionExpiresAt } = calculateSessionExpiries(now);
     const familyId = generateTokenFamily();
     await prisma.refreshToken.create({
       data: {
         userId: user.id,
         tokenHash: hashToken(refreshToken),
         familyId,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
+        expiresAt,
+        sessionExpiresAt,
+        rememberMe: Boolean(rememberMe),
         ipAddress,
         userAgent,
       },
@@ -184,7 +208,13 @@ export const authService = {
   async refreshAccessToken(
     refreshToken: string,
     context?: { ipAddress?: string; userAgent?: string }
-  ): Promise<{ accessToken: string; refreshToken: string }> {
+  ): Promise<{
+    accessToken: string;
+    refreshToken: string;
+    rememberMe: boolean;
+    expiresAt: Date;
+    sessionExpiresAt: Date;
+  }> {
     if (!refreshToken) {
       throw new AuthenticationError('Refresh token is required');
     }
@@ -213,15 +243,25 @@ export const authService = {
         throw new AuthenticationError('Refresh token reuse detected — all sessions in this family have been revoked');
       }
 
-      // Check expiry (belt-and-suspenders with JWT expiry)
-      if (storedToken.expiresAt < new Date()) {
+      const now = new Date();
+
+      // Check idle expiry (belt-and-suspenders with JWT expiry)
+      if (storedToken.expiresAt < now) {
         throw new AuthenticationError('Refresh token expired');
+      }
+
+      // Check absolute session cap.
+      if (storedToken.sessionExpiresAt < now) {
+        throw new AuthenticationError('Session expired - please login again');
       }
 
       // Revoke the current token (it's been used)
       await prisma.refreshToken.update({
         where: { id: storedToken.id },
-        data: { isRevoked: true },
+        data: {
+          isRevoked: true,
+          lastUsedAt: now,
+        },
       });
 
       // Find user
@@ -236,6 +276,7 @@ export const authService = {
       // Generate new token pair
       const newAccessToken = generateAccessToken({ userId: user.id, email: user.email });
       const newRefreshToken = generateRefreshToken({ userId: user.id });
+      const { expiresAt, sessionExpiresAt } = calculateSessionExpiries(now, storedToken.sessionExpiresAt);
 
       // Store new refresh token in the same family
       await prisma.refreshToken.create({
@@ -243,13 +284,22 @@ export const authService = {
           userId: user.id,
           tokenHash: hashToken(newRefreshToken),
           familyId: storedToken.familyId, // Same family for reuse detection
-          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+          expiresAt,
+          sessionExpiresAt,
+          rememberMe: storedToken.rememberMe,
           ipAddress: context?.ipAddress,
           userAgent: context?.userAgent,
+          lastUsedAt: now,
         },
       });
 
-      return { accessToken: newAccessToken, refreshToken: newRefreshToken };
+      return {
+        accessToken: newAccessToken,
+        refreshToken: newRefreshToken,
+        rememberMe: storedToken.rememberMe,
+        expiresAt,
+        sessionExpiresAt,
+      };
     } catch (error) {
       if (error instanceof AuthenticationError) {
         throw error;
@@ -321,7 +371,9 @@ export const authService = {
    */
   async cleanupExpiredTokens(): Promise<number> {
     const result = await prisma.refreshToken.deleteMany({
-      where: { expiresAt: { lt: new Date() } },
+      where: {
+        OR: [{ expiresAt: { lt: new Date() } }, { sessionExpiresAt: { lt: new Date() } }],
+      },
     });
     return result.count;
   },

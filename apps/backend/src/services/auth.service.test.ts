@@ -115,6 +115,23 @@ describe("authService.register", () => {
       })
     );
   });
+
+  it("stores session metadata with secure defaults", async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
+    prismaMock.user.create.mockResolvedValue(buildUser());
+
+    await authService.register(validInput);
+
+    expect(prismaMock.refreshToken.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          rememberMe: false,
+          expiresAt: expect.any(Date),
+          sessionExpiresAt: expect.any(Date),
+        }),
+      })
+    );
+  });
 });
 
 describe("authService.login", () => {
@@ -148,6 +165,28 @@ describe("authService.login", () => {
   it("throws ValidationError for missing fields", async () => {
     await expect(authService.login({ email: "", password: "pass" })).rejects.toThrow("Email and password are required");
   });
+
+  it("stores rememberMe preference and session expiries", async () => {
+    const user = buildUser({ email: "test@example.com" });
+    prismaMock.user.findUnique.mockResolvedValue(user);
+    (verifyPassword as any).mockResolvedValue(true);
+
+    await authService.login({
+      email: "test@example.com",
+      password: "validpassword1",
+      rememberMe: true,
+    });
+
+    expect(prismaMock.refreshToken.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          rememberMe: true,
+          expiresAt: expect.any(Date),
+          sessionExpiresAt: expect.any(Date),
+        }),
+      })
+    );
+  });
 });
 
 describe("authService.findUserById", () => {
@@ -169,20 +208,76 @@ describe("authService.refreshAccessToken", () => {
   it("returns new access token for valid refresh token", async () => {
     const user = buildUser();
     (verifyRefreshToken as any).mockReturnValue({ userId: user.id });
+    const now = Date.now();
     prismaMock.refreshToken.findUnique.mockResolvedValue({
       id: "rt-1",
       userId: user.id,
       familyId: "mock-family-id",
       isRevoked: false,
-      expiresAt: new Date(Date.now() + 60_000),
+      rememberMe: true,
+      expiresAt: new Date(now + 60_000),
+      sessionExpiresAt: new Date(now + 30 * 24 * 60 * 60 * 1000),
     });
     prismaMock.user.findUnique.mockResolvedValue(user);
 
     const result = await authService.refreshAccessToken("valid-refresh-token");
     expect(result.accessToken).toBe("mock-access-token");
+    expect(result.rememberMe).toBe(true);
+    expect(result.expiresAt).toBeInstanceOf(Date);
+    expect(result.sessionExpiresAt).toBeInstanceOf(Date);
+    expect(prismaMock.refreshToken.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          familyId: "mock-family-id",
+          rememberMe: true,
+          sessionExpiresAt: expect.any(Date),
+          expiresAt: expect.any(Date),
+        }),
+      })
+    );
   });
 
   it("throws AuthenticationError for missing refresh token", async () => {
     await expect(authService.refreshAccessToken("")).rejects.toThrow("Refresh token is required");
+  });
+
+  it("rejects refresh when absolute session cap is reached", async () => {
+    const user = buildUser();
+    (verifyRefreshToken as any).mockReturnValue({ userId: user.id });
+    prismaMock.refreshToken.findUnique.mockResolvedValue({
+      id: "rt-1",
+      userId: user.id,
+      familyId: "mock-family-id",
+      isRevoked: false,
+      rememberMe: true,
+      expiresAt: new Date(Date.now() + 60_000),
+      sessionExpiresAt: new Date(Date.now() - 1_000),
+    });
+
+    await expect(authService.refreshAccessToken("valid-refresh-token")).rejects.toThrow(
+      "Session expired - please login again"
+    );
+  });
+
+  it("caps rotated idle expiry to absolute session expiry", async () => {
+    const user = buildUser();
+    (verifyRefreshToken as any).mockReturnValue({ userId: user.id });
+    const sessionExpiresAt = new Date(Date.now() + 2 * 24 * 60 * 60 * 1000);
+
+    prismaMock.refreshToken.findUnique.mockResolvedValue({
+      id: "rt-1",
+      userId: user.id,
+      familyId: "mock-family-id",
+      isRevoked: false,
+      rememberMe: true,
+      expiresAt: new Date(Date.now() + 60_000),
+      sessionExpiresAt,
+    });
+    prismaMock.user.findUnique.mockResolvedValue(user);
+
+    const result = await authService.refreshAccessToken("valid-refresh-token");
+
+    expect(result.expiresAt.getTime()).toBeLessThanOrEqual(sessionExpiresAt.getTime());
+    expect(result.sessionExpiresAt.getTime()).toBe(sessionExpiresAt.getTime());
   });
 });

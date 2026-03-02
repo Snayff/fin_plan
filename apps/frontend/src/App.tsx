@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -18,14 +19,35 @@ import Layout from "./components/layout/Layout";
 import DesignPage from "./pages/DesignPage";
 
 function App() {
-  const { isAuthenticated } = useAuthStore();
+  const authStatus = useAuthStore((state) => state.authStatus);
+  const initializeAuth = useAuthStore((state) => state.initializeAuth);
+  const isDesignPage = import.meta.env.DEV && window.location.pathname.startsWith('/design');
+  const isAuthenticated = authStatus === 'authenticated';
+
+  useEffect(() => {
+    if (isDesignPage) {
+      return;
+    }
+    void initializeAuth();
+  }, [initializeAuth, isDesignPage]);
 
   // Design reference: bypass React Router v7 entirely for this dev-only page
-  if (import.meta.env.DEV && window.location.pathname.startsWith('/design')) {
+  if (isDesignPage) {
     return (
       <QueryClientProvider client={queryClient}>
         <Toaster />
         <DesignPage />
+      </QueryClientProvider>
+    );
+  }
+
+  if (authStatus === 'initializing') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Toaster />
+        <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
+          Restoring secure session...
+        </div>
       </QueryClientProvider>
     );
   }

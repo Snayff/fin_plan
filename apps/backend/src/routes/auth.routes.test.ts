@@ -54,6 +54,14 @@ const mockAuthResponse = {
   refreshToken: "refresh-token",
 };
 
+const mockRefreshResponse = {
+  accessToken: "new-token",
+  refreshToken: "rotated-refresh-token",
+  rememberMe: true,
+  expiresAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000),
+  sessionExpiresAt: new Date(Date.now() + 25 * 24 * 60 * 60 * 1000),
+};
+
 describe("POST /api/auth/register", () => {
   it("returns 201 with valid input", async () => {
     (authService.register as any).mockResolvedValue(mockAuthResponse);
@@ -144,6 +152,39 @@ describe("POST /api/auth/login", () => {
 
     const refreshCookie = response.cookies.find((c: any) => c.name === "refreshToken");
     expect(refreshCookie).toBeDefined();
+    expect(refreshCookie!.maxAge).toBeUndefined();
+  });
+
+  it("sets persistent refresh cookie when rememberMe=true", async () => {
+    (authService.login as any).mockResolvedValue(mockAuthResponse);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "test@test.com", password: "password123456", rememberMe: true },
+    });
+
+    const refreshCookie = response.cookies.find((c: any) => c.name === "refreshToken");
+    expect(refreshCookie).toBeDefined();
+    expect(refreshCookie!.maxAge).toBeDefined();
+  });
+
+  it("passes rememberMe through to authService.login", async () => {
+    (authService.login as any).mockResolvedValue(mockAuthResponse);
+
+    await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "test@test.com", password: "password123456", rememberMe: true },
+    });
+
+    expect(authService.login).toHaveBeenCalledWith(
+      expect.objectContaining({
+        email: "test@test.com",
+        password: "password123456",
+        rememberMe: true,
+      })
+    );
   });
 
   it("returns 400 for missing email", async () => {
@@ -221,7 +262,7 @@ describe("GET /api/auth/me", () => {
 
 describe("POST /api/auth/refresh", () => {
   it("returns 200 with new access token from body", async () => {
-    (authService.refreshAccessToken as any).mockResolvedValue({ accessToken: "new-token" });
+    (authService.refreshAccessToken as any).mockResolvedValue(mockRefreshResponse);
 
     const response = await app.inject({
       method: "POST",
@@ -231,6 +272,20 @@ describe("POST /api/auth/refresh", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json().accessToken).toBe("new-token");
+  });
+
+  it("sets persistent cookie on refresh when rememberMe=true", async () => {
+    (authService.refreshAccessToken as any).mockResolvedValue(mockRefreshResponse);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/refresh",
+      payload: { refreshToken: "valid-refresh-token" },
+    });
+
+    const refreshCookie = response.cookies.find((c: any) => c.name === "refreshToken");
+    expect(refreshCookie).toBeDefined();
+    expect(refreshCookie!.maxAge).toBeDefined();
   });
 
   it("returns 400 when no refresh token provided", async () => {

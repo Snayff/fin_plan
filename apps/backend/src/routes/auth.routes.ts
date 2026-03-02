@@ -32,6 +32,7 @@ const registerSchema = z.object({
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(1),
+  rememberMe: z.boolean().optional().default(false),
 });
 
 const refreshSchema = z.object({
@@ -44,14 +45,19 @@ const refreshSchema = z.object({
  */
 function setRefreshTokenCookie(
   reply: FastifyReply,
-  refreshToken: string
+  refreshToken: string,
+  options?: { rememberMe?: boolean; maxAgeSeconds?: number }
 ) {
+  const rememberMe = options?.rememberMe ?? false;
+  const maxAgeSeconds =
+    options?.maxAgeSeconds && options.maxAgeSeconds > 0 ? options.maxAgeSeconds : 7 * 24 * 60 * 60;
+
   reply.setCookie('refreshToken', refreshToken, {
     httpOnly: true,
     secure: config.NODE_ENV === 'production',
     sameSite: 'strict',
     path: '/api/auth/refresh',
-    maxAge: 7 * 24 * 60 * 60, // 7 days
+    ...(rememberMe ? { maxAge: maxAgeSeconds } : {}),
   });
 }
 
@@ -111,7 +117,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     });
 
     // Set refresh token in httpOnly cookie
-    setRefreshTokenCookie(reply, result.refreshToken);
+    setRefreshTokenCookie(reply, result.refreshToken, { rememberMe: false });
 
     // Return response with BOTH formats for backward compatibility
     return reply.status(201).send(result);
@@ -140,7 +146,9 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
 
       // Set refresh token in httpOnly cookie
-      setRefreshTokenCookie(reply, result.refreshToken);
+      setRefreshTokenCookie(reply, result.refreshToken, {
+        rememberMe: body.rememberMe,
+      });
 
       // Return response with BOTH formats for backward compatibility
       return reply.status(200).send(result);
@@ -207,8 +215,13 @@ export async function authRoutes(fastify: FastifyInstance) {
       ...ctx,
     });
 
-    // Always set the rotated refresh token as a new cookie
-    setRefreshTokenCookie(reply, result.refreshToken);
+    const maxAgeSeconds = Math.max(1, Math.floor((result.expiresAt.getTime() - Date.now()) / 1000));
+
+    // Always set the rotated refresh token as a new cookie.
+    setRefreshTokenCookie(reply, result.refreshToken, {
+      rememberMe: result.rememberMe,
+      maxAgeSeconds,
+    });
 
     // Only return the access token to the client
     return reply.status(200).send({ accessToken: result.accessToken });

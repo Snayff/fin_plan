@@ -2,26 +2,33 @@ import { create } from 'zustand';
 import { authService, type User, type LoginData, type RegisterData } from '../services/auth.service';
 import type { ApiError } from '../lib/api';
 
+export type AuthStatus = 'initializing' | 'authenticated' | 'unauthenticated';
+
 interface AuthState {
   user: User | null;
   accessToken: string | null;
   isAuthenticated: boolean;
+  authStatus: AuthStatus;
   isLoading: boolean;
   error: string | null;
 
-  // Actions
   register: (data: RegisterData) => Promise<void>;
   login: (data: LoginData) => Promise<void>;
   logout: () => Promise<void>;
+  initializeAuth: () => Promise<void>;
   clearError: () => void;
   setUser: (user: User, accessToken: string) => void;
+  setUnauthenticated: () => void;
   updateAccessToken: (accessToken: string) => void;
 }
+
+let initializationPromise: Promise<void> | null = null;
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,
+  authStatus: 'initializing',
   isLoading: false,
   error: null,
 
@@ -30,8 +37,50 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user,
       accessToken,
       isAuthenticated: true,
+      authStatus: 'authenticated',
       error: null,
     }),
+
+  setUnauthenticated: () =>
+    set({
+      user: null,
+      accessToken: null,
+      isAuthenticated: false,
+      authStatus: 'unauthenticated',
+      isLoading: false,
+      error: null,
+    }),
+
+  initializeAuth: async () => {
+    if (get().authStatus !== 'initializing') {
+      return;
+    }
+
+    if (initializationPromise) {
+      return initializationPromise;
+    }
+
+    initializationPromise = (async () => {
+      try {
+        const { accessToken } = await authService.refreshToken();
+        const { user } = await authService.getCurrentUser(accessToken);
+        set({
+          user,
+          accessToken,
+          isAuthenticated: true,
+          authStatus: 'authenticated',
+          isLoading: false,
+          error: null,
+        });
+      } catch {
+        get().setUnauthenticated();
+      } finally {
+        initializationPromise = null;
+      }
+    })();
+
+    return initializationPromise;
+  },
 
   register: async (data) => {
     set({ isLoading: true, error: null });
@@ -41,6 +90,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: response.user,
         accessToken: response.accessToken,
         isAuthenticated: true,
+        authStatus: 'authenticated',
         isLoading: false,
         error: null,
       });
@@ -62,6 +112,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: response.user,
         accessToken: response.accessToken,
         isAuthenticated: true,
+        authStatus: 'authenticated',
         isLoading: false,
         error: null,
       });
@@ -84,12 +135,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         console.error('Logout error:', error);
       }
     }
-    set({
-      user: null,
-      accessToken: null,
-      isAuthenticated: false,
-      error: null,
-    });
+
+    get().setUnauthenticated();
   },
 
   clearError: () => set({ error: null }),

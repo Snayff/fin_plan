@@ -16,6 +16,7 @@ describe("LoginPage", () => {
 
     expect(screen.getByLabelText(/email/i)).toBeTruthy();
     expect(screen.getByLabelText(/password/i)).toBeTruthy();
+    expect(screen.getByLabelText(/remember me on this device/i)).toBeTruthy();
   });
 
   it("renders sign in button", () => {
@@ -43,6 +44,28 @@ describe("LoginPage", () => {
       expect(loginMock).toHaveBeenCalledWith({
         email: "test@test.com",
         password: "password123456",
+        rememberMe: false,
+      });
+    });
+  });
+
+  it("submits rememberMe=true when checked", async () => {
+    const user = userEvent.setup();
+    const loginMock = mock(() => Promise.resolve(undefined));
+    useAuthStore.setState({ login: loginMock } as any);
+
+    renderWithProviders(<LoginPage />);
+
+    await user.type(screen.getByLabelText(/email/i), "test@test.com");
+    await user.type(screen.getByLabelText(/password/i), "password123456");
+    await user.click(screen.getByLabelText(/remember me on this device/i));
+    await user.click(screen.getByRole("button", { name: /sign in/i }));
+
+    await waitFor(() => {
+      expect(loginMock).toHaveBeenCalledWith({
+        email: "test@test.com",
+        password: "password123456",
+        rememberMe: true,
       });
     });
   });
