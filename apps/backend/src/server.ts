@@ -50,6 +50,7 @@ async function start() {
         httpOnly: false, // Must be false so frontend can read it
         secure: config.NODE_ENV === 'production',
         sameSite: 'strict',
+        path: '/', // Scope cookie to all paths (cookieOpts fully replaces defaults)
       },
       sessionPlugin: '@fastify/cookie',
     });
