@@ -7,10 +7,12 @@
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "bun": "./src/index.ts",
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
     "./schemas": {
+      "bun": "./src/schemas/index.ts",
       "types": "./dist/schemas/index.d.ts",
       "import": "./dist/schemas/index.js"
     }
