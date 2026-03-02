@@ -34,7 +34,7 @@ function MetricCard({
         <p className="text-sm text-muted-foreground">{label}</p>
         <p className="text-2xl font-semibold text-foreground mt-1 font-mono">{value}</p>
         {delta && (
-          <p className={`text-xs mt-1 flex items-center gap-1 £{deltaColor}`}>
+          <p className={`text-xs mt-1 flex items-center gap-1 ${deltaColor}`}>
             {deltaType === 'positive' && <TrendingUp className="h-3 w-3" />}
             {deltaType === 'negative' && <TrendingDown className="h-3 w-3" />}
             {delta}
@@ -177,7 +177,7 @@ export function DataDisplayPatterns() {
                   <TableCell>{tx.description}</TableCell>
                   <TableCell className="text-muted-foreground">{tx.category}</TableCell>
                   <TableCell
-                    className={`text-right font-mono £{tx.type === 'income' ? 'text-success' : 'text-foreground'}`}
+                    className={`text-right font-mono ${tx.type === 'income' ? 'text-success' : 'text-foreground'}`}
                   >
                     {tx.amount}
                   </TableCell>
@@ -242,11 +242,11 @@ export function DataDisplayPatterns() {
                     <div className="w-full flex items-end gap-0.5" style={{ height: 100 }}>
                       <div
                         className="flex-1 rounded-t"
-                        style={{ height: `£{income}%`, backgroundColor: 'hsl(var(--chart-1))' }}
+                        style={{ height: `${income}%`, backgroundColor: 'hsl(var(--chart-1))' }}
                       />
                       <div
                         className="flex-1 rounded-t"
-                        style={{ height: `£{expense}%`, backgroundColor: 'hsl(var(--chart-2))' }}
+                        style={{ height: `${expense}%`, backgroundColor: 'hsl(var(--chart-2))' }}
                       />
                     </div>
                     <span className="text-xs text-muted-foreground">{month}</span>
