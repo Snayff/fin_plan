@@ -11,9 +11,9 @@ const semanticColors = [
   { name: 'Primary (Orange)', cssVar: '--primary', tailwindClass: 'bg-primary', hex: '#FF7A18', description: 'Primary actions, CTAs, focus rings' },
   { name: 'Success (Teal)', cssVar: '--success', tailwindClass: 'bg-success', hex: '#07BEB8', description: 'Income, progress, positive states' },
   { name: 'Accent (Purple)', cssVar: '--accent', tailwindClass: 'bg-accent', hex: '#B38BA3', description: 'Branding, accent features' },
-  { name: 'Warning (Magenta)', cssVar: '--warning', tailwindClass: 'bg-warning', hex: '#8F3985', description: 'Attention needed — not urgent' },
+  { name: 'Warning (Magenta)', cssVar: '--warning', tailwindClass: 'bg-warning', hex: '#8F3985', description: 'Financial status badges: Overdue, Over budget, Behind — awareness, not error' },
   { name: 'Destructive (Red)', cssVar: '--destructive', tailwindClass: 'bg-destructive', hex: '#E5484D', description: 'Errors, data loss — use sparingly' },
-  { name: 'Highlight', cssVar: '--highlight', tailwindClass: 'bg-highlight', hex: '#8F3985', description: 'Important but not urgent info' },
+  { name: 'Highlight (Magenta)', cssVar: '--highlight', tailwindClass: 'bg-highlight', hex: '#8F3985', description: 'Same colour as Warning. Use bg-highlight for decorative labels (e.g. Goal badges); bg-warning for status badges' },
   { name: 'Expense', cssVar: '--expense', tailwindClass: 'bg-expense', hex: '#4a5568', description: 'Expense data (discrete, harmonious)' },
 ];
 
@@ -77,6 +77,15 @@ export function FoundationPatterns() {
             Use these for bordered info/alert blocks instead of full colour fills.
           </p>
         </div>
+        <div className="mt-3 p-4 rounded-lg bg-background border border-border text-sm space-y-2">
+          <p className="font-medium text-foreground">Warm orange (attention)</p>
+          <p className="text-muted-foreground text-xs">
+            The warm orange primitive (<code className="bg-card px-1 rounded">#E0B084</code>) is available as{' '}
+            <code className="bg-card px-1 rounded">hsl(var(--chart-5))</code> only — there is no{' '}
+            <code className="bg-card px-1 rounded">bg-attention</code> class. For financial status badges, use{' '}
+            <code className="bg-card px-1 rounded">bg-warning</code> (magenta).
+          </p>
+        </div>
       </PatternSection>
 
       <PatternSection
@@ -97,7 +106,10 @@ export function FoundationPatterns() {
           <p className="text-muted-foreground text-xs mb-2">
             JetBrains Mono is available for numerical data where alignment matters (e.g. financial figures).
           </p>
-          <p className="font-mono text-base text-foreground">$12,450.00 · –$3,200.00 · +$8,900.50</p>
+          <p className="font-mono text-base text-foreground">£12,450.00 · –£3,200.00 · +£8,900.50</p>
+          <p className="text-muted-foreground text-xs mt-2">
+            Use the Unicode en-dash (–, U+2013) for negative values — never a hyphen (-).
+          </p>
         </div>
       </PatternSection>
 

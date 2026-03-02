@@ -1,5 +1,5 @@
 // Update this file when UI components in src/components/ui/ are modified.
-import { AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, Info, Plus } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,12 +54,13 @@ export function ComponentPatterns() {
           code={`<Button size="sm">Small</Button>
 <Button size="default">Default</Button>
 <Button size="lg">Large</Button>
-<Button size="icon"><PlusIcon /></Button>`}
+<Button size="icon"><Plus className="h-4 w-4" /></Button>`}
         >
           <div className="flex flex-wrap items-center gap-3">
             <Button size="sm">Small</Button>
             <Button size="default">Default</Button>
             <Button size="lg">Large</Button>
+            <Button size="icon"><Plus className="h-4 w-4" /></Button>
           </div>
         </PatternExample>
 
@@ -117,7 +118,7 @@ export function ComponentPatterns() {
     <CardDescription>As of today</CardDescription>
   </CardHeader>
   <CardContent>
-    <p className="text-2xl font-semibold">$48,200</p>
+    <p className="text-2xl font-semibold font-mono">£48,200</p>
   </CardContent>
   <CardFooter>
     <Button variant="ghost" size="sm">View history</Button>
@@ -131,7 +132,7 @@ export function ComponentPatterns() {
                 <CardDescription>As of today</CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-2xl font-semibold">$48,200</p>
+                <p className="text-2xl font-semibold font-mono">£48,200</p>
               </CardContent>
               <CardFooter>
                 <Button variant="ghost" size="sm">View history</Button>
@@ -145,15 +146,17 @@ export function ComponentPatterns() {
           code={`<Card>
   <CardContent className="pt-6">
     <p className="text-sm text-muted-foreground">Balance</p>
-    <p className="text-xl font-semibold text-success">$12,450</p>
+    <p className="text-xl font-semibold font-mono text-foreground">£12,450</p>
   </CardContent>
-</Card>`}
+</Card>
+{/* Note: use text-foreground for neutral balances. Reserve text-success (teal)
+    for income figures or positive deltas, not plain account balances. */}`}
         >
           <div className="max-w-xs">
             <Card>
               <CardContent className="pt-6">
                 <p className="text-sm text-muted-foreground">Balance</p>
-                <p className="text-xl font-semibold text-success">$12,450</p>
+                <p className="text-xl font-semibold font-mono text-foreground">£12,450</p>
               </CardContent>
             </Card>
           </div>
@@ -172,25 +175,27 @@ export function ComponentPatterns() {
           code={`<Badge>Default</Badge>
 <Badge variant="secondary">Secondary</Badge>
 <Badge variant="outline">Outline</Badge>
-<Badge variant="destructive">Overdue</Badge>`}
+<Badge variant="destructive">Error</Badge>`}
         >
           <div className="flex flex-wrap gap-2">
             <Badge>Default</Badge>
             <Badge variant="secondary">Secondary</Badge>
             <Badge variant="outline">Outline</Badge>
-            <Badge variant="destructive">Overdue</Badge>
+            <Badge variant="destructive">Error</Badge>
           </div>
         </PatternExample>
 
         <PatternExample
           label="Custom semantic colours (via className)"
-          code={`<Badge className="bg-success text-success-foreground">On Track</Badge>
-<Badge className="bg-warning text-warning-foreground">Review</Badge>
-<Badge className="bg-highlight text-highlight-foreground">Goal</Badge>`}
+          code={`<Badge className="bg-success text-success-foreground border-0">On Track</Badge>
+<Badge className="bg-warning text-warning-foreground border-0">Review</Badge>
+<Badge className="bg-warning text-warning-foreground border-0">Overdue</Badge>
+<Badge className="bg-highlight text-highlight-foreground border-0">Goal</Badge>`}
         >
           <div className="flex flex-wrap gap-2">
             <Badge className="bg-success text-success-foreground border-0">On Track</Badge>
             <Badge className="bg-warning text-warning-foreground border-0">Review</Badge>
+            <Badge className="bg-warning text-warning-foreground border-0">Overdue</Badge>
             <Badge className="bg-highlight text-highlight-foreground border-0">Goal</Badge>
           </div>
         </PatternExample>

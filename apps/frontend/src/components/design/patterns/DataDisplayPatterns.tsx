@@ -26,9 +26,7 @@ function MetricCard({
   const deltaColor =
     deltaType === 'positive'
       ? 'text-success'
-      : deltaType === 'negative'
-        ? 'text-destructive'
-        : 'text-muted-foreground';
+      : 'text-muted-foreground';
 
   return (
     <Card>
@@ -36,7 +34,7 @@ function MetricCard({
         <p className="text-sm text-muted-foreground">{label}</p>
         <p className="text-2xl font-semibold text-foreground mt-1 font-mono">{value}</p>
         {delta && (
-          <p className={`text-xs mt-1 flex items-center gap-1 ${deltaColor}`}>
+          <p className={`text-xs mt-1 flex items-center gap-1 £{deltaColor}`}>
             {deltaType === 'positive' && <TrendingUp className="h-3 w-3" />}
             {deltaType === 'negative' && <TrendingDown className="h-3 w-3" />}
             {delta}
@@ -48,10 +46,10 @@ function MetricCard({
 }
 
 const sampleTransactions = [
-  { date: '1 Mar', description: 'Salary', category: 'Income', amount: '+$5,200.00', type: 'income' },
-  { date: '2 Mar', description: 'Rent', category: 'Housing', amount: '–$1,800.00', type: 'expense' },
-  { date: '3 Mar', description: 'Groceries', category: 'Food', amount: '–$142.50', type: 'expense' },
-  { date: '4 Mar', description: 'Freelance', category: 'Income', amount: '+$800.00', type: 'income' },
+  { date: '1 Mar', description: 'Salary', category: 'Income', amount: '+£5,200.00', type: 'income' },
+  { date: '2 Mar', description: 'Rent', category: 'Housing', amount: '–£1,800.00', type: 'expense' },
+  { date: '3 Mar', description: 'Groceries', category: 'Food', amount: '–£142.50', type: 'expense' },
+  { date: '4 Mar', description: 'Freelance', category: 'Income', amount: '+£800.00', type: 'income' },
 ];
 
 export function DataDisplayPatterns() {
@@ -79,16 +77,21 @@ export function DataDisplayPatterns() {
       >
         <PatternExample
           type="correct"
-          code={`<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          code={`// deltaType="positive" → text-success (teal) + TrendingUp icon
+// deltaType="negative" → text-muted-foreground (muted) + TrendingDown icon
+// deltaType="neutral"  → text-muted-foreground (muted), no icon
+// Never use text-destructive (red) for financial deltas — that is reserved for true errors.
+
+<div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
   <Card>
     <CardContent className="pt-6">
       <p className="text-sm text-muted-foreground">Net Worth</p>
       <p className="text-2xl font-semibold text-foreground mt-1 font-mono">
-        $48,200.00
+        £48,200.00
       </p>
       <p className="text-xs mt-1 flex items-center gap-1 text-success">
         <TrendingUp className="h-3 w-3" />
-        +$1,200 this month
+        +£1,200 this month
       </p>
     </CardContent>
   </Card>
@@ -97,14 +100,14 @@ export function DataDisplayPatterns() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <MetricCard
               label="Net Worth"
-              value="$48,200.00"
-              delta="+$1,200 this month"
+              value="£48,200.00"
+              delta="+£1,200 this month"
               deltaType="positive"
             />
             <MetricCard
               label="Monthly Expenses"
-              value="$3,840.00"
-              delta="+$240 vs last month"
+              value="£3,840.00"
+              delta="£240 more than last month"
               deltaType="negative"
             />
             <MetricCard
@@ -174,7 +177,7 @@ export function DataDisplayPatterns() {
                   <TableCell>{tx.description}</TableCell>
                   <TableCell className="text-muted-foreground">{tx.category}</TableCell>
                   <TableCell
-                    className={`text-right font-mono ${tx.type === 'income' ? 'text-success' : 'text-foreground'}`}
+                    className={`text-right font-mono £{tx.type === 'income' ? 'text-success' : 'text-foreground'}`}
                   >
                     {tx.amount}
                   </TableCell>
@@ -221,7 +224,7 @@ export function DataDisplayPatterns() {
 // chart-2: hsl(var(--chart-2)) — Slate  → Expenses
 // chart-3: hsl(var(--chart-3)) — Purple → Tertiary data
 // chart-4: hsl(var(--chart-4)) — Magenta → Additional
-// chart-5: hsl(var(--chart-5)) — Orange  → Highlights / CTAs`}
+// chart-5: hsl(var(--chart-5)) — Orange  → CTA-adjacent emphasis only — do not use for financial categories`}
         >
           <Card className="max-w-md">
             <CardHeader>
@@ -239,11 +242,11 @@ export function DataDisplayPatterns() {
                     <div className="w-full flex items-end gap-0.5" style={{ height: 100 }}>
                       <div
                         className="flex-1 rounded-t"
-                        style={{ height: `${income}%`, backgroundColor: 'hsl(var(--chart-1))' }}
+                        style={{ height: `£{income}%`, backgroundColor: 'hsl(var(--chart-1))' }}
                       />
                       <div
                         className="flex-1 rounded-t"
-                        style={{ height: `${expense}%`, backgroundColor: 'hsl(var(--chart-2))' }}
+                        style={{ height: `£{expense}%`, backgroundColor: 'hsl(var(--chart-2))' }}
                       />
                     </div>
                     <span className="text-xs text-muted-foreground">{month}</span>
