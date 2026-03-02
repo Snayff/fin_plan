@@ -4,6 +4,14 @@ import { useAuthStore } from "../../stores/authStore";
 import type { ApiError } from "../../lib/api";
 import { Input } from "@/components/ui/input";
 
+function getPasswordStrength(pwd: string): { level: number; label: string; color: string } {
+  if (pwd.length === 0) return { level: 0, label: "", color: "" };
+  if (pwd.length < 8)   return { level: 1, label: "Too short", color: "bg-destructive" };
+  if (pwd.length < 12)  return { level: 2, label: "Weak — needs 12+ characters", color: "bg-warning" };
+  if (!/[^a-zA-Z0-9]/.test(pwd)) return { level: 3, label: "Fair — add a symbol to strengthen", color: "bg-warning" };
+  return { level: 4, label: "Strong", color: "bg-success" };
+}
+
 export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -12,6 +20,8 @@ export default function RegisterPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const register = useAuthStore((state) => state.register);
+
+  const strength = getPasswordStrength(password);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,6 +107,21 @@ export default function RegisterPage() {
               className="mt-1"
               placeholder="Min. 12 characters"
             />
+            {strength.level > 0 && (
+              <div className="mt-2 space-y-1">
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div
+                      key={i}
+                      className={`h-1 flex-1 rounded-full transition-all duration-200 ${
+                        i <= strength.level ? strength.color : "bg-muted"
+                      }`}
+                    />
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground">{strength.label}</p>
+              </div>
+            )}
           </div>
 
           <div>

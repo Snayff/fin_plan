@@ -11,6 +11,8 @@ import BudgetForm from '../components/budgets/BudgetForm';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { AlertTriangleIcon, CheckIcon } from 'lucide-react';
+import { Skeleton } from '../components/ui/skeleton';
 
 const PERIOD_LABELS: Record<BudgetPeriod, string> = {
   monthly: 'Monthly',
@@ -88,8 +90,21 @@ export default function BudgetsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading budgets...</div>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-9 w-32" />
+          <Skeleton className="h-9 w-36" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-56 rounded-xl" />
+          <Skeleton className="h-56 rounded-xl" />
+          <Skeleton className="h-56 rounded-xl" />
+        </div>
       </div>
     );
   }
@@ -130,9 +145,15 @@ export default function BudgetsPage() {
           <Card>
             <CardContent className="p-4">
               <p className="text-sm text-muted-foreground mb-1">Remaining</p>
-              <p className={`text-2xl font-bold ${remaining >= 0 ? 'text-success' : 'text-destructive'}`}>
-                {formatCurrency(remaining)}
-              </p>
+              <div className={remaining < 0 ? 'bg-destructive-subtle rounded-md p-2 -m-2' : ''}>
+                <div className="flex items-center gap-1">
+                  {remaining < 0 && <AlertTriangleIcon className="h-4 w-4 text-destructive shrink-0" />}
+                  {remaining >= 0 && <CheckIcon className="h-4 w-4 text-success shrink-0" />}
+                  <p className={`text-2xl font-bold ${remaining >= 0 ? 'text-success' : 'text-destructive'}`}>
+                    {formatCurrency(remaining)}
+                  </p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -192,11 +213,27 @@ export default function BudgetsPage() {
                     <div className="mb-4">
                       <div className="w-full bg-muted rounded-full h-2">
                         <div
-                          className="h-2 rounded-full bg-primary transition-all"
+                          className={`h-2 rounded-full transition-all ${
+                            progress >= 100 ? 'bg-destructive' :
+                            progress >= 75  ? 'bg-warning' :
+                            'bg-primary'
+                          }`}
                           style={{ width: `${progress}%` }}
                         />
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">{progress.toFixed(1)}% used</p>
+                      <div className="flex items-center justify-between mt-1">
+                        <p className="text-xs text-muted-foreground">{progress.toFixed(1)}% used</p>
+                        {progress >= 100 && (
+                          <span className="text-xs text-destructive font-medium flex items-center gap-1">
+                            <AlertTriangleIcon className="h-3 w-3" /> Over budget
+                          </span>
+                        )}
+                        {progress >= 75 && progress < 100 && (
+                          <span className="text-xs text-warning font-medium flex items-center gap-1">
+                            <AlertTriangleIcon className="h-3 w-3" /> Approaching limit
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     <div className="flex gap-2">

@@ -7,6 +7,7 @@ import IncomeExpenseChart from '../components/charts/IncomeExpenseChart';
 import CategoryPieChart from '../components/charts/CategoryPieChart';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { Skeleton } from '../components/ui/skeleton';
 
 export default function DashboardPage() {
   const { data, isLoading, error } = useQuery({
@@ -26,8 +27,22 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading dashboard...</div>
+      <div className="p-6 space-y-6">
+        <Skeleton className="h-8 w-48" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-28 rounded-xl" />
+          <Skeleton className="h-28 rounded-xl" />
+          <Skeleton className="h-28 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Skeleton className="h-28 rounded-xl" />
+          <Skeleton className="h-28 rounded-xl" />
+          <Skeleton className="h-28 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Skeleton className="h-64 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
+        </div>
       </div>
     );
   }
@@ -129,7 +144,7 @@ export default function DashboardPage() {
                 Assets: £{totalAssets.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
               </span>
               <span className="text-text-tertiary">-</span>
-              <span className="text-brand">
+              <span className="text-accent">
                 Liabilities: £{totalLiabilities.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
               </span>
             </div>
@@ -184,7 +199,7 @@ export default function DashboardPage() {
         <Card>
           <CardContent className="pt-6">
             <div className="text-sm font-medium text-muted-foreground mb-2">Total Liabilities</div>
-            <div className="text-2xl font-bold text-brand">
+            <div className="text-2xl font-bold text-accent">
               £{summary?.totalLiabilities?.toLocaleString('en-GB', { minimumFractionDigits: 2 }) || '0.00'}
             </div>
             <div className="text-sm text-text-tertiary mt-1">Loans, mortgages, etc.</div>

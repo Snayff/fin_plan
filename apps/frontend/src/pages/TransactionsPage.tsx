@@ -14,6 +14,7 @@ import { buildTransactionFilterConfig } from '../config/filter-configs';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { Skeleton } from '../components/ui/skeleton';
 import type { Transaction } from '../types';
 import { format } from 'date-fns';
 import { ArrowUpIcon, ArrowDownIcon, TrendingUpIcon, RepeatIcon } from 'lucide-react';
@@ -109,8 +110,24 @@ export default function TransactionsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading transactions...</div>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-9 w-44" />
+          <Skeleton className="h-9 w-40" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+        <Skeleton className="h-12 rounded-lg" />
+        <div className="space-y-2">
+          <Skeleton className="h-12 rounded-lg" />
+          <Skeleton className="h-12 rounded-lg" />
+          <Skeleton className="h-12 rounded-lg" />
+          <Skeleton className="h-12 rounded-lg" />
+          <Skeleton className="h-12 rounded-lg" />
+        </div>
       </div>
     );
   }
@@ -247,7 +264,7 @@ export default function TransactionsPage() {
                           {transaction.isGenerated && (
                             <Badge
                               variant="outline"
-                              className="text-xs bg-blue-50 text-blue-700 border-blue-200"
+                              className="text-xs bg-primary-subtle text-primary border-primary"
                               title="Generated from recurring rule"
                             >
                               <RepeatIcon className="h-3 w-3 mr-1 inline" />
@@ -257,7 +274,7 @@ export default function TransactionsPage() {
                           {transaction.isGenerated && transaction.overriddenFields && transaction.overriddenFields.length > 0 && (
                             <Badge
                               variant="outline"
-                              className="text-xs bg-amber-50 text-amber-700 border-amber-200"
+                              className="text-xs bg-warning-subtle text-warning border-warning"
                               title={`Edited fields: ${transaction.overriddenFields.join(', ')}`}
                             >
                               Edited

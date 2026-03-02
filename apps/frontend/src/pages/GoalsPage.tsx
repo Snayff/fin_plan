@@ -13,6 +13,7 @@ import { goalFilterConfig } from '../config/filter-configs';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { Skeleton } from '../components/ui/skeleton';
 import type { Goal, EnhancedGoal } from '../types';
 import {
   TrendingUpIcon,
@@ -82,8 +83,22 @@ export default function GoalsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading goals...</div>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-9 w-28" />
+          <Skeleton className="h-9 w-28" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-72 rounded-xl" />
+          <Skeleton className="h-72 rounded-xl" />
+          <Skeleton className="h-72 rounded-xl" />
+        </div>
       </div>
     );
   }
@@ -101,7 +116,7 @@ export default function GoalsPage() {
   const getPriorityBadgeColor = (priority: string) => {
     switch (priority) {
       case 'high':
-        return 'bg-destructive text-destructive-foreground';
+        return 'bg-primary text-primary-foreground';
       case 'medium':
         return 'bg-warning-subtle text-warning';
       case 'low':
@@ -223,7 +238,7 @@ export default function GoalsPage() {
               key={goal.id}
               className={
                 goal.priority === 'high'
-                  ? 'border-2 border-destructive shadow-md'
+                  ? 'border-2 border-primary shadow-md'
                   : undefined
               }
             >

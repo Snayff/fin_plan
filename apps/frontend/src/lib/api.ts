@@ -27,6 +27,15 @@ export class ApiClient {
     const response = await fetch(`${this.baseUrl}/api/auth/csrf-token`, {
       credentials: 'include',
     });
+
+    if (!response.ok) {
+      throw {
+        message: 'Failed to fetch CSRF token',
+        code: 'CSRF_FETCH_ERROR',
+        statusCode: response.status,
+      } as ApiError;
+    }
+
     const data = await response.json();
     const token = data.csrfToken || '';
     this.csrfToken = token;
@@ -152,15 +161,20 @@ export class ApiClient {
         const { authService } = await import('../services/auth.service');
         const { accessToken } = await authService.refreshToken();
 
-        // Update token in store
-        authStore.setUser(authStore.user!, accessToken);
+        if (authStore.user) {
+          authStore.updateAccessToken(accessToken);
+        } else {
+          // Cold-start refresh needs a user profile before we can mark auth as complete.
+          const { user } = await authService.getCurrentUser(accessToken);
+          authStore.setUser(user, accessToken);
+        }
 
         return accessToken;
       } catch (error) {
-        // Refresh failed - logout user
+        // Refresh failed - clear client auth state and force login.
         console.error('Token refresh failed:', error);
         const { useAuthStore } = await import('../stores/authStore');
-        await useAuthStore.getState().logout();
+        useAuthStore.getState().setUnauthenticated();
 
         // Redirect to login
         window.location.href = '/login';

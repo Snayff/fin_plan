@@ -55,6 +55,8 @@ model RefreshToken {
   familyId   String   @map("family_id")
   isRevoked  Boolean  @default(false) @map("is_revoked")
   expiresAt  DateTime @map("expires_at")
+  sessionExpiresAt DateTime @map("session_expires_at")
+  rememberMe Boolean @default(false) @map("remember_me")
   ipAddress  String?  @map("ip_address")
   userAgent  String?  @map("user_agent")
   lastUsedAt DateTime @default(now()) @map("last_used_at")

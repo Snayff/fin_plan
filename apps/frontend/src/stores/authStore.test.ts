@@ -1,19 +1,35 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { useAuthStore } from "./authStore";
-import { setAuthenticated, setUnauthenticated, mockUser } from "../test/helpers/auth";
-
-mock.module("../services/auth.service", () => ({
-  authService: {
-    login: mock(() => {}),
-    register: mock(() => {}),
-    logout: mock(() => {}),
-  },
-}));
-
+import { setAuthenticated, mockUser } from "../test/helpers/auth";
 import { authService } from "../services/auth.service";
 
+const loginMock = mock(() => {});
+const registerMock = mock(() => {});
+const logoutMock = mock(() => {});
+const refreshTokenMock = mock(() => {});
+const getCurrentUserMock = mock(() => {});
+
 beforeEach(() => {
-  setUnauthenticated();
+  loginMock.mockReset();
+  registerMock.mockReset();
+  logoutMock.mockReset();
+  refreshTokenMock.mockReset();
+  getCurrentUserMock.mockReset();
+
+  (authService as any).login = loginMock;
+  (authService as any).register = registerMock;
+  (authService as any).logout = logoutMock;
+  (authService as any).refreshToken = refreshTokenMock;
+  (authService as any).getCurrentUser = getCurrentUserMock;
+
+  useAuthStore.setState({
+    user: null,
+    accessToken: null,
+    isAuthenticated: false,
+    authStatus: "initializing",
+    isLoading: false,
+    error: null,
+  });
 });
 
 describe("useAuthStore", () => {
@@ -28,6 +44,10 @@ describe("useAuthStore", () => {
 
     it("isAuthenticated is false", () => {
       expect(useAuthStore.getState().isAuthenticated).toBe(false);
+    });
+
+    it("authStatus is initializing", () => {
+      expect(useAuthStore.getState().authStatus).toBe("initializing");
     });
 
     it("isLoading is false", () => {
@@ -47,15 +67,44 @@ describe("useAuthStore", () => {
       expect(state.accessToken).toBe("test-token");
     });
 
-    it("sets isAuthenticated to true", () => {
+    it("sets authenticated status", () => {
       useAuthStore.getState().setUser(mockUser, "test-token");
-      expect(useAuthStore.getState().isAuthenticated).toBe(true);
+      const state = useAuthStore.getState();
+      expect(state.isAuthenticated).toBe(true);
+      expect(state.authStatus).toBe("authenticated");
     });
 
     it("clears error", () => {
       useAuthStore.setState({ error: "some error" });
       useAuthStore.getState().setUser(mockUser, "test-token");
       expect(useAuthStore.getState().error).toBeNull();
+    });
+  });
+
+  describe("initializeAuth", () => {
+    it("hydrates auth state on refresh-token success", async () => {
+      (authService.refreshToken as any).mockResolvedValue({ accessToken: "new-access-token" });
+      (authService.getCurrentUser as any).mockResolvedValue({ user: mockUser });
+
+      await useAuthStore.getState().initializeAuth();
+
+      const state = useAuthStore.getState();
+      expect(state.accessToken).toBe("new-access-token");
+      expect(state.user).toEqual(mockUser);
+      expect(state.isAuthenticated).toBe(true);
+      expect(state.authStatus).toBe("authenticated");
+    });
+
+    it("sets unauthenticated state when refresh fails", async () => {
+      (authService.refreshToken as any).mockRejectedValue({ message: "Refresh failed" });
+
+      await useAuthStore.getState().initializeAuth();
+
+      const state = useAuthStore.getState();
+      expect(state.user).toBeNull();
+      expect(state.accessToken).toBeNull();
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.authStatus).toBe("unauthenticated");
     });
   });
 
@@ -84,6 +133,7 @@ describe("useAuthStore", () => {
       expect(state.user).toEqual(mockUser);
       expect(state.accessToken).toBe("access-token");
       expect(state.isAuthenticated).toBe(true);
+      expect(state.authStatus).toBe("authenticated");
       expect(state.isLoading).toBe(false);
     });
 
@@ -121,6 +171,7 @@ describe("useAuthStore", () => {
       expect(state.user).toBeNull();
       expect(state.accessToken).toBeNull();
       expect(state.isAuthenticated).toBe(false);
+      expect(state.authStatus).toBe("unauthenticated");
     });
 
     it("calls authService.logout", async () => {
@@ -135,11 +186,22 @@ describe("useAuthStore", () => {
       setAuthenticated();
       (authService.logout as any).mockRejectedValue(new Error("Network error"));
 
-      // Should not throw
       await useAuthStore.getState().logout();
 
-      // Still clears state even if API call fails
       expect(useAuthStore.getState().isAuthenticated).toBe(false);
+      expect(useAuthStore.getState().authStatus).toBe("unauthenticated");
+    });
+  });
+
+  describe("setUnauthenticated", () => {
+    it("clears state and sets unauthenticated status", () => {
+      setAuthenticated();
+      useAuthStore.getState().setUnauthenticated();
+      const state = useAuthStore.getState();
+      expect(state.user).toBeNull();
+      expect(state.accessToken).toBeNull();
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.authStatus).toBe("unauthenticated");
     });
   });
 

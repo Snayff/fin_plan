@@ -6,6 +6,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.event.pull_request.number || github.sha }}
   cancel-in-progress: true
@@ -136,12 +139,12 @@ jobs:
         continue-on-error: true
 
   # ─────────────────────────────────────────
-  # Build (runs on push to main)
+  # Compile Check (runs on PRs)
   # ─────────────────────────────────────────
-  build:
-    name: Build
+  check-compile:
+    name: Check Compile
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event_name == 'pull_request'
 
     env:
       DATABASE_URL: postgresql://finplan:unused@localhost:5432/unused
@@ -169,3 +172,16 @@ jobs:
 
       - name: Build all packages
         run: bun run build
+
+  # ─────────────────────────────────────────
+  # Deploy (runs on push to main)
+  # ─────────────────────────────────────────
+  deploy:
+    name: Deploy to Coolify
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    environment: PROD
+
+    steps:
+      - name: Trigger Coolify deploy
+        run: curl --fail "${{ secrets.COOLIFY_WEBHOOK_URL }}"

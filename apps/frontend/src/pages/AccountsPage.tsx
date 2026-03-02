@@ -13,6 +13,7 @@ import { accountFilterConfig } from '../config/filter-configs';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { Skeleton } from '../components/ui/skeleton';
 import type { Account } from '../types';
 import { ArrowUpIcon, ArrowDownIcon, WalletIcon, LayoutListIcon, TrendingUpIcon } from 'lucide-react';
 
@@ -63,8 +64,21 @@ export default function AccountsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading accounts...</div>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-9 w-36" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-64 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
+          <Skeleton className="h-64 rounded-xl" />
+        </div>
       </div>
     );
   }
@@ -194,12 +208,12 @@ export default function AccountsPage() {
                       {formatCurrency(account.monthlyFlow.income, getCurrencySymbol(account.currency))}
                     </p>
                   </div>
-                  <div className="bg-chart-2-subtle/20 border border-chart-2-subtle rounded-md p-3">
+                  <div className="bg-expense-subtle/20 border border-expense rounded-md p-3">
                     <div className="flex items-center gap-1 mb-1">
-                      <ArrowDownIcon className="h-3 w-3 text-chart-2" />
+                      <ArrowDownIcon className="h-3 w-3 text-expense" />
                       <p className="text-xs text-muted-foreground">Expenses</p>
                     </div>
-                    <p className="text-sm font-semibold text-chart-2">
+                    <p className="text-sm font-semibold text-expense">
                       {formatCurrency(account.monthlyFlow.expense, getCurrencySymbol(account.currency))}
                     </p>
                   </div>
