@@ -15,6 +15,7 @@ import { assetFilterConfig } from '../config/filter-configs';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
+import { Skeleton } from '../components/ui/skeleton';
 import type { Asset, EnhancedAsset } from '../types';
 import { TrendingUpIcon, TrendingDownIcon, CoinsIcon, LayoutListIcon } from 'lucide-react';
 
@@ -65,8 +66,21 @@ export default function AssetsPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading assets...</div>
+      <div className="p-6 space-y-6">
+        <div className="flex justify-between items-center">
+          <Skeleton className="h-9 w-28" />
+          <Skeleton className="h-9 w-32" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+          <Skeleton className="h-20 rounded-xl" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Skeleton className="h-72 rounded-xl" />
+          <Skeleton className="h-72 rounded-xl" />
+          <Skeleton className="h-72 rounded-xl" />
+        </div>
       </div>
     );
   }
