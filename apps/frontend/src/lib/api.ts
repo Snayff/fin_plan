@@ -27,6 +27,15 @@ export class ApiClient {
     const response = await fetch(`${this.baseUrl}/api/auth/csrf-token`, {
       credentials: 'include',
     });
+
+    if (!response.ok) {
+      throw {
+        message: 'Failed to fetch CSRF token',
+        code: 'CSRF_FETCH_ERROR',
+        statusCode: response.status,
+      } as ApiError;
+    }
+
     const data = await response.json();
     const token = data.csrfToken || '';
     this.csrfToken = token;
