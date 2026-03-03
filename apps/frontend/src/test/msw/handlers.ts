@@ -4,7 +4,7 @@ import { http, HttpResponse } from 'msw';
 // ─── Shared fixtures ──────────────────────────────────────────────────────────
 export const mockUser = {
   id: 'user-1',
-  email: 'test@test.com',
+  email: 'test@example.com',
   name: 'Test User',
   activeHouseholdId: 'household-1',
   createdAt: '2025-01-01T00:00:00Z',
@@ -14,13 +14,15 @@ export const mockUser = {
 
 export const mockAccount = {
   id: 'acc-1',
+  userId: 'user-1',
   name: 'Test Account',
   type: 'current',
+  subtype: null,
   currency: 'GBP',
-  openingBalance: 0,
-  isActive: true,
   balance: 1000,
-  userId: 'user-1',
+  isActive: true,
+  description: null,
+  metadata: {},
   createdAt: '2025-01-01T00:00:00Z',
   updatedAt: '2025-01-01T00:00:00Z',
 };
@@ -29,7 +31,7 @@ export const mockTransaction = {
   id: 'tx-1',
   userId: 'user-1',
   accountId: 'acc-1',
-  categoryId: null,
+  categoryId: 'cat-1',
   subcategoryId: null,
   liabilityId: null,
   date: '2025-01-15T00:00:00Z',
@@ -41,6 +43,9 @@ export const mockTransaction = {
   tags: [],
   isRecurring: false,
   recurringRuleId: null,
+  isGenerated: false,
+  overriddenFields: [],
+  generatedAt: null,
   recurrence: 'none',
   recurrence_end_date: null,
   metadata: {},
@@ -61,6 +66,7 @@ function requireAuth(request: Request) {
 
 // ─── Auth handlers ────────────────────────────────────────────────────────────
 export const authHandlers = [
+  // CSRF endpoint is intentionally public — no auth required
   http.get('/api/auth/csrf-token', () => HttpResponse.json({ csrfToken: 'test-csrf-token' })),
   http.post('/api/auth/login', () =>
     HttpResponse.json({ user: mockUser, accessToken: 'test-token', refreshToken: 'refresh-token' })
@@ -115,16 +121,17 @@ export const transactionHandlers = [
     const err = requireAuth(request);
     return err ?? HttpResponse.json({ totalIncome: 1000, totalExpenses: 500, netFlow: 500, transactionCount: 10 });
   }),
-  http.get('/api/transactions/:id', ({ request }) => {
-    const err = requireAuth(request);
-    return err ?? HttpResponse.json({ transaction: mockTransaction });
-  }),
+  // collection must come before /:id to avoid wrong match
   http.get('/api/transactions', ({ request }) => {
     const err = requireAuth(request);
     return err ?? HttpResponse.json({
       transactions: [mockTransaction],
       pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
     });
+  }),
+  http.get('/api/transactions/:id', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ transaction: mockTransaction });
   }),
   http.post('/api/transactions', ({ request }) => {
     const err = requireAuth(request);
@@ -142,14 +149,49 @@ export const transactionHandlers = [
 
 // ─── Goal handlers ────────────────────────────────────────────────────────────
 const mockGoal = {
-  id: 'goal-1', userId: 'user-1', name: 'Emergency Fund', type: 'savings',
-  targetAmount: 10000, currentAmount: 2500, targetDate: '2026-12-31T00:00:00Z',
-  isCompleted: false, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z',
+  id: 'goal-1',
+  userId: 'user-1',
+  name: 'Emergency Fund',
+  description: null,
+  type: 'savings',
+  targetAmount: 10000,
+  currentAmount: 2500,
+  targetDate: '2026-12-31T00:00:00Z',
+  priority: 'medium' as const,
+  status: 'active' as const,
+  icon: null,
+  metadata: {},
+  createdAt: '2025-01-01T00:00:00Z',
+  updatedAt: '2025-01-01T00:00:00Z',
 };
+
+const mockEnhancedGoal = {
+  ...mockGoal,
+  contributions: [],
+  progressPercentage: 25,
+  daysRemaining: null,
+  averageMonthlyContribution: 0,
+  projectedCompletionDate: null,
+  recommendedMonthlyContribution: null,
+  isOnTrack: false,
+};
+
 export const goalHandlers = [
+  // summary must come before :id to avoid wrong match
+  http.get('/api/goals/summary', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({
+      totalSaved: 2500, totalTarget: 10000, activeGoals: 1, completedGoals: 0,
+      byType: [], byPriority: [],
+    });
+  }),
   http.get('/api/goals', ({ request }) => {
     const err = requireAuth(request);
-    return err ?? HttpResponse.json({ goals: [mockGoal] });
+    return err ?? HttpResponse.json({ goals: [mockEnhancedGoal] });
+  }),
+  http.get('/api/goals/:id/contributions', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ contributions: [] });
   }),
   http.get('/api/goals/:id', ({ request }) => {
     const err = requireAuth(request);
@@ -169,16 +211,28 @@ export const goalHandlers = [
   }),
   http.post('/api/goals/:id/contributions', ({ request }) => {
     const err = requireAuth(request);
-    return err ?? HttpResponse.json({ goal: mockGoal });
+    return err ?? HttpResponse.json({ goal: mockGoal }, { status: 201 });
+  }),
+  http.post('/api/goals/:id/link-transaction', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ goal: mockGoal }, { status: 201 });
   }),
 ];
 
 // ─── Liability handlers ───────────────────────────────────────────────────────
 const mockLiability = {
-  id: 'liability-1', userId: 'user-1', name: 'Test Mortgage', type: 'mortgage',
-  currentBalance: 200000, interestRate: 3.5, interestType: 'fixed',
-  openDate: '2020-01-01T00:00:00Z', termEndDate: '2055-01-01T00:00:00Z',
-  createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z',
+  id: 'liability-1',
+  userId: 'user-1',
+  name: 'Test Mortgage',
+  type: 'mortgage',
+  currentBalance: 200000,
+  interestRate: 3.5,
+  interestType: 'fixed',
+  openDate: '2020-01-01T00:00:00Z',
+  termEndDate: '2055-01-01T00:00:00Z',
+  metadata: {},
+  createdAt: '2025-01-01T00:00:00Z',
+  updatedAt: '2025-01-01T00:00:00Z',
 };
 export const liabilityHandlers = [
   http.get('/api/liabilities', ({ request }) => {
@@ -205,10 +259,18 @@ export const liabilityHandlers = [
 
 // ─── Asset handlers ───────────────────────────────────────────────────────────
 const mockAsset = {
-  id: 'asset-1', userId: 'user-1', name: 'Test Property', type: 'housing',
-  currentValue: 250000, purchaseValue: 200000, purchaseDate: '2020-06-15T00:00:00Z',
-  expectedGrowthRate: 3.0, liquidityType: 'illiquid',
-  createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z',
+  id: 'asset-1',
+  userId: 'user-1',
+  name: 'Test Property',
+  type: 'housing',
+  currentValue: 250000,
+  purchaseValue: 200000,
+  purchaseDate: '2020-06-15T00:00:00Z',
+  expectedGrowthRate: 3.0,
+  liquidityType: 'illiquid',
+  metadata: {},
+  createdAt: '2025-01-01T00:00:00Z',
+  updatedAt: '2025-01-01T00:00:00Z',
 };
 export const assetHandlers = [
   http.get('/api/assets', ({ request }) => {
@@ -266,9 +328,17 @@ export const budgetHandlers = [
 
 // ─── Category handlers ────────────────────────────────────────────────────────
 const mockCategory = {
-  id: 'cat-1', name: 'Food', type: 'expense', color: '#FF0000', icon: '🍽️',
-  isSystemCategory: false, parentCategoryId: null,
-  createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-01-01T00:00:00Z',
+  id: 'cat-1',
+  userId: null,
+  name: 'Food',
+  type: 'expense',
+  color: '#FF0000',
+  icon: null,
+  isSystemCategory: false,
+  parentCategoryId: null,
+  sortOrder: 0,
+  createdAt: '2025-01-01T00:00:00Z',
+  updatedAt: '2025-01-01T00:00:00Z',
 };
 export const categoryHandlers = [
   http.get('/api/categories', ({ request }) => {
@@ -293,9 +363,25 @@ export const householdHandlers = [
   }),
   http.get('/api/households/:id', ({ request }) => {
     const err = requireAuth(request);
-    return err ?? HttpResponse.json({ household: { ...mockHousehold, members: [], pendingInvites: [] } });
+    return err ?? HttpResponse.json({ household: { ...mockHousehold, members: [], invites: [] } });
+  }),
+  http.patch('/api/households/:id', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ household: mockHousehold });
   }),
   http.post('/api/households/:id/switch', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ success: true });
+  }),
+  http.post('/api/households/:id/invite', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ success: true }, { status: 201 });
+  }),
+  http.delete('/api/households/:id/members/:memberId', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ success: true });
+  }),
+  http.delete('/api/households/:id/invites/:inviteId', ({ request }) => {
     const err = requireAuth(request);
     return err ?? HttpResponse.json({ success: true });
   }),
@@ -303,17 +389,28 @@ export const householdHandlers = [
 
 // ─── Dashboard handlers ───────────────────────────────────────────────────────
 export const dashboardHandlers = [
-  http.get('/api/dashboard', ({ request }) => {
+  http.get('/api/dashboard/summary', ({ request }) => {
     const err = requireAuth(request);
     return err ?? HttpResponse.json({
+      period: { startDate: '2025-01-01T00:00:00Z', endDate: '2025-01-31T00:00:00Z' },
       summary: {
         totalBalance: 5000, totalCash: 5000, totalAssets: 100000,
         totalLiabilities: 50000, netWorth: 55000,
-        monthlyIncome: 4000, monthlyExpenses: 2500, savingsRate: 37.5,
+        monthlyIncome: 4000, monthlyExpense: 2500, netCashFlow: 1500, savingsRate: '37.5',
       },
+      accounts: [mockAccount],
       recentTransactions: [],
       topCategories: [],
+      transactionCounts: { income: 5, expense: 8, total: 13 },
     });
+  }),
+  http.get('/api/dashboard/net-worth-trend', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ trend: [] });
+  }),
+  http.get('/api/dashboard/income-expense-trend', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ trend: [] });
   }),
 ];
 
