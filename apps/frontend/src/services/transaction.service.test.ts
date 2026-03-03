@@ -80,7 +80,18 @@ describe('transactionService.createTransaction', () => {
 
 describe('transactionService.deleteTransaction', () => {
   it('sends DELETE to /api/transactions/:id', async () => {
+    let capturedMethod = '';
+    let capturedUrl = '';
+    server.use(
+      http.delete('/api/transactions/:id', ({ request }) => {
+        capturedMethod = request.method;
+        capturedUrl = request.url;
+        return HttpResponse.json({ message: 'Transaction deleted' });
+      })
+    );
     const result = await transactionService.deleteTransaction('tx-1');
+    expect(capturedMethod).toBe('DELETE');
+    expect(capturedUrl).toContain('/api/transactions/tx-1');
     expect(result.message).toBeTruthy();
   });
 });
