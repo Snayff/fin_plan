@@ -13,6 +13,7 @@ mock.module("../services/auth.service", () => {
     revokeAllUserTokens: mock(() => Promise.resolve()),
     getUserSessions: mock(() => Promise.resolve([])),
     revokeSession: mock(() => Promise.resolve(true)),
+    updateUserName: mock(() => {}),
   };
   return { ...fns, authService: fns };
 });
@@ -342,6 +343,50 @@ describe("POST /api/auth/logout", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/auth/logout",
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("PATCH /api/auth/me", () => {
+  it("returns 200 with updated user when authenticated", async () => {
+    const updatedUser = { id: "user-1", email: "test@test.com", name: "New Name" };
+    (authService.updateUserName as any).mockResolvedValue(updatedUser);
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/auth/me",
+      headers: { Authorization: "Bearer valid-token" },
+      payload: { name: "New Name" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.user.name).toBe("New Name");
+    expect(authService.updateUserName).toHaveBeenCalledWith("user-1", "New Name");
+  });
+
+  it("returns 400 when name is empty", async () => {
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/auth/me",
+      headers: { Authorization: "Bearer valid-token" },
+      payload: { name: "" },
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("returns 401 when not authenticated", async () => {
+    (authMiddleware as any).mockImplementationOnce(() => {
+      throw new AuthenticationError("No authorization token provided");
+    });
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/auth/me",
+      payload: { name: "New Name" },
     });
 
     expect(response.statusCode).toBe(401);

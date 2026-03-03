@@ -208,6 +208,18 @@ export const authService = {
   },
 
   /**
+   * Update user display name
+   */
+  async updateUserName(userId: string, name: string): Promise<Omit<User, 'passwordHash'>> {
+    const user = await prisma.user.update({
+      where: { id: userId },
+      data: { name },
+    });
+    const { passwordHash: _, ...userWithoutPassword } = user;
+    return userWithoutPassword;
+  },
+
+  /**
    * Refresh access token using refresh token (with rotation)
    * Returns a new access token AND a new refresh token.
    * The old refresh token is revoked. If a revoked token is reused,

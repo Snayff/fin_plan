@@ -31,7 +31,8 @@
       "Bash(\"c:/Users/Gabriel/Documents/Dev/fin_plan/docker-compose.yml\":*)",
       "Bash(docker build:*)",
       "Bash(docker compose:*)",
-      "WebFetch(domain:coolify.io)"
+      "WebFetch(domain:coolify.io)",
+      "Bash(npx tsc --noEmit)"
     ]
   }
 }
