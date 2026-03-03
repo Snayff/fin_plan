@@ -1,17 +1,19 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 GlobalRegistrator.register();
 
-import { mock, afterEach } from "bun:test";
+import { afterAll, afterEach, beforeAll } from "bun:test";
+import { server } from "./msw/server";
 
-// Clean up DOM between tests (bun test doesn't auto-cleanup like vitest/jest)
+// Start MSW before all tests; reset per-test handler overrides after each; close after all
+beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
 afterEach(() => {
+  server.resetHandlers();
   document.body.innerHTML = "";
 });
+afterAll(() => server.close());
 
-// Mock global fetch
-global.fetch = mock(() => {}) as any;
-
-// Set environment variable
+// Set environment variable so api.ts uses http://localhost:3001 as base URL
+// MSW path patterns ('/api/accounts') match requests to any origin, including this one
 process.env.VITE_API_URL = "http://localhost:3001";
 
 // Mock window.location
