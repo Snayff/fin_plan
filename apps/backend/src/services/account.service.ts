@@ -1,8 +1,8 @@
 import { prisma } from '../config/database';
 import { AccountType } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../utils/errors';
-import { 
-  calculateAccountBalance, 
+import {
+  calculateAccountBalance,
   calculateAccountBalances,
   calculateAccountsBalanceHistory,
   calculateAccountsMonthlyFlow
@@ -40,11 +40,11 @@ export interface UpdateAccountInput {
 
 export const accountService = {
   /**
-   * Get all accounts for a user with balance calculated to current date
+   * Get all accounts for a household with balance calculated to current date
    */
-  async getUserAccounts(userId: string) {
+  async getUserAccounts(householdId: string) {
     const accounts = await prisma.account.findMany({
-      where: { userId },
+      where: { householdId },
       orderBy: [{ isActive: 'desc' }, { createdAt: 'desc' }],
     });
 
@@ -62,14 +62,14 @@ export const accountService = {
   },
 
   /**
-   * Get all accounts for a user with enhanced data:
+   * Get all accounts for a household with enhanced data:
    * - Current balance
    * - Balance history (weekly snapshots over 90 days)
    * - Monthly flow (income and expense for current month)
    */
-  async getUserAccountsWithEnhancedData(userId: string) {
+  async getUserAccountsWithEnhancedData(householdId: string) {
     const accounts = await prisma.account.findMany({
-      where: { userId },
+      where: { householdId },
       orderBy: [{ isActive: 'desc' }, { createdAt: 'desc' }],
     });
 
@@ -122,9 +122,9 @@ export const accountService = {
   /**
    * Get a single account by ID with calculated balance
    */
-  async getAccountById(accountId: string, userId: string) {
+  async getAccountById(accountId: string, householdId: string) {
     const account = await prisma.account.findFirst({
-      where: { id: accountId, userId },
+      where: { id: accountId, householdId },
     });
 
     if (!account) {
@@ -143,7 +143,7 @@ export const accountService = {
   /**
    * Create a new account with optional opening balance
    */
-  async createAccount(userId: string, data: CreateAccountInput) {
+  async createAccount(householdId: string, data: CreateAccountInput) {
     // Validate required fields
     if (!data.name || data.name.trim().length === 0) {
       throw new ValidationError('Account name is required');
@@ -162,7 +162,7 @@ export const accountService = {
     // Get or create "Opening Balance" category
     let openingBalanceCategory = await prisma.category.findFirst({
       where: {
-        userId: null, // System category
+        householdId: null, // System category
         name: 'Opening Balance',
         isSystemCategory: true,
       },
@@ -175,7 +175,7 @@ export const accountService = {
           name: 'Opening Balance',
           type: 'income', // Default, but will vary per transaction
           isSystemCategory: true,
-          userId: null,
+          householdId: null,
         },
       });
     }
@@ -185,7 +185,7 @@ export const accountService = {
       // Create account
       const account = await tx.account.create({
         data: {
-          userId,
+          householdId,
           name: data.name.trim(),
           type: data.type,
           subtype: data.subtype?.trim() || null,
@@ -200,7 +200,7 @@ export const accountService = {
       if (openingBalance !== 0) {
         await tx.transaction.create({
           data: {
-            userId,
+            householdId,
             accountId: account.id,
             date: account.createdAt,
             amount: Math.abs(openingBalance),
@@ -229,10 +229,10 @@ export const accountService = {
   /**
    * Update an account
    */
-  async updateAccount(accountId: string, userId: string, data: UpdateAccountInput) {
-    // Check if account exists and belongs to user
+  async updateAccount(accountId: string, householdId: string, data: UpdateAccountInput) {
+    // Check if account exists and belongs to household
     const existingAccount = await prisma.account.findFirst({
-      where: { id: accountId, userId },
+      where: { id: accountId, householdId },
     });
 
     if (!existingAccount) {
@@ -279,10 +279,10 @@ export const accountService = {
   /**
    * Delete an account (soft delete by setting isActive to false)
    */
-  async deleteAccount(accountId: string, userId: string) {
-    // Check if account exists and belongs to user
+  async deleteAccount(accountId: string, householdId: string) {
+    // Check if account exists and belongs to household
     const account = await prisma.account.findFirst({
-      where: { id: accountId, userId },
+      where: { id: accountId, householdId },
     });
 
     if (!account) {
@@ -315,9 +315,9 @@ export const accountService = {
   /**
    * Get account summary (balance, transaction count, etc.)
    */
-  async getAccountSummary(accountId: string, userId: string) {
+  async getAccountSummary(accountId: string, householdId: string) {
     const account = await prisma.account.findFirst({
-      where: { id: accountId, userId },
+      where: { id: accountId, householdId },
       include: {
         _count: {
           select: { transactions: true },

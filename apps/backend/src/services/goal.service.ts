@@ -49,7 +49,7 @@ export const goalService = {
   /**
    * Create a new goal with default milestones
    */
-  async createGoal(userId: string, data: CreateGoalInput) {
+  async createGoal(householdId: string, data: CreateGoalInput) {
     // Validate required fields
     if (!data.name || data.name.trim().length === 0) {
       throw new ValidationError('Goal name is required');
@@ -71,7 +71,7 @@ export const goalService = {
 
     const goal = await prisma.goal.create({
       data: {
-        userId,
+        householdId,
         name: data.name.trim(),
         description: data.description,
         type: data.type,
@@ -89,9 +89,9 @@ export const goalService = {
   /**
    * Get a single goal by ID with ownership check
    */
-  async getGoalById(goalId: string, userId: string) {
+  async getGoalById(goalId: string, householdId: string) {
     const goal = await prisma.goal.findFirst({
-      where: { id: goalId, userId },
+      where: { id: goalId, householdId },
     });
 
     if (!goal) {
@@ -102,11 +102,11 @@ export const goalService = {
   },
 
   /**
-   * Get all goals for a user
+   * Get all goals for a household
    */
-  async getUserGoals(userId: string) {
+  async getUserGoals(householdId: string) {
     const goals = await prisma.goal.findMany({
-      where: { userId },
+      where: { householdId },
       orderBy: [
         { priority: 'asc' }, // high first (alphabetically)
         { createdAt: 'desc' },
@@ -117,11 +117,11 @@ export const goalService = {
   },
 
   /**
-   * Get all goals for a user with enhanced progress data
+   * Get all goals for a household with enhanced progress data
    */
-  async getUserGoalsWithProgress(userId: string) {
+  async getUserGoalsWithProgress(householdId: string) {
     const goals = await prisma.goal.findMany({
-      where: { userId },
+      where: { householdId },
       orderBy: [
         { priority: 'asc' }, // high first
         { createdAt: 'desc' },
@@ -198,7 +198,7 @@ export const goalService = {
         if (goal.targetDate && daysRemaining !== null && daysRemaining > 0) {
           const monthsRemaining = Math.max(1, daysRemaining / 30);
           recommendedMonthlyContribution = remaining / monthsRemaining;
-          
+
           // If we have a contribution rate, check if on track
           if (averageMonthlyContribution > 0) {
             isOnTrack = averageMonthlyContribution >= recommendedMonthlyContribution;
@@ -242,10 +242,10 @@ export const goalService = {
   /**
    * Update goal properties
    */
-  async updateGoal(goalId: string, userId: string, data: UpdateGoalInput) {
-    // Verify goal exists and belongs to user
+  async updateGoal(goalId: string, householdId: string, data: UpdateGoalInput) {
+    // Verify goal exists and belongs to household
     const existingGoal = await prisma.goal.findFirst({
-      where: { id: goalId, userId },
+      where: { id: goalId, householdId },
     });
 
     if (!existingGoal) {
@@ -293,12 +293,12 @@ export const goalService = {
    */
   async addContribution(
     goalId: string,
-    userId: string,
+    householdId: string,
     data: CreateGoalContributionInput
   ) {
-    // Verify goal exists and belongs to user
+    // Verify goal exists and belongs to household
     const goal = await prisma.goal.findFirst({
-      where: { id: goalId, userId },
+      where: { id: goalId, householdId },
     });
 
     if (!goal) {
@@ -348,21 +348,21 @@ export const goalService = {
    */
   async linkTransactionToGoal(
     goalId: string,
-    userId: string,
+    householdId: string,
     data: LinkTransactionToGoalInput
   ) {
-    // Verify goal exists and belongs to user
+    // Verify goal exists and belongs to household
     const goal = await prisma.goal.findFirst({
-      where: { id: goalId, userId },
+      where: { id: goalId, householdId },
     });
 
     if (!goal) {
       throw new NotFoundError('Goal not found');
     }
 
-    // Verify transaction exists and belongs to user
+    // Verify transaction exists and belongs to household
     const transaction = await prisma.transaction.findFirst({
-      where: { id: data.transactionId, userId },
+      where: { id: data.transactionId, householdId },
     });
 
     if (!transaction) {
@@ -409,10 +409,10 @@ export const goalService = {
   /**
    * Get contribution history for a goal
    */
-  async getGoalContributions(goalId: string, userId: string) {
-    // Verify goal exists and belongs to user
+  async getGoalContributions(goalId: string, householdId: string) {
+    // Verify goal exists and belongs to household
     const goal = await prisma.goal.findFirst({
-      where: { id: goalId, userId },
+      where: { id: goalId, householdId },
     });
 
     if (!goal) {
@@ -445,10 +445,10 @@ export const goalService = {
    * Delete a goal
    * Contributions are automatically deleted due to cascade
    */
-  async deleteGoal(goalId: string, userId: string) {
-    // Verify goal exists and belongs to user
+  async deleteGoal(goalId: string, householdId: string) {
+    // Verify goal exists and belongs to household
     const goal = await prisma.goal.findFirst({
-      where: { id: goalId, userId },
+      where: { id: goalId, householdId },
     });
 
     if (!goal) {
@@ -463,11 +463,11 @@ export const goalService = {
   },
 
   /**
-   * Get goal summary statistics for a user
+   * Get goal summary statistics for a household
    */
-  async getGoalSummary(userId: string) {
+  async getGoalSummary(householdId: string) {
     const goals = await prisma.goal.findMany({
-      where: { userId },
+      where: { householdId },
       include: {
         contributions: true,
       },

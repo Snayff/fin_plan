@@ -7,7 +7,9 @@ import { queryClient } from './lib/queryClient';
 import { useAuthStore } from "./stores/authStore";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import AcceptInvitePage from "./pages/auth/AcceptInvitePage";
 import DashboardPage from "./pages/DashboardPage";
+import HouseholdSettingsPage from "./pages/HouseholdSettingsPage";
 import AccountsPage from "./pages/AccountsPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import AssetsPage from "./pages/AssetsPage";
@@ -66,6 +68,7 @@ function App() {
           path="/register"
           element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />}
         />
+        <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
 
         {/* Protected routes */}
         <Route
@@ -82,6 +85,7 @@ function App() {
                   <Route path="/budget" element={<BudgetsPage />} />
                   <Route path="/budget/:id" element={<BudgetDetailPage />} />
                   <Route path="/goals" element={<GoalsPage />} />
+                  <Route path="/settings/household" element={<HouseholdSettingsPage />} />
                   <Route path="/" element={<Navigate to="/dashboard" />} />
                 </Routes>
               </Layout>

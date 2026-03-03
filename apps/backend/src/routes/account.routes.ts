@@ -10,10 +10,10 @@ export async function accountRoutes(fastify: FastifyInstance) {
     '/accounts',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
-      
+      const householdId = request.householdId!;
+
       // Always return enhanced data for consistency and simplicity
-      const accounts = await accountService.getUserAccountsWithEnhancedData(userId);
+      const accounts = await accountService.getUserAccountsWithEnhancedData(householdId);
       return reply.send({ accounts });
     }
   );
@@ -23,11 +23,11 @@ export async function accountRoutes(fastify: FastifyInstance) {
     '/accounts/:id',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { id } = request.params as { id: string };
 
-      const account = await accountService.getAccountById(id, userId);
-      
+      const account = await accountService.getAccountById(id, householdId);
+
       return reply.send({ account });
     }
   );
@@ -37,11 +37,11 @@ export async function accountRoutes(fastify: FastifyInstance) {
     '/accounts/:id/summary',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { id } = request.params as { id: string };
 
-      const summary = await accountService.getAccountSummary(id, userId);
-      
+      const summary = await accountService.getAccountSummary(id, householdId);
+
       return reply.send(summary);
     }
   );
@@ -52,11 +52,12 @@ export async function accountRoutes(fastify: FastifyInstance) {
     { preHandler: [authMiddleware] },
     async (request, reply) => {
       const userId = request.user!.userId;
-      
+      const householdId = request.householdId!;
+
       // Validate request body
       const validatedData = createAccountSchema.parse(request.body);
 
-      const account = await accountService.createAccount(userId, validatedData);
+      const account = await accountService.createAccount(householdId, validatedData);
 
       auditService.log({ userId, action: 'ACCOUNT_CREATED', resource: 'account', resourceId: account.id, ipAddress: request.ip });
 
@@ -69,14 +70,14 @@ export async function accountRoutes(fastify: FastifyInstance) {
     '/accounts/:id',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { id } = request.params as { id: string };
 
       // Validate request body
       const validatedData = updateAccountSchema.parse(request.body);
 
-      const account = await accountService.updateAccount(id, userId, validatedData);
-      
+      const account = await accountService.updateAccount(id, householdId, validatedData);
+
       return reply.send({ account });
     }
   );
@@ -87,9 +88,10 @@ export async function accountRoutes(fastify: FastifyInstance) {
     { preHandler: [authMiddleware] },
     async (request, reply) => {
       const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { id } = request.params as { id: string };
 
-      const result = await accountService.deleteAccount(id, userId);
+      const result = await accountService.deleteAccount(id, householdId);
 
       auditService.log({ userId, action: 'ACCOUNT_DELETED', resource: 'account', resourceId: id, ipAddress: request.ip });
 

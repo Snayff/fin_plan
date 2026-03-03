@@ -2,6 +2,7 @@ import { prisma } from '../config/database';
 import { hashPassword, verifyPassword } from '../utils/password';
 import { generateAccessToken, generateRefreshToken, hashToken, generateTokenFamily, verifyRefreshToken } from '../utils/jwt';
 import { AuthenticationError, ConflictError, ValidationError } from '../utils/errors';
+import { householdService } from './household.service.js';
 import type { User } from '@prisma/client';
 
 export interface RegisterInput {
@@ -79,17 +80,24 @@ export const authService = {
         passwordHash,
         name,
         preferences: {
-          currency: 'USD',
-          dateFormat: 'MM/DD/YYYY',
-          theme: 'light',
+          currency: 'GBP',
+          dateFormat: 'DD/MM/YYYY',
+          theme: 'dark',
           defaultInflationRate: 2.5,
         },
       },
     });
 
+    // Create personal household and set as active
+    const household = await householdService.createHousehold(user.id, `${name}'s Household`);
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: { activeHouseholdId: household.id },
+    });
+
     // Generate tokens
-    const accessToken = generateAccessToken({ userId: user.id, email: user.email });
-    const refreshToken = generateRefreshToken({ userId: user.id });
+    const accessToken = generateAccessToken({ userId: updatedUser.id, email: updatedUser.email });
+    const refreshToken = generateRefreshToken({ userId: updatedUser.id });
 
     // Store refresh token with family tracking
     const now = new Date();
@@ -97,7 +105,7 @@ export const authService = {
     const familyId = generateTokenFamily();
     await prisma.refreshToken.create({
       data: {
-        userId: user.id,
+        userId: updatedUser.id,
         tokenHash: hashToken(refreshToken),
         familyId,
         expiresAt,
@@ -107,7 +115,7 @@ export const authService = {
     });
 
     // Remove password hash from response
-    const { passwordHash: _, ...userWithoutPassword } = user;
+    const { passwordHash: _, ...userWithoutPassword } = updatedUser;
 
     return {
       user: userWithoutPassword,

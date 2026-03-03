@@ -9,9 +9,9 @@ export async function categoryRoutes(fastify: FastifyInstance) {
     '/categories',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
-      const categories = await categoryService.getUserCategories(userId);
-      
+      const householdId = request.householdId!;
+      const categories = await categoryService.getUserCategories(householdId);
+
       return reply.send({ categories });
     }
   );
@@ -21,7 +21,7 @@ export async function categoryRoutes(fastify: FastifyInstance) {
     '/categories/:type',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { type } = request.params as { type: string };
 
       // Validate type
@@ -30,8 +30,8 @@ export async function categoryRoutes(fastify: FastifyInstance) {
         return reply.status(400).send({ error: 'Invalid category type. Must be "income" or "expense"' });
       }
 
-      const categories = await categoryService.getCategoriesByType(userId, categoryType);
-      
+      const categories = await categoryService.getCategoriesByType(householdId, categoryType);
+
       return reply.send({ categories });
     }
   );

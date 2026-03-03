@@ -139,7 +139,7 @@ function simulateProjection(
 }
 
 export const liabilityService = {
-  async createLiability(userId: string, data: CreateLiabilityInput) {
+  async createLiability(householdId: string, data: CreateLiabilityInput) {
     if (!data.name || data.name.trim().length === 0) {
       throw new ValidationError('Liability name is required');
     }
@@ -157,7 +157,7 @@ export const liabilityService = {
 
     return prisma.liability.create({
       data: {
-        userId,
+        householdId,
         name: data.name.trim(),
         type: data.type,
         currentBalance: data.currentBalance,
@@ -170,9 +170,9 @@ export const liabilityService = {
     });
   },
 
-  async getLiabilityById(liabilityId: string, userId: string) {
+  async getLiabilityById(liabilityId: string, householdId: string) {
     const liability = await prisma.liability.findFirst({
-      where: { id: liabilityId, userId },
+      where: { id: liabilityId, householdId },
     });
 
     if (!liability) {
@@ -186,9 +186,9 @@ export const liabilityService = {
     };
   },
 
-  async getUserLiabilities(userId: string) {
+  async getUserLiabilities(householdId: string) {
     const liabilities = await prisma.liability.findMany({
-      where: { userId },
+      where: { householdId },
       orderBy: [{ createdAt: 'desc' }],
     });
 
@@ -199,9 +199,9 @@ export const liabilityService = {
     }));
   },
 
-  async getUserLiabilitiesWithForecast(userId: string) {
+  async getUserLiabilitiesWithForecast(householdId: string) {
     const liabilities = await prisma.liability.findMany({
-      where: { userId },
+      where: { householdId },
       orderBy: [{ createdAt: 'desc' }],
       include: {
         transactions: {
@@ -253,9 +253,9 @@ export const liabilityService = {
     });
   },
 
-  async updateLiability(liabilityId: string, userId: string, data: UpdateLiabilityInput) {
+  async updateLiability(liabilityId: string, householdId: string, data: UpdateLiabilityInput) {
     const existingLiability = await prisma.liability.findFirst({
-      where: { id: liabilityId, userId },
+      where: { id: liabilityId, householdId },
     });
 
     if (!existingLiability) {
@@ -299,9 +299,9 @@ export const liabilityService = {
     };
   },
 
-  async deleteLiability(liabilityId: string, userId: string) {
+  async deleteLiability(liabilityId: string, householdId: string) {
     const liability = await prisma.liability.findFirst({
-      where: { id: liabilityId, userId },
+      where: { id: liabilityId, householdId },
     });
 
     if (!liability) {
@@ -315,9 +315,9 @@ export const liabilityService = {
     return { message: 'Liability deleted successfully' };
   },
 
-  async calculateLiabilityProjection(liabilityId: string, userId: string) {
+  async calculateLiabilityProjection(liabilityId: string, householdId: string) {
     const liability = await prisma.liability.findFirst({
-      where: { id: liabilityId, userId },
+      where: { id: liabilityId, householdId },
       include: {
         transactions: {
           where: { type: 'expense' },
@@ -359,9 +359,9 @@ export const liabilityService = {
     };
   },
 
-  async getLiabilitySummary(userId: string) {
+  async getLiabilitySummary(householdId: string) {
     const liabilities = await prisma.liability.findMany({
-      where: { userId },
+      where: { householdId },
     });
 
     if (liabilities.length === 0) {
@@ -406,10 +406,10 @@ export const liabilityService = {
     };
   },
 
-  async calculateTotalLiabilityValue(userId: string, asOfDate: Date = new Date()) {
+  async calculateTotalLiabilityValue(householdId: string, asOfDate: Date = new Date()) {
     const liabilities = await prisma.liability.findMany({
       where: {
-        userId,
+        householdId,
         createdAt: { lte: asOfDate },
       },
     });

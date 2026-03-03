@@ -74,7 +74,7 @@ export const transactionService = {
    * Get transactions with filters and pagination
    */
   async getTransactions(
-    userId: string,
+    householdId: string,
     filters: TransactionFilters = {},
     options: { limit?: number; offset?: number; orderBy?: string; orderDir?: 'asc' | 'desc' } = {}
   ) {
@@ -93,7 +93,7 @@ export const transactionService = {
 
     // Build where clause
     const where: Prisma.TransactionWhereInput = {
-      userId,
+      householdId,
     };
 
     if (filters.accountId) {
@@ -198,9 +198,9 @@ export const transactionService = {
   /**
    * Get single transaction by ID
    */
-  async getTransactionById(transactionId: string, userId: string) {
+  async getTransactionById(transactionId: string, householdId: string) {
     const transaction = await prisma.transaction.findFirst({
-      where: { id: transactionId, userId },
+      where: { id: transactionId, householdId },
       include: {
         account: {
           select: {
@@ -244,7 +244,7 @@ export const transactionService = {
   /**
    * Create a new transaction
    */
-  async createTransaction(userId: string, data: CreateTransactionInput) {
+  async createTransaction(householdId: string, data: CreateTransactionInput) {
     // Validate required fields
     if (!data.accountId) {
       throw new ValidationError('Account is required');
@@ -266,9 +266,9 @@ export const transactionService = {
       throw new ValidationError('Transaction name is required');
     }
 
-    // Verify account belongs to user
+    // Verify account belongs to household
     const account = await prisma.account.findFirst({
-      where: { id: data.accountId, userId },
+      where: { id: data.accountId, householdId },
     });
 
     if (!account) {
@@ -293,7 +293,7 @@ export const transactionService = {
       }
 
       const liability = await prisma.liability.findFirst({
-        where: { id: data.liabilityId, userId },
+        where: { id: data.liabilityId, householdId },
       });
 
       if (!liability) {
@@ -315,7 +315,7 @@ export const transactionService = {
     // Create transaction
     const transaction = await prisma.transaction.create({
       data: {
-        userId,
+        householdId,
         accountId: data.accountId,
         liabilityId: data.liabilityId || null,
         date: new Date(data.date),
@@ -378,13 +378,13 @@ export const transactionService = {
    */
   async updateTransaction(
     transactionId: string,
-    userId: string,
+    householdId: string,
     data: UpdateTransactionInput,
     updateScope?: UpdateScope
   ) {
     // Get existing transaction with recurring rule
     const existing = await prisma.transaction.findFirst({
-      where: { id: transactionId, userId },
+      where: { id: transactionId, householdId },
       include: { recurringRule: true },
     });
 
@@ -399,7 +399,7 @@ export const transactionService = {
 
     if (data.accountId) {
       const account = await prisma.account.findFirst({
-        where: { id: data.accountId, userId },
+        where: { id: data.accountId, householdId },
       });
 
       if (!account) {
@@ -431,7 +431,7 @@ export const transactionService = {
       }
 
       const liability = await prisma.liability.findFirst({
-        where: { id: resultingLiabilityId, userId },
+        where: { id: resultingLiabilityId, householdId },
       });
 
       if (!liability) {
@@ -622,10 +622,10 @@ export const transactionService = {
   /**
    * Delete a transaction
    */
-  async deleteTransaction(transactionId: string, userId: string) {
+  async deleteTransaction(transactionId: string, householdId: string) {
     // Get transaction
     const transaction = await prisma.transaction.findFirst({
-      where: { id: transactionId, userId },
+      where: { id: transactionId, householdId },
     });
 
     if (!transaction) {
@@ -643,8 +643,8 @@ export const transactionService = {
   /**
    * Get transaction summary (totals by type)
    */
-  async getTransactionSummary(userId: string, filters: TransactionFilters = {}) {
-    const where: Prisma.TransactionWhereInput = { userId };
+  async getTransactionSummary(householdId: string, filters: TransactionFilters = {}) {
+    const where: Prisma.TransactionWhereInput = { householdId };
 
     if (filters.accountId) where.accountId = filters.accountId;
     if (filters.startDate || filters.endDate) {
