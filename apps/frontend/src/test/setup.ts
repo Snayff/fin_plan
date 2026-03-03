@@ -17,6 +17,16 @@ afterEach(async () => {
   (apiClient as any).csrfToken = null;
   (apiClient as any).isRefreshing = false;
   (apiClient as any).refreshPromise = null;
+  // Reset the auth store to unauthenticated state so tests don't leak auth state
+  const { useAuthStore } = await import("../stores/authStore");
+  useAuthStore.setState({
+    user: null,
+    accessToken: null,
+    isAuthenticated: false,
+    authStatus: "unauthenticated",
+    isLoading: false,
+    error: null,
+  });
 });
 afterAll(() => server.close());
 

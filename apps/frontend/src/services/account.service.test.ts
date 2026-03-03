@@ -3,6 +3,7 @@ import { http, HttpResponse } from 'msw';
 import { server } from '../test/msw/server';
 import { setAuthenticated, setUnauthenticated } from '../test/helpers/auth';
 import { accountService } from './account.service';
+import type { AccountType } from '../types';
 
 beforeEach(() => setAuthenticated());
 
@@ -27,7 +28,7 @@ describe('accountService.getAccounts', () => {
 
 describe('accountService.createAccount', () => {
   it('sends POST to /api/accounts and returns created account', async () => {
-    const result = await accountService.createAccount({ name: 'Test', type: 'current' as any, currency: 'GBP' });
+    const result = await accountService.createAccount({ name: 'Test', type: 'current' as AccountType, currency: 'GBP' });
     expect(result.account.id).toBe('acc-1');
   });
 });
@@ -42,6 +43,6 @@ describe('accountService.updateAccount', () => {
 describe('accountService.deleteAccount', () => {
   it('sends DELETE and returns message', async () => {
     const result = await accountService.deleteAccount('acc-1');
-    expect(result.message).toBeTruthy();
+    expect(result.message).toBe('Account deleted successfully');
   });
 });
