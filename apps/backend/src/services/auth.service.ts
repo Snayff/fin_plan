@@ -1,7 +1,8 @@
 import { prisma } from '../config/database';
 import { hashPassword, verifyPassword } from '../utils/password';
 import { generateAccessToken, generateRefreshToken, hashToken, generateTokenFamily, verifyRefreshToken } from '../utils/jwt';
-import { AuthenticationError, ConflictError, ValidationError } from '../utils/errors';
+import { AuthenticationError, ConflictError, NotFoundError, ValidationError } from '../utils/errors';
+import { Prisma } from '@prisma/client';
 import { householdService } from './household.service.js';
 import type { User } from '@prisma/client';
 
@@ -211,12 +212,19 @@ export const authService = {
    * Update user display name
    */
   async updateUserName(userId: string, name: string): Promise<Omit<User, 'passwordHash'>> {
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: { name },
-    });
-    const { passwordHash: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    try {
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: { name },
+      });
+      const { passwordHash: _, ...userWithoutPassword } = user;
+      return userWithoutPassword;
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
+        throw new NotFoundError('User not found');
+      }
+      throw error;
+    }
   },
 
   /**

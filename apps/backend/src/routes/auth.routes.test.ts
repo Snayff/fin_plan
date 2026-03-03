@@ -378,6 +378,17 @@ describe("PATCH /api/auth/me", () => {
     expect(response.statusCode).toBe(400);
   });
 
+  it("returns 400 when name is whitespace only", async () => {
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/auth/me",
+      headers: { Authorization: "Bearer valid-token" },
+      payload: { name: "   " },
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
   it("returns 401 when not authenticated", async () => {
     (authMiddleware as any).mockImplementationOnce(() => {
       throw new AuthenticationError("No authorization token provided");
