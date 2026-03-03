@@ -9,7 +9,7 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import AcceptInvitePage from "./pages/auth/AcceptInvitePage";
 import DashboardPage from "./pages/DashboardPage";
-import HouseholdSettingsPage from "./pages/HouseholdSettingsPage";
+import ProfilePage from "./pages/ProfilePage";
 import AccountsPage from "./pages/AccountsPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import AssetsPage from "./pages/AssetsPage";
@@ -85,7 +85,7 @@ function App() {
                   <Route path="/budget" element={<BudgetsPage />} />
                   <Route path="/budget/:id" element={<BudgetDetailPage />} />
                   <Route path="/goals" element={<GoalsPage />} />
-                  <Route path="/settings/household" element={<HouseholdSettingsPage />} />
+                  <Route path="/profile" element={<ProfilePage />} />
                   <Route path="/" element={<Navigate to="/dashboard" />} />
                 </Routes>
               </Layout>
