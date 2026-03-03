@@ -50,6 +50,10 @@ export const authService = {
     return apiClient.get<{ user: User }>('/api/auth/me', token);
   },
 
+  async updateProfile(token: string, data: { name: string }): Promise<{ user: User }> {
+    return apiClient.patch<{ user: User }>('/api/auth/me', data, token);
+  },
+
   async refreshToken(): Promise<{ accessToken: string }> {
     // No longer pass refreshToken - it's in httpOnly cookie
     return apiClient.post<{ accessToken: string }>('/api/auth/refresh', {});
