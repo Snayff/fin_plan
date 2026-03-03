@@ -6,7 +6,7 @@ import { householdService } from "../../services/household.service";
 import { authService } from "../../services/auth.service";
 import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
 import { Button } from "../ui/button";
-import { MenuIcon, ChevronDownIcon, HomeIcon, PlusIcon, SettingsIcon } from "lucide-react";
+import { MenuIcon, ChevronDownIcon, HomeIcon, PlusIcon } from "lucide-react";
 
 function HouseholdSwitcher() {
   const navigate = useNavigate();
@@ -75,18 +75,11 @@ function HouseholdSwitcher() {
               ))}
               <div className="border-t border-border mt-1 pt-1">
                 <button
-                  onClick={() => { setOpen(false); navigate("/settings/household"); }}
+                  onClick={() => { setOpen(false); navigate("/profile"); }}
                   className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                 >
                   <PlusIcon className="h-4 w-4" />
                   Create household
-                </button>
-                <button
-                  onClick={() => { setOpen(false); navigate("/settings/household"); }}
-                  className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                >
-                  <SettingsIcon className="h-4 w-4" />
-                  Household settings
                 </button>
               </div>
             </div>
@@ -104,6 +97,8 @@ interface LayoutProps {
 export default function Layout({ children }: LayoutProps) {
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  const navigate = useNavigate();
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
@@ -146,6 +141,20 @@ export default function Layout({ children }: LayoutProps) {
                         </Link>
                       ))}
                     </nav>
+                    <div className="border-t border-border mt-4 pt-4 flex flex-col gap-1">
+                      <Link
+                        to="/profile"
+                        className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        View Profile
+                      </Link>
+                      <button
+                        onClick={logout}
+                        className="text-left px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        Sign Out
+                      </button>
+                    </div>
                   </SheetContent>
                 </Sheet>
               </div>
@@ -174,13 +183,37 @@ export default function Layout({ children }: LayoutProps) {
 
             <div className="flex items-center gap-3">
               <HouseholdSwitcher />
-              <span className="hidden sm:block text-sm text-muted-foreground">{user?.name}</span>
-              <button
-                onClick={logout}
-                className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground"
-              >
-                Sign Out
-              </button>
+              <div className="relative hidden sm:block">
+                <button
+                  onClick={() => setUserMenuOpen((v) => !v)}
+                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors"
+                >
+                  {user?.name}
+                  <ChevronDownIcon className="h-3 w-3 shrink-0" />
+                </button>
+                {userMenuOpen && (
+                  <>
+                    <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
+                    <div className="absolute right-0 top-full mt-1 z-20 w-44 rounded-md border border-border bg-card shadow-lg">
+                      <div className="py-1">
+                        <button
+                          onClick={() => { setUserMenuOpen(false); navigate('/profile'); }}
+                          className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
+                        >
+                          View Profile
+                        </button>
+                        <div className="border-t border-border my-1" />
+                        <button
+                          onClick={() => { setUserMenuOpen(false); logout(); }}
+                          className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          Sign Out
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
           </div>
         </div>
