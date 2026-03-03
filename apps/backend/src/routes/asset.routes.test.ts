@@ -45,6 +45,7 @@ beforeEach(() => {
       throw new AuthenticationError("No authorization token provided");
     }
     request.user = { userId: "user-1", email: "test@test.com" };
+    request.householdId = "household-1";
   });
 });
 
@@ -125,7 +126,7 @@ describe("GET /api/assets/:id/history", () => {
       headers: authHeaders,
     });
 
-    expect(assetService.getAssetValueHistory).toHaveBeenCalledWith("asset-1", "user-1", 30);
+    expect(assetService.getAssetValueHistory).toHaveBeenCalledWith("asset-1", "household-1", 30);
   });
 
   it("defaults to 90 days when no daysBack provided", async () => {
@@ -137,7 +138,7 @@ describe("GET /api/assets/:id/history", () => {
       headers: authHeaders,
     });
 
-    expect(assetService.getAssetValueHistory).toHaveBeenCalledWith("asset-1", "user-1", 90);
+    expect(assetService.getAssetValueHistory).toHaveBeenCalledWith("asset-1", "household-1", 90);
   });
 });
 
@@ -242,7 +243,7 @@ describe("PUT /api/assets/:id/value", () => {
 
     expect(assetService.updateAssetValue).toHaveBeenCalledWith(
       "asset-1",
-      "user-1",
+      "household-1",
       300000,
       "automatic",
       expect.any(Date)

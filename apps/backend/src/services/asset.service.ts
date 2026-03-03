@@ -61,10 +61,10 @@ export const assetService = {
    * Fallback query for assets when Prisma enum decoding fails.
    * Reads enum as text and normalizes legacy values for API consumers.
    */
-  async getUserAssetsRawWithLegacyTypeSupport(userId: string) {
+  async getUserAssetsRawWithLegacyTypeSupport(householdId: string) {
     const rows = await prisma.$queryRaw<Array<{
       id: string;
-      user_id: string;
+      household_id: string;
       name: string;
       type: string;
       current_value: number | string;
@@ -78,7 +78,7 @@ export const assetService = {
     }>>`
       SELECT
         id,
-        user_id,
+        household_id,
         name,
         type::text AS type,
         current_value,
@@ -90,13 +90,13 @@ export const assetService = {
         created_at,
         updated_at
       FROM assets
-      WHERE user_id = ${userId}
+      WHERE household_id = ${householdId}
       ORDER BY created_at DESC
     `;
 
     return rows.map((row) => ({
       id: row.id,
-      userId: row.user_id,
+      householdId: row.household_id,
       name: row.name,
       type: row.type === 'real_estate' ? 'housing' : row.type,
       currentValue: Number(row.current_value),
@@ -113,7 +113,7 @@ export const assetService = {
   /**
    * Create a new asset with initial value history entry
    */
-  async createAsset(userId: string, data: CreateAssetInput) {
+  async createAsset(householdId: string, data: CreateAssetInput) {
     // Validate required fields
     if (!data.name || data.name.trim().length === 0) {
       throw new ValidationError('Asset name is required');
@@ -127,7 +127,7 @@ export const assetService = {
     const result = await prisma.$transaction(async (tx) => {
       const asset = await tx.asset.create({
         data: {
-          userId,
+          householdId,
           name: data.name.trim(),
           type: data.type,
           currentValue: data.currentValue,
@@ -158,9 +158,9 @@ export const assetService = {
   /**
    * Get a single asset by ID with ownership check
    */
-  async getAssetById(assetId: string, userId: string) {
+  async getAssetById(assetId: string, householdId: string) {
     const asset = await prisma.asset.findFirst({
-      where: { id: assetId, userId },
+      where: { id: assetId, householdId },
     });
 
     if (!asset) {
@@ -171,11 +171,11 @@ export const assetService = {
   },
 
   /**
-   * Get all assets for a user
+   * Get all assets for a household
    */
-  async getUserAssets(userId: string) {
+  async getUserAssets(householdId: string) {
     const assets = await prisma.asset.findMany({
-      where: { userId },
+      where: { householdId },
       orderBy: [{ createdAt: 'desc' }],
     });
 
@@ -183,14 +183,14 @@ export const assetService = {
   },
 
   /**
-   * Get all assets for a user with enhanced data:
+   * Get all assets for a household with enhanced data:
    * - Value history (last 90 days)
    * - Calculated gains
    */
-  async getUserAssetsWithHistory(userId: string, daysBack: number = 90) {
+  async getUserAssetsWithHistory(householdId: string, daysBack: number = 90) {
     const assets = await prisma.asset
       .findMany({
-        where: { userId },
+        where: { householdId },
         orderBy: [{ createdAt: 'desc' }],
       })
       .catch(async (error) => {
@@ -201,7 +201,7 @@ export const assetService = {
         console.warn(
           '[assetService] Falling back to raw asset query due to legacy AssetType enum values. Consider running migrations to normalize enum values.'
         );
-        return this.getUserAssetsRawWithLegacyTypeSupport(userId);
+        return this.getUserAssetsRawWithLegacyTypeSupport(householdId);
       });
 
     if (assets.length === 0) {
@@ -264,10 +264,10 @@ export const assetService = {
   /**
    * Update asset properties
    */
-  async updateAsset(assetId: string, userId: string, data: UpdateAssetInput) {
-    // Verify asset exists and belongs to user
+  async updateAsset(assetId: string, householdId: string, data: UpdateAssetInput) {
+    // Verify asset exists and belongs to household
     const existingAsset = await prisma.asset.findFirst({
-      where: { id: assetId, userId },
+      where: { id: assetId, householdId },
     });
 
     if (!existingAsset) {
@@ -309,14 +309,14 @@ export const assetService = {
    */
   async updateAssetValue(
     assetId: string,
-    userId: string,
+    householdId: string,
     newValue: number,
     source: ValueSource = 'manual',
     date?: Date
   ) {
-    // Verify asset exists and belongs to user
+    // Verify asset exists and belongs to household
     const existingAsset = await prisma.asset.findFirst({
-      where: { id: assetId, userId },
+      where: { id: assetId, householdId },
     });
 
     if (!existingAsset) {
@@ -356,10 +356,10 @@ export const assetService = {
   /**
    * Get value history for an asset
    */
-  async getAssetValueHistory(assetId: string, userId: string, daysBack: number = 90) {
-    // Verify asset exists and belongs to user
+  async getAssetValueHistory(assetId: string, householdId: string, daysBack: number = 90) {
+    // Verify asset exists and belongs to household
     const asset = await prisma.asset.findFirst({
-      where: { id: assetId, userId },
+      where: { id: assetId, householdId },
     });
 
     if (!asset) {
@@ -388,10 +388,10 @@ export const assetService = {
    * Delete an asset
    * Value history is automatically deleted due to cascade
    */
-  async deleteAsset(assetId: string, userId: string) {
-    // Verify asset exists and belongs to user
+  async deleteAsset(assetId: string, householdId: string) {
+    // Verify asset exists and belongs to household
     const asset = await prisma.asset.findFirst({
-      where: { id: assetId, userId },
+      where: { id: assetId, householdId },
     });
 
     if (!asset) {
@@ -406,11 +406,11 @@ export const assetService = {
   },
 
   /**
-   * Get asset summary statistics for a user
+   * Get asset summary statistics for a household
    */
-  async getAssetSummary(userId: string) {
+  async getAssetSummary(householdId: string) {
     const assets = await prisma.asset.findMany({
-      where: { userId },
+      where: { householdId },
     });
 
     if (assets.length === 0) {
@@ -467,10 +467,10 @@ export const assetService = {
   /**
    * Calculate total asset value as of a specific date
    */
-  async calculateTotalAssetValue(userId: string, asOfDate: Date = new Date()) {
+  async calculateTotalAssetValue(householdId: string, asOfDate: Date = new Date()) {
     const assets = await prisma.asset.findMany({
       where: {
-        userId,
+        householdId,
         createdAt: { lte: asOfDate },
       },
     });

@@ -20,7 +20,7 @@ describe("budgetService.createBudget", () => {
     prismaMock.budget.updateMany.mockResolvedValue({ count: 1 } as any);
     prismaMock.budget.create.mockResolvedValue(mockBudget as any);
 
-    const result = await budgetService.createBudget("user-1", {
+    const result = await budgetService.createBudget("household-1", {
       name: "Monthly Budget",
       period: "monthly",
       startDate: "2025-01-01",
@@ -29,13 +29,13 @@ describe("budgetService.createBudget", () => {
 
     expect(prismaMock.$transaction).toHaveBeenCalled();
     expect(prismaMock.budget.updateMany).toHaveBeenCalledWith({
-      where: { userId: "user-1", isActive: true },
+      where: { householdId: "household-1", isActive: true },
       data: { isActive: false },
     });
     expect(prismaMock.budget.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({
-          userId: "user-1",
+          householdId: "household-1",
           name: "Monthly Budget",
           period: "monthly",
           isActive: true,
@@ -47,7 +47,7 @@ describe("budgetService.createBudget", () => {
 
   it("throws ValidationError when endDate is before startDate", async () => {
     await expect(
-      budgetService.createBudget("user-1", {
+      budgetService.createBudget("household-1", {
         name: "Invalid Budget",
         period: "monthly",
         startDate: "2025-01-31",
@@ -58,7 +58,7 @@ describe("budgetService.createBudget", () => {
 
   it("throws ValidationError when endDate equals startDate", async () => {
     await expect(
-      budgetService.createBudget("user-1", {
+      budgetService.createBudget("household-1", {
         name: "Invalid Budget",
         period: "monthly",
         startDate: "2025-01-15",
@@ -71,7 +71,7 @@ describe("budgetService.createBudget", () => {
 describe("budgetService.getUserBudgets", () => {
   it("returns empty array when no budgets", async () => {
     prismaMock.budget.findMany.mockResolvedValue([]);
-    const result = await budgetService.getUserBudgets("user-1");
+    const result = await budgetService.getUserBudgets("household-1");
     expect(result).toEqual([]);
   });
 
@@ -103,7 +103,7 @@ describe("budgetService.getUserBudgets", () => {
       },
     ] as any);
 
-    const result = await budgetService.getUserBudgets("user-1");
+    const result = await budgetService.getUserBudgets("household-1");
 
     expect(result).toHaveLength(2);
     expect(result[0].id).toBe("budget-2"); // Most recent first
@@ -125,7 +125,7 @@ describe("budgetService.getUserBudgets", () => {
       },
     ] as any);
 
-    const result = await budgetService.getUserBudgets("user-1");
+    const result = await budgetService.getUserBudgets("household-1");
     expect(result[0].totalAllocated).toBe(123.45);
     expect(typeof result[0].totalAllocated).toBe("number");
   });
@@ -135,7 +135,7 @@ describe("budgetService.getBudgetWithTracking", () => {
   it("throws NotFoundError when budget not found", async () => {
     prismaMock.budget.findFirst.mockResolvedValue(null);
     await expect(
-      budgetService.getBudgetWithTracking("budget-1", "user-1")
+      budgetService.getBudgetWithTracking("budget-1", "household-1")
     ).rejects.toThrow(NotFoundError);
   });
 
@@ -178,7 +178,7 @@ describe("budgetService.getBudgetWithTracking", () => {
       _sum: { amount: 5000 },
     } as any);
 
-    const result = await budgetService.getBudgetWithTracking("budget-1", "user-1");
+    const result = await budgetService.getBudgetWithTracking("budget-1", "household-1");
 
     expect(result.id).toBe(budget.id);
     expect(result.expectedIncome).toBe(5000);
@@ -230,7 +230,7 @@ describe("budgetService.getBudgetWithTracking", () => {
       _sum: { amount: 2000 },
     } as any);
 
-    const result = await budgetService.getBudgetWithTracking("budget-1", "user-1");
+    const result = await budgetService.getBudgetWithTracking("budget-1", "household-1");
 
     const group = result.categoryGroups[0];
     expect(group.allocated).toBe(500);
@@ -258,7 +258,7 @@ describe("budgetService.getBudgetWithTracking", () => {
       _sum: { amount: 3000 },
     } as any);
 
-    const result = await budgetService.getBudgetWithTracking("budget-1", "user-1");
+    const result = await budgetService.getBudgetWithTracking("budget-1", "household-1");
 
     const group = result.categoryGroups[0];
     expect(group.spent).toBe(0);
@@ -277,7 +277,7 @@ describe("budgetService.updateBudget", () => {
       name: "Updated Budget",
     } as any);
 
-    const result = await budgetService.updateBudget("budget-1", "user-1", {
+    const result = await budgetService.updateBudget("budget-1", "household-1", {
       name: "Updated Budget",
       period: "quarterly",
     });
@@ -296,7 +296,7 @@ describe("budgetService.updateBudget", () => {
   it("throws NotFoundError when budget not found", async () => {
     prismaMock.budget.findFirst.mockResolvedValue(null);
     await expect(
-      budgetService.updateBudget("missing", "user-1", { name: "X" })
+      budgetService.updateBudget("missing", "household-1", { name: "X" })
     ).rejects.toThrow(NotFoundError);
   });
 
@@ -308,7 +308,7 @@ describe("budgetService.updateBudget", () => {
     prismaMock.budget.findFirst.mockResolvedValue(existingBudget as any);
 
     await expect(
-      budgetService.updateBudget("budget-1", "user-1", {
+      budgetService.updateBudget("budget-1", "household-1", {
         startDate: "2025-02-01",
         endDate: "2025-01-01", // Before start
       })
@@ -322,7 +322,7 @@ describe("budgetService.deleteBudget", () => {
     prismaMock.budget.findFirst.mockResolvedValue(budget as any);
     prismaMock.budget.delete.mockResolvedValue(budget as any);
 
-    const result = await budgetService.deleteBudget("budget-1", "user-1");
+    const result = await budgetService.deleteBudget("budget-1", "household-1");
 
     expect(prismaMock.budget.delete).toHaveBeenCalledWith({ where: { id: "budget-1" } });
     expect(result.message).toBe("Budget deleted successfully");
@@ -330,7 +330,7 @@ describe("budgetService.deleteBudget", () => {
 
   it("throws NotFoundError when budget not found", async () => {
     prismaMock.budget.findFirst.mockResolvedValue(null);
-    await expect(budgetService.deleteBudget("missing", "user-1")).rejects.toThrow(NotFoundError);
+    await expect(budgetService.deleteBudget("missing", "household-1")).rejects.toThrow(NotFoundError);
   });
 });
 
@@ -347,7 +347,7 @@ describe("budgetService.addBudgetItem", () => {
       category: { id: "cat-1", name: "Housing", color: "#FF0000", icon: "home" },
     } as any);
 
-    const result = await budgetService.addBudgetItem("budget-1", "user-1", {
+    const result = await budgetService.addBudgetItem("budget-1", "household-1", {
       categoryId: "cat-1",
       allocatedAmount: 500,
       notes: "Rent",
@@ -369,7 +369,7 @@ describe("budgetService.addBudgetItem", () => {
   it("throws NotFoundError when budget not found", async () => {
     prismaMock.budget.findFirst.mockResolvedValue(null);
     await expect(
-      budgetService.addBudgetItem("missing", "user-1", {
+      budgetService.addBudgetItem("missing", "household-1", {
         categoryId: "cat-1",
         allocatedAmount: 500,
       })
@@ -381,7 +381,7 @@ describe("budgetService.addBudgetItem", () => {
     prismaMock.category.findUnique.mockResolvedValue(null);
 
     await expect(
-      budgetService.addBudgetItem("budget-1", "user-1", {
+      budgetService.addBudgetItem("budget-1", "household-1", {
         categoryId: "missing",
         allocatedAmount: 500,
       })
@@ -395,7 +395,7 @@ describe("budgetService.addBudgetItem", () => {
     );
 
     await expect(
-      budgetService.addBudgetItem("budget-1", "user-1", {
+      budgetService.addBudgetItem("budget-1", "household-1", {
         categoryId: "cat-1",
         allocatedAmount: 500,
       })
@@ -408,7 +408,7 @@ describe("budgetService.updateBudgetItem", () => {
     const item = buildBudgetItem({ allocatedAmount: 500 });
     prismaMock.budgetItem.findUnique.mockResolvedValue({
       ...item,
-      budget: { userId: "user-1" },
+      budget: { householdId: "household-1" },
     } as any);
     prismaMock.budgetItem.update.mockResolvedValue({
       ...item,
@@ -416,7 +416,7 @@ describe("budgetService.updateBudgetItem", () => {
       category: { id: "cat-1", name: "Housing", color: "#FF0000", icon: "home" },
     } as any);
 
-    const result = await budgetService.updateBudgetItem("item-1", "user-1", {
+    const result = await budgetService.updateBudgetItem("item-1", "household-1", {
       allocatedAmount: 750,
       notes: "Updated rent",
     });
@@ -435,18 +435,18 @@ describe("budgetService.updateBudgetItem", () => {
   it("throws NotFoundError when item not found", async () => {
     prismaMock.budgetItem.findUnique.mockResolvedValue(null);
     await expect(
-      budgetService.updateBudgetItem("missing", "user-1", { allocatedAmount: 100 })
+      budgetService.updateBudgetItem("missing", "household-1", { allocatedAmount: 100 })
     ).rejects.toThrow(NotFoundError);
   });
 
   it("throws NotFoundError when user does not own budget", async () => {
     prismaMock.budgetItem.findUnique.mockResolvedValue({
       ...buildBudgetItem(),
-      budget: { userId: "other-user" },
+      budget: { householdId: "other-household" },
     } as any);
 
     await expect(
-      budgetService.updateBudgetItem("item-1", "user-1", { allocatedAmount: 100 })
+      budgetService.updateBudgetItem("item-1", "household-1", { allocatedAmount: 100 })
     ).rejects.toThrow(NotFoundError);
   });
 });
@@ -456,11 +456,11 @@ describe("budgetService.deleteBudgetItem", () => {
     const item = buildBudgetItem();
     prismaMock.budgetItem.findUnique.mockResolvedValue({
       ...item,
-      budget: { userId: "user-1" },
+      budget: { householdId: "household-1" },
     } as any);
     prismaMock.budgetItem.delete.mockResolvedValue(item as any);
 
-    const result = await budgetService.deleteBudgetItem("item-1", "user-1");
+    const result = await budgetService.deleteBudgetItem("item-1", "household-1");
 
     expect(prismaMock.budgetItem.delete).toHaveBeenCalledWith({ where: { id: "item-1" } });
     expect(result.message).toBe("Budget item deleted successfully");
@@ -468,7 +468,7 @@ describe("budgetService.deleteBudgetItem", () => {
 
   it("throws NotFoundError when item not found", async () => {
     prismaMock.budgetItem.findUnique.mockResolvedValue(null);
-    await expect(budgetService.deleteBudgetItem("missing", "user-1")).rejects.toThrow(NotFoundError);
+    await expect(budgetService.deleteBudgetItem("missing", "household-1")).rejects.toThrow(NotFoundError);
   });
 });
 
@@ -478,7 +478,7 @@ describe("budgetService.removeCategoryFromBudget", () => {
     prismaMock.budget.findFirst.mockResolvedValue(budget as any);
     prismaMock.budgetItem.deleteMany.mockResolvedValue({ count: 3 } as any);
 
-    const result = await budgetService.removeCategoryFromBudget("budget-1", "user-1", "cat-1");
+    const result = await budgetService.removeCategoryFromBudget("budget-1", "household-1", "cat-1");
 
     expect(prismaMock.budgetItem.deleteMany).toHaveBeenCalledWith({
       where: {
@@ -492,7 +492,7 @@ describe("budgetService.removeCategoryFromBudget", () => {
   it("throws NotFoundError when budget not found", async () => {
     prismaMock.budget.findFirst.mockResolvedValue(null);
     await expect(
-      budgetService.removeCategoryFromBudget("missing", "user-1", "cat-1")
+      budgetService.removeCategoryFromBudget("missing", "household-1", "cat-1")
     ).rejects.toThrow(NotFoundError);
   });
 });

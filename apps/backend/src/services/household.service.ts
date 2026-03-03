@@ -1,0 +1,317 @@
+import { createHash, randomBytes } from 'crypto';
+import { prisma } from '../config/database.js';
+import { hashPassword } from '../utils/password.js';
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  hashToken,
+  generateTokenFamily,
+} from '../utils/jwt.js';
+import {
+  NotFoundError,
+  AuthorizationError,
+  ConflictError,
+  ValidationError,
+} from '../utils/errors.js';
+import { sendInviteEmail } from './email.service.js';
+
+const INVITE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
+const IDLE_SESSION_MS = 7 * 24 * 60 * 60 * 1000;
+const ABSOLUTE_SESSION_MS = 30 * 24 * 60 * 60 * 1000;
+
+function generateInviteToken(): string {
+  return randomBytes(32).toString('hex');
+}
+
+function hashInviteToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
+
+async function assertOwner(householdId: string, userId: string) {
+  const m = await prisma.householdMember.findUnique({
+    where: { householdId_userId: { householdId, userId } },
+  });
+  if (!m || m.role !== 'owner') {
+    throw new AuthorizationError('Only household owners can perform this action');
+  }
+}
+
+async function assertMember(householdId: string, userId: string) {
+  const m = await prisma.householdMember.findUnique({
+    where: { householdId_userId: { householdId, userId } },
+  });
+  if (!m) throw new AuthorizationError('Not a member of this household');
+}
+
+export const householdService = {
+  // ─── Household CRUD ────────────────────────────────────────────────────────
+
+  async createHousehold(userId: string, name: string) {
+    return prisma.household.create({
+      data: {
+        name,
+        members: { create: { userId, role: 'owner' } },
+      },
+    });
+  },
+
+  async getUserHouseholds(userId: string) {
+    return prisma.householdMember.findMany({
+      where: { userId },
+      include: {
+        household: {
+          include: {
+            _count: { select: { members: true } },
+          },
+        },
+      },
+      orderBy: { joinedAt: 'asc' },
+    });
+  },
+
+  async switchHousehold(userId: string, householdId: string) {
+    await assertMember(householdId, userId);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { activeHouseholdId: householdId },
+    });
+  },
+
+  async getHouseholdDetails(householdId: string, requestingUserId: string) {
+    await assertMember(householdId, requestingUserId);
+
+    return prisma.household.findUnique({
+      where: { id: householdId },
+      include: {
+        members: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+          orderBy: { joinedAt: 'asc' },
+        },
+        invites: {
+          where: { usedAt: null, expiresAt: { gt: new Date() } },
+          orderBy: { createdAt: 'desc' },
+        },
+      },
+    });
+  },
+
+  async renameHousehold(householdId: string, ownerUserId: string, name: string) {
+    await assertOwner(householdId, ownerUserId);
+    return prisma.household.update({ where: { id: householdId }, data: { name } });
+  },
+
+  // ─── Members ───────────────────────────────────────────────────────────────
+
+  async removeMember(householdId: string, ownerUserId: string, targetUserId: string) {
+    await assertOwner(householdId, ownerUserId);
+    if (targetUserId === ownerUserId) {
+      throw new ValidationError('Owner cannot remove themselves from the household');
+    }
+    await prisma.householdMember.delete({
+      where: { householdId_userId: { householdId, userId: targetUserId } },
+    });
+  },
+
+  // ─── Invites ───────────────────────────────────────────────────────────────
+
+  async inviteMember(householdId: string, ownerUserId: string, email: string) {
+    await assertOwner(householdId, ownerUserId);
+
+    const household = await prisma.household.findUnique({
+      where: { id: householdId },
+      include: { members: { include: { user: { select: { email: true } } } } },
+    });
+    if (!household) throw new NotFoundError('Household not found');
+
+    const normalizedEmail = email.toLowerCase();
+
+    // Already a member?
+    const alreadyMember = household.members.some(
+      (m) => m.user.email.toLowerCase() === normalizedEmail
+    );
+    if (alreadyMember) throw new ConflictError('This person is already a member of the household');
+
+    // Active invite already exists?
+    const existing = await prisma.householdInvite.findFirst({
+      where: {
+        householdId,
+        email: normalizedEmail,
+        usedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+    });
+    if (existing) throw new ConflictError('An active invitation already exists for this email');
+
+    const rawToken = generateInviteToken();
+    const tokenHash = hashInviteToken(rawToken);
+    const expiresAt = new Date(Date.now() + INVITE_EXPIRY_MS);
+
+    await prisma.householdInvite.create({
+      data: {
+        householdId,
+        email: normalizedEmail,
+        tokenHash,
+        expiresAt,
+        createdByUserId: ownerUserId,
+      },
+    });
+
+    const inviter = await prisma.user.findUnique({
+      where: { id: ownerUserId },
+      select: { name: true },
+    });
+    await sendInviteEmail(normalizedEmail, household.name, rawToken, inviter?.name ?? 'Someone');
+  },
+
+  async cancelInvite(householdId: string, ownerUserId: string, inviteId: string) {
+    await assertOwner(householdId, ownerUserId);
+
+    const invite = await prisma.householdInvite.findUnique({ where: { id: inviteId } });
+    if (!invite || invite.householdId !== householdId) throw new NotFoundError('Invite not found');
+
+    await prisma.householdInvite.delete({ where: { id: inviteId } });
+  },
+
+  // ─── Invite acceptance ─────────────────────────────────────────────────────
+
+  async validateInviteToken(token: string) {
+    const tokenHash = hashInviteToken(token);
+    const invite = await prisma.householdInvite.findUnique({
+      where: { tokenHash },
+      include: { household: { select: { id: true, name: true } } },
+    });
+
+    if (!invite) throw new NotFoundError('Invalid invitation link');
+    if (invite.usedAt) throw new ValidationError('This invitation has already been used');
+    if (invite.expiresAt < new Date()) throw new ValidationError('This invitation has expired');
+
+    return invite;
+  },
+
+  /** New user accepts an invite — creates account + joins household */
+  async acceptInvite(
+    token: string,
+    newUser: { name: string; email: string; password: string }
+  ) {
+    const invite = await this.validateInviteToken(token);
+
+    if (invite.email !== newUser.email.toLowerCase()) {
+      throw new AuthorizationError('This invitation was sent to a different email address');
+    }
+
+    // Validate password (mirrors authService rules)
+    if (newUser.password.length < 12) {
+      throw new ValidationError('Password must be at least 12 characters long');
+    }
+
+    const existingUser = await prisma.user.findUnique({
+      where: { email: newUser.email.toLowerCase() },
+    });
+    if (existingUser) {
+      throw new ConflictError(
+        'An account with this email already exists. Please log in and use the join link instead.'
+      );
+    }
+
+    const passwordHash = await hashPassword(newUser.password);
+
+    // Create user + personal household in a transaction
+    const user = await prisma.$transaction(async (tx) => {
+      const created = await tx.user.create({
+        data: {
+          email: newUser.email.toLowerCase(),
+          passwordHash,
+          name: newUser.name,
+          preferences: {
+            currency: 'GBP',
+            dateFormat: 'DD/MM/YYYY',
+            theme: 'dark',
+            defaultInflationRate: 2.5,
+          },
+        },
+      });
+
+      // Personal household
+      const personal = await tx.household.create({
+        data: {
+          name: `${newUser.name}'s Household`,
+          members: { create: { userId: created.id, role: 'owner' } },
+        },
+      });
+
+      // Join the invited household and set it as active
+      await tx.householdMember.create({
+        data: { householdId: invite.householdId, userId: created.id, role: 'member' },
+      });
+
+      const updated = await tx.user.update({
+        where: { id: created.id },
+        data: { activeHouseholdId: invite.householdId },
+      });
+
+      // Mark invite used
+      await tx.householdInvite.update({
+        where: { id: invite.id },
+        data: { usedAt: new Date() },
+      });
+
+      void personal; // personal household created, referenced by membership
+      return updated;
+    });
+
+    // Generate auth tokens
+    const accessToken = generateAccessToken({ userId: user.id, email: user.email });
+    const refreshToken = generateRefreshToken({ userId: user.id });
+    const now = new Date();
+    const familyId = generateTokenFamily();
+
+    await prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: hashToken(refreshToken),
+        familyId,
+        expiresAt: new Date(now.getTime() + IDLE_SESSION_MS),
+        sessionExpiresAt: new Date(now.getTime() + ABSOLUTE_SESSION_MS),
+        rememberMe: false,
+      },
+    });
+
+    const { passwordHash: _, ...userWithoutPassword } = user;
+    return { user: userWithoutPassword, accessToken, refreshToken };
+  },
+
+  /** Existing logged-in user joins a household via invite */
+  async joinViaInvite(token: string, existingUserId: string) {
+    const invite = await this.validateInviteToken(token);
+
+    const user = await prisma.user.findUnique({ where: { id: existingUserId } });
+    if (!user) throw new NotFoundError('User not found');
+
+    if (user.email !== invite.email) {
+      throw new AuthorizationError('This invitation was sent to a different email address');
+    }
+
+    const existing = await prisma.householdMember.findUnique({
+      where: { householdId_userId: { householdId: invite.householdId, userId: existingUserId } },
+    });
+    if (existing) throw new ConflictError('You are already a member of this household');
+
+    await prisma.$transaction([
+      prisma.householdMember.create({
+        data: { householdId: invite.householdId, userId: existingUserId, role: 'member' },
+      }),
+      prisma.user.update({
+        where: { id: existingUserId },
+        data: { activeHouseholdId: invite.householdId },
+      }),
+      prisma.householdInvite.update({
+        where: { id: invite.id },
+        data: { usedAt: new Date() },
+      }),
+    ]);
+
+    return invite.household;
+  },
+};

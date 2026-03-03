@@ -50,6 +50,7 @@ beforeEach(() => {
       throw new AuthenticationError('No authorization token provided');
     }
     request.user = { userId: 'user-1', email: 'test@test.com' };
+    request.householdId = 'household-1';
   });
 });
 
@@ -168,7 +169,7 @@ describe('POST /api/recurring-rules', () => {
     });
 
     expect(recurringService.createRecurringRule).toHaveBeenCalledWith(
-      'user-1',
+      'household-1',
       expect.objectContaining({
         frequency: 'weekly',
         interval: 2,
@@ -333,7 +334,7 @@ describe('DELETE /api/recurring-rules/:id', () => {
       headers: authHeaders,
     });
 
-    expect(recurringService.deleteRecurringRule).toHaveBeenCalledWith('rule-1', 'user-1');
+    expect(recurringService.deleteRecurringRule).toHaveBeenCalledWith('rule-1', 'household-1');
   });
 });
 
@@ -448,7 +449,7 @@ describe('POST /api/recurring-rules/materialize', () => {
       payload: {},
     });
 
-    expect(recurringService.materializeAllToday).toHaveBeenCalledWith('user-1');
+    expect(recurringService.materializeAllToday).toHaveBeenCalledWith('household-1');
   });
 
   it('returns 0 count when no transactions to materialize', async () => {

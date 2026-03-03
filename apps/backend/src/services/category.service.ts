@@ -3,17 +3,17 @@ import { CategoryType } from '@prisma/client';
 
 export const categoryService = {
   /**
-   * Get all categories for a user (including system categories)
+   * Get all categories for a household (including system categories)
    * Returns flat list of categories (no subcategories)
    */
-  async getUserCategories(userId: string) {
-    // Get system categories (no userId) and user's custom categories
+  async getUserCategories(householdId: string) {
+    // Get system categories (no userId) and household's custom categories
     // Only return top-level categories (no parentCategoryId)
     const categories = await prisma.category.findMany({
       where: {
         OR: [
-          { userId: null, isSystemCategory: true }, // System categories
-          { userId }, // User's custom categories
+          { householdId: null, isSystemCategory: true }, // System categories
+          { householdId }, // Household's custom categories
         ],
         parentCategoryId: null, // Only top-level categories
       },
@@ -31,12 +31,12 @@ export const categoryService = {
    * Get categories by type (income or expense)
    * Returns flat list of categories (no subcategories)
    */
-  async getCategoriesByType(userId: string, type: CategoryType) {
+  async getCategoriesByType(householdId: string, type: CategoryType) {
     const categories = await prisma.category.findMany({
       where: {
         OR: [
-          { userId: null, isSystemCategory: true, type },
-          { userId, type },
+          { householdId: null, isSystemCategory: true, type },
+          { householdId, type },
         ],
         parentCategoryId: null, // Only top-level categories
       },

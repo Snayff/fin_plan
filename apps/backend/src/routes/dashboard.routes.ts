@@ -8,15 +8,15 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
     '/dashboard/summary',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { startDate, endDate } = request.query as any;
 
       const options: any = {};
       if (startDate) options.startDate = new Date(startDate);
       if (endDate) options.endDate = new Date(endDate);
 
-      const summary = await dashboardService.getDashboardSummary(userId, options);
-      
+      const summary = await dashboardService.getDashboardSummary(householdId, options);
+
       return reply.send(summary);
     }
   );
@@ -26,12 +26,12 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
     '/dashboard/net-worth-trend',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { months } = request.query as any;
 
       const monthsNum = months ? Number(months) : 6;
-      const trend = await dashboardService.getNetWorthTrend(userId, monthsNum);
-      
+      const trend = await dashboardService.getNetWorthTrend(householdId, monthsNum);
+
       return reply.send({ trend });
     }
   );
@@ -41,12 +41,12 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
     '/dashboard/income-expense-trend',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { months } = request.query as any;
 
       const monthsNum = months ? Number(months) : 6;
-      const trend = await dashboardService.getIncomeExpenseTrend(userId, monthsNum);
-      
+      const trend = await dashboardService.getIncomeExpenseTrend(householdId, monthsNum);
+
       return reply.send({ trend });
     }
   );

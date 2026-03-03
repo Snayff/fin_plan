@@ -30,7 +30,7 @@ export async function transactionRoutes(fastify: FastifyInstance) {
     '/transactions',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const query = transactionQuerySchema.parse(request.query);
 
       const filters: any = {};
@@ -50,8 +50,8 @@ export async function transactionRoutes(fastify: FastifyInstance) {
       if (query.orderBy) options.orderBy = query.orderBy;
       if (query.orderDir) options.orderDir = query.orderDir;
 
-      const result = await transactionService.getTransactions(userId, filters, options);
-      
+      const result = await transactionService.getTransactions(householdId, filters, options);
+
       return reply.send(result);
     }
   );
@@ -61,11 +61,11 @@ export async function transactionRoutes(fastify: FastifyInstance) {
     '/transactions/:id',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { id } = request.params as { id: string };
 
-      const transaction = await transactionService.getTransactionById(id, userId);
-      
+      const transaction = await transactionService.getTransactionById(id, householdId);
+
       return reply.send({ transaction });
     }
   );
@@ -75,7 +75,7 @@ export async function transactionRoutes(fastify: FastifyInstance) {
     '/transactions/summary',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { accountId, startDate, endDate } = request.query as any;
 
       const filters: any = {};
@@ -83,8 +83,8 @@ export async function transactionRoutes(fastify: FastifyInstance) {
       if (startDate) filters.startDate = startDate;
       if (endDate) filters.endDate = endDate;
 
-      const summary = await transactionService.getTransactionSummary(userId, filters);
-      
+      const summary = await transactionService.getTransactionSummary(householdId, filters);
+
       return reply.send(summary);
     }
   );
@@ -95,11 +95,12 @@ export async function transactionRoutes(fastify: FastifyInstance) {
     { preHandler: [authMiddleware] },
     async (request, reply) => {
       const userId = request.user!.userId;
-      
+      const householdId = request.householdId!;
+
       // Validate request body
       const validatedData = createTransactionSchema.parse(request.body);
 
-      const transaction = await transactionService.createTransaction(userId, validatedData);
+      const transaction = await transactionService.createTransaction(householdId, validatedData);
 
       auditService.log({ userId, action: 'TRANSACTION_CREATED', resource: 'transaction', resourceId: transaction.id, ipAddress: request.ip });
 
@@ -112,7 +113,7 @@ export async function transactionRoutes(fastify: FastifyInstance) {
     '/transactions/:id',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { id } = request.params as { id: string };
       const { updateScope } = request.query as { updateScope?: string };
 
@@ -133,7 +134,7 @@ export async function transactionRoutes(fastify: FastifyInstance) {
 
       const transaction = await transactionService.updateTransaction(
         id,
-        userId,
+        householdId,
         validatedData,
         validatedScope
       );
@@ -148,9 +149,10 @@ export async function transactionRoutes(fastify: FastifyInstance) {
     { preHandler: [authMiddleware] },
     async (request, reply) => {
       const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { id } = request.params as { id: string };
 
-      const result = await transactionService.deleteTransaction(id, userId);
+      const result = await transactionService.deleteTransaction(id, householdId);
 
       auditService.log({ userId, action: 'TRANSACTION_DELETED', resource: 'transaction', resourceId: id, ipAddress: request.ip });
 

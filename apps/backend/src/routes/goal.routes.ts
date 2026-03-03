@@ -11,83 +11,83 @@ import {
 export async function goalRoutes(fastify: FastifyInstance) {
   // Get all goals for current user with progress data
   fastify.get('/goals', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
 
     // Always return enhanced data (with progress calculations) for consistency
-    const goals = await goalService.getUserGoalsWithProgress(userId);
+    const goals = await goalService.getUserGoalsWithProgress(householdId);
     return reply.send({ goals });
   });
 
   // Get single goal by ID
   fastify.get('/goals/:id', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { id } = request.params as { id: string };
 
-    const goal = await goalService.getGoalById(id, userId);
+    const goal = await goalService.getGoalById(id, householdId);
     return reply.send({ goal });
   });
 
   // Get contribution history for a goal
   fastify.get('/goals/:id/contributions', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { id } = request.params as { id: string };
 
-    const contributions = await goalService.getGoalContributions(id, userId);
+    const contributions = await goalService.getGoalContributions(id, householdId);
     return reply.send({ contributions });
   });
 
   // Create new goal
   fastify.post('/goals', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const validatedData = createGoalSchema.parse(request.body);
 
-    const goal = await goalService.createGoal(userId, validatedData);
+    const goal = await goalService.createGoal(householdId, validatedData);
     return reply.status(201).send({ goal });
   });
 
   // Update goal properties
   fastify.put('/goals/:id', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { id } = request.params as { id: string };
     const validatedData = updateGoalSchema.parse(request.body);
 
-    const goal = await goalService.updateGoal(id, userId, validatedData);
+    const goal = await goalService.updateGoal(id, householdId, validatedData);
     return reply.send({ goal });
   });
 
   // Add a manual contribution to a goal
   fastify.post('/goals/:id/contributions', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { id } = request.params as { id: string };
     const validatedData = createGoalContributionSchema.parse(request.body);
 
-    const result = await goalService.addContribution(id, userId, validatedData);
+    const result = await goalService.addContribution(id, householdId, validatedData);
     return reply.status(201).send(result);
   });
 
   // Link an existing transaction to a goal as a contribution
   fastify.post('/goals/:id/link-transaction', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { id } = request.params as { id: string };
     const validatedData = linkTransactionToGoalSchema.parse(request.body);
 
-    const result = await goalService.linkTransactionToGoal(id, userId, validatedData);
+    const result = await goalService.linkTransactionToGoal(id, householdId, validatedData);
     return reply.send(result);
   });
 
   // Delete goal
   fastify.delete('/goals/:id', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { id } = request.params as { id: string };
 
-    const result = await goalService.deleteGoal(id, userId);
+    const result = await goalService.deleteGoal(id, householdId);
     return reply.send(result);
   });
 
   // Get goal summary (analytics)
   fastify.get('/goals/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
-    const summary = await goalService.getGoalSummary(userId);
+    const householdId = request.householdId!;
+    const summary = await goalService.getGoalSummary(householdId);
     return reply.send(summary);
   });
 }

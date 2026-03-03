@@ -8,29 +8,84 @@ datasource db {
 }
 
 model User {
-  id               String          @id @default(uuid())
-  email            String          @unique
-  passwordHash     String          @map("password_hash")
-  name             String
-  createdAt        DateTime        @default(now()) @map("created_at")
-  updatedAt        DateTime        @updatedAt @map("updated_at")
-  preferences      Json?           @default("{}")
-  twoFactorEnabled Boolean         @default(false) @map("two_factor_enabled")
-  twoFactorSecret  String?         @map("two_factor_secret")
-  accounts         Account[]
-  assets           Asset[]
-  budgets          Budget[]
-  categories       Category[]
-  devices          Device[]
-  forecasts        Forecast[]
-  goals            Goal[]
-  liabilities      Liability[]
-  recurringRules   RecurringRule[]
-  refreshTokens    RefreshToken[]
-  transactions     Transaction[]
+  id                  String            @id @default(uuid())
+  email               String            @unique
+  passwordHash        String            @map("password_hash")
+  name                String
+  createdAt           DateTime          @default(now()) @map("created_at")
+  updatedAt           DateTime          @updatedAt @map("updated_at")
+  preferences         Json?             @default("{}")
+  twoFactorEnabled    Boolean           @default(false) @map("two_factor_enabled")
+  twoFactorSecret     String?           @map("two_factor_secret")
+  activeHouseholdId   String?           @map("active_household_id")
+  activeHousehold     Household?        @relation("UserActiveHousehold", fields: [activeHouseholdId], references: [id])
+  householdMemberships HouseholdMember[]
+  createdInvites      HouseholdInvite[]
+  devices             Device[]
+  refreshTokens       RefreshToken[]
 
   @@map("users")
 }
+
+// ─── Household ───────────────────────────────────────────────────────────────
+
+model Household {
+  id           String            @id @default(uuid())
+  name         String
+  createdAt    DateTime          @default(now()) @map("created_at")
+  updatedAt    DateTime          @updatedAt @map("updated_at")
+  members      HouseholdMember[]
+  invites      HouseholdInvite[]
+  activeForUsers User[]          @relation("UserActiveHousehold")
+  accounts     Account[]
+  transactions Transaction[]
+  categories   Category[]
+  recurringRules RecurringRule[]
+  budgets      Budget[]
+  goals        Goal[]
+  assets       Asset[]
+  liabilities  Liability[]
+  forecasts    Forecast[]
+
+  @@map("households")
+}
+
+model HouseholdMember {
+  householdId String        @map("household_id")
+  userId      String        @map("user_id")
+  role        HouseholdRole @default(member)
+  joinedAt    DateTime      @default(now()) @map("joined_at")
+  household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([householdId, userId])
+  @@index([userId])
+  @@map("household_members")
+}
+
+model HouseholdInvite {
+  id              String    @id @default(uuid())
+  householdId     String    @map("household_id")
+  email           String
+  tokenHash       String    @unique @map("token_hash")
+  expiresAt       DateTime  @map("expires_at")
+  usedAt          DateTime? @map("used_at")
+  createdByUserId String    @map("created_by_user_id")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  household       Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy       User      @relation(fields: [createdByUserId], references: [id])
+
+  @@index([householdId])
+  @@index([email])
+  @@map("household_invites")
+}
+
+enum HouseholdRole {
+  owner
+  member
+}
+
+// ─── Auth ─────────────────────────────────────────────────────────────────────
 
 model AuditLog {
   id         String   @id @default(uuid())
@@ -49,28 +104,30 @@ model AuditLog {
 }
 
 model RefreshToken {
-  id         String   @id @default(uuid())
-  userId     String   @map("user_id")
-  tokenHash  String   @unique @map("token_hash")
-  familyId   String   @map("family_id")
-  isRevoked  Boolean  @default(false) @map("is_revoked")
-  expiresAt  DateTime @map("expires_at")
+  id               String   @id @default(uuid())
+  userId           String   @map("user_id")
+  tokenHash        String   @unique @map("token_hash")
+  familyId         String   @map("family_id")
+  isRevoked        Boolean  @default(false) @map("is_revoked")
+  expiresAt        DateTime @map("expires_at")
   sessionExpiresAt DateTime @map("session_expires_at")
-  rememberMe Boolean @default(false) @map("remember_me")
-  ipAddress  String?  @map("ip_address")
-  userAgent  String?  @map("user_agent")
-  lastUsedAt DateTime @default(now()) @map("last_used_at")
-  createdAt  DateTime @default(now()) @map("created_at")
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rememberMe       Boolean  @default(false) @map("remember_me")
+  ipAddress        String?  @map("ip_address")
+  userAgent        String?  @map("user_agent")
+  lastUsedAt       DateTime @default(now()) @map("last_used_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([familyId])
   @@map("refresh_tokens")
 }
 
+// ─── Financial Data (household-scoped) ───────────────────────────────────────
+
 model Account {
   id           String        @id @default(uuid())
-  userId       String        @map("user_id")
+  householdId  String        @map("household_id")
   name         String
   type         AccountType
   subtype      String?
@@ -80,48 +137,48 @@ model Account {
   updatedAt    DateTime      @updatedAt @map("updated_at")
   metadata     Json?         @default("{}")
   description  String?
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
   transactions Transaction[]
 
-  @@index([userId, isActive])
+  @@index([householdId, isActive])
   @@map("accounts")
 }
 
 model Transaction {
-  id                  String                  @id @default(uuid())
-  userId              String                  @map("user_id")
-  accountId           String                  @map("account_id")
-  liabilityId         String?                 @map("liability_id")
+  id                  String                @id @default(uuid())
+  householdId         String                @map("household_id")
+  accountId           String                @map("account_id")
+  liabilityId         String?               @map("liability_id")
   date                DateTime
-  amount              Decimal                 @db.Decimal(15, 2)
+  amount              Decimal               @db.Decimal(15, 2)
   type                TransactionType
-  categoryId          String?                 @map("category_id")
-  subcategoryId       String?                 @map("subcategory_id")
+  categoryId          String?               @map("category_id")
+  subcategoryId       String?               @map("subcategory_id")
   description         String?
   memo                String?
-  tags                String[]                @default([])
-  isRecurring         Boolean                 @default(false) @map("is_recurring")
-  recurringRuleId     String?                 @map("recurring_rule_id")
-  isGenerated         Boolean                 @default(false) @map("is_generated")
-  overriddenFields    String[]                @default([]) @map("overridden_fields")
-  generatedAt         DateTime?               @map("generated_at")
-  createdAt           DateTime                @default(now()) @map("created_at")
-  updatedAt           DateTime                @updatedAt @map("updated_at")
-  metadata            Json?                   @default("{}")
+  tags                String[]              @default([])
+  isRecurring         Boolean               @default(false) @map("is_recurring")
+  recurringRuleId     String?               @map("recurring_rule_id")
+  isGenerated         Boolean               @default(false) @map("is_generated")
+  overriddenFields    String[]              @default([]) @map("overridden_fields")
+  generatedAt         DateTime?             @map("generated_at")
+  createdAt           DateTime              @default(now()) @map("created_at")
+  updatedAt           DateTime              @updatedAt @map("updated_at")
+  metadata            Json?                 @default("{}")
   name                String?
-  recurrence          RecurrenceType          @default(none)
+  recurrence          RecurrenceType        @default(none)
   recurrence_end_date DateTime?
   goalContributions   GoalContribution[]
   overrides           TransactionOverride[]
-  account             Account                 @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  category            Category?               @relation("TransactionCategory", fields: [categoryId], references: [id])
-  liability           Liability?              @relation(fields: [liabilityId], references: [id], onDelete: SetNull)
-  recurringRule       RecurringRule?          @relation(fields: [recurringRuleId], references: [id])
-  subcategory         Category?               @relation("TransactionSubcategory", fields: [subcategoryId], references: [id])
-  user                User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account             Account               @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  category            Category?             @relation("TransactionCategory", fields: [categoryId], references: [id])
+  liability           Liability?            @relation(fields: [liabilityId], references: [id], onDelete: SetNull)
+  recurringRule       RecurringRule?        @relation(fields: [recurringRuleId], references: [id])
+  subcategory         Category?             @relation("TransactionSubcategory", fields: [subcategoryId], references: [id])
+  household           Household             @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
-  @@index([userId, date])
-  @@index([userId, categoryId, date])
+  @@index([householdId, date])
+  @@index([householdId, categoryId, date])
   @@index([recurringRuleId, date])
   @@map("transactions")
 }
@@ -142,7 +199,7 @@ model TransactionOverride {
 
 model Category {
   id               String        @id @default(uuid())
-  userId           String?       @map("user_id")
+  householdId      String?       @map("household_id")
   name             String
   type             CategoryType
   parentCategoryId String?       @map("parent_category_id")
@@ -155,17 +212,17 @@ model Category {
   budgetItems      BudgetItem[]
   parentCategory   Category?     @relation("CategoryHierarchy", fields: [parentCategoryId], references: [id])
   subcategories    Category[]    @relation("CategoryHierarchy")
-  user             User?         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household        Household?    @relation(fields: [householdId], references: [id], onDelete: Cascade)
   transactions     Transaction[] @relation("TransactionCategory")
   transactionsSub  Transaction[] @relation("TransactionSubcategory")
 
-  @@index([userId, type])
+  @@index([householdId, type])
   @@map("categories")
 }
 
 model RecurringRule {
   id                  String             @id @default(uuid())
-  userId              String             @map("user_id")
+  householdId         String             @map("household_id")
   frequency           RecurringFrequency
   interval            Int                @default(1)
   startDate           DateTime           @map("start_date")
@@ -177,17 +234,17 @@ model RecurringRule {
   version             Int                @default(1)
   createdAt           DateTime           @default(now()) @map("created_at")
   updatedAt           DateTime           @updatedAt @map("updated_at")
-  user                User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household           Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
   transactions        Transaction[]
 
-  @@index([userId, isActive])
+  @@index([householdId, isActive])
   @@index([startDate, endDate])
   @@map("recurring_rules")
 }
 
 model Budget {
   id          String       @id @default(uuid())
-  userId      String       @map("user_id")
+  householdId String       @map("household_id")
   name        String
   period      BudgetPeriod
   startDate   DateTime     @map("start_date")
@@ -196,7 +253,7 @@ model Budget {
   createdAt   DateTime     @default(now()) @map("created_at")
   updatedAt   DateTime     @updatedAt @map("updated_at")
   budgetItems BudgetItem[]
-  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household   Household    @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
   @@map("budgets")
 }
@@ -216,24 +273,24 @@ model BudgetItem {
 }
 
 model Goal {
-  id              String             @id @default(uuid())
-  userId          String             @map("user_id")
-  name            String
-  description     String?
-  type            GoalType
-  targetAmount    Decimal            @map("target_amount") @db.Decimal(15, 2)
-  currentAmount   Decimal            @default(0) @map("current_amount") @db.Decimal(15, 2)
-  targetDate      DateTime?          @map("target_date")
-  priority        Priority           @default(medium)
-  status          GoalStatus         @default(active)
-  icon            String?
-  createdAt       DateTime           @default(now()) @map("created_at")
-  updatedAt       DateTime           @updatedAt @map("updated_at")
-  metadata        Json?              @default("{}")
-  contributions   GoalContribution[]
-  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id            String             @id @default(uuid())
+  householdId   String             @map("household_id")
+  name          String
+  description   String?
+  type          GoalType
+  targetAmount  Decimal            @map("target_amount") @db.Decimal(15, 2)
+  currentAmount Decimal            @default(0) @map("current_amount") @db.Decimal(15, 2)
+  targetDate    DateTime?          @map("target_date")
+  priority      Priority           @default(medium)
+  status        GoalStatus         @default(active)
+  icon          String?
+  createdAt     DateTime           @default(now()) @map("created_at")
+  updatedAt     DateTime           @updatedAt @map("updated_at")
+  metadata      Json?              @default("{}")
+  contributions GoalContribution[]
+  household     Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
-  @@index([userId, status])
+  @@index([householdId, status])
   @@map("goals")
 }
 
@@ -252,7 +309,7 @@ model GoalContribution {
 
 model Asset {
   id                 String              @id @default(uuid())
-  userId             String              @map("user_id")
+  householdId        String              @map("household_id")
   name               String
   type               AssetType
   currentValue       Decimal             @map("current_value") @db.Decimal(15, 2)
@@ -264,7 +321,7 @@ model Asset {
   updatedAt          DateTime            @updatedAt @map("updated_at")
   metadata           Json?               @default("{}")
   valueHistory       AssetValueHistory[]
-  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  household          Household           @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
   @@map("assets")
 }
@@ -281,48 +338,48 @@ model AssetValueHistory {
 }
 
 model Liability {
-  id               String             @id @default(uuid())
-  userId           String             @map("user_id")
-  name             String
-  type             LiabilityType
-  currentBalance   Decimal            @map("current_balance") @db.Decimal(15, 2)
-  interestRate     Decimal            @map("interest_rate") @db.Decimal(5, 2)
-  interestType     InterestType       @map("interest_type")
-  openDate         DateTime           @map("open_date")
-  termEndDate      DateTime           @map("term_end_date")
-  createdAt        DateTime           @default(now()) @map("created_at")
-  updatedAt        DateTime           @updatedAt @map("updated_at")
-  metadata         Json?              @default("{}")
-  transactions     Transaction[]
-  user             User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id             String        @id @default(uuid())
+  householdId    String        @map("household_id")
+  name           String
+  type           LiabilityType
+  currentBalance Decimal       @map("current_balance") @db.Decimal(15, 2)
+  interestRate   Decimal       @map("interest_rate") @db.Decimal(5, 2)
+  interestType   InterestType  @map("interest_type")
+  openDate       DateTime      @map("open_date")
+  termEndDate    DateTime      @map("term_end_date")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  metadata       Json?         @default("{}")
+  transactions   Transaction[]
+  household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
   @@map("liabilities")
 }
 
 model Forecast {
-  id                     String                 @id @default(uuid())
-  userId                 String                 @map("user_id")
-  name                   String
-  description            String?
-  startDate              DateTime               @map("start_date")
-  endDate                DateTime               @map("end_date")
-  inflationRate          Decimal                @map("inflation_rate") @db.Decimal(5, 2)
-  categoryInflationRates Json?                  @map("category_inflation_rates")
-  createdAt              DateTime               @default(now()) @map("created_at")
-  updatedAt              DateTime               @updatedAt @map("updated_at")
-  scenarios              ForecastScenario[]
-  user                   User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  monteCarloSimulations  MonteCarloSimulation[]
+  id                    String                 @id @default(uuid())
+  householdId           String                 @map("household_id")
+  name                  String
+  description           String?
+  startDate             DateTime               @map("start_date")
+  endDate               DateTime               @map("end_date")
+  inflationRate         Decimal                @map("inflation_rate") @db.Decimal(5, 2)
+  categoryInflationRates Json?                 @map("category_inflation_rates")
+  createdAt             DateTime               @default(now()) @map("created_at")
+  updatedAt             DateTime               @updatedAt @map("updated_at")
+  scenarios             ForecastScenario[]
+  household             Household              @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  monteCarloSimulations MonteCarloSimulation[]
 
   @@map("forecasts")
 }
 
 model ForecastScenario {
-  id          String   @id @default(uuid())
-  forecastId  String   @map("forecast_id")
-  name        String
+  id         String   @id @default(uuid())
+  forecastId String   @map("forecast_id")
+  name       String
   assumptions Json
-  forecast    Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
+  forecast   Forecast @relation(fields: [forecastId], references: [id], onDelete: Cascade)
 
   @@map("forecast_scenarios")
 }
@@ -354,6 +411,8 @@ model Device {
 
   @@map("devices")
 }
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
 
 enum AccountType {
   current
