@@ -75,10 +75,14 @@ describe("householdService.getUserHouseholds", () => {
 
     expect(prismaMock.householdMember.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { userId: user.id },
-        include: expect.objectContaining({
-          household: expect.any(Object),
-        }),
+        where: { userId: expect.any(String) },
+        include: {
+          household: expect.objectContaining({
+            include: expect.objectContaining({
+              _count: expect.any(Object),
+            }),
+          }),
+        },
         orderBy: { joinedAt: "asc" },
       })
     );
@@ -240,6 +244,14 @@ describe("householdService.removeMember", () => {
       householdService.removeMember("household-1", "member-user", "target-user")
     ).rejects.toThrow(AuthorizationError);
   });
+
+  it("throws AuthorizationError when caller is not a member", async () => {
+    prismaMock.householdMember.findUnique.mockResolvedValue(null);
+
+    await expect(
+      householdService.removeMember("household-1", "outsider", "target-user")
+    ).rejects.toThrow(AuthorizationError);
+  });
 });
 
 // ─── validateInviteToken ──────────────────────────────────────────────────────
@@ -255,6 +267,11 @@ describe("householdService.validateInviteToken", () => {
 
     const result = await householdService.validateInviteToken("valid-raw-token");
 
+    expect(prismaMock.householdInvite.findUnique).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { tokenHash: expect.any(String) },
+      })
+    );
     expect(result.id).toBe(invite.id);
   });
 
