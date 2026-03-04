@@ -43,6 +43,30 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
+  // Reset all service mock call histories
+  for (const method of Object.values(transactionService) as any[]) {
+    if (typeof method?.mockReset === 'function') method.mockReset();
+  }
+
+  // Re-apply default mock return values
+  (transactionService.getTransactions as any).mockResolvedValue({
+    transactions: [mockTransaction],
+    pagination: { total: 1, limit: 50, offset: 0, hasMore: false },
+  });
+  (transactionService.getTransactionById as any).mockResolvedValue(mockTransaction);
+  (transactionService.getTransactionSummary as any).mockResolvedValue({
+    totalIncome: 5000,
+    totalExpenses: 3000,
+    netAmount: 2000,
+    byCategory: [],
+  });
+  (transactionService.createTransaction as any).mockResolvedValue(mockTransaction);
+  (transactionService.updateTransaction as any).mockResolvedValue(mockTransaction);
+  (transactionService.deleteTransaction as any).mockResolvedValue({
+    message: 'Transaction deleted successfully',
+  });
+
+  // Re-apply auth middleware mock
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith('Bearer ')) {
@@ -170,6 +194,15 @@ describe('GET /api/transactions/summary', () => {
     expect(response.statusCode).toBe(200);
     expect(response.json().totalIncome).toBe(5000);
   });
+
+  it('returns 401 without auth', async () => {
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/transactions/summary',
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
 });
 
 describe('POST /api/transactions', () => {
@@ -231,6 +264,9 @@ describe('POST /api/transactions', () => {
     });
 
     expect(response.statusCode).toBe(400);
+    const body = response.json();
+    expect(body.error).toBeDefined();
+    expect(body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('returns 400 for invalid transaction type', async () => {
@@ -248,6 +284,9 @@ describe('POST /api/transactions', () => {
     });
 
     expect(response.statusCode).toBe(400);
+    const body = response.json();
+    expect(body.error).toBeDefined();
+    expect(body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('returns 401 without auth', async () => {
@@ -292,6 +331,9 @@ describe('PUT /api/transactions/:id', () => {
     });
 
     expect(response.statusCode).toBe(400);
+    const body = response.json();
+    expect(body.error).toBeDefined();
+    expect(typeof body.error).toBe('string');
   });
 
   it('returns 401 without auth', async () => {
