@@ -78,6 +78,11 @@ describe("categoryService.getUserCategories", () => {
       { name: "asc" },
     ]);
   });
+
+  it('propagates database errors', async () => {
+    prismaMock.category.findMany.mockRejectedValue(new Error('DB connection lost'));
+    await expect(categoryService.getUserCategories('household-1')).rejects.toThrow('DB connection lost');
+  });
 });
 
 // ─── getCategoriesByType ──────────────────────────────────────────────────────
@@ -143,5 +148,10 @@ describe("categoryService.getCategoriesByType", () => {
     const result = await categoryService.getCategoriesByType("household-no-cats", "income");
 
     expect(result).toEqual([]);
+  });
+
+  it('propagates database errors', async () => {
+    prismaMock.category.findMany.mockRejectedValue(new Error('DB connection lost'));
+    await expect(categoryService.getCategoriesByType('household-1', 'expense')).rejects.toThrow('DB connection lost');
   });
 });
