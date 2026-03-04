@@ -27,6 +27,6 @@ describe('goalService.createGoal', () => {
 describe('goalService.deleteGoal', () => {
   it('sends DELETE to /api/goals/:id and returns success message', async () => {
     const result = await goalService.deleteGoal('goal-1');
-    expect(result.message).toBeTruthy();
+    expect(result.message).toBe('Goal deleted');
   });
 });

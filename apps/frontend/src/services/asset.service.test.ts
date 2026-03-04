@@ -26,6 +26,6 @@ describe('assetService.createAsset', () => {
 describe('assetService.deleteAsset', () => {
   it('sends DELETE to /api/assets/:id and returns success message', async () => {
     const result = await assetService.deleteAsset('asset-1');
-    expect(result.message).toBeTruthy();
+    expect(result.message).toBe('Asset deleted');
   });
 });

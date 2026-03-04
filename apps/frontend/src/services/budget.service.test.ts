@@ -27,6 +27,6 @@ describe('budgetService.createBudget', () => {
 describe('budgetService.deleteBudget', () => {
   it('sends DELETE to /api/budgets/:id and returns success message', async () => {
     const result = await budgetService.deleteBudget('budget-1');
-    expect(result.message).toBeTruthy();
+    expect(result.message).toBe('Budget deleted');
   });
 });

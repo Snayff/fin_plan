@@ -30,6 +30,6 @@ describe('liabilityService.createLiability', () => {
 describe('liabilityService.deleteLiability', () => {
   it('sends DELETE to /api/liabilities/:id and returns success message', async () => {
     const result = await liabilityService.deleteLiability('liability-1');
-    expect(result.message).toBeTruthy();
+    expect(result.message).toBe('Liability deleted');
   });
 });
