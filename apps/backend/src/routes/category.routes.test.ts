@@ -79,8 +79,6 @@ beforeEach(() => {
 
 describe('GET /api/categories', () => {
   it('returns 200 with all categories', async () => {
-    (categoryService.getUserCategories as any).mockResolvedValue([mockCategory, mockIncomeCategory]);
-
     const response = await app.inject({
       method: 'GET',
       url: '/api/categories',
@@ -131,8 +129,6 @@ describe('GET /api/categories', () => {
 
 describe('GET /api/categories/:type', () => {
   it('returns 200 with expense categories', async () => {
-    (categoryService.getCategoriesByType as any).mockResolvedValue([mockCategory]);
-
     const response = await app.inject({
       method: 'GET',
       url: '/api/categories/expense',
@@ -163,8 +159,6 @@ describe('GET /api/categories/:type', () => {
   });
 
   it('calls service with householdId and type', async () => {
-    (categoryService.getCategoriesByType as any).mockResolvedValue([mockCategory]);
-
     await app.inject({
       method: 'GET',
       url: '/api/categories/expense',
@@ -194,6 +188,8 @@ describe('GET /api/categories/:type', () => {
     });
 
     expect(response.statusCode).toBe(400);
+    const body = response.json();
+    expect(body.error).toBeDefined();
   });
 
   it('returns 401 without auth', async () => {

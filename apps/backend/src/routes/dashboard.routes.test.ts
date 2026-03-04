@@ -93,8 +93,6 @@ beforeEach(() => {
 
 describe('GET /api/dashboard/summary', () => {
   it('returns 200 with dashboard summary', async () => {
-    (dashboardService.getDashboardSummary as any).mockResolvedValue(mockSummary);
-
     const response = await app.inject({
       method: 'GET',
       url: '/api/dashboard/summary',
@@ -103,10 +101,12 @@ describe('GET /api/dashboard/summary', () => {
 
     expect(response.statusCode).toBe(200);
     const body = response.json();
+    expect(body.period).toBeDefined();
     expect(body.summary).toBeDefined();
     expect(body.summary.netWorth).toBe(40000);
     expect(body.summary.monthlyIncome).toBe(5000);
     expect(body.summary.monthlyExpense).toBe(3000);
+    expect(body.transactionCounts.total).toBe(13);
   });
 
   it('calls service with householdId and no options when no query params', async () => {
@@ -169,8 +169,6 @@ describe('GET /api/dashboard/summary', () => {
 
 describe('GET /api/dashboard/net-worth-trend', () => {
   it('returns 200 with net worth trend data', async () => {
-    (dashboardService.getNetWorthTrend as any).mockResolvedValue(mockNetWorthTrend);
-
     const response = await app.inject({
       method: 'GET',
       url: '/api/dashboard/net-worth-trend',
@@ -231,8 +229,6 @@ describe('GET /api/dashboard/net-worth-trend', () => {
 
 describe('GET /api/dashboard/income-expense-trend', () => {
   it('returns 200 with income/expense trend data', async () => {
-    (dashboardService.getIncomeExpenseTrend as any).mockResolvedValue(mockIncomeExpenseTrend);
-
     const response = await app.inject({
       method: 'GET',
       url: '/api/dashboard/income-expense-trend',
