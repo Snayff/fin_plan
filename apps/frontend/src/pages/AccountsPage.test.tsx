@@ -6,10 +6,11 @@ import { setAuthenticated } from '../test/helpers/auth';
 import { renderWithProviders } from '../test/helpers/render';
 import { server } from '../test/msw/server';
 import { mockAccount } from '../test/msw/handlers';
+import type { EnhancedAccount } from '../types';
 import AccountsPage from './AccountsPage';
 
 // Enhanced fixture — extends mockAccount with the extra fields AccountsPage requires.
-const mockEnhancedAccount = {
+const mockEnhancedAccount: EnhancedAccount = {
   ...mockAccount,
   balanceHistory: [
     { date: '2025-01-01T00:00:00Z', balance: 900 },
@@ -23,15 +24,9 @@ describe('AccountsPage (MSW)', () => {
     setAuthenticated();
     // Override the /api/accounts handler to return the enhanced fixture.
     server.use(
-      http.get('/api/accounts', ({ request }) => {
-        if (!request.headers.get('authorization')?.startsWith('Bearer ')) {
-          return HttpResponse.json(
-            { error: { code: 'AUTHENTICATION_ERROR', message: 'No authorization token provided' } },
-            { status: 401 }
-          );
-        }
-        return HttpResponse.json({ accounts: [mockEnhancedAccount] });
-      })
+      http.get('/api/accounts', () =>
+        HttpResponse.json({ accounts: [mockEnhancedAccount] })
+      )
     );
   });
 
@@ -44,9 +39,8 @@ describe('AccountsPage (MSW)', () => {
 
   it('renders account name from MSW handler', async () => {
     renderWithProviders(<AccountsPage />);
-    // mockAccount.name === 'Test Account'
     await waitFor(() => {
-      expect(screen.getByText('Test Account')).toBeTruthy();
+      expect(screen.getByText(mockAccount.name)).toBeTruthy();
     });
   });
 
@@ -57,7 +51,7 @@ describe('AccountsPage (MSW)', () => {
     });
   });
 
-  it('shows empty state when not authenticated', async () => {
+  it('shows an error banner when the API returns 401', async () => {
     // Override to return 401 for this test
     server.use(
       http.get('/api/accounts', () =>

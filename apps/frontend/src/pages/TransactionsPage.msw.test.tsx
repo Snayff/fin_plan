@@ -5,6 +5,7 @@ import { describe, it, expect, beforeEach } from 'bun:test';
 import { screen, waitFor } from '@testing-library/react';
 import { setAuthenticated } from '../test/helpers/auth';
 import { renderWithProviders } from '../test/helpers/render';
+import { mockTransaction } from '../test/msw/handlers';
 import TransactionsPage from './TransactionsPage';
 
 describe('TransactionsPage (MSW)', () => {
@@ -21,9 +22,8 @@ describe('TransactionsPage (MSW)', () => {
 
   it('renders transaction name from MSW handler', async () => {
     renderWithProviders(<TransactionsPage />);
-    // mockTransaction.name === 'Test Transaction'
     await waitFor(() => {
-      expect(screen.getByText('Test Transaction')).toBeTruthy();
+      expect(screen.getByText(mockTransaction.name)).toBeTruthy();
     });
   });
 
