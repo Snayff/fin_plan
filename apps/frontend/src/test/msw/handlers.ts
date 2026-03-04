@@ -148,7 +148,7 @@ export const transactionHandlers = [
 ];
 
 // ─── Goal handlers ────────────────────────────────────────────────────────────
-const mockGoal = {
+export const mockGoal = {
   id: 'goal-1',
   userId: 'user-1',
   name: 'Emergency Fund',
@@ -165,7 +165,7 @@ const mockGoal = {
   updatedAt: '2025-01-01T00:00:00Z',
 };
 
-const mockEnhancedGoal = {
+export const mockEnhancedGoal = {
   ...mockGoal,
   contributions: [],
   progressPercentage: 25,
@@ -220,7 +220,7 @@ export const goalHandlers = [
 ];
 
 // ─── Liability handlers ───────────────────────────────────────────────────────
-const mockLiability = {
+export const mockLiability = {
   id: 'liability-1',
   userId: 'user-1',
   name: 'Test Mortgage',
