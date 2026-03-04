@@ -6,20 +6,14 @@ import { setAuthenticated } from '../test/helpers/auth';
 import { renderWithProviders } from '../test/helpers/render';
 import { server } from '../test/msw/server';
 import { mockGoal, mockEnhancedGoal } from '../test/msw/handlers';
-import type { EnhancedGoal } from '../types';
 import GoalsPage from './GoalsPage';
-
-// Full EnhancedGoal fixture re-used across tests.
-const mockEnhancedGoalFixture: EnhancedGoal = {
-  ...mockEnhancedGoal,
-};
 
 describe('GoalsPage (MSW)', () => {
   beforeEach(() => {
     setAuthenticated();
     server.use(
       http.get('/api/goals', () =>
-        HttpResponse.json({ goals: [mockEnhancedGoalFixture] })
+        HttpResponse.json({ goals: [mockEnhancedGoal] })
       )
     );
   });

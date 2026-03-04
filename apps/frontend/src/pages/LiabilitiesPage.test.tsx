@@ -42,7 +42,7 @@ describe('LiabilitiesPage (MSW)', () => {
     await waitFor(() => {
       // The name appears in both the card heading and the summary "Highest Rate" label.
       const elements = screen.getAllByText(mockLiability.name);
-      expect(elements.length).toBeGreaterThan(0);
+      expect(elements).toHaveLength(2);
     });
   });
 
