@@ -72,6 +72,8 @@ const mockHouseholdDetails = {
   invites: [],
 };
 
+const authHeaders = { authorization: 'Bearer valid-token' };
+
 beforeEach(() => {
   // Reset all service mock call histories
   for (const method of Object.values(householdService) as any[]) {
@@ -102,12 +104,8 @@ beforeEach(() => {
   });
 });
 
-const authHeaders = { authorization: 'Bearer valid-token' };
-
 describe('GET /api/households', () => {
   it('returns 200 with list of households', async () => {
-    (householdService.getUserHouseholds as any).mockResolvedValue([mockMembership]);
-
     const response = await app.inject({
       method: 'GET',
       url: '/api/households',
@@ -118,6 +116,7 @@ describe('GET /api/households', () => {
     const body = response.json();
     expect(body.households).toBeDefined();
     expect(body.households).toHaveLength(1);
+    expect(body.households[0].householdId).toBe('household-1');
   });
 
   it('calls service with userId from auth', async () => {
@@ -144,8 +143,6 @@ describe('GET /api/households', () => {
 
 describe('POST /api/households', () => {
   it('returns 201 with created household', async () => {
-    (householdService.createHousehold as any).mockResolvedValue(mockHousehold);
-
     const response = await app.inject({
       method: 'POST',
       url: '/api/households',
@@ -160,8 +157,6 @@ describe('POST /api/households', () => {
   });
 
   it('calls service with userId and household name', async () => {
-    (householdService.createHousehold as any).mockResolvedValue(mockHousehold);
-
     await app.inject({
       method: 'POST',
       url: '/api/households',
@@ -213,8 +208,6 @@ describe('POST /api/households', () => {
 
 describe('GET /api/households/:id', () => {
   it('returns 200 with household details', async () => {
-    (householdService.getHouseholdDetails as any).mockResolvedValue(mockHouseholdDetails);
-
     const response = await app.inject({
       method: 'GET',
       url: '/api/households/household-1',
@@ -229,8 +222,6 @@ describe('GET /api/households/:id', () => {
   });
 
   it('calls service with householdId and userId', async () => {
-    (householdService.getHouseholdDetails as any).mockResolvedValue(mockHouseholdDetails);
-
     await app.inject({
       method: 'GET',
       url: '/api/households/household-abc',
@@ -252,9 +243,6 @@ describe('GET /api/households/:id', () => {
 
 describe('PATCH /api/households/:id', () => {
   it('returns 200 with renamed household', async () => {
-    const renamed = { ...mockHousehold, name: 'Renamed Household' };
-    (householdService.renameHousehold as any).mockResolvedValue(renamed);
-
     const response = await app.inject({
       method: 'PATCH',
       url: '/api/households/household-1',
@@ -312,8 +300,6 @@ describe('PATCH /api/households/:id', () => {
 
 describe('POST /api/households/:id/switch', () => {
   it('returns 200 with success', async () => {
-    (householdService.switchHousehold as any).mockResolvedValue(undefined);
-
     const response = await app.inject({
       method: 'POST',
       url: '/api/households/household-1/switch',
@@ -326,8 +312,6 @@ describe('POST /api/households/:id/switch', () => {
   });
 
   it('calls service with userId and householdId', async () => {
-    (householdService.switchHousehold as any).mockResolvedValue(undefined);
-
     await app.inject({
       method: 'POST',
       url: '/api/households/household-xyz/switch',
@@ -349,8 +333,6 @@ describe('POST /api/households/:id/switch', () => {
 
 describe('POST /api/households/:id/invite', () => {
   it('returns 201 with success', async () => {
-    (householdService.inviteMember as any).mockResolvedValue(undefined);
-
     const response = await app.inject({
       method: 'POST',
       url: '/api/households/household-1/invite',
@@ -364,8 +346,6 @@ describe('POST /api/households/:id/invite', () => {
   });
 
   it('calls service with householdId, userId, and email', async () => {
-    (householdService.inviteMember as any).mockResolvedValue(undefined);
-
     await app.inject({
       method: 'POST',
       url: '/api/households/household-1/invite',
@@ -421,8 +401,6 @@ describe('POST /api/households/:id/invite', () => {
 
 describe('DELETE /api/households/:id/members/:memberId', () => {
   it('returns 200 with success', async () => {
-    (householdService.removeMember as any).mockResolvedValue(undefined);
-
     const response = await app.inject({
       method: 'DELETE',
       url: '/api/households/household-1/members/member-user-2',
@@ -435,8 +413,6 @@ describe('DELETE /api/households/:id/members/:memberId', () => {
   });
 
   it('calls service with householdId, userId, and memberId', async () => {
-    (householdService.removeMember as any).mockResolvedValue(undefined);
-
     await app.inject({
       method: 'DELETE',
       url: '/api/households/household-1/members/user-to-remove',
@@ -462,8 +438,6 @@ describe('DELETE /api/households/:id/members/:memberId', () => {
 
 describe('DELETE /api/households/:id/invites/:inviteId', () => {
   it('returns 200 with success', async () => {
-    (householdService.cancelInvite as any).mockResolvedValue(undefined);
-
     const response = await app.inject({
       method: 'DELETE',
       url: '/api/households/household-1/invites/invite-1',
@@ -476,8 +450,6 @@ describe('DELETE /api/households/:id/invites/:inviteId', () => {
   });
 
   it('calls service with householdId, userId, and inviteId', async () => {
-    (householdService.cancelInvite as any).mockResolvedValue(undefined);
-
     await app.inject({
       method: 'DELETE',
       url: '/api/households/household-1/invites/invite-abc',
