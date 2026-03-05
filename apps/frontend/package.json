@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "test": "bun scripts/run-tests.ts",
+    "test:coverage": "bun scripts/run-tests.ts --coverage",
     "test:file": "bun test",
     "lint": "eslint src/",
     "type-check": "tsc --noEmit"

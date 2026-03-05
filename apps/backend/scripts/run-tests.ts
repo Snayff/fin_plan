@@ -14,8 +14,10 @@ const testDir = "src";
 const glob = new Glob("**/*.test.ts");
 const testFiles = Array.from(glob.scanSync(testDir)).sort();
 
+const coverage = process.argv.includes('--coverage');
+
 // Allow filtering by pattern passed as CLI arg: `bun scripts/run-tests.ts auth`
-const filterPattern = process.argv[2];
+const filterPattern = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
 const filesToRun = filterPattern
   ? testFiles.filter((f) => f.includes(filterPattern))
   : testFiles;
@@ -33,7 +35,7 @@ const failures: string[] = [];
 
 for (const file of filesToRun) {
   const filePath = `${testDir}/${file}`;
-  const proc = Bun.spawn(["bun", "test", "--preload", preload, filePath], {
+  const proc = Bun.spawn(["bun", "test", ...(coverage ? ["--coverage"] : []), "--preload", preload, filePath], {
     stdout: "inherit",
     stderr: "inherit",
     env: process.env,
