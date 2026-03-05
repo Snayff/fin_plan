@@ -387,6 +387,65 @@ export const householdHandlers = [
   }),
 ];
 
+// ─── Recurring rule handlers ──────────────────────────────────────────────────
+export const mockRecurringRule = {
+  id: 'rule-1',
+  userId: 'user-1',
+  frequency: 'monthly',
+  interval: 1,
+  startDate: '2025-01-01T00:00:00Z',
+  endDate: null,
+  occurrences: null,
+  lastGeneratedDate: null,
+  isActive: true,
+  templateTransaction: {
+    accountId: 'acc-1',
+    amount: 500,
+    type: 'expense',
+    categoryId: 'cat-1',
+    subcategoryId: null,
+    name: 'Monthly Rent',
+    description: null,
+    memo: null,
+    tags: [],
+  },
+  version: 1,
+  createdAt: '2025-01-01T00:00:00Z',
+  updatedAt: '2025-01-01T00:00:00Z',
+};
+
+export const recurringHandlers = [
+  // preview and materialize must come before :id to avoid wrong match
+  http.post('/api/recurring-rules/preview', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ occurrences: ['2025-01-01', '2025-02-01', '2025-03-01'] });
+  }),
+  http.post('/api/recurring-rules/materialize', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ message: 'Materialized 3 transactions', count: 3 });
+  }),
+  http.get('/api/recurring-rules', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ recurringRules: [mockRecurringRule] });
+  }),
+  http.get('/api/recurring-rules/:id', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ recurringRule: mockRecurringRule });
+  }),
+  http.post('/api/recurring-rules', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ recurringRule: mockRecurringRule }, { status: 201 });
+  }),
+  http.put('/api/recurring-rules/:id', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ recurringRule: mockRecurringRule });
+  }),
+  http.delete('/api/recurring-rules/:id', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ message: 'Recurring rule deleted' });
+  }),
+];
+
 // ─── Dashboard handlers ───────────────────────────────────────────────────────
 export const dashboardHandlers = [
   http.get('/api/dashboard/summary', ({ request }) => {
@@ -417,5 +476,5 @@ export const dashboardHandlers = [
 export const handlers = [
   ...authHandlers, ...accountHandlers, ...transactionHandlers, ...goalHandlers,
   ...liabilityHandlers, ...assetHandlers, ...budgetHandlers, ...categoryHandlers,
-  ...householdHandlers, ...dashboardHandlers,
+  ...householdHandlers, ...recurringHandlers, ...dashboardHandlers,
 ];
