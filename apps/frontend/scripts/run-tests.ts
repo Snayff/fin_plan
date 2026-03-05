@@ -13,10 +13,10 @@ const testDir = "src";
 const glob = new Glob("**/*.test.{ts,tsx}");
 const testFiles = Array.from(glob.scanSync(testDir)).sort();
 
-const coverage = process.argv.includes('--coverage');
+const coverage = process.argv.includes("--coverage");
 
 // Allow filtering by pattern passed as CLI arg: `bun scripts/run-tests.ts auth`
-const filterPattern = process.argv.slice(2).find((arg) => !arg.startsWith('--'));
+const filterPattern = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
 const filesToRun = filterPattern
   ? testFiles.filter((f) => f.includes(filterPattern))
   : testFiles;
