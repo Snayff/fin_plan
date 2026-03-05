@@ -258,7 +258,7 @@ export const liabilityHandlers = [
 ];
 
 // ─── Asset handlers ───────────────────────────────────────────────────────────
-const mockAsset = {
+export const mockAsset = {
   id: 'asset-1',
   userId: 'user-1',
   name: 'Test Property',
@@ -272,10 +272,17 @@ const mockAsset = {
   createdAt: '2025-01-01T00:00:00Z',
   updatedAt: '2025-01-01T00:00:00Z',
 };
+
+export const mockEnhancedAsset = {
+  ...mockAsset,
+  valueHistory: [],
+  totalGain: 50000,
+  totalGainPercent: 25,
+};
 export const assetHandlers = [
   http.get('/api/assets', ({ request }) => {
     const err = requireAuth(request);
-    return err ?? HttpResponse.json({ assets: [mockAsset] });
+    return err ?? HttpResponse.json({ assets: [mockEnhancedAsset] });
   }),
   http.get('/api/assets/:id', ({ request }) => {
     const err = requireAuth(request);
