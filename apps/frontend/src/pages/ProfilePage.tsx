@@ -201,6 +201,30 @@ export default function ProfilePage() {
         {/* ── Household Tab ────────────────────────────────────────────────── */}
         <TabsContent value="household" className="mt-6 space-y-6">
 
+          {/* Create New Household */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Create New Household</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <form onSubmit={handleCreateHousehold} className="flex items-center gap-3">
+                <Input
+                  type="text"
+                  value={newHouseholdName}
+                  onChange={(e) => setNewHouseholdName(e.target.value)}
+                  placeholder="Household name"
+                  className="max-w-sm"
+                />
+                <Button
+                  type="submit"
+                  disabled={createHouseholdMutation.isPending || !newHouseholdName.trim()}
+                >
+                  {createHouseholdMutation.isPending ? 'Creating...' : 'Create Household'}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
+
           {/* Household Name */}
           <Card>
             <CardHeader>
@@ -368,29 +392,6 @@ export default function ProfilePage() {
             </Card>
           )}
 
-          {/* Create New Household */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Create New Household</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <form onSubmit={handleCreateHousehold} className="flex items-center gap-3">
-                <Input
-                  type="text"
-                  value={newHouseholdName}
-                  onChange={(e) => setNewHouseholdName(e.target.value)}
-                  placeholder="Household name"
-                  className="max-w-sm"
-                />
-                <Button
-                  type="submit"
-                  disabled={createHouseholdMutation.isPending || !newHouseholdName.trim()}
-                >
-                  {createHouseholdMutation.isPending ? 'Creating...' : 'Create Household'}
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
 
         </TabsContent>
       </Tabs>
