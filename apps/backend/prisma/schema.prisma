@@ -320,6 +320,7 @@ model Asset {
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
   metadata           Json?               @default("{}")
+  linkedLiability    Liability?          @relation("LiabilityLinkedAsset")
   valueHistory       AssetValueHistory[]
   household          Household           @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
@@ -340,6 +341,7 @@ model AssetValueHistory {
 model Liability {
   id             String        @id @default(uuid())
   householdId    String        @map("household_id")
+  linkedAssetId  String?       @unique @map("linked_asset_id")
   name           String
   type           LiabilityType
   currentBalance Decimal       @map("current_balance") @db.Decimal(15, 2)
@@ -351,8 +353,10 @@ model Liability {
   updatedAt      DateTime      @updatedAt @map("updated_at")
   metadata       Json?         @default("{}")
   transactions   Transaction[]
+  linkedAsset    Asset?        @relation("LiabilityLinkedAsset", fields: [linkedAssetId], references: [id], onDelete: Restrict)
   household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
+  @@index([householdId, linkedAssetId])
   @@map("liabilities")
 }
 
