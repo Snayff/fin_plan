@@ -50,7 +50,7 @@ export default function BudgetsPage() {
     queryFn: () => budgetService.getBudgets(),
   });
 
-  const budgets = data?.budgets || [];
+  const budgets = useMemo(() => data?.budgets || [], [data]);
 
   const budgetIds = useMemo(() => budgets.map((budget) => budget.id), [budgets]);
 

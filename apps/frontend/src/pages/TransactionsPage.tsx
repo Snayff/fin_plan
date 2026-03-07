@@ -70,9 +70,9 @@ export default function TransactionsPage() {
     },
   });
 
-  const transactions = data?.transactions || [];
-  const accounts = accountsData?.accounts || [];
-  const categories = categoriesData?.categories || [];
+  const transactions = useMemo(() => data?.transactions || [], [data]);
+  const accounts = useMemo(() => accountsData?.accounts || [], [accountsData]);
+  const categories = useMemo(() => categoriesData?.categories || [], [categoriesData]);
 
   // Defensive normalization: backend should send numbers, but coerce here too
   // so summary cards never concatenate strings.

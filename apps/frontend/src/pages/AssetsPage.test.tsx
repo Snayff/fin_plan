@@ -5,7 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { setAuthenticated } from '../test/helpers/auth';
 import { renderWithProviders } from '../test/helpers/render';
 import { server } from '../test/msw/server';
-import { mockAsset, mockEnhancedAsset } from '../test/msw/handlers';
+import { mockAsset } from '../test/msw/handlers';
 import AssetsPage from './AssetsPage';
 
 describe('AssetsPage (MSW)', () => {

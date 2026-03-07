@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { recurringService } from '../../services/recurring.service';
 import { accountService } from '../../services/account.service';
@@ -65,8 +65,8 @@ export default function RecurringRuleForm({
     queryFn: () => categoryService.getCategories(),
   });
 
-  const accounts = accountsData?.accounts || [];
-  const categories = categoriesData?.categories || [];
+  const accounts = useMemo(() => accountsData?.accounts || [], [accountsData]);
+  const categories = useMemo(() => categoriesData?.categories || [], [categoriesData]);
   const filteredCategories = categories.filter(cat => cat.type === formData.type);
 
   // Auto-select first account if none selected

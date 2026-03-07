@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { transactionService } from '../../services/transaction.service';
 import { accountService } from '../../services/account.service';
@@ -82,9 +82,9 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
     },
   });
 
-  const accounts = accountsData?.accounts || [];
-  const categories = categoriesData?.categories || [];
-  const liabilities = liabilitiesData?.liabilities || [];
+  const accounts = useMemo(() => accountsData?.accounts || [], [accountsData]);
+  const categories = useMemo(() => categoriesData?.categories || [], [categoriesData]);
+  const liabilities = useMemo(() => liabilitiesData?.liabilities || [], [liabilitiesData]);
 
   // Filter categories by type
   const filteredCategories = categories.filter(cat => cat.type === formData.type);
