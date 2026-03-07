@@ -137,7 +137,7 @@ export default function ProfilePage() {
   const handleRenameSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmed = renameValue.trim();
-    if (!trimmed) return;
+    if (!trimmed || trimmed === household?.name) return;
     renameMutation.mutate(trimmed);
   };
 
