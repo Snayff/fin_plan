@@ -362,7 +362,15 @@ const mockHousehold = {
 export const householdHandlers = [
   http.get('/api/households', ({ request }) => {
     const err = requireAuth(request);
-    return err ?? HttpResponse.json({ households: [{ role: 'owner', household: mockHousehold }] });
+    return err ?? HttpResponse.json({
+      households: [{
+        householdId: mockHousehold.id,
+        userId: 'user-1',
+        role: 'owner',
+        joinedAt: '2025-01-01T00:00:00Z',
+        household: { ...mockHousehold, _count: { members: 1 } },
+      }],
+    });
   }),
   http.post('/api/households', ({ request }) => {
     const err = requireAuth(request);
