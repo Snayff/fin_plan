@@ -2,8 +2,7 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { setAuthenticated } from '../test/helpers/auth';
-import { mockUser } from '../test/helpers/auth';
+import { setAuthenticated, mockUser } from '../test/helpers/auth';
 import { renderWithProviders } from '../test/helpers/render';
 import ProfilePage from './ProfilePage';
 
@@ -64,10 +63,11 @@ describe('ProfilePage — Household tab layout', () => {
     const allNodes = Array.from(tabPanel.querySelectorAll('*'));
     const createEl = screen.getByText('Create New Household');
     const householdCardTitle = Array.from(tabPanel.querySelectorAll('div'))
-      .find((el) => el.textContent === 'Household')!;
+      .find((el) => el.textContent === 'Household');
 
+    expect(householdCardTitle).toBeDefined();
     const createIdx = allNodes.indexOf(createEl);
-    const householdIdx = allNodes.indexOf(householdCardTitle);
+    const householdIdx = allNodes.indexOf(householdCardTitle!);
     expect(createIdx).toBeLessThan(householdIdx);
   });
 });
