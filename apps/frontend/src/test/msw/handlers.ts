@@ -233,6 +233,12 @@ export const mockLiability = {
   metadata: {},
   createdAt: '2025-01-01T00:00:00Z',
   updatedAt: '2025-01-01T00:00:00Z',
+  linkedAsset: {
+    id: 'asset-1',
+    name: 'Test Property',
+    type: 'housing',
+    currentValue: 250000,
+  },
 };
 export const liabilityHandlers = [
   http.get('/api/liabilities', ({ request }) => {
@@ -271,6 +277,12 @@ export const mockAsset = {
   metadata: {},
   createdAt: '2025-01-01T00:00:00Z',
   updatedAt: '2025-01-01T00:00:00Z',
+  linkedLiability: {
+    id: 'liability-1',
+    name: 'Test Mortgage',
+    type: 'mortgage',
+    currentBalance: 200000,
+  },
 };
 
 export const mockEnhancedAsset = {

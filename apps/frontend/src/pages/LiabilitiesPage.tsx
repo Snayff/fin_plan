@@ -177,6 +177,16 @@ export default function LiabilitiesPage() {
                   <p className="text-2xl font-bold text-expense">{formatCurrency(liability.currentBalance)}</p>
                 </div>
 
+                {liability.linkedAsset && (
+                  <div className="rounded-md border border-border bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">Linked asset</p>
+                    <p className="text-sm font-medium text-foreground">{liability.linkedAsset.name}</p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {liability.linkedAsset.type.replace(/_/g, ' ')} · {formatCurrency(liability.linkedAsset.currentValue)}
+                    </p>
+                  </div>
+                )}
+
                 <div className="space-y-1 text-sm">
                   <div className="flex items-center gap-1 text-muted-foreground">
                     <CalendarIcon className="h-3 w-3 shrink-0" />
