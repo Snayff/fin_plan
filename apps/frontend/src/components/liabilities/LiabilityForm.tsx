@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { liabilityService } from '../../services/liability.service';
-import type { LiabilityType, InterestType, CreateLiabilityInput } from '../../types';
+import { assetService } from '../../services/asset.service';
+import type { AssetType, CreateAssetInput, CreateLiabilityInput, InterestType, LiabilityType, LiquidityType } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -10,6 +11,15 @@ interface LiabilityFormProps {
   onSuccess?: () => void;
   onCancel?: () => void;
 }
+
+const ASSET_LIQUIDITY_BY_TYPE: Record<AssetType, LiquidityType> = {
+  housing: 'illiquid',
+  investment: 'liquid',
+  vehicle: 'illiquid',
+  business: 'illiquid',
+  personal_property: 'illiquid',
+  crypto: 'liquid',
+};
 
 export default function LiabilityForm({ onSuccess, onCancel }: LiabilityFormProps) {
   const queryClient = useQueryClient();
@@ -22,11 +32,46 @@ export default function LiabilityForm({ onSuccess, onCancel }: LiabilityFormProp
     openDate: '',
     termEndDate: '',
     lender: '',
+    linkedAssetId: '',
+    linkMode: 'none' as 'none' | 'existing' | 'new',
+    newAssetName: '',
+    newAssetType: 'housing' as AssetType,
+    newAssetCurrentValue: '' as string | number,
+    newAssetPurchaseValue: '' as string | number,
+    newAssetPurchaseDate: '',
+    newAssetExpectedGrowthRate: 0,
+  });
+
+  const { data: assetsData } = useQuery({
+    queryKey: ['assets'],
+    queryFn: () => assetService.getAssets(),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateLiabilityInput) => liabilityService.createLiability(data),
+    mutationFn: async (data: CreateLiabilityInput) => {
+      let linkedAssetId = data.linkedAssetId;
+
+      if (formData.linkMode === 'new') {
+        const assetPayload: CreateAssetInput = {
+          name: formData.newAssetName,
+          type: formData.newAssetType,
+          currentValue: Number(formData.newAssetCurrentValue),
+          purchaseValue:
+            formData.newAssetPurchaseValue === '' ? undefined : Number(formData.newAssetPurchaseValue),
+          purchaseDate: formData.newAssetPurchaseDate || undefined,
+          expectedGrowthRate: formData.newAssetExpectedGrowthRate,
+        };
+        const assetResult = await assetService.createAsset(assetPayload);
+        linkedAssetId = assetResult.asset.id;
+      }
+
+      return liabilityService.createLiability({
+        ...data,
+        linkedAssetId,
+      });
+    },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['assets'] });
       queryClient.invalidateQueries({ queryKey: ['liabilities'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
       onSuccess?.();
@@ -43,10 +88,15 @@ export default function LiabilityForm({ onSuccess, onCancel }: LiabilityFormProp
       interestType: formData.interestType,
       openDate: formData.openDate,
       termEndDate: formData.termEndDate,
+      linkedAssetId:
+        formData.linkMode === 'existing' ? formData.linkedAssetId || undefined : undefined,
       metadata: formData.lender ? { lender: formData.lender } : undefined,
     };
     createMutation.mutate(submitData);
   };
+
+  const assets = assetsData?.assets || [];
+  const derivedLiquidityType = ASSET_LIQUIDITY_BY_TYPE[formData.newAssetType];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -114,6 +164,161 @@ export default function LiabilityForm({ onSuccess, onCancel }: LiabilityFormProp
         <Label htmlFor="lender">Lender (Optional)</Label>
         <Input id="lender" value={formData.lender} onChange={(e) => setFormData({ ...formData, lender: e.target.value })} />
       </div>
+
+      <div className="space-y-3 border border-border rounded-md p-4">
+        <div>
+          <Label>Linked Asset</Label>
+          <p className="text-xs text-muted-foreground mt-1">
+            Link an existing asset or create a new one to associate with this liability.
+          </p>
+        </div>
+
+        <div className="flex gap-2 flex-wrap">
+          <Button
+            type="button"
+            variant={formData.linkMode === 'none' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFormData({ ...formData, linkMode: 'none', linkedAssetId: '' })}
+          >
+            No linked asset
+          </Button>
+          <Button
+            type="button"
+            variant={formData.linkMode === 'existing' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFormData({ ...formData, linkMode: 'existing' })}
+          >
+            Select existing asset
+          </Button>
+          <Button
+            type="button"
+            variant={formData.linkMode === 'new' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setFormData({ ...formData, linkMode: 'new', linkedAssetId: '' })}
+          >
+            Create new asset
+          </Button>
+        </div>
+
+        {formData.linkMode === 'existing' && (
+          <div className="space-y-2">
+            <Label htmlFor="linkedAssetId">Existing Asset</Label>
+            <select
+              id="linkedAssetId"
+              value={formData.linkedAssetId}
+              onChange={(e) => setFormData({ ...formData, linkedAssetId: e.target.value })}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Select an asset</option>
+              {assets.map((asset) => (
+                <option
+                  key={asset.id}
+                  value={asset.id}
+                  disabled={Boolean(asset.linkedLiability)}
+                >
+                  {asset.name}
+                  {asset.linkedLiability ? ` (already linked to ${asset.linkedLiability.name})` : ''}
+                </option>
+              ))}
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Assets already linked to another liability are unavailable.
+            </p>
+          </div>
+        )}
+
+        {formData.linkMode === 'new' && (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="newAssetName">Asset Name *</Label>
+              <Input
+                id="newAssetName"
+                required={formData.linkMode === 'new'}
+                value={formData.newAssetName}
+                onChange={(e) => setFormData({ ...formData, newAssetName: e.target.value })}
+                placeholder="e.g., Main Residence"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newAssetType">Asset Type *</Label>
+              <select
+                id="newAssetType"
+                value={formData.newAssetType}
+                onChange={(e) => setFormData({ ...formData, newAssetType: e.target.value as AssetType })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="housing">Housing</option>
+                <option value="investment">Investment</option>
+                <option value="vehicle">Vehicle</option>
+                <option value="business">Business</option>
+                <option value="personal_property">Personal Property</option>
+                <option value="crypto">Cryptocurrency</option>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newAssetCurrentValue">Current Value *</Label>
+              <Input
+                id="newAssetCurrentValue"
+                type="number"
+                step="0.01"
+                required={formData.linkMode === 'new'}
+                value={formData.newAssetCurrentValue}
+                onChange={(e) => setFormData({ ...formData, newAssetCurrentValue: e.target.value })}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="newAssetPurchaseValue">Purchase Value</Label>
+                <Input
+                  id="newAssetPurchaseValue"
+                  type="number"
+                  step="0.01"
+                  value={formData.newAssetPurchaseValue}
+                  onChange={(e) => setFormData({ ...formData, newAssetPurchaseValue: e.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="newAssetPurchaseDate">Purchase Date</Label>
+                <Input
+                  id="newAssetPurchaseDate"
+                  type="date"
+                  value={formData.newAssetPurchaseDate}
+                  onChange={(e) => setFormData({ ...formData, newAssetPurchaseDate: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="newAssetExpectedGrowthRate">Expected Growth Rate (%)</Label>
+              <Input
+                id="newAssetExpectedGrowthRate"
+                type="number"
+                step="0.1"
+                min={-100}
+                max={1000}
+                value={formData.newAssetExpectedGrowthRate}
+                onChange={(e) =>
+                  setFormData({ ...formData, newAssetExpectedGrowthRate: Number(e.target.value) })
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Liquidity Type</Label>
+              <Input value={derivedLiquidityType.replace('_', ' ')} disabled className="capitalize bg-muted" />
+            </div>
+          </div>
+        )}
+      </div>
+
+      {createMutation.error && (
+        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
+          {(createMutation.error as Error).message}
+        </div>
+      )}
 
       <div className="flex justify-end space-x-3 pt-4">
         {onCancel && <Button type="button" onClick={onCancel} variant="secondary">Cancel</Button>}
