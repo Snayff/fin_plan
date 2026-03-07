@@ -104,4 +104,35 @@ describe('ProfilePage — Household tab layout', () => {
     // The first Save button in DOM order belongs to the Household card (Create New Household is above it but has no Save button)
     expect(saveButtons[0].hasAttribute('disabled')).toBe(true);
   });
+
+  it('shows "Invite to Household" card title instead of "Invite Member"', async () => {
+    renderWithProviders(<ProfilePage />);
+    await userEvent.click(screen.getByRole('tab', { name: /household/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Invite to Household')).toBeTruthy();
+      expect(screen.queryByText('Invite Member')).toBeNull();
+    });
+  });
+
+  it('does not render a separate "Pending Invites" card', async () => {
+    renderWithProviders(<ProfilePage />);
+    await userEvent.click(screen.getByRole('tab', { name: /household/i }));
+
+    await waitFor(() => {
+      // "Pending Invites" as a card title should not exist — it's now inside the combined card
+      expect(screen.queryByText('Pending Invites')).toBeNull();
+    });
+  });
+
+  it('shows pending invites section inside the Invite to Household card', async () => {
+    renderWithProviders(<ProfilePage />);
+    await userEvent.click(screen.getByRole('tab', { name: /household/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText('Invite to Household')).toBeTruthy();
+      // The "No pending invites." message should appear inside the same card area
+      expect(screen.getByText('No pending invites.')).toBeTruthy();
+    });
+  });
 });

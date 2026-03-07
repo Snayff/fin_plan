@@ -316,52 +316,13 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
 
-          {/* Pending Invites (owner only) */}
+          {/* Invite to Household (owner only) */}
           {isOwner && (
             <Card>
               <CardHeader>
-                <CardTitle>Pending Invites</CardTitle>
+                <CardTitle>Invite to Household</CardTitle>
               </CardHeader>
-              <CardContent className="pt-0 space-y-3">
-                {isLoadingDetails ? (
-                  <Skeleton className="h-10 w-full" />
-                ) : household?.invites.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No pending invites.</p>
-                ) : (
-                  household?.invites.map((invite) => (
-                    <div
-                      key={invite.id}
-                      className="flex items-center justify-between py-2 border-b border-border last:border-0"
-                    >
-                      <div>
-                        <p className="text-sm font-medium text-foreground">{invite.email}</p>
-                        <p className="text-xs text-muted-foreground">
-                          Expires {new Date(invite.expiresAt).toLocaleDateString('en-GB')}
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="text-destructive hover:text-destructive hover:bg-destructive-subtle"
-                        onClick={() => cancelInviteMutation.mutate(invite.id)}
-                        disabled={cancelInviteMutation.isPending}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Invite Member (owner only) */}
-          {isOwner && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Invite Member</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
+              <CardContent className="pt-0 space-y-4">
                 <form onSubmit={handleInviteSubmit} className="flex items-center gap-3">
                   <Input
                     type="email"
@@ -377,6 +338,42 @@ export default function ProfilePage() {
                     {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
                   </Button>
                 </form>
+
+                <div className="border-t border-border pt-4">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+                    Pending
+                  </p>
+                  {isLoadingDetails ? (
+                    <Skeleton className="h-10 w-full" />
+                  ) : household?.invites.length === 0 ? (
+                    <p className="text-sm text-muted-foreground">No pending invites.</p>
+                  ) : (
+                    <div className="space-y-3">
+                      {household?.invites.map((invite) => (
+                        <div
+                          key={invite.id}
+                          className="flex items-center justify-between py-2 border-b border-border last:border-0"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{invite.email}</p>
+                            <p className="text-xs text-muted-foreground">
+                              Expires {new Date(invite.expiresAt).toLocaleDateString('en-GB')}
+                            </p>
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="text-destructive hover:text-destructive hover:bg-destructive-subtle"
+                            onClick={() => cancelInviteMutation.mutate(invite.id)}
+                            disabled={cancelInviteMutation.isPending}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}
