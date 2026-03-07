@@ -378,7 +378,6 @@ export default function ProfilePage() {
             </Card>
           )}
 
-
         </TabsContent>
       </Tabs>
     </div>
