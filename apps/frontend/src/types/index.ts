@@ -263,6 +263,12 @@ export interface Asset {
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;
+  linkedLiability?: {
+    id: string;
+    name: string;
+    type: LiabilityType;
+    currentBalance: number;
+  } | null;
 }
 
 export interface AssetValueHistory {
@@ -306,6 +312,12 @@ export interface Liability {
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;
+  linkedAsset?: {
+    id: string;
+    name: string;
+    type: AssetType;
+    currentValue: number;
+  } | null;
 }
 
 export interface EnhancedLiability extends Liability {
