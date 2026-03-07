@@ -20,6 +20,27 @@ import BudgetDetailPage from "./pages/BudgetDetailPage";
 import Layout from "./components/layout/Layout";
 import DesignPage from "./pages/DesignPage";
 
+export function ProtectedAppRoutes() {
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/accounts" element={<AccountsPage />} />
+        <Route path="/transactions" element={<TransactionsPage />} />
+        <Route path="/assets" element={<AssetsPage />} />
+        <Route path="/liabilities" element={<LiabilitiesPage />} />
+        <Route path="/budget" element={<BudgetsPage />} />
+        <Route path="/budget/:id" element={<BudgetDetailPage />} />
+        <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/settings/household" element={<Navigate to="/profile" replace />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </Layout>
+  );
+}
+
 function App() {
   const authStatus = useAuthStore((state) => state.authStatus);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
@@ -75,20 +96,7 @@ function App() {
           path="/*"
           element={
             isAuthenticated ? (
-              <Layout>
-                <Routes>
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/accounts" element={<AccountsPage />} />
-                  <Route path="/transactions" element={<TransactionsPage />} />
-                  <Route path="/assets" element={<AssetsPage />} />
-                  <Route path="/liabilities" element={<LiabilitiesPage />} />
-                  <Route path="/budget" element={<BudgetsPage />} />
-                  <Route path="/budget/:id" element={<BudgetDetailPage />} />
-                  <Route path="/goals" element={<GoalsPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                  <Route path="/" element={<Navigate to="/dashboard" />} />
-                </Routes>
-              </Layout>
+              <ProtectedAppRoutes />
             ) : (
               <Navigate to="/login" />
             )
