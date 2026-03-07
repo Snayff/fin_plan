@@ -32,7 +32,14 @@
       "Bash(docker build:*)",
       "Bash(docker compose:*)",
       "WebFetch(domain:coolify.io)",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx vite build)",
+      "Bash(grep -r \"\"\"Building\"\"\" node_modules/lucide-react/dist/esm/icons/)",
+      "Bash(grep -r \"\"\"Building2\"\"\" node_modules/lucide-react/dist/esm/icons/)",
+      "Bash(node -e \"const l = require\\(''./node_modules/lucide-react''\\); console.log\\(''Building:'', !!l.Building, ''Building2:'', !!l.Building2, ''PiggyBank:'', !!l.PiggyBank, ''Landmark:'', !!l.Landmark, ''LayoutDashboard:'', !!l.LayoutDashboard, ''ArrowRightLeft:'', !!l.ArrowRightLeft\\)\")",
+      "Bash(grep -l \"Building2\\\\|PiggyBank\" \"c:/Users/Gabriel/Documents/Dev/fin_plan/apps/frontend/node_modules/lucide-react/dist/cjs/\"*.js)",
+      "Bash(bunx vite build)",
+      "Bash(docker restart finplan-frontend-dev)"
     ]
   }
 }
