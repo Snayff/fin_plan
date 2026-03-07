@@ -34,28 +34,14 @@ beforeEach(() => {
 
 describe("useAuthStore", () => {
   describe("initial state", () => {
-    it("user is null", () => {
-      expect(useAuthStore.getState().user).toBeNull();
-    });
-
-    it("accessToken is null", () => {
-      expect(useAuthStore.getState().accessToken).toBeNull();
-    });
-
-    it("isAuthenticated is false", () => {
-      expect(useAuthStore.getState().isAuthenticated).toBe(false);
-    });
-
-    it("authStatus is initializing", () => {
-      expect(useAuthStore.getState().authStatus).toBe("initializing");
-    });
-
-    it("isLoading is false", () => {
-      expect(useAuthStore.getState().isLoading).toBe(false);
-    });
-
-    it("error is null", () => {
-      expect(useAuthStore.getState().error).toBeNull();
+    it("has correct initial state", () => {
+      const state = useAuthStore.getState();
+      expect(state.user).toBeNull();
+      expect(state.accessToken).toBeNull();
+      expect(state.isAuthenticated).toBe(false);
+      expect(state.authStatus).toBe("initializing");
+      expect(state.isLoading).toBe(false);
+      expect(state.error).toBeNull();
     });
   });
 

@@ -37,6 +37,9 @@ beforeEach(() => {
   prismaMock.refreshToken.create.mockResolvedValue({ id: "rt-1" } as any);
   prismaMock.refreshToken.update.mockResolvedValue({ id: "rt-1", isRevoked: true } as any);
   prismaMock.refreshToken.updateMany.mockResolvedValue({ count: 1 } as any);
+  // register() now creates a personal household and updates user.activeHouseholdId
+  prismaMock.household.create.mockResolvedValue({ id: "household-1", name: "Test Household" } as any);
+  prismaMock.user.update.mockResolvedValue(buildUser({ activeHouseholdId: "household-1" } as any));
 });
 
 describe("authService.register", () => {
@@ -108,8 +111,8 @@ describe("authService.register", () => {
       expect.objectContaining({
         data: expect.objectContaining({
           preferences: expect.objectContaining({
-            currency: "USD",
-            theme: "light",
+            currency: "GBP",
+            theme: "dark",
           }),
         }),
       })

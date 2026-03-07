@@ -7,7 +7,9 @@ import { queryClient } from './lib/queryClient';
 import { useAuthStore } from "./stores/authStore";
 import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
+import AcceptInvitePage from "./pages/auth/AcceptInvitePage";
 import DashboardPage from "./pages/DashboardPage";
+import ProfilePage from "./pages/ProfilePage";
 import AccountsPage from "./pages/AccountsPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import AssetsPage from "./pages/AssetsPage";
@@ -17,6 +19,27 @@ import BudgetsPage from "./pages/BudgetsPage";
 import BudgetDetailPage from "./pages/BudgetDetailPage";
 import Layout from "./components/layout/Layout";
 import DesignPage from "./pages/DesignPage";
+
+export function ProtectedAppRoutes() {
+  return (
+    <Layout>
+      <Routes>
+        <Route path="/dashboard" element={<DashboardPage />} />
+        <Route path="/accounts" element={<AccountsPage />} />
+        <Route path="/transactions" element={<TransactionsPage />} />
+        <Route path="/assets" element={<AssetsPage />} />
+        <Route path="/liabilities" element={<LiabilitiesPage />} />
+        <Route path="/budget" element={<BudgetsPage />} />
+        <Route path="/budget/:id" element={<BudgetDetailPage />} />
+        <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/settings/household" element={<Navigate to="/profile" replace />} />
+        <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    </Layout>
+  );
+}
 
 function App() {
   const authStatus = useAuthStore((state) => state.authStatus);
@@ -66,25 +89,14 @@ function App() {
           path="/register"
           element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />}
         />
+        <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
 
         {/* Protected routes */}
         <Route
           path="/*"
           element={
             isAuthenticated ? (
-              <Layout>
-                <Routes>
-                  <Route path="/dashboard" element={<DashboardPage />} />
-                  <Route path="/accounts" element={<AccountsPage />} />
-                  <Route path="/transactions" element={<TransactionsPage />} />
-                  <Route path="/assets" element={<AssetsPage />} />
-                  <Route path="/liabilities" element={<LiabilitiesPage />} />
-                  <Route path="/budget" element={<BudgetsPage />} />
-                  <Route path="/budget/:id" element={<BudgetDetailPage />} />
-                  <Route path="/goals" element={<GoalsPage />} />
-                  <Route path="/" element={<Navigate to="/dashboard" />} />
-                </Routes>
-              </Layout>
+              <ProtectedAppRoutes />
             ) : (
               <Navigate to="/login" />
             )

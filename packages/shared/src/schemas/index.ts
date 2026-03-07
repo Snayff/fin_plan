@@ -112,3 +112,15 @@ export {
   type AddBudgetItemInput,
   type UpdateBudgetItemInput,
 } from './budget.schemas';
+
+// Household schemas and types
+export {
+  createHouseholdSchema,
+  renameHouseholdSchema,
+  inviteMemberSchema,
+  acceptInviteSchema,
+  type CreateHouseholdInput,
+  type RenameHouseholdInput,
+  type InviteMemberInput,
+  type AcceptInviteInput,
+} from './household.schemas';

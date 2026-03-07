@@ -57,3 +57,6 @@ docker-compose.override.yml
 .cache/
 temp/
 tmp/
+
+# Git worktrees
+.worktrees/

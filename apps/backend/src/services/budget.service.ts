@@ -32,7 +32,7 @@ export const budgetService = {
   /**
    * Create a new budget (deactivates any existing active budgets)
    */
-  async createBudget(userId: string, data: CreateBudgetInput) {
+  async createBudget(householdId: string, data: CreateBudgetInput) {
     // Validate dates
     const startDate = new Date(data.startDate);
     const endDate = new Date(data.endDate);
@@ -43,16 +43,16 @@ export const budgetService = {
 
     // Use transaction to deactivate old budgets and create new one atomically
     return prisma.$transaction(async (tx) => {
-      // Deactivate all active budgets for this user
+      // Deactivate all active budgets for this household
       await tx.budget.updateMany({
-        where: { userId, isActive: true },
+        where: { householdId, isActive: true },
         data: { isActive: false },
       });
 
       // Create new budget
       const budget = await tx.budget.create({
         data: {
-          userId,
+          householdId,
           name: data.name.trim(),
           period: data.period,
           startDate,
@@ -66,11 +66,11 @@ export const budgetService = {
   },
 
   /**
-   * Get all budgets for a user with summary data
+   * Get all budgets for a household with summary data
    */
-  async getUserBudgets(userId: string) {
+  async getUserBudgets(householdId: string) {
     const budgets = await prisma.budget.findMany({
-      where: { userId },
+      where: { householdId },
       orderBy: { createdAt: 'desc' },
       include: {
         budgetItems: {
@@ -106,10 +106,10 @@ export const budgetService = {
   /**
    * Get a budget by ID with full tracking data
    */
-  async getBudgetWithTracking(budgetId: string, userId: string) {
+  async getBudgetWithTracking(budgetId: string, householdId: string) {
     // Fetch budget with items and categories
     const budget = await prisma.budget.findFirst({
-      where: { id: budgetId, userId },
+      where: { id: budgetId, householdId },
       include: {
         budgetItems: {
           include: {
@@ -133,7 +133,7 @@ export const budgetService = {
     // Get all expense transactions in the budget period
     const transactions = await prisma.transaction.findMany({
       where: {
-        userId,
+        householdId,
         type: 'expense',
         date: {
           gte: budget.startDate,
@@ -158,7 +158,7 @@ export const budgetService = {
     // Calculate expected income for the period
     const incomeResult = await prisma.transaction.aggregate({
       where: {
-        userId,
+        householdId,
         type: 'income',
         date: {
           gte: budget.startDate,
@@ -238,7 +238,7 @@ export const budgetService = {
 
     return {
       id: budget.id,
-      userId: budget.userId,
+      householdId: budget.householdId,
       name: budget.name,
       period: budget.period,
       startDate: budget.startDate.toISOString(),
@@ -258,10 +258,10 @@ export const budgetService = {
   /**
    * Update a budget's basic fields
    */
-  async updateBudget(budgetId: string, userId: string, data: UpdateBudgetInput) {
+  async updateBudget(budgetId: string, householdId: string, data: UpdateBudgetInput) {
     // Verify ownership
     const existing = await prisma.budget.findFirst({
-      where: { id: budgetId, userId },
+      where: { id: budgetId, householdId },
     });
 
     if (!existing) {
@@ -293,10 +293,10 @@ export const budgetService = {
   /**
    * Delete a budget (cascades to budget items)
    */
-  async deleteBudget(budgetId: string, userId: string) {
+  async deleteBudget(budgetId: string, householdId: string) {
     // Verify ownership
     const budget = await prisma.budget.findFirst({
-      where: { id: budgetId, userId },
+      where: { id: budgetId, householdId },
     });
 
     if (!budget) {
@@ -313,10 +313,10 @@ export const budgetService = {
   /**
    * Add a line item to a budget
    */
-  async addBudgetItem(budgetId: string, userId: string, data: AddBudgetItemInput) {
+  async addBudgetItem(budgetId: string, householdId: string, data: AddBudgetItemInput) {
     // Verify budget ownership
     const budget = await prisma.budget.findFirst({
-      where: { id: budgetId, userId },
+      where: { id: budgetId, householdId },
     });
 
     if (!budget) {
@@ -366,18 +366,18 @@ export const budgetService = {
   /**
    * Update a budget line item
    */
-  async updateBudgetItem(itemId: string, userId: string, data: UpdateBudgetItemInput) {
+  async updateBudgetItem(itemId: string, householdId: string, data: UpdateBudgetItemInput) {
     // Verify ownership via budget
     const item = await prisma.budgetItem.findUnique({
       where: { id: itemId },
       include: {
         budget: {
-          select: { userId: true },
+          select: { householdId: true },
         },
       },
     });
 
-    if (!item || item.budget.userId !== userId) {
+    if (!item || item.budget.householdId !== householdId) {
       throw new NotFoundError('Budget item not found');
     }
 
@@ -409,18 +409,18 @@ export const budgetService = {
   /**
    * Delete a budget line item
    */
-  async deleteBudgetItem(itemId: string, userId: string) {
+  async deleteBudgetItem(itemId: string, householdId: string) {
     // Verify ownership via budget
     const item = await prisma.budgetItem.findUnique({
       where: { id: itemId },
       include: {
         budget: {
-          select: { userId: true },
+          select: { householdId: true },
         },
       },
     });
 
-    if (!item || item.budget.userId !== userId) {
+    if (!item || item.budget.householdId !== householdId) {
       throw new NotFoundError('Budget item not found');
     }
 
@@ -434,10 +434,10 @@ export const budgetService = {
   /**
    * Remove all line items for a category from a budget
    */
-  async removeCategoryFromBudget(budgetId: string, userId: string, categoryId: string) {
+  async removeCategoryFromBudget(budgetId: string, householdId: string, categoryId: string) {
     // Verify budget ownership
     const budget = await prisma.budget.findFirst({
-      where: { id: budgetId, userId },
+      where: { id: budgetId, householdId },
     });
 
     if (!budget) {

@@ -2,9 +2,11 @@ import type { FastifyRequest, FastifyReply } from 'fastify';
 import { verifyAccessToken } from '../utils/jwt';
 import { isTokenBlacklisted } from '../utils/tokenBlacklist';
 import { AuthenticationError } from '../utils/errors';
+import { prisma } from '../config/database';
 
 /**
- * Auth middleware to verify JWT token and attach user to request
+ * Auth middleware to verify JWT token, attach user + householdId to request.
+ * householdId is resolved from the user's persisted activeHouseholdId.
  */
 export async function authMiddleware(request: FastifyRequest, _reply: FastifyReply) {
   try {
@@ -37,12 +39,26 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
       throw new AuthenticationError('Token has been revoked');
     }
 
-    // Attach normalized user info to request
+    // Resolve active household from the database
+    const user = await prisma.user.findUnique({
+      where: { id: resolvedUserId },
+      select: { id: true, email: true, activeHouseholdId: true },
+    });
+
+    if (!user) {
+      throw new AuthenticationError('User not found');
+    }
+
+    if (!user.activeHouseholdId) {
+      throw new AuthenticationError('No active household — please contact support');
+    }
+
+    // Attach normalized user info + householdId to request
     (request as any).user = {
-      ...payload,
       userId: resolvedUserId,
-      email: payload.email || '',
+      email: user.email,
     };
+    (request as any).householdId = user.activeHouseholdId;
   } catch (error) {
     if (error instanceof AuthenticationError) {
       throw error;
@@ -52,7 +68,7 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
 }
 
 /**
- * Decorator to get current user from request
+ * Type augmentation for Fastify request
  */
 declare module 'fastify' {
   interface FastifyRequest {
@@ -60,5 +76,6 @@ declare module 'fastify' {
       userId: string;
       email: string;
     };
+    householdId?: string;
   }
 }

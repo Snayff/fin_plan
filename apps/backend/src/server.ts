@@ -7,6 +7,8 @@ import rateLimit from '@fastify/rate-limit';
 import websocket from '@fastify/websocket';
 import { config } from './config/env';
 import { authRoutes } from './routes/auth.routes';
+import { householdRoutes } from './routes/households';
+import { inviteRoutes } from './routes/invite';
 import { accountRoutes } from './routes/account.routes';
 import { categoryRoutes } from './routes/category.routes';
 import { transactionRoutes } from './routes/transaction.routes';
@@ -78,6 +80,8 @@ async function start() {
 
     // API routes
     server.register(authRoutes, { prefix: '/api/auth' });
+    server.register(householdRoutes, { prefix: '/api' });
+    server.register(inviteRoutes, { prefix: '/api/auth' });
     server.register(accountRoutes, { prefix: '/api' });
     server.register(categoryRoutes, { prefix: '/api' });
     server.register(transactionRoutes, { prefix: '/api' });

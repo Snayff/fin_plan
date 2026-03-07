@@ -76,6 +76,14 @@ const envSchema = z.object({
   // Rate Limiting
   RATE_LIMIT_MAX: z.string().default('100').transform(Number),
   RATE_LIMIT_TIME_WINDOW: z.string().default('15m'),
+
+  // Email (SMTP)
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.string().default('587').transform(Number),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASS: z.string().optional(),
+  FROM_EMAIL: z.string().email().default('noreply@finplan.app'),
+  APP_URL: z.string().url().default('http://localhost:3000'),
 });
 
 export type Env = z.infer<typeof envSchema>;

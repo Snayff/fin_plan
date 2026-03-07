@@ -1,21 +1,41 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 GlobalRegistrator.register();
 
-import { mock, afterEach } from "bun:test";
+import { afterAll, afterEach, beforeAll } from "bun:test";
+import { server } from "./msw/server";
 
-// Clean up DOM between tests (bun test doesn't auto-cleanup like vitest/jest)
-afterEach(() => {
+// Start MSW before all tests; reset per-test handler overrides after each; close after all
+beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
+afterEach(async () => {
+  server.resetHandlers();
   document.body.innerHTML = "";
+  // Reset location.href so MSW can still resolve relative handler paths correctly
+  // (auth error handlers set window.location.href = '/login' which breaks URL resolution)
+  (globalThis as any).location = { href: "http://localhost:3001", pathname: "/" };
+  // Reset the singleton apiClient's CSRF cache so each test starts clean
+  const { apiClient } = await import("../lib/api");
+  (apiClient as any).csrfToken = null;
+  (apiClient as any).isRefreshing = false;
+  (apiClient as any).refreshPromise = null;
+  // Reset the auth store to unauthenticated state so tests don't leak auth state
+  const { useAuthStore } = await import("../stores/authStore");
+  useAuthStore.setState({
+    user: null,
+    accessToken: null,
+    isAuthenticated: false,
+    authStatus: "unauthenticated",
+    isLoading: false,
+    error: null,
+  });
 });
+afterAll(() => server.close());
 
-// Mock global fetch
-global.fetch = mock(() => {}) as any;
-
-// Set environment variable
+// Set environment variable so api.ts uses http://localhost:3001 as base URL
 process.env.VITE_API_URL = "http://localhost:3001";
 
-// Mock window.location
+// Mock window.location — href must match VITE_API_URL so MSW resolves relative
+// handler paths (e.g. '/api/accounts') against the same origin the API client uses.
 Object.defineProperty(window, "location", {
-  value: { href: "", pathname: "/" },
+  value: { href: "http://localhost:3001", pathname: "/" },
   writable: true,
 });

@@ -37,21 +37,17 @@ describe('BudgetForm', () => {
   it('auto-calculates end date when start date/period changes for non-custom periods', () => {
     renderWithProviders(<BudgetForm />);
 
-    const startDateInput = screen.getByLabelText(/start date/i) as HTMLInputElement;
-    const endDateInput = screen.getByLabelText(/end date/i) as HTMLInputElement;
-    const periodSelect = screen.getByLabelText(/period/i) as HTMLSelectElement;
+    fireEvent.change(screen.getByLabelText(/start date/i), { target: { value: '2026-01-01' } });
+    expect((screen.getByLabelText(/end date/i) as HTMLInputElement).value).toBe('2026-01-31');
 
-    fireEvent.change(startDateInput, { target: { value: '2026-01-01' } });
-    expect(endDateInput.value).toBe('2026-01-31');
+    fireEvent.change(screen.getByLabelText(/period/i), { target: { value: 'quarterly' } });
+    expect((screen.getByLabelText(/end date/i) as HTMLInputElement).value).toBe('2026-03-31');
 
-    fireEvent.change(periodSelect, { target: { value: 'quarterly' } });
-    expect(endDateInput.value).toBe('2026-03-31');
+    fireEvent.change(screen.getByLabelText(/period/i), { target: { value: 'annual' } });
+    expect((screen.getByLabelText(/end date/i) as HTMLInputElement).value).toBe('2026-12-31');
 
-    fireEvent.change(periodSelect, { target: { value: 'annual' } });
-    expect(endDateInput.value).toBe('2026-12-31');
-
-    fireEvent.change(periodSelect, { target: { value: 'custom' } });
-    expect(endDateInput.disabled).toBe(false);
+    fireEvent.change(screen.getByLabelText(/period/i), { target: { value: 'custom' } });
+    expect((screen.getByLabelText(/end date/i) as HTMLInputElement).disabled).toBe(false);
   });
 
   it('submits create payload and calls onSuccess in create mode', async () => {

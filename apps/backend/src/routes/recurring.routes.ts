@@ -14,8 +14,8 @@ export async function recurringRoutes(fastify: FastifyInstance) {
     '/recurring-rules',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
-      const rules = await recurringService.getRecurringRules(userId);
+      const householdId = request.householdId!;
+      const rules = await recurringService.getRecurringRules(householdId);
       return reply.send({ recurringRules: rules });
     }
   );
@@ -25,9 +25,9 @@ export async function recurringRoutes(fastify: FastifyInstance) {
     '/recurring-rules/:id',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { id } = request.params as { id: string };
-      const rule = await recurringService.getRecurringRuleById(id, userId);
+      const rule = await recurringService.getRecurringRuleById(id, householdId);
       return reply.send({ recurringRule: rule });
     }
   );
@@ -56,8 +56,9 @@ export async function recurringRoutes(fastify: FastifyInstance) {
     { preHandler: [authMiddleware] },
     async (request, reply) => {
       const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const validatedData = createRecurringRuleSchema.parse(request.body);
-      const rule = await recurringService.createRecurringRule(userId, validatedData);
+      const rule = await recurringService.createRecurringRule(householdId, validatedData);
 
       auditService.log({
         userId,
@@ -77,9 +78,10 @@ export async function recurringRoutes(fastify: FastifyInstance) {
     { preHandler: [authMiddleware] },
     async (request, reply) => {
       const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { id } = request.params as { id: string };
       const validatedData = updateRecurringRuleSchema.parse(request.body);
-      const rule = await recurringService.updateRecurringRule(id, userId, validatedData);
+      const rule = await recurringService.updateRecurringRule(id, householdId, validatedData);
 
       auditService.log({
         userId,
@@ -99,8 +101,9 @@ export async function recurringRoutes(fastify: FastifyInstance) {
     { preHandler: [authMiddleware] },
     async (request, reply) => {
       const userId = request.user!.userId;
+      const householdId = request.householdId!;
       const { id } = request.params as { id: string };
-      const result = await recurringService.deleteRecurringRule(id, userId);
+      const result = await recurringService.deleteRecurringRule(id, householdId);
 
       auditService.log({
         userId,
@@ -119,8 +122,8 @@ export async function recurringRoutes(fastify: FastifyInstance) {
     '/recurring-rules/materialize',
     { preHandler: [authMiddleware] },
     async (request, reply) => {
-      const userId = request.user!.userId;
-      const count = await recurringService.materializeAllToday(userId);
+      const householdId = request.householdId!;
+      const count = await recurringService.materializeAllToday(householdId);
       return reply.send({ message: `Materialized ${count} transactions`, count });
     }
   );

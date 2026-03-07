@@ -171,7 +171,7 @@ export async function generateTransactions(
 
   // Create transaction objects
   const transactions = filtered.map((date) => ({
-    userId: rule.userId,
+    householdId: rule.householdId,
     accountId: template.accountId,
     type: template.type,
     amount: template.amount,
@@ -260,7 +260,7 @@ export async function materializeHistoricalTransactions(
  * Generated on-demand, not persisted
  */
 export async function getForecastTransactions(
-  userId: string,
+  householdId: string,
   startDate?: Date,
   endDate?: Date
 ): Promise<any[]> {
@@ -277,7 +277,7 @@ export async function getForecastTransactions(
   // Get all active recurring rules for user
   const rules = await prisma.recurringRule.findMany({
     where: {
-      userId,
+      householdId,
       isActive: true,
     },
   });
@@ -503,7 +503,7 @@ export const recurringService = {
   /**
    * Create a new recurring rule and materialize historical transactions
    */
-  async createRecurringRule(userId: string, data: CreateRecurringRuleInput) {
+  async createRecurringRule(householdId: string, data: CreateRecurringRuleInput) {
     // Validate template
     if (!data.templateTransaction.accountId) {
       throw new ValidationError('Template transaction must have an accountId');
@@ -512,7 +512,7 @@ export const recurringService = {
     // Create recurring rule
     const rule = await prisma.recurringRule.create({
       data: {
-        userId,
+        householdId,
         frequency: data.frequency,
         interval: data.interval || 1,
         startDate: new Date(data.startDate),
@@ -533,9 +533,9 @@ export const recurringService = {
   /**
    * Get all recurring rules for a user
    */
-  async getRecurringRules(userId: string) {
+  async getRecurringRules(householdId: string) {
     return await prisma.recurringRule.findMany({
-      where: { userId },
+      where: { householdId },
       orderBy: { createdAt: 'desc' },
     });
   },
@@ -543,9 +543,9 @@ export const recurringService = {
   /**
    * Get a single recurring rule
    */
-  async getRecurringRuleById(ruleId: string, userId: string) {
+  async getRecurringRuleById(ruleId: string, householdId: string) {
     const rule = await prisma.recurringRule.findFirst({
-      where: { id: ruleId, userId },
+      where: { id: ruleId, householdId },
     });
 
     if (!rule) {
@@ -560,11 +560,11 @@ export const recurringService = {
    */
   async updateRecurringRule(
     ruleId: string,
-    userId: string,
+    householdId: string,
     data: UpdateRecurringRuleInput
   ) {
     const existing = await prisma.recurringRule.findFirst({
-      where: { id: ruleId, userId },
+      where: { id: ruleId, householdId },
     });
 
     if (!existing) {
@@ -609,9 +609,9 @@ export const recurringService = {
   /**
    * Delete a recurring rule (keeps generated transactions)
    */
-  async deleteRecurringRule(ruleId: string, userId: string) {
+  async deleteRecurringRule(ruleId: string, householdId: string) {
     const rule = await prisma.recurringRule.findFirst({
-      where: { id: ruleId, userId },
+      where: { id: ruleId, householdId },
     });
 
     if (!rule) {
@@ -652,9 +652,9 @@ export const recurringService = {
    * Materialize today's transactions for all active recurring rules
    * Should be called on first query of the day
    */
-  async materializeAllToday(userId: string): Promise<number> {
+  async materializeAllToday(householdId: string): Promise<number> {
     const rules = await prisma.recurringRule.findMany({
-      where: { userId, isActive: true },
+      where: { householdId, isActive: true },
     });
 
     let totalCreated = 0;

@@ -5,7 +5,7 @@ export const dashboardService = {
   /**
    * Get comprehensive dashboard summary
    */
-  async getDashboardSummary(userId: string, options: { startDate?: Date; endDate?: Date } = {}) {
+  async getDashboardSummary(householdId: string, options: { startDate?: Date; endDate?: Date } = {}) {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
@@ -15,7 +15,7 @@ export const dashboardService = {
 
     // Get all active accounts
     const accounts = await prisma.account.findMany({
-      where: { userId, isActive: true },
+      where: { householdId, isActive: true },
       select: {
         id: true,
         name: true,
@@ -37,7 +37,7 @@ export const dashboardService = {
     const [incomeAgg, expenseAgg] = await Promise.all([
       prisma.transaction.aggregate({
         where: {
-          userId,
+          householdId,
           type: 'income',
           date: {
             gte: startDate,
@@ -49,7 +49,7 @@ export const dashboardService = {
       }),
       prisma.transaction.aggregate({
         where: {
-          userId,
+          householdId,
           type: 'expense',
           date: {
             gte: startDate,
@@ -67,7 +67,7 @@ export const dashboardService = {
 
     // Get recent transactions
     const recentTransactions = await prisma.transaction.findMany({
-      where: { userId },
+      where: { householdId },
       orderBy: { date: 'desc' },
       take: 10,
       include: {
@@ -91,7 +91,7 @@ export const dashboardService = {
     const categorySpending = await prisma.transaction.groupBy({
       by: ['categoryId'],
       where: {
-        userId,
+        householdId,
         type: 'expense',
         date: {
           gte: startDate,
@@ -136,7 +136,7 @@ export const dashboardService = {
 
     // Get total asset values
     const assetAgg = await prisma.asset.aggregate({
-      where: { userId },
+      where: { householdId },
       _sum: { currentValue: true },
       _count: true,
     });
@@ -144,7 +144,7 @@ export const dashboardService = {
 
     // Get total liability balances
     const liabilityAgg = await prisma.liability.aggregate({
-      where: { userId },
+      where: { householdId },
       _sum: { currentBalance: true },
       _count: true,
     });
@@ -189,14 +189,14 @@ export const dashboardService = {
   /**
    * Get net worth trend (monthly data for charts)
    */
-  async getNetWorthTrend(userId: string, months: number = 6) {
+  async getNetWorthTrend(householdId: string, months: number = 6) {
     const now = new Date();
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - months);
 
     // Get all user accounts
     const accounts = await prisma.account.findMany({
-      where: { userId, isActive: true },
+      where: { householdId, isActive: true },
       select: { id: true },
     });
 
@@ -223,7 +223,7 @@ export const dashboardService = {
         // Get assets created before or on this date
         const assetAgg = await prisma.asset.aggregate({
           where: {
-            userId,
+            householdId,
             createdAt: { lte: date },
           },
           _sum: { currentValue: true },
@@ -233,7 +233,7 @@ export const dashboardService = {
         // Get liabilities created before or on this date
         const liabilityAgg = await prisma.liability.aggregate({
           where: {
-            userId,
+            householdId,
             createdAt: { lte: date },
           },
           _sum: { currentBalance: true },
@@ -261,7 +261,7 @@ export const dashboardService = {
   /**
    * Get income vs expense trend (monthly comparison)
    */
-  async getIncomeExpenseTrend(userId: string, months: number = 6) {
+  async getIncomeExpenseTrend(householdId: string, months: number = 6) {
     const endDate = new Date();
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - months);
@@ -269,7 +269,7 @@ export const dashboardService = {
     // Get transactions grouped by month and type
     const transactions = await prisma.transaction.findMany({
       where: {
-        userId,
+        householdId,
         date: {
           gte: startDate,
           lte: endDate,

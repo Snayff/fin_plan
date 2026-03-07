@@ -4,6 +4,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  activeHouseholdId: string | null;
   createdAt: string;
   updatedAt: string;
   preferences: {
@@ -47,6 +48,10 @@ export const authService = {
 
   async getCurrentUser(token: string): Promise<{ user: User }> {
     return apiClient.get<{ user: User }>('/api/auth/me', token);
+  },
+
+  async updateProfile(token: string, data: { name: string }): Promise<{ user: User }> {
+    return apiClient.patch<{ user: User }>('/api/auth/me', data, token);
   },
 
   async refreshToken(): Promise<{ accessToken: string }> {

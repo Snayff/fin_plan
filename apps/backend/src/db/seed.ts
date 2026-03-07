@@ -36,7 +36,7 @@ async function seedCategories() {
 
   // Get all existing system categories
   const existingCategories = await prisma.category.findMany({
-    where: { userId: null, parentCategoryId: null },
+    where: { householdId: null, parentCategoryId: null },
   });
 
   const desiredCategoryNames = desiredCategories.map(c => c.name);
@@ -59,7 +59,7 @@ async function seedCategories() {
   // Create or update categories
   for (const category of desiredCategories) {
     const existing = await prisma.category.findFirst({
-      where: { name: category.name, userId: null, parentCategoryId: null },
+      where: { name: category.name, householdId: null, parentCategoryId: null },
     });
 
     if (existing) {
@@ -80,7 +80,7 @@ async function seedCategories() {
       await prisma.category.create({
         data: {
           ...category,
-          userId: null, // System categories
+          householdId: null, // System categories
         },
       });
       logger.info(`Created category: ${category.name}`);

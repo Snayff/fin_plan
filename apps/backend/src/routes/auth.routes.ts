@@ -39,6 +39,10 @@ const refreshSchema = z.object({
   refreshToken: z.string().min(1).optional(),
 });
 
+const updateProfileSchema = z.object({
+  name: z.string().trim().min(1).max(100),
+});
+
 /**
  * Set refresh token as httpOnly cookie
  * Provides security by making token inaccessible to JavaScript
@@ -181,6 +185,17 @@ export async function authRoutes(fastify: FastifyInstance) {
       });
     }
 
+    return reply.status(200).send({ user });
+  });
+
+  /**
+   * PATCH /api/auth/me
+   * Update current user profile (name)
+   */
+  fastify.patch('/me', { preHandler: authMiddleware }, async (request, reply) => {
+    const userId = request.user!.userId;
+    const body = updateProfileSchema.parse(request.body);
+    const user = await authService.updateUserName(userId, body.name);
     return reply.status(200).send({ user });
   });
 

@@ -45,6 +45,7 @@ beforeEach(() => {
       throw new AuthenticationError("No authorization token provided");
     }
     request.user = { userId: "user-1", email: "test@test.com" };
+    request.householdId = "household-1";
   });
 });
 
@@ -68,7 +69,7 @@ describe("liability routes", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(liabilityService.getUserLiabilitiesWithForecast).toHaveBeenCalledWith("user-1");
+    expect(liabilityService.getUserLiabilitiesWithForecast).toHaveBeenCalledWith("household-1");
   });
 
   it("GET /api/liabilities/:id/projection returns projection", async () => {

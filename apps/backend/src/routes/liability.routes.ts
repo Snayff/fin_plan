@@ -9,71 +9,71 @@ import {
 export async function liabilityRoutes(fastify: FastifyInstance) {
   // Get all liabilities for current user with optional enhanced data
   fastify.get('/liabilities', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { enhanced } = request.query as { enhanced?: string };
 
     // If enhanced=true, return with forecast data
     if (enhanced === 'true') {
-      const liabilities = await liabilityService.getUserLiabilitiesWithForecast(userId);
+      const liabilities = await liabilityService.getUserLiabilitiesWithForecast(householdId);
       return reply.send({ liabilities });
     }
 
     // Otherwise return basic data
-    const liabilities = await liabilityService.getUserLiabilities(userId);
+    const liabilities = await liabilityService.getUserLiabilities(householdId);
     return reply.send({ liabilities });
   });
 
   // Get single liability by ID
   fastify.get('/liabilities/:id', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { id } = request.params as { id: string };
 
-    const liability = await liabilityService.getLiabilityById(id, userId);
+    const liability = await liabilityService.getLiabilityById(id, householdId);
     return reply.send({ liability });
   });
 
   // Get projection for a liability
   fastify.get('/liabilities/:id/projection', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { id } = request.params as { id: string };
 
-    const projection = await liabilityService.calculateLiabilityProjection(id, userId);
+    const projection = await liabilityService.calculateLiabilityProjection(id, householdId);
     return reply.send({ projection });
   });
 
   // Create new liability
   fastify.post('/liabilities', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const validatedData = createLiabilitySchema.parse(request.body);
 
-    const liability = await liabilityService.createLiability(userId, validatedData);
+    const liability = await liabilityService.createLiability(householdId, validatedData);
     return reply.status(201).send({ liability });
   });
 
   // Update liability properties
   fastify.put('/liabilities/:id', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { id } = request.params as { id: string };
     const validatedData = updateLiabilitySchema.parse(request.body);
 
-    const liability = await liabilityService.updateLiability(id, userId, validatedData);
+    const liability = await liabilityService.updateLiability(id, householdId, validatedData);
     return reply.send({ liability });
   });
 
 
   // Delete liability
   fastify.delete('/liabilities/:id', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
+    const householdId = request.householdId!;
     const { id } = request.params as { id: string };
 
-    const result = await liabilityService.deleteLiability(id, userId);
+    const result = await liabilityService.deleteLiability(id, householdId);
     return reply.send(result);
   });
 
   // Get liability summary (analytics)
   fastify.get('/liabilities/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const userId = request.user!.userId;
-    const summary = await liabilityService.getLiabilitySummary(userId);
+    const householdId = request.householdId!;
+    const summary = await liabilityService.getLiabilitySummary(householdId);
     return reply.send(summary);
   });
 }

@@ -43,6 +43,7 @@ beforeEach(() => {
       throw new AuthenticationError("No authorization token provided");
     }
     request.user = { userId: "user-1", email: "test@test.com" };
+    request.householdId = "household-1";
   });
 });
 
@@ -139,7 +140,7 @@ describe("POST /api/accounts", () => {
     });
 
     expect(accountService.createAccount).toHaveBeenCalledWith(
-      "user-1",
+      "household-1",
       expect.objectContaining({
         name: "Savings",
         type: "savings",
