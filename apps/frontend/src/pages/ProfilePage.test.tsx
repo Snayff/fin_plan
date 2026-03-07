@@ -70,4 +70,38 @@ describe('ProfilePage — Household tab layout', () => {
     const householdIdx = allNodes.indexOf(householdCardTitle!);
     expect(createIdx).toBeLessThan(householdIdx);
   });
+
+  it('shows the household name in an always-visible input field', async () => {
+    renderWithProviders(<ProfilePage />);
+    await userEvent.click(screen.getByRole('tab', { name: /household/i }));
+
+    await waitFor(() => {
+      const input = screen.getByLabelText(/household name/i) as HTMLInputElement;
+      expect(input.value).toBe('My Household');
+    });
+  });
+
+  it('has no "Rename" button on the Household tab', async () => {
+    renderWithProviders(<ProfilePage />);
+    await userEvent.click(screen.getByRole('tab', { name: /household/i }));
+
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /rename/i })).toBeNull();
+    });
+  });
+
+  it('disables the Save button on the Household card when name is unchanged', async () => {
+    renderWithProviders(<ProfilePage />);
+    await userEvent.click(screen.getByRole('tab', { name: /household/i }));
+
+    await waitFor(() => {
+      const input = screen.getByLabelText(/household name/i) as HTMLInputElement;
+      expect(input.value).toBe('My Household');
+    });
+
+    // Find the Save button closest to the household name input
+    const saveButtons = screen.getAllByRole('button', { name: /^save$/i });
+    // The first Save button in DOM order belongs to the Household card (Create New Household is above it but has no Save button)
+    expect(saveButtons[0].hasAttribute('disabled')).toBe(true);
+  });
 });

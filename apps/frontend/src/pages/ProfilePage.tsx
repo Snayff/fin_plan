@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/auth.service';
@@ -22,7 +22,6 @@ export default function ProfilePage() {
 
   // Household tab — rename state
   const [renameValue, setRenameValue] = useState('');
-  const [isRenaming, setIsRenaming] = useState(false);
 
   // Household tab — invite state
   const [inviteEmail, setInviteEmail] = useState('');
@@ -50,6 +49,10 @@ export default function ProfilePage() {
   const isOwner = currentMembership?.role === 'owner';
   const household = detailsData?.household;
 
+  useEffect(() => {
+    if (household?.name) setRenameValue(household.name);
+  }, [household?.name]);
+
   // ── Mutations ─────────────────────────────────────────────────────────────
 
   const updateNameMutation = useMutation({
@@ -72,8 +75,6 @@ export default function ProfilePage() {
       queryClient.invalidateQueries({ queryKey: ['household-details', activeHouseholdId] });
       queryClient.invalidateQueries({ queryKey: ['households'] });
       showSuccess('Household renamed');
-      setIsRenaming(false);
-      setRenameValue('');
     },
     onError: (err: Error) => showError(err.message || 'Failed to rename household'),
   });
@@ -233,43 +234,31 @@ export default function ProfilePage() {
             <CardContent className="pt-0">
               {isLoadingDetails ? (
                 <Skeleton className="h-8 w-48" />
-              ) : isRenaming ? (
-                <form onSubmit={handleRenameSubmit} className="flex items-center gap-3">
-                  <Input
-                    value={renameValue}
-                    onChange={(e) => setRenameValue(e.target.value)}
-                    className="max-w-sm"
-                    autoFocus
-                    placeholder="Household name"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={renameMutation.isPending || !renameValue.trim()}
-                  >
-                    {renameMutation.isPending ? 'Saving...' : 'Save'}
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => { setIsRenaming(false); setRenameValue(''); }}
-                    disabled={renameMutation.isPending}
-                  >
-                    Cancel
-                  </Button>
-                </form>
               ) : (
-                <div className="flex items-center gap-4">
-                  <span className="text-lg font-medium text-foreground">{household?.name}</span>
+                <form onSubmit={handleRenameSubmit} className="flex items-end gap-3">
+                  <div className="space-y-1 flex-1 max-w-sm">
+                    <Label htmlFor="household-name">Household name</Label>
+                    <Input
+                      id="household-name"
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      placeholder="Household name"
+                      readOnly={!isOwner}
+                    />
+                  </div>
                   {isOwner && (
                     <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => { setRenameValue(household?.name ?? ''); setIsRenaming(true); }}
+                      type="submit"
+                      disabled={
+                        renameMutation.isPending ||
+                        !renameValue.trim() ||
+                        renameValue.trim() === household?.name
+                      }
                     >
-                      Rename
+                      {renameMutation.isPending ? 'Saving...' : 'Save'}
                     </Button>
                   )}
-                </div>
+                </form>
               )}
             </CardContent>
           </Card>
