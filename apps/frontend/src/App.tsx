@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import React, { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -9,6 +9,8 @@ import LoginPage from "./pages/auth/LoginPage";
 import RegisterPage from "./pages/auth/RegisterPage";
 import AcceptInvitePage from "./pages/auth/AcceptInvitePage";
 import DashboardPage from "./pages/DashboardPage";
+import Dashboard1Page from "./pages/Dashboard1Page";
+import Dashboard2Page from "./pages/Dashboard2Page";
 import ProfilePage from "./pages/ProfilePage";
 import AccountsPage from "./pages/AccountsPage";
 import TransactionsPage from "./pages/TransactionsPage";
@@ -19,40 +21,60 @@ import BudgetsPage from "./pages/BudgetsPage";
 import BudgetDetailPage from "./pages/BudgetDetailPage";
 import Layout from "./components/layout/Layout";
 import DesignPage from "./pages/DesignPage";
+import Dashboard3Page from "./pages/Dashboard3Page";
+import Dashboard4Page from "./pages/Dashboard4Page";
+import Dashboard5Page from "./pages/Dashboard5Page";
+import Dashboard6Page from "./pages/Dashboard6Page";
 
 export function ProtectedAppRoutes() {
   return (
     <Layout>
       <Routes>
-        <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/accounts" element={<AccountsPage />} />
-        <Route path="/transactions" element={<TransactionsPage />} />
-        <Route path="/assets" element={<AssetsPage />} />
-        <Route path="/liabilities" element={<LiabilitiesPage />} />
-        <Route path="/budget" element={<BudgetsPage />} />
-        <Route path="/budget/:id" element={<BudgetDetailPage />} />
-        <Route path="/goals" element={<GoalsPage />} />
-        <Route path="/settings/household" element={<Navigate to="/profile" replace />} />
-        <Route path="/profile" element={<ProfilePage />} />
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="dashboard1" element={<Dashboard1Page />} />
+        <Route path="dashboard2" element={<Dashboard2Page />} />
+        <Route path="dashboard3" element={<Dashboard3Page />} />
+        <Route path="dashboard4" element={<Dashboard4Page />} />
+        <Route path="dashboard5" element={<Dashboard5Page />} />
+        <Route path="dashboard6" element={<Dashboard6Page />} />
+        <Route path="dashboard" element={<DashboardPage />} />
+        <Route path="accounts" element={<AccountsPage />} />
+        <Route path="transactions" element={<TransactionsPage />} />
+        <Route path="assets" element={<AssetsPage />} />
+        <Route path="liabilities" element={<LiabilitiesPage />} />
+        <Route path="budget" element={<BudgetsPage />} />
+        <Route path="budget/:id" element={<BudgetDetailPage />} />
+        <Route path="goals" element={<GoalsPage />} />
+        <Route path="settings/household" element={<Navigate to="/profile" replace />} />
+        <Route path="profile" element={<ProfilePage />} />
+        <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     </Layout>
   );
 }
 
+const DASHBOARD_PREVIEWS: Record<string, React.ComponentType> = {
+  '/dashboard1': Dashboard1Page,
+  '/dashboard2': Dashboard2Page,
+  '/dashboard3': Dashboard3Page,
+  '/dashboard4': Dashboard4Page,
+  '/dashboard5': Dashboard5Page,
+  '/dashboard6': Dashboard6Page,
+};
+
 function App() {
   const authStatus = useAuthStore((state) => state.authStatus);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
   const isDesignPage = import.meta.env.DEV && window.location.pathname.startsWith('/design');
+  const isDashboardPreview = import.meta.env.DEV && window.location.pathname in DASHBOARD_PREVIEWS;
   const isAuthenticated = authStatus === 'authenticated';
 
   useEffect(() => {
-    if (isDesignPage) {
+    if (isDesignPage || isDashboardPreview) {
       return;
     }
     void initializeAuth();
-  }, [initializeAuth, isDesignPage]);
+  }, [initializeAuth, isDesignPage, isDashboardPreview]);
 
   // Design reference: bypass React Router v7 entirely for this dev-only page
   if (isDesignPage) {
@@ -60,6 +82,22 @@ function App() {
       <QueryClientProvider client={queryClient}>
         <Toaster />
         <DesignPage />
+      </QueryClientProvider>
+    );
+  }
+
+  // Dashboard design previews: same bypass pattern, but wrapped in BrowserRouter
+  // so Link / useLocation work inside the pages.
+  if (isDashboardPreview) {
+    const Page = DASHBOARD_PREVIEWS[window.location.pathname]!;
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Toaster />
+        <BrowserRouter>
+          <Routes>
+            <Route path="*" element={<Page />} />
+          </Routes>
+        </BrowserRouter>
       </QueryClientProvider>
     );
   }
