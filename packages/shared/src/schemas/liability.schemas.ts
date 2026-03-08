@@ -41,6 +41,7 @@ export const createLiabilitySchema = z
       .string()
       .or(z.date())
       .transform((val) => (typeof val === 'string' ? val : val.toISOString())),
+    linkedAssetId: z.string().uuid().nullable().optional(),
     metadata: z
       .object({
         lender: z.string().optional(),
@@ -72,6 +73,7 @@ export const updateLiabilitySchema = z.object({
     .or(z.date())
     .optional()
     .transform((val) => (val ? (typeof val === 'string' ? val : val.toISOString()) : undefined)),
+  linkedAssetId: z.string().uuid().nullable().optional(),
   metadata: z.record(z.any()).optional(),
 });
 

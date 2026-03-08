@@ -211,6 +211,16 @@ export default function AssetsPage() {
                   </p>
                 </div>
 
+                {asset.linkedLiability && (
+                  <div className="mb-4 rounded-md border border-border bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">Linked liability</p>
+                    <p className="text-sm font-medium text-foreground">{asset.linkedLiability.name}</p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {asset.linkedLiability.type.replace(/_/g, ' ')} · {formatCurrency(asset.linkedLiability.currentBalance)}
+                    </p>
+                  </div>
+                )}
+
                 {/* Value History Chart */}
                 {asset.valueHistory && asset.valueHistory.length > 0 && (
                   <div className="mb-4 border border-border rounded-md overflow-hidden">

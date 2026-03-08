@@ -48,6 +48,14 @@ describe('AssetsPage (MSW)', () => {
     });
   });
 
+  it('renders linked liability metadata on the asset card', async () => {
+    renderWithProviders(<AssetsPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Linked liability')).toBeTruthy();
+      expect(screen.getByText('Test Mortgage')).toBeTruthy();
+    });
+  });
+
   it('shows empty state with Create Asset button when no assets exist', async () => {
     server.use(
       http.get('/api/assets', () =>

@@ -84,7 +84,7 @@ export function buildAsset(overrides: Record<string, any> = {}) {
   const id = nextId();
   return {
     id,
-    userId: "user-1",
+    householdId: "household-1",
     name: "Test Property",
     type: "housing" as const,
     currentValue: 250000,
@@ -93,6 +93,7 @@ export function buildAsset(overrides: Record<string, any> = {}) {
     expectedGrowthRate: 3.0,
     liquidityType: "illiquid" as const,
     metadata: {},
+    linkedLiability: null,
     createdAt: new Date("2025-01-01T00:00:00Z"),
     updatedAt: new Date("2025-01-01T00:00:00Z"),
     ...overrides,
@@ -103,7 +104,8 @@ export function buildLiability(overrides: Record<string, any> = {}) {
   const id = nextId();
   return {
     id,
-    userId: "user-1",
+    householdId: "household-1",
+    linkedAssetId: null,
     name: "Test Mortgage",
     type: "mortgage" as const,
     currentBalance: 200000,
@@ -112,6 +114,7 @@ export function buildLiability(overrides: Record<string, any> = {}) {
     openDate: new Date("2020-01-01T00:00:00Z"),
     termEndDate: new Date("2055-01-01T00:00:00Z"),
     metadata: {},
+    linkedAsset: null,
     createdAt: new Date("2025-01-01T00:00:00Z"),
     updatedAt: new Date("2025-01-01T00:00:00Z"),
     ...overrides,
