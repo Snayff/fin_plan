@@ -32,6 +32,8 @@ import Dashboard10Page from "./pages/Dashboard10Page";
 import Dashboard11Page from "./pages/Dashboard11Page";
 import Dashboard12Page from "./pages/Dashboard12Page";
 import Dashboard13Page from "./pages/Dashboard13Page";
+import Dashboard14Page from "./pages/Dashboard14Page";
+import Dashboard15Page from "./pages/Dashboard15Page";
 
 export function ProtectedAppRoutes() {
   return (
@@ -50,6 +52,8 @@ export function ProtectedAppRoutes() {
         <Route path="dashboard11" element={<Dashboard11Page />} />
         <Route path="dashboard12" element={<Dashboard12Page />} />
         <Route path="dashboard13" element={<Dashboard13Page />} />
+        <Route path="dashboard14" element={<Dashboard14Page />} />
+        <Route path="dashboard15" element={<Dashboard15Page />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
@@ -81,6 +85,8 @@ const DASHBOARD_PREVIEWS: Record<string, React.ComponentType> = {
   '/dashboard11': Dashboard11Page,
   '/dashboard12': Dashboard12Page,
   '/dashboard13': Dashboard13Page,
+  '/dashboard14': Dashboard14Page,
+  '/dashboard15': Dashboard15Page,
 };
 
 function App() {
