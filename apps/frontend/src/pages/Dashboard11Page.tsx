@@ -271,7 +271,8 @@ function Skeleton({ height = 60, width = '100%' }: { height?: number; width?: st
 
 // ── Custom recharts tooltip ───────────────────────────────────────────────────
 function GoldTooltip({ active, payload }: { active?: boolean; payload?: Array<{ value: number }> }) {
-  if (!active || !payload?.length) return null;
+  const firstPoint = payload?.[0];
+  if (!active || !firstPoint) return null;
   return (
     <div
       style={{
@@ -284,7 +285,7 @@ function GoldTooltip({ active, payload }: { active?: boolean; payload?: Array<{ 
         letterSpacing: '0.1em',
       }}
     >
-      {formatCurrency(payload[0].value)}
+      {formatCurrency(firstPoint.value)}
     </div>
   );
 }

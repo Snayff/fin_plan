@@ -90,7 +90,8 @@ function BloomTooltip({ active, payload, label }: {
   payload?: Array<{ value: number }>;
   label?: string;
 }) {
-  if (!active || !payload?.length) return null;
+  const firstPoint = payload?.[0];
+  if (!active || !firstPoint) return null;
   return (
     <div
       style={{
@@ -105,7 +106,7 @@ function BloomTooltip({ active, payload, label }: {
       }}
     >
       <div style={{ color: C.textMuted, fontSize: 11, marginBottom: 4 }}>{label}</div>
-      <div style={{ fontWeight: 700, color: C.forest }}>{formatCurrency(payload[0].value)}</div>
+      <div style={{ fontWeight: 700, color: C.forest }}>{formatCurrency(firstPoint.value)}</div>
     </div>
   );
 }
@@ -128,7 +129,7 @@ function SkeletonBlock({ height, borderRadius = 24 }: { height: number; borderRa
 // ── Main component ────────────────────────────────────────────────────────────
 export default function Dashboard10Page() {
   const location = useLocation();
-  const { user, logout, authStatus } = useAuthStore();
+  const { user, authStatus } = useAuthStore();
 
   // Inject fonts + blob keyframes once
   useEffect(() => {

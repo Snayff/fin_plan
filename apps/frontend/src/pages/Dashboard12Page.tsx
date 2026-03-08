@@ -92,7 +92,8 @@ function Shimmer({ width = '100%', height = 16, radius = 8 }: { width?: string |
 
 // ── Custom tooltip ────────────────────────────────────────────────────────────
 function AetherTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) {
-  if (!active || !payload?.length) return null;
+  const firstPoint = payload?.[0];
+  if (!active || !firstPoint) return null;
   return (
     <div
       style={{
@@ -107,7 +108,7 @@ function AetherTooltip({ active, payload, label }: { active?: boolean; payload?:
     >
       <div style={{ color: P.textMuted, marginBottom: 2 }}>{label}</div>
       <div style={{ color: P.violetLight, fontFamily: SORA, fontWeight: 600 }}>
-        {formatCurrency(payload[0].value)}
+        {formatCurrency(firstPoint.value)}
       </div>
     </div>
   );
@@ -115,7 +116,8 @@ function AetherTooltip({ active, payload, label }: { active?: boolean; payload?:
 
 // ── Pie tooltip ───────────────────────────────────────────────────────────────
 function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number }> }) {
-  if (!active || !payload?.length) return null;
+  const firstPoint = payload?.[0];
+  if (!active || !firstPoint) return null;
   return (
     <div
       style={{
@@ -128,9 +130,9 @@ function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ n
         pointerEvents: 'none',
       }}
     >
-      <div style={{ color: P.textMuted, marginBottom: 2 }}>{payload[0].name}</div>
+      <div style={{ color: P.textMuted, marginBottom: 2 }}>{firstPoint.name}</div>
       <div style={{ color: P.teal, fontFamily: SORA, fontWeight: 600 }}>
-        {formatCurrency(payload[0].value)}
+        {formatCurrency(firstPoint.value)}
       </div>
     </div>
   );
@@ -887,9 +889,10 @@ export default function Dashboard12Page() {
                   const isIncome  = tx.type === 'income';
                   const dotColor  = isIncome ? P.teal : P.rose;
                   const amtColor  = isIncome ? P.teal : P.rose;
-                  const desc      = tx.description.length > 25
-                    ? `${tx.description.slice(0, 25)}…`
-                    : tx.description;
+                  const descSource = tx.description ?? tx.name ?? 'Transaction';
+                  const desc      = descSource.length > 25
+                    ? `${descSource.slice(0, 25)}…`
+                    : descSource;
 
                   return (
                     <div

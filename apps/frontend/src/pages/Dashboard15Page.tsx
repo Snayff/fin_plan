@@ -17,8 +17,6 @@ import {
   XAxis,
   Tooltip,
   ResponsiveContainer,
-  LinearGradient,
-  defs,
 } from 'recharts';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency } from '../lib/utils';
@@ -128,8 +126,8 @@ export default function Dashboard15Page() {
   const userInitials = (() => {
     const name = user?.name || user?.email || '';
     if (!name) return 'FP';
-    const parts = name.split(' ');
-    if (parts.length >= 2) return (parts[0][0] + parts[1][0]).toUpperCase();
+    const parts = name.split(' ').filter(Boolean);
+    if (parts.length >= 2) return `${parts[0]?.[0] ?? ''}${parts[1]?.[0] ?? ''}`.toUpperCase();
     return name.charAt(0).toUpperCase();
   })();
 
@@ -533,10 +531,10 @@ export default function Dashboard15Page() {
                 <ResponsiveContainer width="100%" height={200}>
                   <AreaChart data={chartData} margin={{ top: 8, right: 0, left: 0, bottom: 0 }}>
                     <defs>
-                      <LinearGradient id="sovereignGrad" x1="0" y1="0" x2="0" y2="1">
+                      <linearGradient id="sovereignGrad" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="0%" stopColor="#D4AF37" stopOpacity={0.3} />
                         <stop offset="100%" stopColor="#D4AF37" stopOpacity={0} />
-                      </LinearGradient>
+                      </linearGradient>
                     </defs>
                     <XAxis
                       dataKey="month"

@@ -17,9 +17,6 @@ import {
   XAxis,
   Tooltip,
   ResponsiveContainer,
-  defs,
-  linearGradient,
-  stop,
 } from 'recharts';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency } from '../lib/utils';
@@ -155,7 +152,8 @@ interface TooltipProps {
 }
 
 function CyberTooltip({ active, payload, label }: TooltipProps) {
-  if (!active || !payload || !payload.length) return null;
+  const firstPoint = payload?.[0];
+  if (!active || !firstPoint) return null;
   return (
     <div
       style={{
@@ -169,7 +167,7 @@ function CyberTooltip({ active, payload, label }: TooltipProps) {
       }}
     >
       <div style={{ color: C.textMuted, fontSize: '9px', marginBottom: 4 }}>{label}</div>
-      <div>{formatCurrency(payload[0].value)}</div>
+      <div>{formatCurrency(firstPoint.value)}</div>
     </div>
   );
 }

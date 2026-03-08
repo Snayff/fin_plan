@@ -73,7 +73,8 @@ function ChartTooltip({
   active?: boolean;
   payload?: { value: number }[];
 }) {
-  if (!active || !payload?.length) return null;
+  const firstPoint = payload?.[0];
+  if (!active || !firstPoint) return null;
   return (
     <div
       style={{
@@ -87,7 +88,7 @@ function ChartTooltip({
         color: C.primary,
       }}
     >
-      {formatCurrency(payload[0].value)}
+      {formatCurrency(firstPoint.value)}
     </div>
   );
 }

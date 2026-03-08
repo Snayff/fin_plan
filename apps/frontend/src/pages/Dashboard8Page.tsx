@@ -124,7 +124,7 @@ export default function Dashboard8Page() {
   const totalAssets     = summary?.totalAssets     ?? 0;
   const totalLiabilities = summary?.totalLiabilities ?? 0;
   const monthlyIncome   = summary?.monthlyIncome   ?? 0;
-  const monthlyExpenses = summary?.monthlyExpenses ?? summary?.monthlyExpense ?? 0;
+  const monthlyExpenses = summary?.monthlyExpense ?? 0;
   const netCashFlow     = monthlyIncome - monthlyExpenses;
   const isPositive      = netWorth >= 0;
 
@@ -802,7 +802,7 @@ export default function Dashboard8Page() {
                   >
                     {tx.description || 'Unnamed transaction'}
                   </span>
-                  {(tx.categoryName || tx.category?.name) && (
+                  {tx.category?.name && (
                     <span
                       style={{
                         fontFamily:    FONT_MONO,
@@ -816,7 +816,7 @@ export default function Dashboard8Page() {
                         flexShrink:    0,
                       }}
                     >
-                      {tx.categoryName || tx.category?.name}
+                      {tx.category.name}
                     </span>
                   )}
                 </div>
