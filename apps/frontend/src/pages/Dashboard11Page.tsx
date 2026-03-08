@@ -536,7 +536,7 @@ export default function Dashboard11Page() {
 
           <CentreLine />
 
-          {isLoading ? (
+          {isLoading || isBootstrappingAuth ? (
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
               <Skeleton height={80} width={360} />
             </div>
@@ -583,7 +583,7 @@ export default function Dashboard11Page() {
         <GoldDivider />
 
         {/* ── SECTION 2: STATS ROW ── */}
-        {isLoading ? (
+        {isLoading || isBootstrappingAuth ? (
           <div style={{ display: 'flex', gap: 0, marginBottom: 8 }}>
             <Skeleton height={110} />
           </div>
@@ -834,7 +834,7 @@ export default function Dashboard11Page() {
             ))}
           </div>
 
-          {isLoading ? (
+          {isLoading || isBootstrappingAuth ? (
             <div style={{ padding: '16px 0' }}>
               {[1, 2, 3].map((n) => <Skeleton key={n} height={44} />)}
             </div>
@@ -953,7 +953,7 @@ export default function Dashboard11Page() {
             ))}
           </div>
 
-          {isLoading ? (
+          {isLoading || isBootstrappingAuth ? (
             <div style={{ padding: '16px 0' }}>
               {[1, 2, 3, 4].map((n) => <Skeleton key={n} height={48} />)}
             </div>
