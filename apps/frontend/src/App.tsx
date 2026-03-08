@@ -73,11 +73,11 @@ function App() {
   const isAuthenticated = authStatus === 'authenticated';
 
   useEffect(() => {
-    if (isDesignPage || isDashboardPreview) {
+    if (isDesignPage) {
       return;
     }
     void initializeAuth();
-  }, [initializeAuth, isDesignPage, isDashboardPreview]);
+  }, [initializeAuth, isDesignPage]);
 
   // Design reference: bypass React Router v7 entirely for this dev-only page
   if (isDesignPage) {
@@ -89,8 +89,18 @@ function App() {
     );
   }
 
-  // Dashboard design previews: same bypass pattern, but wrapped in BrowserRouter
-  // so Link / useLocation work inside the pages.
+  if (authStatus === 'initializing') {
+    return (
+      <QueryClientProvider client={queryClient}>
+        <Toaster />
+        <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
+          Restoring secure session...
+        </div>
+      </QueryClientProvider>
+    );
+  }
+
+  // Dashboard design previews: render after auth resolves so API calls have a token.
   if (isDashboardPreview) {
     const Page = DASHBOARD_PREVIEWS[window.location.pathname]!;
     return (
@@ -101,17 +111,6 @@ function App() {
             <Route path="*" element={<Page />} />
           </Routes>
         </BrowserRouter>
-      </QueryClientProvider>
-    );
-  }
-
-  if (authStatus === 'initializing') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <Toaster />
-        <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
-          Restoring secure session...
-        </div>
       </QueryClientProvider>
     );
   }
