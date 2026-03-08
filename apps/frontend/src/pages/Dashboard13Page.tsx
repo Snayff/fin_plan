@@ -20,6 +20,7 @@ import {
 } from 'recharts';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency } from '../lib/utils';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 
 const C = {
   bg: '#07000F',
@@ -174,6 +175,7 @@ function CyberTooltip({ active, payload, label }: TooltipProps) {
 
 export default function Dashboard13Page() {
   const location = useLocation();
+  const { queriesEnabled, isBootstrappingAuth } = useDashboardPreviewAuth();
 
   useEffect(() => {
     const fontId = 'dashboard13-fonts';
@@ -216,11 +218,13 @@ export default function Dashboard13Page() {
   const { data: summaryData, isLoading: summaryLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: trendData, isLoading: trendLoading } = useQuery({
     queryKey: ['dashboard-net-worth-trend'],
     queryFn: () => dashboardService.getNetWorthTrend(6),
+    enabled: queriesEnabled,
   });
 
   const summary = summaryData?.summary;

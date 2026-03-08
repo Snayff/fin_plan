@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency, getCurrencySymbol } from '../lib/utils';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 import { useAuthStore } from '../stores/authStore';
 import IncomeExpenseChart from '../components/charts/IncomeExpenseChart';
 import CategoryPieChart from '../components/charts/CategoryPieChart';
@@ -69,6 +70,7 @@ function getGreeting() {
 export default function Dashboard2Page() {
   const location = useLocation();
   const { user } = useAuthStore();
+  const { queriesEnabled } = useDashboardPreviewAuth();
 
   useEffect(() => {
     const id = 'dashboard2-fonts';
@@ -85,11 +87,13 @@ export default function Dashboard2Page() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: incomeExpenseTrendResponse } = useQuery({
     queryKey: ['dashboard-income-expense-trend', 6],
     queryFn: () => dashboardService.getIncomeExpenseTrend(6),
+    enabled: queriesEnabled,
   });
 
   const summary = data?.summary;

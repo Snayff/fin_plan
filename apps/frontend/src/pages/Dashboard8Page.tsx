@@ -21,6 +21,7 @@ import {
 } from 'recharts';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency, getCurrencySymbol } from '../lib/utils';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 
 // ── Palette ──────────────────────────────────────────────────────────────────
 const C = {
@@ -91,6 +92,7 @@ const SECTION_BORDER = `4px solid ${C.black}`;
 
 export default function Dashboard8Page() {
   const location = useLocation();
+  const { queriesEnabled } = useDashboardPreviewAuth();
 
   // ── Google Fonts ─────────────────────────────────────────────────────────
   useEffect(() => {
@@ -109,11 +111,13 @@ export default function Dashboard8Page() {
   const { data: summaryData } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn:  () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: trendData } = useQuery({
     queryKey: ['dashboard-net-worth-trend'],
     queryFn:  () => dashboardService.getNetWorthTrend(6),
+    enabled: queriesEnabled,
   });
 
   const summary             = summaryData?.summary;

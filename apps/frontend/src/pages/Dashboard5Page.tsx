@@ -15,6 +15,7 @@ import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency, getCurrencySymbol } from '../lib/utils';
 import IncomeExpenseChart from '../components/charts/IncomeExpenseChart';
 import CategoryPieChart from '../components/charts/CategoryPieChart';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 import { useAuthStore } from '../stores/authStore';
 
 // ─── Color tokens ──────────────────────────────────────────────────────────────
@@ -83,6 +84,7 @@ export default function Dashboard5Page() {
   // Auth
   const user   = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
+  const { queriesEnabled } = useDashboardPreviewAuth();
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
@@ -91,11 +93,13 @@ export default function Dashboard5Page() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn:  () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: incomeExpenseTrendResponse } = useQuery({
     queryKey: ['dashboard-income-expense-trend', 6],
     queryFn:  () => dashboardService.getIncomeExpenseTrend(6),
+    enabled: queriesEnabled,
   });
 
   // Derived values

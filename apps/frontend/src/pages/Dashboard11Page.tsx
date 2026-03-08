@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency, getCurrencySymbol } from '../lib/utils';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 import { useAuthStore } from '../stores/authStore';
 
 // ── Palette ──────────────────────────────────────────────────────────────────
@@ -312,6 +313,7 @@ function accountTypeLabel(type: string) {
 export default function Dashboard11Page() {
   const location = useLocation();
   const { user } = useAuthStore();
+  const { queriesEnabled, isBootstrappingAuth } = useDashboardPreviewAuth();
 
   // Inject fonts + keyframe animation
   useEffect(() => {
@@ -343,11 +345,13 @@ export default function Dashboard11Page() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn:  () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: trendData } = useQuery({
     queryKey: ['dashboard-net-worth-trend'],
     queryFn:  () => dashboardService.getNetWorthTrend(6),
+    enabled: queriesEnabled,
   });
 
   const summary            = data?.summary;

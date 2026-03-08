@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency, getCurrencySymbol } from '../lib/utils';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 import { format } from 'date-fns';
 import NetWorthChart from '../components/charts/NetWorthChart';
 import IncomeExpenseChart from '../components/charts/IncomeExpenseChart';
@@ -170,6 +171,7 @@ function TickerContent({
 
 // ─── Main page ────────────────────────────────────────────────────────────────
 export default function Dashboard4Page() {
+  const { queriesEnabled } = useDashboardPreviewAuth();
   // Load fonts
   useEffect(() => {
     const id = 'dashboard4-fonts';
@@ -186,16 +188,19 @@ export default function Dashboard4Page() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: netWorthTrendResponse } = useQuery({
     queryKey: ['dashboard-net-worth-trend', 6],
     queryFn: () => dashboardService.getNetWorthTrend(6),
+    enabled: queriesEnabled,
   });
 
   const { data: incomeExpenseTrendResponse } = useQuery({
     queryKey: ['dashboard-income-expense-trend', 6],
     queryFn: () => dashboardService.getIncomeExpenseTrend(6),
+    enabled: queriesEnabled,
   });
 
   const summary        = data?.summary;

@@ -16,6 +16,7 @@ import { formatCurrency, getCurrencySymbol } from '../lib/utils';
 import NetWorthChart from '../components/charts/NetWorthChart';
 import IncomeExpenseChart from '../components/charts/IncomeExpenseChart';
 import CategoryPieChart from '../components/charts/CategoryPieChart';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 import { useAuthStore } from '../stores/authStore';
 
 // ─── Color tokens ──────────────────────────────────────────────────────────────
@@ -74,6 +75,7 @@ export default function Dashboard6Page() {
   // Auth
   const user    = useAuthStore((s) => s.user);
   const logout  = useAuthStore((s) => s.logout);
+  const { queriesEnabled } = useDashboardPreviewAuth();
   const initials = user?.name
     ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
     : 'U';
@@ -82,16 +84,19 @@ export default function Dashboard6Page() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn:  () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: netWorthTrendResponse } = useQuery({
     queryKey: ['dashboard-net-worth-trend', 6],
     queryFn:  () => dashboardService.getNetWorthTrend(6),
+    enabled: queriesEnabled,
   });
 
   const { data: incomeExpenseTrendResponse } = useQuery({
     queryKey: ['dashboard-income-expense-trend', 6],
     queryFn:  () => dashboardService.getIncomeExpenseTrend(6),
+    enabled: queriesEnabled,
   });
 
   // Derived values

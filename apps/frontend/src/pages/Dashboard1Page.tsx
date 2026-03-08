@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency, getCurrencySymbol } from '../lib/utils';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 import { useAuthStore } from '../stores/authStore';
 import NetWorthChart from '../components/charts/NetWorthChart';
 import CategoryPieChart from '../components/charts/CategoryPieChart';
@@ -72,6 +73,7 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
 export default function Dashboard1Page() {
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  const { queriesEnabled } = useDashboardPreviewAuth();
 
   useEffect(() => {
     const id = 'dashboard1-fonts';
@@ -88,11 +90,13 @@ export default function Dashboard1Page() {
   const { data, isLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: netWorthTrendResponse } = useQuery({
     queryKey: ['dashboard-net-worth-trend', 6],
     queryFn: () => dashboardService.getNetWorthTrend(6),
+    enabled: queriesEnabled,
   });
 
   const summary = data?.summary;

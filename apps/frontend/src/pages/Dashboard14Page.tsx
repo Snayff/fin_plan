@@ -11,6 +11,7 @@ import {
 } from 'recharts';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency } from '../lib/utils';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 
 // ─── Palette ────────────────────────────────────────────────────────────────
 const C = {
@@ -110,6 +111,7 @@ function Skeleton({ width, height }: { width: string; height: string }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function Dashboard14Page() {
   const location = useLocation();
+  const { queriesEnabled } = useDashboardPreviewAuth();
 
   // Inject fonts
   useEffect(() => {
@@ -148,11 +150,13 @@ export default function Dashboard14Page() {
   const { data: summaryData } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: trendData } = useQuery({
     queryKey: ['dashboard-net-worth-trend'],
     queryFn: () => dashboardService.getNetWorthTrend(6),
+    enabled: queriesEnabled,
   });
 
   // ─── Derived values ──────────────────────────────────────────────────────────

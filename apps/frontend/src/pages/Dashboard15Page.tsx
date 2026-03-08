@@ -20,6 +20,7 @@ import {
 } from 'recharts';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency } from '../lib/utils';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 import { useAuthStore } from '../stores/authStore';
 
 const C = {
@@ -74,6 +75,7 @@ const GoldDivider = () => (
 export default function Dashboard15Page() {
   const location = useLocation();
   const { user } = useAuthStore();
+  const { queriesEnabled } = useDashboardPreviewAuth();
 
   useEffect(() => {
     const fontId = 'dashboard15-fonts';
@@ -101,11 +103,13 @@ export default function Dashboard15Page() {
   const { data: summaryData } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: trendData } = useQuery({
     queryKey: ['dashboard-net-worth-trend'],
     queryFn: () => dashboardService.getNetWorthTrend(6),
+    enabled: queriesEnabled,
   });
 
   const summary = summaryData?.summary;

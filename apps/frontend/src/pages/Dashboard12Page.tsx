@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency, getCurrencySymbol } from '../lib/utils';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 import { useAuthStore } from '../stores/authStore';
 
 // ── Palette ─────────────────────────────────────────────────────────────────
@@ -141,7 +142,8 @@ function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ n
 // ── Component ─────────────────────────────────────────────────────────────────
 export default function Dashboard12Page() {
   const location = useLocation();
-  const { user, logout, authStatus } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const { queriesEnabled, isBootstrappingAuth } = useDashboardPreviewAuth();
 
   // ── Font & keyframe injection ─────────────────────────────────────────────
   useEffect(() => {
@@ -172,16 +174,16 @@ export default function Dashboard12Page() {
   }, []);
 
   // ── Queries ───────────────────────────────────────────────────────────────
-  const { data: summaryData } = useQuery({
+  const { data: summaryData, isLoading: isSummaryLoading } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn:  () => dashboardService.getSummary(),
-    enabled:  authStatus === 'authenticated',
+    enabled:  queriesEnabled,
   });
 
-  const { data: trendData } = useQuery({
+  const { data: trendData, isLoading: isTrendLoading } = useQuery({
     queryKey: ['dashboard-net-worth-trend'],
     queryFn:  () => dashboardService.getNetWorthTrend(6),
-    enabled:  authStatus === 'authenticated',
+    enabled:  queriesEnabled,
   });
 
   // ── Derived values ────────────────────────────────────────────────────────

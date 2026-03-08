@@ -24,6 +24,7 @@ import {
 } from 'recharts';
 import { dashboardService } from '../services/dashboard.service';
 import { formatCurrency, getCurrencySymbol } from '../lib/utils';
+import { useDashboardPreviewAuth } from '../hooks/useDashboardPreviewAuth';
 import { useAuthStore } from '../stores/authStore';
 
 // ── Palette ────────────────────────────────────────────────────────────────────
@@ -169,6 +170,7 @@ function ChartTooltip({
 export default function Dashboard9Page() {
   const location = useLocation();
   const { user, logout } = useAuthStore();
+  const { queriesEnabled } = useDashboardPreviewAuth();
 
   // ── Load fonts ──────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -187,16 +189,19 @@ export default function Dashboard9Page() {
   const { data } = useQuery({
     queryKey: ['dashboard-summary'],
     queryFn: () => dashboardService.getSummary(),
+    enabled: queriesEnabled,
   });
 
   const { data: trendData } = useQuery({
     queryKey: ['dashboard-net-worth-trend'],
     queryFn: () => dashboardService.getNetWorthTrend(6),
+    enabled: queriesEnabled,
   });
 
   const { data: ieData } = useQuery({
     queryKey: ['dashboard-income-expense-trend'],
     queryFn: () => dashboardService.getIncomeExpenseTrend(6),
+    enabled: queriesEnabled,
   });
 
   // ── Derived data ─────────────────────────────────────────────────────────────
