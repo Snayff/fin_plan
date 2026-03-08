@@ -146,6 +146,12 @@ describe('AssetEditForm', () => {
 
     fireEvent.submit(screen.getByRole('button', { name: /update asset/i }).closest('form')!);
 
+    // The component shows a confirm dialog when unlinking an existing liability
+    await waitFor(() => {
+      expect(screen.getByRole('button', { name: /yes, change link/i })).toBeTruthy();
+    });
+    fireEvent.click(screen.getByRole('button', { name: /yes, change link/i }));
+
     await waitFor(() => {
       expect(updateLiabilityMock).toHaveBeenCalledWith('liability-1', { linkedAssetId: null });
     });
