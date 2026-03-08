@@ -209,6 +209,8 @@ export default function Dashboard12Page() {
     name:  item.category?.name ?? 'Unknown',
     value: item.amount,
   }));
+  const showSummarySkeletons = isBootstrappingAuth || isSummaryLoading;
+  const showTrendSkeleton = isBootstrappingAuth || isTrendLoading;
 
   const userInitials = user?.name
     ? user.name.split(' ').map((n) => n[0]).join('').toUpperCase().slice(0, 2)
@@ -577,7 +579,7 @@ export default function Dashboard12Page() {
 
               {/* Income */}
               <div style={{ marginBottom: 4 }}>
-                {summary ? (
+                  {summary ? (
                   <div style={{ fontFamily: SORA, fontWeight: 600, fontSize: 30, color: P.teal, lineHeight: 1.1 }}>
                     {formatCurrency(monthlyIncome)}
                   </div>
@@ -594,7 +596,7 @@ export default function Dashboard12Page() {
 
               {/* Expenses */}
               <div>
-                {summary ? (
+                  {summary ? (
                   <div style={{ fontFamily: SORA, fontWeight: 600, fontSize: 30, color: P.rose, lineHeight: 1.1 }}>
                     {formatCurrency(monthlyExpense)}
                   </div>
@@ -626,7 +628,12 @@ export default function Dashboard12Page() {
                 NET WORTH TREND
               </div>
 
-              {chartTrend.length > 0 ? (
+              {showTrendSkeleton ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 8 }}>
+                  <Shimmer height={140} radius={8} />
+                  <Shimmer width="70%" height={11} />
+                </div>
+              ) : chartTrend.length > 0 ? (
                 <ResponsiveContainer width="100%" height={220}>
                   <AreaChart data={chartTrend} margin={{ top: 4, right: 4, left: 4, bottom: 0 }}>
                     <defs>
@@ -655,9 +662,19 @@ export default function Dashboard12Page() {
                   </AreaChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12, paddingTop: 8 }}>
-                  <Shimmer height={140} radius={8} />
-                  <Shimmer width="70%" height={11} />
+                <div
+                  style={{
+                    minHeight: 220,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    color: P.textMuted,
+                    fontFamily: FIGTREE,
+                    fontSize: 13,
+                  }}
+                >
+                  No trend data yet.
                 </div>
               )}
             </div>
@@ -677,7 +694,16 @@ export default function Dashboard12Page() {
                 SPENDING
               </div>
 
-              {pieData.length > 0 ? (
+              {showSummarySkeletons ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8, paddingBottom: 8 }}>
+                    <Shimmer width={160} height={160} radius={80} />
+                  </div>
+                  <Shimmer width="80%" height={11} />
+                  <Shimmer width="65%" height={11} />
+                  <Shimmer width="55%" height={11} />
+                </div>
+              ) : pieData.length > 0 ? (
                 <>
                   <ResponsiveContainer width="100%" height={200}>
                     <PieChart>
@@ -734,13 +760,19 @@ export default function Dashboard12Page() {
                   </div>
                 </>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  <div style={{ display: 'flex', justifyContent: 'center', paddingTop: 8, paddingBottom: 8 }}>
-                    <Shimmer width={160} height={160} radius={80} />
-                  </div>
-                  <Shimmer width="80%" height={11} />
-                  <Shimmer width="65%" height={11} />
-                  <Shimmer width="55%" height={11} />
+                <div
+                  style={{
+                    minHeight: 220,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    textAlign: 'center',
+                    color: P.textMuted,
+                    fontFamily: FIGTREE,
+                    fontSize: 13,
+                  }}
+                >
+                  No spending data yet.
                 </div>
               )}
             </div>
@@ -781,7 +813,7 @@ export default function Dashboard12Page() {
               </div>
 
               {/* Account list */}
-              {accounts.length === 0 && !summaryData ? (
+              {showSummarySkeletons ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[100, 80, 90, 75].map((w, i) => (
                     <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '12px 16px' }}>
@@ -870,7 +902,7 @@ export default function Dashboard12Page() {
                 RECENT ACTIVITY
               </div>
 
-              {recentTransactions.length === 0 && !summaryData ? (
+              {showSummarySkeletons ? (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {[100, 85, 92, 78, 88, 70, 95, 80].map((w, i) => (
                     <div key={i} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '12px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
