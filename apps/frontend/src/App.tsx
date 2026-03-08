@@ -25,6 +25,7 @@ import Dashboard3Page from "./pages/Dashboard3Page";
 import Dashboard4Page from "./pages/Dashboard4Page";
 import Dashboard5Page from "./pages/Dashboard5Page";
 import Dashboard6Page from "./pages/Dashboard6Page";
+import Dashboard7Page from "./pages/Dashboard7Page";
 
 export function ProtectedAppRoutes() {
   return (
@@ -36,6 +37,7 @@ export function ProtectedAppRoutes() {
         <Route path="dashboard4" element={<Dashboard4Page />} />
         <Route path="dashboard5" element={<Dashboard5Page />} />
         <Route path="dashboard6" element={<Dashboard6Page />} />
+        <Route path="dashboard7" element={<Dashboard7Page />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="accounts" element={<AccountsPage />} />
         <Route path="transactions" element={<TransactionsPage />} />
@@ -60,6 +62,7 @@ const DASHBOARD_PREVIEWS: Record<string, React.ComponentType> = {
   '/dashboard4': Dashboard4Page,
   '/dashboard5': Dashboard5Page,
   '/dashboard6': Dashboard6Page,
+  '/dashboard7': Dashboard7Page,
 };
 
 function App() {
