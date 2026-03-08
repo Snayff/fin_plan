@@ -503,7 +503,7 @@ export default function Dashboard13Page() {
                   display: 'inline-block',
                 }}
               >
-                {summaryLoading ? '——' : formatCurrency(netWorth)}
+                {summaryLoading || isBootstrappingAuth ? '——' : formatCurrency(netWorth)}
               </div>
             </div>
 
@@ -537,7 +537,7 @@ export default function Dashboard13Page() {
                   color: C.cyan,
                 }}
               >
-                {summaryLoading ? '——' : formatCurrency(monthlyIncome)}
+                {summaryLoading || isBootstrappingAuth ? '——' : formatCurrency(monthlyIncome)}
               </div>
             </div>
 
@@ -571,7 +571,7 @@ export default function Dashboard13Page() {
                   color: C.magenta,
                 }}
               >
-                {summaryLoading ? '——' : formatCurrency(monthlyExpenses)}
+                {summaryLoading || isBootstrappingAuth ? '——' : formatCurrency(monthlyExpenses)}
               </div>
             </div>
 
@@ -602,10 +602,10 @@ export default function Dashboard13Page() {
                   fontFamily: "'Chakra Petch', sans-serif",
                   fontWeight: 600,
                   fontSize: '20px',
-                  color: summaryLoading ? C.textMuted : netFlow >= 0 ? C.acid : C.magenta,
+                  color: summaryLoading || isBootstrappingAuth ? C.textMuted : netFlow >= 0 ? C.acid : C.magenta,
                 }}
               >
-                {summaryLoading ? '——' : formatCurrency(netFlow)}
+                {summaryLoading || isBootstrappingAuth ? '——' : formatCurrency(netFlow)}
               </div>
             </div>
           </div>
@@ -619,7 +619,7 @@ export default function Dashboard13Page() {
             }}
           >
             {/* Panel 1: Net Worth Timeline */}
-            {trendLoading ? (
+            {trendLoading || isBootstrappingAuth ? (
               <LoadingPanel />
             ) : (
               <div style={panelStyle}>
@@ -665,7 +665,7 @@ export default function Dashboard13Page() {
             )}
 
             {/* Panel 2: Expenditure Matrix */}
-            {summaryLoading ? (
+            {summaryLoading || isBootstrappingAuth ? (
               <LoadingPanel />
             ) : (
               <div style={panelStyle}>
@@ -737,7 +737,7 @@ export default function Dashboard13Page() {
             )}
 
             {/* Panel 3: Account Nodes */}
-            {summaryLoading ? (
+            {summaryLoading || isBootstrappingAuth ? (
               <LoadingPanel />
             ) : (
               <div style={panelStyle}>
@@ -841,7 +841,7 @@ export default function Dashboard13Page() {
             )}
 
             {/* Panel 4: Transaction Feed */}
-            {summaryLoading ? (
+            {summaryLoading || isBootstrappingAuth ? (
               <LoadingPanel />
             ) : (
               <div style={panelStyle}>
