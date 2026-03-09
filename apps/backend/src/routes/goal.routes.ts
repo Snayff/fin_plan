@@ -12,9 +12,14 @@ export async function goalRoutes(fastify: FastifyInstance) {
   // Get all goals for current user with progress data
   fastify.get('/goals', { preHandler: [authMiddleware] }, async (request, reply) => {
     const householdId = request.householdId!;
+    const { monthStart, yearStart, periodEnd } = request.query as {
+      monthStart?: string;
+      yearStart?: string;
+      periodEnd?: string;
+    };
 
     // Always return enhanced data (with progress calculations) for consistency
-    const goals = await goalService.getUserGoalsWithProgress(householdId);
+    const goals = await goalService.getUserGoalsWithProgress(householdId, { monthStart, yearStart, periodEnd });
     return reply.send({ goals });
   });
 

@@ -216,7 +216,10 @@ export const goalService = {
   /**
    * Get all goals for a household with enhanced progress data
    */
-  async getUserGoalsWithProgress(householdId: string) {
+  async getUserGoalsWithProgress(
+    householdId: string,
+    periodBoundaries?: { monthStart?: string; yearStart?: string; periodEnd?: string }
+  ) {
     // Fetch goals and accounts in parallel
     const [goals, accounts] = await Promise.all([
       prisma.goal.findMany({
@@ -258,12 +261,23 @@ export const goalService = {
 
     if (hasIncomeGoals) {
       const now = new Date();
+      // Use client-provided timezone-aware boundaries when available; fall back to server UTC
+      const monthStartDate = periodBoundaries?.monthStart
+        ? new Date(periodBoundaries.monthStart)
+        : startOfMonth(now);
+      const yearStartDate = periodBoundaries?.yearStart
+        ? new Date(periodBoundaries.yearStart)
+        : startOfYear(now);
+      const periodEndDate = periodBoundaries?.periodEnd
+        ? new Date(periodBoundaries.periodEnd)
+        : endOfDay(now);
+
       const [monthResult, yearResult] = await Promise.all([
         prisma.transaction.aggregate({
           where: {
             householdId,
             type: 'income',
-            date: { gte: startOfMonth(now), lte: endOfDay(now) },
+            date: { gte: monthStartDate, lte: periodEndDate },
           },
           _sum: { amount: true },
         }),
@@ -271,7 +285,7 @@ export const goalService = {
           where: {
             householdId,
             type: 'income',
-            date: { gte: startOfYear(now), lte: endOfDay(now) },
+            date: { gte: yearStartDate, lte: periodEndDate },
           },
           _sum: { amount: true },
         }),
