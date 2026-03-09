@@ -21,6 +21,8 @@ function buildGoal(overrides: Record<string, any> = {}) {
     priority: "medium",
     status: "active",
     icon: null,
+    linkedAccountId: null,
+    incomePeriod: null,
     metadata: {},
     createdAt: new Date("2025-01-01T00:00:00Z"),
     updatedAt: new Date("2025-01-01T00:00:00Z"),
@@ -164,6 +166,47 @@ describe("goalService.linkTransactionToGoal", () => {
         amount: 10,
       })
     ).rejects.toThrow(NotFoundError);
+  });
+});
+
+describe('goalService.createGoal — linkedAccountId and incomePeriod', () => {
+  it('saves linkedAccountId when provided', async () => {
+    const accountId = 'a0000000-0000-0000-0000-000000000001';
+    prismaMock.goal.create.mockResolvedValue(
+      buildGoal({ linkedAccountId: accountId })
+    );
+
+    await goalService.createGoal('household-1', {
+      name: 'Pay off loan',
+      type: 'debt_payoff' as any,
+      targetAmount: 5000,
+      linkedAccountId: accountId,
+    });
+
+    expect(prismaMock.goal.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ linkedAccountId: accountId }),
+      })
+    );
+  });
+
+  it('saves incomePeriod when provided', async () => {
+    prismaMock.goal.create.mockResolvedValue(
+      buildGoal({ incomePeriod: 'month' })
+    );
+
+    await goalService.createGoal('household-1', {
+      name: 'Monthly income',
+      type: 'income' as any,
+      targetAmount: 5000,
+      incomePeriod: 'month',
+    });
+
+    expect(prismaMock.goal.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ incomePeriod: 'month' }),
+      })
+    );
   });
 });
 

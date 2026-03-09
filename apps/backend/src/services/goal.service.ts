@@ -11,6 +11,8 @@ export interface CreateGoalInput {
   targetDate?: string | Date;
   priority?: Priority;
   icon?: string;
+  linkedAccountId?: string;
+  incomePeriod?: 'month' | 'year';
   metadata?: {
     milestones?: Array<{
       percentage: number;
@@ -30,6 +32,8 @@ export interface UpdateGoalInput {
   priority?: Priority;
   status?: GoalStatus;
   icon?: string;
+  linkedAccountId?: string | null;
+  incomePeriod?: 'month' | 'year' | null;
   metadata?: Record<string, any>;
 }
 
@@ -79,6 +83,8 @@ export const goalService = {
         targetDate: data.targetDate ? new Date(data.targetDate) : null,
         priority: data.priority || 'medium',
         icon: data.icon,
+        linkedAccountId: data.linkedAccountId,
+        incomePeriod: data.incomePeriod,
         metadata,
       },
     });
@@ -273,6 +279,8 @@ export const goalService = {
     if (data.priority !== undefined) updateData.priority = data.priority;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.icon !== undefined) updateData.icon = data.icon;
+    if (data.linkedAccountId !== undefined) updateData.linkedAccountId = data.linkedAccountId;
+    if (data.incomePeriod !== undefined) updateData.incomePeriod = data.incomePeriod;
 
     // Merge metadata if provided
     if (data.metadata !== undefined) {
