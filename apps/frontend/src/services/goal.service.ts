@@ -51,10 +51,16 @@ interface GoalSummaryResponse {
 
 export const goalService = {
   /**
-   * Get all goals with progress data
+   * Get all goals with progress data.
+   * Passes local-timezone period boundaries so income goals are counted correctly.
    */
   async getGoals(): Promise<GoalsResponse> {
-    return apiClient.get<GoalsResponse>('/api/goals');
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+    const yearStart = new Date(now.getFullYear(), 0, 1).toISOString();
+    const periodEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999).toISOString();
+    const params = new URLSearchParams({ monthStart, yearStart, periodEnd });
+    return apiClient.get<GoalsResponse>(`/api/goals?${params}`);
   },
 
   /**
