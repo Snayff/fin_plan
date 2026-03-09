@@ -1,12 +1,18 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
 
+mock.module("../utils/balance.utils", () => ({
+  calculateAccountBalances: mock(() => Promise.resolve(new Map<string, number>())),
+  endOfDay: (d: Date) => d,
+}));
+
 mock.module("../config/database", () => ({
   prisma: prismaMock,
 }));
 
 import { goalService } from "./goal.service";
 import { NotFoundError, ValidationError } from "../utils/errors";
+import { calculateAccountBalances } from "../utils/balance.utils";
 
 function buildGoal(overrides: Record<string, any> = {}) {
   return {
@@ -246,5 +252,87 @@ describe("goalService.getGoalSummary", () => {
     expect(result.totalTarget).toBe(3000);
     expect(result.byType).toHaveLength(2);
     expect(result.byPriority).toHaveLength(2);
+  });
+});
+
+describe('goalService.getUserGoalsWithProgress — calculatedProgress', () => {
+  function buildGoalWithContributions(overrides: Record<string, any> = {}) {
+    return {
+      ...buildGoal(overrides),
+      contributions: [],
+    };
+  }
+
+  it('computes savings progress from savings+isa account balances (excludes current)', async () => {
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'savings', targetAmount: 1000, currentAmount: 0 }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: 'acc-savings', type: 'savings', isActive: true },
+      { id: 'acc-isa', type: 'isa', isActive: true },
+      { id: 'acc-current', type: 'current', isActive: true },
+    ]);
+    (calculateAccountBalances as any).mockResolvedValue(
+      new Map([['acc-savings', 300], ['acc-isa', 100], ['acc-current', 500]])
+    );
+
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    expect(results[0].calculatedProgress).toBe(400); // 300 + 100, NOT 500 (current excluded)
+    expect(results[0].progressPercentage).toBe(40);
+  });
+
+  it('computes debt_payoff progress as targetAmount minus linkedAccount balance', async () => {
+    const accountId = 'acc-credit';
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'debt_payoff', targetAmount: 10000, currentAmount: 0, linkedAccountId: accountId }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: accountId, type: 'credit', isActive: true },
+    ]);
+    (calculateAccountBalances as any).mockResolvedValue(
+      new Map([[accountId, 6000]])
+    );
+
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    expect(results[0].calculatedProgress).toBe(4000); // 10000 - 6000
+    expect(results[0].progressPercentage).toBe(40);
+  });
+
+  it('sets linkedAccountMissing=true when linkedAccount not found in balanceMap', async () => {
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'debt_payoff', targetAmount: 10000, currentAmount: 0, linkedAccountId: 'deleted-acc' }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([]); // no accounts returned
+    (calculateAccountBalances as any).mockResolvedValue(new Map());
+
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    expect(results[0].linkedAccountMissing).toBe(true);
+    expect(results[0].calculatedProgress).toBe(0);
+  });
+
+  it('computes income progress from income transactions this month when incomePeriod is month', async () => {
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'income', targetAmount: 3000, currentAmount: 0, incomePeriod: 'month' }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([]);
+    (calculateAccountBalances as any).mockResolvedValue(new Map());
+    prismaMock.transaction.aggregate
+      .mockResolvedValueOnce({ _sum: { amount: 1500 } }) // monthly income
+      .mockResolvedValueOnce({ _sum: { amount: 18000 } }); // yearly income
+
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    expect(results[0].calculatedProgress).toBe(1500);
+    expect(results[0].progressPercentage).toBeCloseTo(50);
+  });
+
+  it('uses currentAmount for manual purchase goals (no linkedAccountId)', async () => {
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'purchase', targetAmount: 2000, currentAmount: 500, linkedAccountId: null }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([]);
+    (calculateAccountBalances as any).mockResolvedValue(new Map());
+
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    expect(results[0].calculatedProgress).toBe(500);
   });
 });
