@@ -23,6 +23,11 @@ export const PriorityEnum = z.enum(['high', 'medium', 'low']);
 export const GoalStatusEnum = z.enum(['active', 'completed', 'archived']);
 
 /**
+ * Income period enum
+ */
+export const IncomePeriodEnum = z.enum(['month', 'year']);
+
+/**
  * Schema for creating goals
  */
 export const createGoalSchema = z.object({
@@ -41,6 +46,11 @@ export const createGoalSchema = z.object({
     .transform((val) => (val ? (typeof val === 'string' ? val : val.toISOString()) : undefined)),
   priority: PriorityEnum.default('medium'),
   icon: z.string().max(50).optional(),
+  linkedAccountId: z
+    .string()
+    .uuid('Invalid account ID')
+    .optional(),
+  incomePeriod: IncomePeriodEnum.optional(),
   metadata: z
     .object({
       milestones: z
@@ -55,6 +65,21 @@ export const createGoalSchema = z.object({
       notes: z.string().optional(),
     })
     .optional(),
+}).superRefine((data, ctx) => {
+  if (data.type === 'debt_payoff' && !data.linkedAccountId) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'A linked account is required for debt payoff goals',
+      path: ['linkedAccountId'],
+    });
+  }
+  if (data.type === 'income' && !data.incomePeriod) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'An income period (month or year) is required for income goals',
+      path: ['incomePeriod'],
+    });
+  }
 });
 
 /**
@@ -73,6 +98,12 @@ export const updateGoalSchema = z.object({
   priority: PriorityEnum.optional(),
   status: GoalStatusEnum.optional(),
   icon: z.string().max(50).optional(),
+  linkedAccountId: z
+    .string()
+    .uuid('Invalid account ID')
+    .optional()
+    .nullable(),
+  incomePeriod: IncomePeriodEnum.optional().nullable(),
   metadata: z.record(z.any()).optional(),
 });
 
@@ -110,6 +141,7 @@ export const linkTransactionToGoalSchema = z.object({
 export type GoalType = z.infer<typeof GoalTypeEnum>;
 export type Priority = z.infer<typeof PriorityEnum>;
 export type GoalStatus = z.infer<typeof GoalStatusEnum>;
+export type IncomePeriod = z.infer<typeof IncomePeriodEnum>;
 export type CreateGoalInput = z.infer<typeof createGoalSchema>;
 export type UpdateGoalInput = z.infer<typeof updateGoalSchema>;
 export type CreateGoalContributionInput = z.infer<typeof createGoalContributionSchema>;
