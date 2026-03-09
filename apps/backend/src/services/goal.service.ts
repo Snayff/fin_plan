@@ -73,6 +73,16 @@ export const goalService = {
       ];
     }
 
+    // Validate linkedAccountId belongs to same household
+    if (data.linkedAccountId) {
+      const account = await prisma.account.findFirst({
+        where: { id: data.linkedAccountId, householdId },
+      });
+      if (!account) {
+        throw new ValidationError('Linked account not found or does not belong to this household');
+      }
+    }
+
     const goal = await prisma.goal.create({
       data: {
         householdId,
@@ -256,6 +266,16 @@ export const goalService = {
 
     if (!existingGoal) {
       throw new NotFoundError('Goal not found');
+    }
+
+    // Validate linkedAccountId belongs to same household if provided
+    if (data.linkedAccountId) {
+      const account = await prisma.account.findFirst({
+        where: { id: data.linkedAccountId, householdId },
+      });
+      if (!account) {
+        throw new ValidationError('Linked account not found or does not belong to this household');
+      }
     }
 
     // Validate provided fields

@@ -172,6 +172,7 @@ describe("goalService.linkTransactionToGoal", () => {
 describe('goalService.createGoal — linkedAccountId and incomePeriod', () => {
   it('saves linkedAccountId when provided', async () => {
     const accountId = 'a0000000-0000-0000-0000-000000000001';
+    prismaMock.account.findFirst.mockResolvedValue({ id: accountId, householdId: 'household-1' } as any);
     prismaMock.goal.create.mockResolvedValue(
       buildGoal({ linkedAccountId: accountId })
     );
@@ -207,6 +208,21 @@ describe('goalService.createGoal — linkedAccountId and incomePeriod', () => {
         data: expect.objectContaining({ incomePeriod: 'month' }),
       })
     );
+  });
+});
+
+describe('goalService.createGoal — household ownership check', () => {
+  it('throws ValidationError if linkedAccountId belongs to different household', async () => {
+    prismaMock.account.findFirst.mockResolvedValue(null); // no match for householdId
+
+    await expect(
+      goalService.createGoal('household-1', {
+        name: 'Pay off loan',
+        type: 'debt_payoff' as any,
+        targetAmount: 5000,
+        linkedAccountId: 'a0000000-0000-0000-0000-000000000001',
+      })
+    ).rejects.toThrow(ValidationError);
   });
 });
 
