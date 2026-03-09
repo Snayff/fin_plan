@@ -245,8 +245,8 @@ describe("goalService.getGoalSummary", () => {
 
   it("aggregates totals and buckets", async () => {
     prismaMock.goal.findMany.mockResolvedValue([
-      buildGoal({ type: "savings", priority: "high", currentAmount: 0, targetAmount: 1000 }),
-      buildGoal({ id: "goal-2", type: "investment", priority: "low", currentAmount: 0, targetAmount: 2000 }),
+      buildGoal({ type: "savings", priority: "high", currentAmount: 0, targetAmount: 1000, contributions: [] }),
+      buildGoal({ id: "goal-2", type: "investment", priority: "low", currentAmount: 0, targetAmount: 2000, contributions: [] }),
     ] as any);
     prismaMock.account.findMany.mockResolvedValue([
       { id: 'acc-savings', type: 'savings', isActive: true },
