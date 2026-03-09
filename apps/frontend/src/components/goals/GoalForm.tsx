@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createGoalSchema, updateGoalSchema } from '@finplan/shared';
 import { accountService } from '../../services/account.service';
 import { goalService } from '../../services/goal.service';
 import type {
@@ -56,6 +57,21 @@ interface GoalFormState {
   purchaseTrackingMode: 'account' | 'manual';
 }
 
+function getIncomePeriodRange(period: 'month' | 'year'): string {
+  const now = new Date();
+  const locale = 'en-GB';
+  const shortFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' });
+  const fullFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' });
+  if (period === 'month') {
+    const start = new Date(now.getFullYear(), now.getMonth(), 1);
+    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    return `${shortFmt.format(start)} – ${fullFmt.format(end)}`;
+  }
+  const start = new Date(now.getFullYear(), 0, 1);
+  const end = new Date(now.getFullYear(), 11, 31);
+  return `${shortFmt.format(start)} – ${fullFmt.format(end)}`;
+}
+
 function getInitialFormData(goal?: Goal): GoalFormState {
   return {
     name: goal?.name ?? '',
@@ -76,6 +92,7 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
   const queryClient = useQueryClient();
   const isEditMode = Boolean(goal);
   const [formData, setFormData] = useState<GoalFormState>(() => getInitialFormData(goal));
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const { data: accountsData } = useQuery({
     queryKey: ['accounts'],
@@ -104,13 +121,20 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+
+    const targetAmount = Number(formData.targetAmount);
+    const extraErrors: Record<string, string> = {};
+    if (!formData.targetAmount || targetAmount <= 0) {
+      extraErrors.targetAmount = 'Target amount must be greater than 0';
+    }
 
     if (isEditMode) {
       const submitData: UpdateGoalInput = {
         name: formData.name,
         description: formData.description || undefined,
         type: formData.type,
-        targetAmount: Number(formData.targetAmount),
+        targetAmount,
         targetDate: formData.targetDate || undefined,
         priority: formData.priority,
         status: formData.status,
@@ -118,6 +142,18 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
         linkedAccountId: formData.linkedAccountId || null,
         incomePeriod: formData.type === 'income' ? formData.incomePeriod : null,
       };
+      const result = updateGoalSchema.safeParse(submitData);
+      if (!result.success || Object.keys(extraErrors).length > 0) {
+        const errors = { ...extraErrors };
+        if (!result.success) {
+          for (const issue of result.error.issues) {
+            const path = issue.path[0] as string;
+            if (path && !errors[path]) errors[path] = issue.message;
+          }
+        }
+        setFormErrors(errors);
+        return;
+      }
       submitMutation.mutate(submitData);
       return;
     }
@@ -126,13 +162,25 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
       name: formData.name,
       description: formData.description || undefined,
       type: formData.type,
-      targetAmount: Number(formData.targetAmount),
+      targetAmount,
       targetDate: formData.targetDate || undefined,
       priority: formData.priority,
       icon: formData.icon,
       linkedAccountId: formData.linkedAccountId || undefined,
       incomePeriod: formData.type === 'income' ? formData.incomePeriod : undefined,
     };
+    const result = createGoalSchema.safeParse(submitData);
+    if (!result.success || Object.keys(extraErrors).length > 0) {
+      const errors = { ...extraErrors };
+      if (!result.success) {
+        for (const issue of result.error.issues) {
+          const path = issue.path[0] as string;
+          if (path && !errors[path]) errors[path] = issue.message;
+        }
+      }
+      setFormErrors(errors);
+      return;
+    }
 
     submitMutation.mutate(submitData);
   };
@@ -145,6 +193,7 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
       linkedAccountId: '',
       purchaseTrackingMode: 'manual',
     });
+    setFormErrors({});
   };
 
   return (
@@ -154,11 +203,15 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
         <Input
           type="text"
           id="name"
-          required
           value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e) => {
+            setFormData({ ...formData, name: e.target.value });
+            if (formErrors.name) setFormErrors(prev => { const n = {...prev}; delete n.name; return n; });
+          }}
           placeholder="e.g., Emergency Fund, New Car, Retirement"
+          aria-invalid={!!formErrors.name}
         />
+        {formErrors.name && <p className="text-destructive text-sm mt-1">{formErrors.name}</p>}
       </div>
 
       <div className="space-y-2">
@@ -203,10 +256,12 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
           </Label>
           <select
             id="linkedAccountId"
-            required
             value={formData.linkedAccountId}
-            onChange={(e) => setFormData({ ...formData, linkedAccountId: e.target.value })}
-            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            onChange={(e) => {
+              setFormData({ ...formData, linkedAccountId: e.target.value });
+              if (formErrors.linkedAccountId) setFormErrors(prev => { const n = {...prev}; delete n.linkedAccountId; return n; });
+            }}
+            className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${formErrors.linkedAccountId ? 'border-destructive' : 'border-input'}`}
           >
             <option value="">Select the account to pay off...</option>
             {accounts
@@ -217,6 +272,7 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
                 </option>
               ))}
           </select>
+          {formErrors.linkedAccountId && <p className="text-destructive text-sm mt-1">{formErrors.linkedAccountId}</p>}
         </div>
       )}
 
@@ -277,7 +333,10 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
               <button
                 key={period}
                 type="button"
-                onClick={() => setFormData({ ...formData, incomePeriod: period })}
+                onClick={() => {
+                  setFormData({ ...formData, incomePeriod: period });
+                  if (formErrors.incomePeriod) setFormErrors(prev => { const n = {...prev}; delete n.incomePeriod; return n; });
+                }}
                 className={`flex-1 rounded-md border px-3 py-2 text-sm capitalize transition-colors ${
                   formData.incomePeriod === period
                     ? 'border-primary bg-primary/10 text-primary'
@@ -288,6 +347,10 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
               </button>
             ))}
           </div>
+          <p className="text-xs text-muted-foreground">
+            Counting transactions {getIncomePeriodRange(formData.incomePeriod)}
+          </p>
+          {formErrors.incomePeriod && <p className="text-destructive text-sm mt-1">{formErrors.incomePeriod}</p>}
         </div>
       )}
 
@@ -326,13 +389,17 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
             type="number"
             id="targetAmount"
             step="0.01"
-            required
             value={formData.targetAmount}
-            onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })}
-            className="pl-8"
+            onChange={(e) => {
+              setFormData({ ...formData, targetAmount: e.target.value });
+              if (formErrors.targetAmount) setFormErrors(prev => { const n = {...prev}; delete n.targetAmount; return n; });
+            }}
+            className={`pl-8 ${formErrors.targetAmount ? 'border-destructive' : ''}`}
             placeholder="0.00"
+            aria-invalid={!!formErrors.targetAmount}
           />
         </div>
+        {formErrors.targetAmount && <p className="text-destructive text-sm mt-1">{formErrors.targetAmount}</p>}
         {goal && goal.type === 'purchase' && !goal.linkedAccountId && (
           <p className="text-xs text-muted-foreground">
             Current progress: £{(goal.currentAmount ?? 0).toLocaleString('en-GB', { minimumFractionDigits: 2 })}
