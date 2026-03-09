@@ -23,6 +23,24 @@ import {
   CalendarIcon,
 } from 'lucide-react';
 
+function getProgressSourceLabel(goal: EnhancedGoal): string {
+  switch (goal.type) {
+    case 'savings':
+    case 'investment':
+    case 'net_worth':
+      return 'Auto-tracked from accounts';
+    case 'debt_payoff':
+    case 'purchase':
+      return goal.linkedAccountId
+        ? 'Auto-tracked from account'
+        : 'Manually tracked';
+    case 'income':
+      return goal.incomePeriod === 'year' ? 'Auto-tracked (this year)' : 'Auto-tracked (this month)';
+    default:
+      return 'Manually tracked';
+  }
+}
+
 export default function GoalsPage() {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -72,7 +90,7 @@ export default function GoalsPage() {
   });
 
   // Calculate summary stats from filtered data
-  const totalSaved = filteredGoals.reduce((sum, goal) => sum + goal.currentAmount, 0);
+  const totalSaved = filteredGoals.reduce((sum, goal) => sum + (goal.calculatedProgress ?? 0), 0);
   const totalTarget = filteredGoals.reduce((sum, goal) => sum + goal.targetAmount, 0);
   const activeGoals = filteredGoals.filter((g) => g.status === 'active').length;
   const onTrackGoals = filteredGoals.filter((g) => g.isOnTrack && g.status === 'active').length;
@@ -308,12 +326,26 @@ export default function GoalsPage() {
                   {/* Amount display */}
                   <div className="flex justify-between text-sm">
                     <span className="font-semibold text-primary">
-                      {formatCurrency(goal.currentAmount)}
+                      {goal.linkedAccountMissing
+                        ? '—'
+                        : formatCurrency(goal.calculatedProgress ?? 0)
+                      }
                     </span>
                     <span className="text-muted-foreground">
                       {formatCurrency(goal.targetAmount)}
                     </span>
                   </div>
+
+                  {/* Progress source label */}
+                  {goal.linkedAccountMissing ? (
+                    <p className="text-xs text-destructive mt-1">
+                      ⚠ Linked account not found — progress unavailable
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {getProgressSourceLabel(goal)}
+                    </p>
+                  )}
                 </div>
 
                 {/* Target date and tracking */}
