@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { accountService } from '../../services/account.service';
 import { goalService } from '../../services/goal.service';
 import type {
   Goal,
@@ -32,6 +33,15 @@ const GOAL_ICON_OPTIONS = Array.from(
   new Set([...Object.values(GOAL_TYPE_ICONS), '🎯', '🏠', '🚗', '✈️', '🎓', '🧳', '🔧', '📚'])
 );
 
+const GOAL_TYPE_GUIDANCE: Record<GoalType, string> = {
+  savings: 'Progress is automatically calculated from your savings and ISA account balances.',
+  investment: 'Progress is automatically calculated from your investment account balances.',
+  net_worth: 'Progress is automatically calculated as total assets minus all liabilities.',
+  debt_payoff: 'Link the liability account you want to pay off. Progress updates automatically.',
+  purchase: 'Link a dedicated account to track automatically, or log contributions manually.',
+  income: 'Income transactions are automatically counted for the selected period.',
+};
+
 interface GoalFormState {
   name: string;
   description: string;
@@ -41,6 +51,9 @@ interface GoalFormState {
   priority: Priority;
   status: GoalStatus;
   icon: string;
+  linkedAccountId: string;
+  incomePeriod: 'month' | 'year';
+  purchaseTrackingMode: 'account' | 'manual';
 }
 
 function getInitialFormData(goal?: Goal): GoalFormState {
@@ -53,6 +66,9 @@ function getInitialFormData(goal?: Goal): GoalFormState {
     priority: (goal?.priority as Priority) ?? 'medium',
     status: (goal?.status as GoalStatus) ?? 'active',
     icon: goal?.icon ?? GOAL_TYPE_ICONS[goal?.type as GoalType] ?? '🎯',
+    linkedAccountId: goal?.linkedAccountId ?? '',
+    incomePeriod: (goal?.incomePeriod as 'month' | 'year') ?? 'month',
+    purchaseTrackingMode: goal?.linkedAccountId ? 'account' : 'manual',
   };
 }
 
@@ -60,6 +76,12 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
   const queryClient = useQueryClient();
   const isEditMode = Boolean(goal);
   const [formData, setFormData] = useState<GoalFormState>(() => getInitialFormData(goal));
+
+  const { data: accountsData } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => accountService.getAccounts(),
+  });
+  const accounts = accountsData?.accounts ?? [];
 
   useEffect(() => {
     setFormData(getInitialFormData(goal));
@@ -93,6 +115,8 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
         priority: formData.priority,
         status: formData.status,
         icon: formData.icon,
+        linkedAccountId: formData.linkedAccountId || null,
+        incomePeriod: formData.type === 'income' ? formData.incomePeriod : null,
       };
       submitMutation.mutate(submitData);
       return;
@@ -106,6 +130,8 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
       targetDate: formData.targetDate || undefined,
       priority: formData.priority,
       icon: formData.icon,
+      linkedAccountId: formData.linkedAccountId || undefined,
+      incomePeriod: formData.type === 'income' ? formData.incomePeriod : undefined,
     };
 
     submitMutation.mutate(submitData);
@@ -162,6 +188,107 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
         </select>
       </div>
 
+      {/* Guidance banner */}
+      <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+        {GOAL_TYPE_GUIDANCE[formData.type]}
+      </div>
+
+      {/* Debt payoff: required liability account selector */}
+      {formData.type === 'debt_payoff' && (
+        <div className="space-y-2">
+          <Label htmlFor="linkedAccountId">
+            Linked Account <span className="text-destructive">*</span>
+          </Label>
+          <select
+            id="linkedAccountId"
+            required
+            value={formData.linkedAccountId}
+            onChange={(e) => setFormData({ ...formData, linkedAccountId: e.target.value })}
+            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          >
+            <option value="">Select the account to pay off...</option>
+            {accounts
+              .filter((a) => ['credit', 'loan', 'liability'].includes(a.type))
+              .map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} ({a.type.replace(/_/g, ' ')})
+                </option>
+              ))}
+          </select>
+        </div>
+      )}
+
+      {/* Purchase: optional account link or manual tracking */}
+      {formData.type === 'purchase' && (
+        <div className="space-y-3">
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, purchaseTrackingMode: 'account', linkedAccountId: '' })}
+              className={`flex-1 rounded-md border px-3 py-2 text-sm transition-colors ${
+                formData.purchaseTrackingMode === 'account'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-input hover:bg-muted'
+              }`}
+            >
+              Link an account
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, purchaseTrackingMode: 'manual', linkedAccountId: '' })}
+              className={`flex-1 rounded-md border px-3 py-2 text-sm transition-colors ${
+                formData.purchaseTrackingMode === 'manual'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-input hover:bg-muted'
+              }`}
+            >
+              Track manually
+            </button>
+          </div>
+          {formData.purchaseTrackingMode === 'account' && (
+            <div className="space-y-2">
+              <Label htmlFor="linkedAccountIdPurchase">Linked Account</Label>
+              <select
+                id="linkedAccountIdPurchase"
+                value={formData.linkedAccountId}
+                onChange={(e) => setFormData({ ...formData, linkedAccountId: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="">Select account...</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} ({a.type.replace(/_/g, ' ')})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Income: period selector */}
+      {formData.type === 'income' && (
+        <div className="space-y-2">
+          <Label>Income Period <span className="text-destructive">*</span></Label>
+          <div className="flex gap-3">
+            {(['month', 'year'] as const).map((period) => (
+              <button
+                key={period}
+                type="button"
+                onClick={() => setFormData({ ...formData, incomePeriod: period })}
+                className={`flex-1 rounded-md border px-3 py-2 text-sm capitalize transition-colors ${
+                  formData.incomePeriod === period
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-input hover:bg-muted'
+                }`}
+              >
+                {period === 'month' ? 'Monthly' : 'Annually'}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <div className="space-y-2">
         <Label>Icon</Label>
         <div className="flex items-center gap-3">
@@ -204,9 +331,9 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
             placeholder="0.00"
           />
         </div>
-        {goal && (
+        {goal && goal.type === 'purchase' && !goal.linkedAccountId && (
           <p className="text-xs text-muted-foreground">
-            Current progress: £{goal.currentAmount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+            Current progress: £{(goal.currentAmount ?? 0).toLocaleString('en-GB', { minimumFractionDigits: 2 })}
           </p>
         )}
       </div>
