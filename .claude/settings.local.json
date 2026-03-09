@@ -32,7 +32,17 @@
       "Bash(docker build:*)",
       "Bash(docker compose:*)",
       "WebFetch(domain:coolify.io)",
-      "Bash(npx tsc --noEmit)"
+      "Bash(npx tsc --noEmit)",
+      "Bash(npx prisma validate)",
+      "Bash(./node_modules/.bin/prisma validate)",
+      "Bash(./node_modules/.bin/prisma migrate dev --name goal_progress_allocation)",
+      "Bash(./node_modules/.bin/prisma migrate resolve --rolled-back 20260309084449_goal_progress_allocation)",
+      "Bash(docker exec finplan-postgres-dev psql -U finplan -d finplan_dev -c \"DELETE FROM _prisma_migrations WHERE migration_name = ''20260309084449_goal_progress_allocation'';\")",
+      "Bash(git add apps/backend/prisma/schema.prisma apps/backend/prisma/migrations/)",
+      "Bash(git commit:*)",
+      "Bash(git add packages/shared/src/schemas/goal.schemas.ts packages/shared/src/schemas/goal.schemas.test.ts)",
+      "Bash(git add apps/backend/src/services/goal.service.ts apps/backend/src/services/goal.service.test.ts)",
+      "Bash(npm run build)"
     ]
   }
 }
