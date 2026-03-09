@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goalService } from '../services/goal.service';
+import { accountService } from '../services/account.service';
 import { showSuccess, showError } from '../lib/toast';
 import { formatCurrency } from '../lib/utils';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import GoalForm from '../components/goals/GoalForm';
 import GoalContributionModal from '../components/goals/GoalContributionModal';
+import GoalCelebration from '../components/goals/GoalCelebration';
 import FilterBar from '../components/filters/FilterBar';
 import { useClientFilters } from '../hooks/useClientFilters';
 import { goalFilterConfig } from '../config/filter-configs';
@@ -47,10 +49,44 @@ export default function GoalsPage() {
   const [editingGoal, setEditingGoal] = useState<Goal | null>(null);
   const [contributingGoal, setContributingGoal] = useState<EnhancedGoal | null>(null);
   const [deletingGoal, setDeletingGoal] = useState<EnhancedGoal | null>(null);
+  const [relinkGoal, setRelinkGoal] = useState<EnhancedGoal | null>(null);
+  const [celebrationVariant, setCelebrationVariant] = useState<number | null>(null);
+  const prevProgressRef = useRef<Record<string, number>>({});
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['goals'],
     queryFn: () => goalService.getGoals(),
+  });
+
+  const { data: accountsData } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => accountService.getAccounts(),
+  });
+  const accounts = accountsData?.accounts ?? [];
+
+  const relinkMutation = useMutation({
+    mutationFn: ({ goalId, linkedAccountId }: { goalId: string; linkedAccountId: string }) =>
+      goalService.updateGoal(goalId, { linkedAccountId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      showSuccess('Account re-linked successfully');
+      setRelinkGoal(null);
+    },
+    onError: (err: Error) => {
+      showError(err.message || 'Failed to re-link account');
+    },
+  });
+
+  const markCompleteMutation = useMutation({
+    mutationFn: (goalId: string) => goalService.updateGoal(goalId, { status: 'completed' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['goals'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
+      showSuccess('Goal marked as complete!');
+    },
+    onError: (err: Error) => {
+      showError(err.message || 'Failed to update goal');
+    },
   });
 
   const deleteMutation = useMutation({
@@ -67,6 +103,19 @@ export default function GoalsPage() {
   });
 
   const goals = (data?.goals || []) as EnhancedGoal[];
+
+  // Detect when any goal crosses the 100% threshold and trigger a celebration
+  useEffect(() => {
+    if (!goals.length) return;
+    goals.forEach((goal) => {
+      const prev = prevProgressRef.current[goal.id] ?? 0;
+      if (prev > 0 && prev < 100 && goal.progressPercentage >= 100) {
+        const variant = Math.floor(Math.random() * 5) + 1;
+        setCelebrationVariant(variant);
+      }
+      prevProgressRef.current[goal.id] = goal.progressPercentage;
+    });
+  }, [goals]);
 
   const {
     filteredItems: filteredGoals,
@@ -255,7 +304,9 @@ export default function GoalsPage() {
             <Card
               key={goal.id}
               className={
-                goal.priority === 'high'
+                goal.progressPercentage >= 100 && goal.status === 'active'
+                  ? 'border-2 border-success shadow-md'
+                  : goal.priority === 'high'
                   ? 'border-2 border-primary shadow-md'
                   : undefined
               }
@@ -275,9 +326,13 @@ export default function GoalsPage() {
                     </div>
                   </div>
                   <div className="flex flex-col gap-1 items-end">
-                    <Badge className={getPriorityBadgeColor(goal.priority)}>
-                      {goal.priority}
-                    </Badge>
+                    {goal.progressPercentage >= 100 && goal.status === 'active' ? (
+                      <Badge className="bg-success text-success-foreground">Goal reached!</Badge>
+                    ) : (
+                      <Badge className={getPriorityBadgeColor(goal.priority)}>
+                        {goal.priority}
+                      </Badge>
+                    )}
                     <Badge className={getStatusBadgeColor(goal.status)}>
                       {goal.status}
                     </Badge>
@@ -303,6 +358,11 @@ export default function GoalsPage() {
                   {/* Progress bar with milestones */}
                   <div className="relative w-full bg-muted rounded-full h-3 mb-1">
                     <div
+                      role="progressbar"
+                      aria-valuenow={Math.round(goal.progressPercentage)}
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-label={`${goal.name} progress`}
                       className={`h-3 rounded-full transition-all ${
                         goal.progressPercentage >= 100
                           ? 'bg-success'
@@ -319,6 +379,7 @@ export default function GoalsPage() {
                         className="absolute top-0 bottom-0 w-0.5 bg-background"
                         style={{ left: `${milestone}%` }}
                         title={`${milestone}% milestone`}
+                        aria-hidden="true"
                       />
                     ))}
                   </div>
@@ -338,9 +399,19 @@ export default function GoalsPage() {
 
                   {/* Progress source label */}
                   {goal.linkedAccountMissing ? (
-                    <p className="text-xs text-destructive mt-1">
-                      ⚠ Linked account not found — progress unavailable
-                    </p>
+                    <div className="flex items-center justify-between mt-1 gap-2">
+                      <p className="text-xs text-warning">
+                        ⚠ Linked account not found — progress unavailable
+                      </p>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 px-2 text-xs shrink-0"
+                        onClick={() => setRelinkGoal(goal)}
+                      >
+                        Re-link account
+                      </Button>
+                    </div>
                   ) : (
                     <p className="text-xs text-muted-foreground mt-1">
                       {getProgressSourceLabel(goal)}
@@ -378,35 +449,50 @@ export default function GoalsPage() {
                     </div>
                   )}
 
-                  {/* On track indicator */}
-                  {goal.status === 'active' && goal.targetDate && (
-                    <div className="flex items-center gap-1 text-xs">
-                      {goal.isOnTrack ? (
-                        <>
-                          <CheckCircle2Icon className="h-3 w-3 text-success" />
-                          <span className="text-success font-medium">On Track</span>
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircleIcon className="h-3 w-3 text-warning" />
-                          <span className="text-warning font-medium">Behind Schedule</span>
-                        </>
-                      )}
-                    </div>
+                  {/* On track indicator / completion CTA */}
+                  {goal.status === 'active' && goal.progressPercentage >= 100 ? (
+                    <Button
+                      size="sm"
+                      variant="default"
+                      className="w-full bg-success hover:bg-success/90 text-success-foreground"
+                      onClick={() => markCompleteMutation.mutate(goal.id)}
+                      disabled={markCompleteMutation.isPending}
+                    >
+                      <CheckCircle2Icon className="h-3.5 w-3.5 mr-1.5" />
+                      Mark Complete
+                    </Button>
+                  ) : (
+                    goal.status === 'active' && goal.targetDate && (
+                      <div className="flex items-center gap-1 text-xs">
+                        {goal.isOnTrack ? (
+                          <>
+                            <CheckCircle2Icon className="h-3 w-3 text-success" />
+                            <span className="text-success font-medium">On Track</span>
+                          </>
+                        ) : (
+                          <>
+                            <AlertCircleIcon className="h-3 w-3 text-warning" />
+                            <span className="text-warning font-medium">Behind Schedule</span>
+                          </>
+                        )}
+                      </div>
+                    )
                   )}
                 </div>
 
                 {/* Actions */}
                 <div className="flex gap-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => setContributingGoal(goal)}
-                    className="flex-1"
-                    disabled={goal.status !== 'active'}
-                  >
-                    Add Contribution
-                  </Button>
+                  {goal.type === 'purchase' && !goal.linkedAccountId && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => setContributingGoal(goal)}
+                      className="flex-1"
+                      disabled={goal.status !== 'active'}
+                    >
+                      Add Contribution
+                    </Button>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -488,6 +574,46 @@ export default function GoalsPage() {
           confirmText="Delete"
           variant="danger"
           isLoading={deleteMutation.isPending}
+        />
+      )}
+
+      {/* Re-link Account Modal */}
+      {relinkGoal && (
+        <Modal isOpen={true} onClose={() => setRelinkGoal(null)} title="Re-link Account">
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Select a replacement account for <strong>{relinkGoal.name}</strong>.
+            </p>
+            <div className="space-y-2">
+              <select
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                defaultValue=""
+                onChange={(e) => {
+                  if (e.target.value) {
+                    relinkMutation.mutate({ goalId: relinkGoal.id, linkedAccountId: e.target.value });
+                  }
+                }}
+              >
+                <option value="">Select account...</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} ({a.type.replace(/_/g, ' ')})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="secondary" onClick={() => setRelinkGoal(null)}>Cancel</Button>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+      {/* Celebration Animation */}
+      {celebrationVariant !== null && (
+        <GoalCelebration
+          variant={celebrationVariant}
+          onComplete={() => setCelebrationVariant(null)}
         />
       )}
     </div>
