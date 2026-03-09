@@ -139,6 +139,7 @@ model Account {
   description  String?
   household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  linkedGoals  Goal[]        @relation("GoalLinkedAccount")
 
   @@index([householdId, isActive])
   @@map("accounts")
@@ -286,7 +287,10 @@ model Goal {
   icon          String?
   createdAt     DateTime           @default(now()) @map("created_at")
   updatedAt     DateTime           @updatedAt @map("updated_at")
-  metadata      Json?              @default("{}")
+  metadata         Json?              @default("{}")
+  linkedAccountId  String?            @map("linked_account_id")
+  incomePeriod     IncomePeriod?      @map("income_period")
+  linkedAccount    Account?           @relation("GoalLinkedAccount", fields: [linkedAccountId], references: [id], onDelete: SetNull)
   contributions GoalContribution[]
   household     Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
@@ -477,6 +481,11 @@ enum GoalStatus {
   active
   completed
   archived
+}
+
+enum IncomePeriod {
+  month
+  year
 }
 
 enum AssetType {
