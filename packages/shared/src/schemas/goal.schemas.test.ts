@@ -186,3 +186,29 @@ describe('createGoalSchema — linkedAccountId and incomePeriod', () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe('updateGoalSchema — cross-field validation', () => {
+  it('rejects update that sets type=debt_payoff while explicitly clearing linkedAccountId', () => {
+    const result = updateGoalSchema.safeParse({
+      type: 'debt_payoff',
+      linkedAccountId: null,
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toContain('linkedAccountId');
+  });
+
+  it('allows update that only changes name (no cross-field violation)', () => {
+    const result = updateGoalSchema.safeParse({
+      name: 'Updated name',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('allows update that sets type=debt_payoff with a linkedAccountId', () => {
+    const result = updateGoalSchema.safeParse({
+      type: 'debt_payoff',
+      linkedAccountId: 'a0000000-0000-0000-0000-000000000001',
+    });
+    expect(result.success).toBe(true);
+  });
+});

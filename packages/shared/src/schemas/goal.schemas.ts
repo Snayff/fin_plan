@@ -105,6 +105,23 @@ export const updateGoalSchema = z.object({
     .nullable(),
   incomePeriod: IncomePeriodEnum.optional().nullable(),
   metadata: z.record(z.any()).optional(),
+}).superRefine((data, ctx) => {
+  // Only validate cross-field constraints when the type is explicitly being changed
+  // to a type that requires a specific field AND that field is being explicitly cleared
+  if (data.type === 'debt_payoff' && data.linkedAccountId === null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'A linked account is required for debt payoff goals',
+      path: ['linkedAccountId'],
+    });
+  }
+  if (data.type === 'income' && data.incomePeriod === null) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'An income period (month or year) is required for income goals',
+      path: ['incomePeriod'],
+    });
+  }
 });
 
 /**

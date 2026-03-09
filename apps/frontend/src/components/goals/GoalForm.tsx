@@ -142,6 +142,8 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
       ...formData,
       type: newType,
       icon: GOAL_TYPE_ICONS[newType] || '🎯',
+      linkedAccountId: '',
+      purchaseTrackingMode: 'manual',
     });
   };
 
