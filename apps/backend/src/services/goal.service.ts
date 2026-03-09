@@ -611,14 +611,9 @@ export const goalService = {
    * Get goal summary statistics for a household
    */
   async getGoalSummary(householdId: string) {
-    const goals = await prisma.goal.findMany({
-      where: { householdId },
-      include: {
-        contributions: true,
-      },
-    });
+    const enhancedGoals = await goalService.getUserGoalsWithProgress(householdId);
 
-    if (goals.length === 0) {
+    if (enhancedGoals.length === 0) {
       return {
         totalSaved: 0,
         totalTarget: 0,
@@ -637,8 +632,8 @@ export const goalService = {
     const byTypeMap = new Map<GoalType, { saved: number; target: number; count: number }>();
     const byPriorityMap = new Map<Priority, { saved: number; target: number; count: number }>();
 
-    goals.forEach((goal) => {
-      const saved = Number(goal.currentAmount);
+    enhancedGoals.forEach((goal) => {
+      const saved = goal.calculatedProgress;
       const target = Number(goal.targetAmount);
 
       totalSaved += saved;

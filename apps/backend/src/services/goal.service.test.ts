@@ -235,6 +235,9 @@ describe('goalService.createGoal — household ownership check', () => {
 describe("goalService.getGoalSummary", () => {
   it("returns zero summary for no goals", async () => {
     prismaMock.goal.findMany.mockResolvedValue([]);
+    prismaMock.account.findMany.mockResolvedValue([]);
+    (calculateAccountBalances as any).mockResolvedValue(new Map());
+
     const result = await goalService.getGoalSummary("user-1");
     expect(result.totalSaved).toBe(0);
     expect(result.byType).toEqual([]);
@@ -242,9 +245,16 @@ describe("goalService.getGoalSummary", () => {
 
   it("aggregates totals and buckets", async () => {
     prismaMock.goal.findMany.mockResolvedValue([
-      buildGoal({ type: "savings", priority: "high", currentAmount: 200, targetAmount: 1000 }),
-      buildGoal({ id: "goal-2", type: "investment", priority: "low", currentAmount: 500, targetAmount: 2000 }),
+      buildGoal({ type: "savings", priority: "high", currentAmount: 0, targetAmount: 1000 }),
+      buildGoal({ id: "goal-2", type: "investment", priority: "low", currentAmount: 0, targetAmount: 2000 }),
     ] as any);
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: 'acc-savings', type: 'savings', isActive: true },
+      { id: 'acc-investment', type: 'investment', isActive: true },
+    ]);
+    (calculateAccountBalances as any).mockResolvedValue(
+      new Map([['acc-savings', 200], ['acc-investment', 500]])
+    );
 
     const result = await goalService.getGoalSummary("user-1");
 
@@ -334,5 +344,95 @@ describe('goalService.getUserGoalsWithProgress — calculatedProgress', () => {
 
     const results = await goalService.getUserGoalsWithProgress('household-1');
     expect(results[0].calculatedProgress).toBe(500);
+  });
+});
+
+describe('goalService.getUserGoalsWithProgress — additional computeGoalProgress cases', () => {
+  function buildGoalWithContributions(overrides: Record<string, any> = {}) {
+    return { ...buildGoal(overrides), contributions: [] };
+  }
+
+  it('computes investment progress from investment+stocks_and_shares_isa balances', async () => {
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'investment', targetAmount: 5000, currentAmount: 0 }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: 'acc-investment', type: 'investment', isActive: true },
+      { id: 'acc-isa', type: 'stocks_and_shares_isa', isActive: true },
+      { id: 'acc-savings', type: 'savings', isActive: true }, // excluded
+    ]);
+    (calculateAccountBalances as any).mockResolvedValue(
+      new Map([['acc-investment', 2000], ['acc-isa', 500], ['acc-savings', 300]])
+    );
+
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    expect(results[0].calculatedProgress).toBe(2500); // 2000 + 500, NOT 300
+    expect(results[0].progressPercentage).toBe(50);
+  });
+
+  it('computes net_worth progress as assets minus liabilities', async () => {
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'net_worth', targetAmount: 10000, currentAmount: 0 }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: 'acc-current', type: 'current', isActive: true },
+      { id: 'acc-savings', type: 'savings', isActive: true },
+      { id: 'acc-credit', type: 'credit', isActive: true },
+    ]);
+    (calculateAccountBalances as any).mockResolvedValue(
+      new Map([['acc-current', 3000], ['acc-savings', 2000], ['acc-credit', 1000]])
+    );
+
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    expect(results[0].calculatedProgress).toBe(4000); // (3000+2000) - 1000
+    expect(results[0].progressPercentage).toBe(40);
+  });
+
+  it('computes purchase progress from linked account balance', async () => {
+    const accountId = 'acc-purchase';
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'purchase', targetAmount: 2000, currentAmount: 0, linkedAccountId: accountId }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: accountId, type: 'savings', isActive: true },
+    ]);
+    (calculateAccountBalances as any).mockResolvedValue(
+      new Map([[accountId, 500]])
+    );
+
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    expect(results[0].calculatedProgress).toBe(500);
+    expect(results[0].progressPercentage).toBe(25);
+  });
+
+  it('computes income progress from annual income transactions when incomePeriod is year', async () => {
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'income', targetAmount: 36000, currentAmount: 0, incomePeriod: 'year' }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([]);
+    (calculateAccountBalances as any).mockResolvedValue(new Map());
+    prismaMock.transaction.aggregate
+      .mockResolvedValueOnce({ _sum: { amount: 3000 } })  // monthly (called first)
+      .mockResolvedValueOnce({ _sum: { amount: 18000 } }); // yearly (called second)
+
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    expect(results[0].calculatedProgress).toBe(18000);
+    expect(results[0].progressPercentage).toBeCloseTo(50);
+  });
+
+  it('caps progressPercentage at 100 when calculatedProgress exceeds targetAmount', async () => {
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'savings', targetAmount: 1000, currentAmount: 0 }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: 'acc-savings', type: 'savings', isActive: true },
+    ]);
+    (calculateAccountBalances as any).mockResolvedValue(
+      new Map([['acc-savings', 1500]])
+    );
+
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    expect(results[0].calculatedProgress).toBe(1500);
+    expect(results[0].progressPercentage).toBe(100); // capped
   });
 });

@@ -18,6 +18,13 @@ export async function goalRoutes(fastify: FastifyInstance) {
     return reply.send({ goals });
   });
 
+  // Get goal summary (analytics)
+  fastify.get('/goals/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
+    const householdId = request.householdId!;
+    const summary = await goalService.getGoalSummary(householdId);
+    return reply.send(summary);
+  });
+
   // Get single goal by ID
   fastify.get('/goals/:id', { preHandler: [authMiddleware] }, async (request, reply) => {
     const householdId = request.householdId!;
@@ -82,12 +89,5 @@ export async function goalRoutes(fastify: FastifyInstance) {
 
     const result = await goalService.deleteGoal(id, householdId);
     return reply.send(result);
-  });
-
-  // Get goal summary (analytics)
-  fastify.get('/goals/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const householdId = request.householdId!;
-    const summary = await goalService.getGoalSummary(householdId);
-    return reply.send(summary);
   });
 }
