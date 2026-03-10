@@ -50,6 +50,8 @@ export default function GoalsPage() {
   const [contributingGoal, setContributingGoal] = useState<EnhancedGoal | null>(null);
   const [deletingGoal, setDeletingGoal] = useState<EnhancedGoal | null>(null);
   const [relinkGoal, setRelinkGoal] = useState<EnhancedGoal | null>(null);
+  const [relinkSelectedAccountId, setRelinkSelectedAccountId] = useState('');
+  const [completingGoalId, setCompletingGoalId] = useState<string | null>(null);
   const [celebrationVariant, setCelebrationVariant] = useState<number | null>(null);
   const prevProgressRef = useRef<Record<string, number>>({});
 
@@ -71,6 +73,7 @@ export default function GoalsPage() {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       showSuccess('Account re-linked successfully');
       setRelinkGoal(null);
+      setRelinkSelectedAccountId('');
     },
     onError: (err: Error) => {
       showError(err.message || 'Failed to re-link account');
@@ -78,7 +81,10 @@ export default function GoalsPage() {
   });
 
   const markCompleteMutation = useMutation({
-    mutationFn: (goalId: string) => goalService.updateGoal(goalId, { status: 'completed' }),
+    mutationFn: (goalId: string) => {
+      setCompletingGoalId(goalId);
+      return goalService.updateGoal(goalId, { status: 'completed' });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
@@ -87,6 +93,7 @@ export default function GoalsPage() {
     onError: (err: Error) => {
       showError(err.message || 'Failed to update goal');
     },
+    onSettled: () => setCompletingGoalId(null),
   });
 
   const deleteMutation = useMutation({
@@ -109,7 +116,7 @@ export default function GoalsPage() {
     if (!goals.length) return;
     goals.forEach((goal) => {
       const prev = prevProgressRef.current[goal.id] ?? 0;
-      if (prev > 0 && prev < 100 && goal.progressPercentage >= 100) {
+      if (prev < 100 && goal.progressPercentage >= 100) {
         const variant = Math.floor(Math.random() * 5) + 1;
         setCelebrationVariant(variant);
       }
@@ -456,7 +463,7 @@ export default function GoalsPage() {
                       variant="default"
                       className="w-full bg-success hover:bg-success/90 text-success-foreground"
                       onClick={() => markCompleteMutation.mutate(goal.id)}
-                      disabled={markCompleteMutation.isPending}
+                      disabled={completingGoalId === goal.id}
                     >
                       <CheckCircle2Icon className="h-3.5 w-3.5 mr-1.5" />
                       Mark Complete
@@ -579,7 +586,11 @@ export default function GoalsPage() {
 
       {/* Re-link Account Modal */}
       {relinkGoal && (
-        <Modal isOpen={true} onClose={() => setRelinkGoal(null)} title="Re-link Account">
+        <Modal
+          isOpen={true}
+          onClose={() => { setRelinkGoal(null); setRelinkSelectedAccountId(''); }}
+          title="Re-link Account"
+        >
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Select a replacement account for <strong>{relinkGoal.name}</strong>.
@@ -587,15 +598,14 @@ export default function GoalsPage() {
             <div className="space-y-2">
               <select
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-                defaultValue=""
-                onChange={(e) => {
-                  if (e.target.value) {
-                    relinkMutation.mutate({ goalId: relinkGoal.id, linkedAccountId: e.target.value });
-                  }
-                }}
+                value={relinkSelectedAccountId}
+                onChange={(e) => setRelinkSelectedAccountId(e.target.value)}
               >
                 <option value="">Select account...</option>
-                {accounts.map((a) => (
+                {(relinkGoal.type === 'debt_payoff'
+                  ? accounts.filter(a => ['credit', 'loan', 'liability'].includes(a.type))
+                  : accounts
+                ).map((a) => (
                   <option key={a.id} value={a.id}>
                     {a.name} ({a.type.replace(/_/g, ' ')})
                   </option>
@@ -603,7 +613,18 @@ export default function GoalsPage() {
               </select>
             </div>
             <div className="flex justify-end gap-2">
-              <Button variant="secondary" onClick={() => setRelinkGoal(null)}>Cancel</Button>
+              <Button
+                variant="secondary"
+                onClick={() => { setRelinkGoal(null); setRelinkSelectedAccountId(''); }}
+              >
+                Cancel
+              </Button>
+              <Button
+                disabled={!relinkSelectedAccountId || relinkMutation.isPending}
+                onClick={() => relinkMutation.mutate({ goalId: relinkGoal.id, linkedAccountId: relinkSelectedAccountId })}
+              >
+                {relinkMutation.isPending ? 'Saving...' : 'Save'}
+              </Button>
             </div>
           </div>
         </Modal>
