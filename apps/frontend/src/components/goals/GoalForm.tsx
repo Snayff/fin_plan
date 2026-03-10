@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { createGoalSchema, updateGoalSchema } from '@finplan/shared';
 import { accountService } from '../../services/account.service';
 import { goalService } from '../../services/goal.service';
+import { getIncomePeriodRange } from '../../lib/date-utils';
 import type {
   Goal,
   GoalType,
@@ -55,21 +56,6 @@ interface GoalFormState {
   linkedAccountId: string;
   incomePeriod: 'month' | 'year';
   purchaseTrackingMode: 'account' | 'manual';
-}
-
-function getIncomePeriodRange(period: 'month' | 'year'): string {
-  const now = new Date();
-  const locale = 'en-GB';
-  const shortFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short' });
-  const fullFmt = new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', year: 'numeric' });
-  if (period === 'month') {
-    const start = new Date(now.getFullYear(), now.getMonth(), 1);
-    const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    return `${shortFmt.format(start)} – ${fullFmt.format(end)}`;
-  }
-  const start = new Date(now.getFullYear(), 0, 1);
-  const end = new Date(now.getFullYear(), 11, 31);
-  return `${shortFmt.format(start)} – ${fullFmt.format(end)}`;
 }
 
 function getInitialFormData(goal?: Goal): GoalFormState {
