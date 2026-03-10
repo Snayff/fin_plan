@@ -146,10 +146,9 @@ export default function GoalsPage() {
   });
 
   // Calculate summary stats from filtered data
-  const totalSaved = filteredGoals.reduce((sum, goal) => sum + (goal.calculatedProgress ?? 0), 0);
-  const totalTarget = filteredGoals.reduce((sum, goal) => sum + goal.targetAmount, 0);
+  const totalSaved = filteredGoals.reduce((sum, goal) => sum + Number(goal.calculatedProgress ?? 0), 0);
+  const totalTarget = filteredGoals.reduce((sum, goal) => sum + Number(goal.targetAmount), 0);
   const activeGoals = filteredGoals.filter((g) => g.status === 'active').length;
-  const onTrackGoals = filteredGoals.filter((g) => g.isOnTrack && g.status === 'active').length;
   const needsAttentionGoals = filteredGoals.filter((goal) => {
     if (goal.status !== 'active' || !goal.targetDate) return false;
     return new Date(goal.targetDate).getTime() < Date.now();
@@ -255,9 +254,6 @@ export default function GoalsPage() {
                 <p className="text-sm text-muted-foreground">Active Goals</p>
               </div>
               <p className="text-2xl font-bold text-foreground">{activeGoals}</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {onTrackGoals} on track
-              </p>
             </CardContent>
           </Card>
           <Card>
@@ -358,7 +354,7 @@ export default function GoalsPage() {
                   <div className="flex justify-between text-sm mb-2">
                     <span className="text-muted-foreground">Progress</span>
                     <span className="font-semibold">
-                      {goal.progressPercentage.toFixed(1)}%
+                      {Number(goal.progressPercentage).toFixed(1)}%
                     </span>
                   </div>
 
@@ -366,18 +362,16 @@ export default function GoalsPage() {
                   <div className="relative w-full bg-muted rounded-full h-3 mb-1">
                     <div
                       role="progressbar"
-                      aria-valuenow={Math.round(goal.progressPercentage)}
+                      aria-valuenow={Math.round(Number(goal.progressPercentage))}
                       aria-valuemin={0}
                       aria-valuemax={100}
                       aria-label={`${goal.name} progress`}
                       className={`h-3 rounded-full transition-all ${
-                        goal.progressPercentage >= 100
+                        Number(goal.progressPercentage) >= 100
                           ? 'bg-success'
-                          : goal.isOnTrack
-                          ? 'bg-primary'
-                          : 'bg-warning'
+                          : 'bg-primary'
                       }`}
-                      style={{ width: `${Math.min(goal.progressPercentage, 100)}%` }}
+                      style={{ width: `${Math.min(Number(goal.progressPercentage), 100)}%` }}
                     />
                     {/* Milestone markers */}
                     {[25, 50, 75].map((milestone) => (
