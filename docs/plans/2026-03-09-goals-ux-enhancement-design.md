@@ -109,15 +109,15 @@ Persists until user acts (no auto-archiving).
 
 | # | Name | Implementation |
 |---|------|----------------|
-| 1 | Confetti burst | `canvas-confetti` library |
-| 2 | Coin shower | CSS keyframe, gold SVG circles fall from top |
-| 3 | Star scatter | CSS keyframe, ★ symbols burst outward |
-| 4 | Fireworks pop | CSS keyframe, 3 radial colour bursts |
-| 5 | Balloon float | CSS keyframe, 3 SVG balloons drift up |
+| 1 | Confetti burst | Coloured rectangles tumble down |
+| 2 | Coin shower | Gold circles rain from top |
+| 3 | Star scatter | ★ symbols burst outward from centre |
+| 4 | Fireworks pop | 3 radial dot bursts |
+| 5 | Balloon float | Ovals drift up with gentle drift |
 
-**Component:** `GoalCelebration.tsx` — `ReactDOM.createPortal` fixed overlay (`pointer-events: none`), auto-unmounts after ~2.5s.
+**Component:** `GoalCelebration.tsx` — `ReactDOM.createPortal` fixed overlay (`pointer-events: none`), auto-unmounts after ~2.8s.
 
-**Dependencies:** `canvas-confetti` + `@types/canvas-confetti`
+**Dependencies:** Implemented using `framer-motion` (already a project dependency) for all 5 variants — `canvas-confetti` was not added.
 
 ---
 
@@ -137,7 +137,7 @@ Align to existing `Card > CardContent p-12 text-center` pattern (same as Account
 | `apps/backend/src/routes/goal.routes.ts` | Step 6 |
 | `apps/backend/src/services/goal.service.ts` | Step 6 |
 | `apps/frontend/src/components/goals/GoalCelebration.tsx` | Step 8 (new) |
-| `apps/frontend/package.json` | Step 8 (canvas-confetti) |
+| `apps/frontend/package.json` | Step 8 (no new dependency — framer-motion reused) |
 | `apps/backend/package.json` | Step 6 (date-fns-tz) |
 
 ---
