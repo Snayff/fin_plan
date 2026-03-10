@@ -36,7 +36,7 @@ export default function AssetsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      showSuccess('Asset deleted successfully!');
+      showSuccess('Asset deleted!');
       setDeletingAsset(null);
     },
     onError: (error: Error) => {

@@ -58,7 +58,7 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      showSuccess('Transaction created successfully!');
+      showSuccess('Transaction created!');
       onSuccess?.();
     },
     onError: (error: Error) => {
@@ -74,7 +74,7 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
       queryClient.invalidateQueries({ queryKey: ['recurringRules'] });
-      showSuccess('Transaction updated successfully!');
+      showSuccess('Transaction updated!');
       onSuccess?.();
     },
     onError: (error: Error) => {

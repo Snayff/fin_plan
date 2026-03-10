@@ -71,7 +71,7 @@ export default function GoalsPage() {
       goalService.updateGoal(goalId, { linkedAccountId }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
-      showSuccess('Account re-linked successfully');
+      showSuccess('Account re-linked!');
       setRelinkGoal(null);
       setRelinkSelectedAccountId('');
     },
@@ -88,7 +88,7 @@ export default function GoalsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      showSuccess('Goal marked as complete!');
+      showSuccess('Goal completed!');
     },
     onError: (err: Error) => {
       showError(err.message || 'Failed to update goal');
@@ -101,7 +101,7 @@ export default function GoalsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['goals'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      showSuccess('Goal deleted successfully!');
+      showSuccess('Goal deleted!');
       setDeletingGoal(null);
     },
     onError: (error: Error) => {

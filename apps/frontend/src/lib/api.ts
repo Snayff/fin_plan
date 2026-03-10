@@ -75,7 +75,7 @@ export class ApiClient {
         ...options,
         credentials: 'include', // CRITICAL: Send cookies
         headers: {
-          'Content-Type': 'application/json',
+          ...(options.body !== undefined && { 'Content-Type': 'application/json' }),
           ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
           ...authHeaders,
           ...options.headers, // Allow explicit override

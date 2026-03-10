@@ -62,7 +62,7 @@ export default function TransactionsPage() {
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      showSuccess('Transaction deleted successfully!');
+      showSuccess('Transaction deleted!');
       setDeletingTransaction(null);
     },
     onError: (error: Error) => {

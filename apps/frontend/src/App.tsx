@@ -54,57 +54,47 @@ function App() {
     void initializeAuth();
   }, [initializeAuth, isDesignPage]);
 
-  // Design reference: bypass React Router v7 entirely for this dev-only page
-  if (isDesignPage) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <Toaster />
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Toaster position="top-right" />
+      {/* Design reference: bypass React Router v7 entirely for this dev-only page */}
+      {isDesignPage ? (
         <DesignPage />
-      </QueryClientProvider>
-    );
-  }
-
-  if (authStatus === 'initializing') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <Toaster />
+      ) : authStatus === 'initializing' ? (
         <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
           Restoring secure session...
         </div>
-      </QueryClientProvider>
-    );
-  }
+      ) : (
+        <>
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route
+                path="/login"
+                element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />}
+              />
+              <Route
+                path="/register"
+                element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />}
+              />
+              <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <BrowserRouter>
-        <Routes>
-        {/* Public routes */}
-        <Route
-          path="/login"
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />}
-        />
-        <Route
-          path="/register"
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />}
-        />
-        <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
-
-        {/* Protected routes */}
-        <Route
-          path="/*"
-          element={
-            isAuthenticated ? (
-              <ProtectedAppRoutes />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-      </Routes>
-    </BrowserRouter>
-    <ReactQueryDevtools initialIsOpen={false} />
+              {/* Protected routes */}
+              <Route
+                path="/*"
+                element={
+                  isAuthenticated ? (
+                    <ProtectedAppRoutes />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+            </Routes>
+          </BrowserRouter>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </>
+      )}
     </QueryClientProvider>
   );
 }

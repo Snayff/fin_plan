@@ -82,7 +82,7 @@ export default function BudgetDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      showSuccess('Budget item added successfully!');
+      showSuccess('Budget item added!');
       setAddingCategoryId(null);
       setAddAmount('');
       setAddNotes('');
