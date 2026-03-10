@@ -304,8 +304,9 @@ export const goalService = {
       );
 
       const targetAmount = Number(goal.targetAmount);
+      const cp = Number(calculatedProgress);
       const progressPercentage = targetAmount > 0
-        ? Math.min((calculatedProgress / targetAmount) * 100, 100)
+        ? Math.min((cp / targetAmount) * 100, 100)
         : 0;
 
       // Days remaining
@@ -370,7 +371,7 @@ export const goalService = {
       return {
         ...goal,
         targetAmount,
-        calculatedProgress,
+        calculatedProgress: cp,
         linkedAccountMissing,
         contributions: contributions.map((c) => ({ ...c, amount: Number(c.amount) })),
         progressPercentage,
