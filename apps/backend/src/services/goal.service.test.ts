@@ -436,3 +436,67 @@ describe('goalService.getUserGoalsWithProgress — additional computeGoalProgres
     expect(results[0].progressPercentage).toBe(100); // capped
   });
 });
+
+describe('goalService.getUserGoalsWithProgress — periodBoundaries', () => {
+  function buildGoalWithContributions(overrides: Record<string, any> = {}) {
+    return { ...buildGoal(overrides), contributions: [] };
+  }
+
+  it('uses client-supplied period boundaries when provided for income goal', async () => {
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'income', targetAmount: 3000, currentAmount: 0, incomePeriod: 'month' }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([]);
+    (calculateAccountBalances as any).mockResolvedValue(new Map());
+    prismaMock.transaction.aggregate
+      .mockResolvedValueOnce({ _sum: { amount: 900 } })  // monthly (client boundaries)
+      .mockResolvedValueOnce({ _sum: { amount: 5000 } }); // yearly
+
+    const monthStart = '2026-03-01T00:00:00.000Z';
+    const yearStart = '2026-01-01T00:00:00.000Z';
+    const periodEnd = '2026-03-09T23:59:59.999Z';
+
+    const results = await goalService.getUserGoalsWithProgress('household-1', {
+      monthStart,
+      yearStart,
+      periodEnd,
+    });
+
+    // Verify the correct aggregate value is used
+    expect(results[0].calculatedProgress).toBe(900);
+
+    // Verify Prisma was called with the client-supplied boundaries (not server defaults)
+    const firstCall = prismaMock.transaction.aggregate.mock.calls[0][0];
+    expect(firstCall.where.date.gte).toEqual(new Date(monthStart));
+    expect(firstCall.where.date.lte).toEqual(new Date(periodEnd));
+
+    const secondCall = prismaMock.transaction.aggregate.mock.calls[1][0];
+    expect(secondCall.where.date.gte).toEqual(new Date(yearStart));
+    expect(secondCall.where.date.lte).toEqual(new Date(periodEnd));
+  });
+
+  it('falls back to server UTC boundaries when no periodBoundaries supplied', async () => {
+    prismaMock.goal.findMany.mockResolvedValue([
+      buildGoalWithContributions({ type: 'income', targetAmount: 3000, currentAmount: 0, incomePeriod: 'month' }),
+    ]);
+    prismaMock.account.findMany.mockResolvedValue([]);
+    (calculateAccountBalances as any).mockResolvedValue(new Map());
+    prismaMock.transaction.aggregate
+      .mockResolvedValueOnce({ _sum: { amount: 750 } })
+      .mockResolvedValueOnce({ _sum: { amount: 4000 } });
+
+    const before = new Date();
+    const results = await goalService.getUserGoalsWithProgress('household-1');
+    const after = new Date();
+
+    expect(results[0].calculatedProgress).toBe(750);
+
+    // Verify the boundaries are around "now" (i.e. server computed, not client-supplied)
+    const firstCall = prismaMock.transaction.aggregate.mock.calls[0][0];
+    const usedGte: Date = firstCall.where.date.gte;
+    // startOfMonth(now) should be the 1st of the current month
+    expect(usedGte.getDate()).toBe(1);
+    expect(usedGte >= new Date(before.getFullYear(), before.getMonth(), 1)).toBe(true);
+    expect(usedGte <= new Date(after.getFullYear(), after.getMonth(), 1)).toBe(true);
+  });
+});
