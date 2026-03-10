@@ -194,6 +194,9 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
             setFormData({ ...formData, name: e.target.value });
             if (formErrors.name) setFormErrors(prev => { const n = {...prev}; delete n.name; return n; });
           }}
+          onBlur={() => {
+            if (!formData.name.trim()) setFormErrors(prev => ({ ...prev, name: 'Goal name is required' }));
+          }}
           placeholder="e.g., Emergency Fund, New Car, Retirement"
           aria-invalid={!!formErrors.name}
         />
@@ -379,6 +382,12 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
             onChange={(e) => {
               setFormData({ ...formData, targetAmount: e.target.value });
               if (formErrors.targetAmount) setFormErrors(prev => { const n = {...prev}; delete n.targetAmount; return n; });
+            }}
+            onBlur={() => {
+              const n = Number(formData.targetAmount);
+              if (!formData.targetAmount || n <= 0) {
+                setFormErrors(prev => ({ ...prev, targetAmount: 'Target amount must be greater than 0' }));
+              }
             }}
             className={`pl-8 ${formErrors.targetAmount ? 'border-destructive' : ''}`}
             placeholder="0.00"
