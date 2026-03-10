@@ -24,11 +24,26 @@ export class ApiClient {
       return this.csrfToken;
     }
 
-    const response = await fetch(`${this.baseUrl}/api/auth/csrf-token`, {
-      credentials: 'include',
-    });
+    const MAX_RETRIES = 3;
+    const RETRY_DELAY_MS = 1500;
 
-    if (!response.ok) {
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      const response = await fetch(`${this.baseUrl}/api/auth/csrf-token`, {
+        credentials: 'include',
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        this.csrfToken = data.csrfToken || '';
+        return this.csrfToken;
+      }
+
+      // Retry on 5xx (e.g. backend restarting due to hot-reload)
+      if (response.status >= 500 && attempt < MAX_RETRIES) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        continue;
+      }
+
       throw {
         message: 'Failed to fetch CSRF token',
         code: 'CSRF_FETCH_ERROR',
@@ -36,10 +51,11 @@ export class ApiClient {
       } as ApiError;
     }
 
-    const data = await response.json();
-    const token = data.csrfToken || '';
-    this.csrfToken = token;
-    return token;
+    throw {
+      message: 'Failed to fetch CSRF token after retries',
+      code: 'CSRF_FETCH_ERROR',
+      statusCode: 500,
+    } as ApiError;
   }
 
   private async request<T>(

@@ -42,7 +42,13 @@
       "Bash(git commit:*)",
       "Bash(git add packages/shared/src/schemas/goal.schemas.ts packages/shared/src/schemas/goal.schemas.test.ts)",
       "Bash(git add apps/backend/src/services/goal.service.ts apps/backend/src/services/goal.service.test.ts)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(grep '\"\"version\"\"')",
+      "Bash(xargs grep -l \"csrf\")",
+      "Bash(curl -s http://localhost:3001/api/auth/csrf-token)",
+      "Bash(curl -s http://localhost:3001/health)",
+      "Bash(curl -v http://localhost:3000/api/auth/csrf-token)",
+      "Bash(xargs -I{} git diff-tree --no-commit-id -r {} --name-only)"
     ]
   }
 }
