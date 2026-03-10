@@ -1,4 +1,5 @@
 import { FastifyInstance } from 'fastify';
+import { z } from 'zod';
 import { goalService } from '../services/goal.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import {
@@ -8,15 +9,32 @@ import {
   linkTransactionToGoalSchema,
 } from '@finplan/shared';
 
+const periodBoundariesSchema = z.object({
+  monthStart: z.string().datetime({ message: 'monthStart must be an ISO 8601 datetime' }).optional(),
+  yearStart: z.string().datetime({ message: 'yearStart must be an ISO 8601 datetime' }).optional(),
+  periodEnd: z.string().datetime({ message: 'periodEnd must be an ISO 8601 datetime' }).optional(),
+}).refine(
+  (data) => {
+    if (data.periodEnd && data.monthStart) {
+      return new Date(data.periodEnd) >= new Date(data.monthStart);
+    }
+    return true;
+  },
+  { message: 'periodEnd must be on or after monthStart' }
+);
+
 export async function goalRoutes(fastify: FastifyInstance) {
   // Get all goals for current user with progress data
   fastify.get('/goals', { preHandler: [authMiddleware] }, async (request, reply) => {
     const householdId = request.householdId!;
-    const { monthStart, yearStart, periodEnd } = request.query as {
-      monthStart?: string;
-      yearStart?: string;
-      periodEnd?: string;
-    };
+
+    const periodResult = periodBoundariesSchema.safeParse(request.query);
+    if (!periodResult.success) {
+      return reply.status(400).send({
+        error: { message: periodResult.error.issues[0]?.message ?? 'Invalid period parameters' },
+      });
+    }
+    const { monthStart, yearStart, periodEnd } = periodResult.data;
 
     // Always return enhanced data (with progress calculations) for consistency
     const goals = await goalService.getUserGoalsWithProgress(householdId, { monthStart, yearStart, periodEnd });
