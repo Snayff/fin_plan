@@ -100,7 +100,7 @@ export default function BudgetForm({ budget, onSuccess, onCancel }: BudgetFormPr
         queryClient.invalidateQueries({ queryKey: ['budget', budget.id] });
       }
 
-      showSuccess(isEditMode ? 'Budget updated!' : 'Budget created!');
+      showSuccess(isEditMode ? 'Budget updated successfully!' : 'Budget created successfully!');
       onSuccess?.();
     },
     onError: (error: Error) => {

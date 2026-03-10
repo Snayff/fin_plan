@@ -73,7 +73,7 @@ export default function BudgetsPage() {
     mutationFn: (id: string) => budgetService.deleteBudget(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
-      showSuccess('Budget deleted!');
+      showSuccess('Budget deleted successfully!');
       setDeletingBudget(null);
     },
     onError: (mutationError: Error) => {
