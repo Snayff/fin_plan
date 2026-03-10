@@ -34,8 +34,9 @@ export class ApiClient {
 
       if (response.ok) {
         const data = await response.json();
-        this.csrfToken = data.csrfToken || '';
-        return this.csrfToken;
+        const token: string = data.csrfToken || '';
+        this.csrfToken = token;
+        return token;
       }
 
       // Retry on 5xx (e.g. backend restarting due to hot-reload)
