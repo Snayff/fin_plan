@@ -136,6 +136,17 @@ export async function errorHandler(
     });
   }
 
+  // Handle errors that carry their own HTTP status code (e.g. rate-limit 429)
+  if (error.statusCode && error.statusCode < 500) {
+    return reply.status(error.statusCode).send({
+      error: {
+        message: error.message,
+        code: error.code || 'HTTP_ERROR',
+        statusCode: error.statusCode,
+      },
+    });
+  }
+
   // Default internal server error
   return reply.status(500).send({
     error: {

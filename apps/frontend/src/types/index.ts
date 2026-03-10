@@ -423,6 +423,8 @@ export interface Goal {
   type: GoalType;
   targetAmount: number;
   currentAmount: number;
+  linkedAccountId: string | null;
+  incomePeriod: 'month' | 'year' | null;
   targetDate: string | null;
   priority: Priority;
   status: GoalStatus;
@@ -450,6 +452,8 @@ export interface GoalContribution {
 
 export interface EnhancedGoal extends Goal {
   contributions: GoalContribution[];
+  calculatedProgress: number;
+  linkedAccountMissing?: boolean;
   progressPercentage: number;
   daysRemaining: number | null;
   averageMonthlyContribution: number;

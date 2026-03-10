@@ -41,7 +41,7 @@ export default function LiabilitiesPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['liabilities'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      showSuccess('Liability deleted successfully!');
+      showSuccess('Liability deleted!');
       setDeletingLiability(null);
     },
     onError: (err: Error) => showError(err.message || 'Failed to delete liability'),

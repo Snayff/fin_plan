@@ -33,7 +33,7 @@ export default function AccountsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      showSuccess('Account deleted successfully!');
+      showSuccess('Account deleted!');
       setDeletingAccount(null);
     },
     onError: (error: Error) => {

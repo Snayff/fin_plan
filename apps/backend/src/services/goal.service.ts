@@ -1,7 +1,8 @@
 import { prisma } from '../config/database';
 import { GoalType, Priority, GoalStatus } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../utils/errors';
-import { differenceInDays, addMonths } from 'date-fns';
+import { differenceInDays, addMonths, startOfMonth, startOfYear } from 'date-fns';
+import { calculateAccountBalances, endOfDay } from '../utils/balance.utils';
 
 export interface CreateGoalInput {
   name: string;
@@ -11,6 +12,8 @@ export interface CreateGoalInput {
   targetDate?: string | Date;
   priority?: Priority;
   icon?: string;
+  linkedAccountId?: string;
+  incomePeriod?: 'month' | 'year';
   metadata?: {
     milestones?: Array<{
       percentage: number;
@@ -30,6 +33,8 @@ export interface UpdateGoalInput {
   priority?: Priority;
   status?: GoalStatus;
   icon?: string;
+  linkedAccountId?: string | null;
+  incomePeriod?: 'month' | 'year' | null;
   metadata?: Record<string, any>;
 }
 
@@ -43,6 +48,86 @@ export interface LinkTransactionToGoalInput {
   transactionId: string;
   amount: number;
   notes?: string;
+}
+
+const SAVINGS_ACCOUNT_TYPES = ['savings', 'isa'];
+const INVESTMENT_ACCOUNT_TYPES = ['investment', 'stocks_and_shares_isa'];
+const ASSET_ACCOUNT_TYPES = ['current', 'savings', 'isa', 'stocks_and_shares_isa', 'investment', 'asset'];
+const LIABILITY_ACCOUNT_TYPES = ['credit', 'loan', 'liability'];
+
+function computeGoalProgress(
+  goal: {
+    type: GoalType;
+    targetAmount: any;
+    currentAmount: any;
+    linkedAccountId: string | null;
+    incomePeriod: string | null;
+  },
+  balanceMap: Map<string, number>,
+  accountsByType: Map<string, number>,
+  incomeThisMonth: number,
+  incomeThisYear: number
+): { calculatedProgress: number; linkedAccountMissing: boolean } {
+  const targetAmount = Number(goal.targetAmount);
+  let calculatedProgress = 0;
+  let linkedAccountMissing = false;
+
+  switch (goal.type as GoalType) {
+    case 'savings':
+      calculatedProgress = SAVINGS_ACCOUNT_TYPES.reduce(
+        (sum, t) => sum + (accountsByType.get(t) ?? 0), 0
+      );
+      break;
+
+    case 'investment':
+      calculatedProgress = INVESTMENT_ACCOUNT_TYPES.reduce(
+        (sum, t) => sum + (accountsByType.get(t) ?? 0), 0
+      );
+      break;
+
+    case 'net_worth': {
+      const assets = ASSET_ACCOUNT_TYPES.reduce((sum, t) => sum + (accountsByType.get(t) ?? 0), 0);
+      const liabilities = LIABILITY_ACCOUNT_TYPES.reduce((sum, t) => sum + (accountsByType.get(t) ?? 0), 0);
+      calculatedProgress = assets - liabilities;
+      break;
+    }
+
+    case 'debt_payoff': {
+      if (!goal.linkedAccountId) {
+        calculatedProgress = 0;
+        break;
+      }
+      const linkedBalance = balanceMap.get(goal.linkedAccountId);
+      if (linkedBalance === undefined) {
+        linkedAccountMissing = true;
+        calculatedProgress = 0;
+      } else {
+        calculatedProgress = Math.max(0, targetAmount - Math.abs(linkedBalance));
+      }
+      break;
+    }
+
+    case 'purchase': {
+      if (goal.linkedAccountId) {
+        const linkedBalance = balanceMap.get(goal.linkedAccountId);
+        if (linkedBalance === undefined) {
+          linkedAccountMissing = true;
+          calculatedProgress = 0;
+        } else {
+          calculatedProgress = linkedBalance;
+        }
+      } else {
+        calculatedProgress = Number(goal.currentAmount);
+      }
+      break;
+    }
+
+    case 'income':
+      calculatedProgress = goal.incomePeriod === 'year' ? incomeThisYear : incomeThisMonth;
+      break;
+  }
+
+  return { calculatedProgress, linkedAccountMissing };
 }
 
 export const goalService = {
@@ -69,6 +154,16 @@ export const goalService = {
       ];
     }
 
+    // Validate linkedAccountId belongs to same household
+    if (data.linkedAccountId) {
+      const account = await prisma.account.findFirst({
+        where: { id: data.linkedAccountId, householdId },
+      });
+      if (!account) {
+        throw new ValidationError('Linked account not found or does not belong to this household');
+      }
+    }
+
     const goal = await prisma.goal.create({
       data: {
         householdId,
@@ -79,6 +174,8 @@ export const goalService = {
         targetDate: data.targetDate ? new Date(data.targetDate) : null,
         priority: data.priority || 'medium',
         icon: data.icon,
+        linkedAccountId: data.linkedAccountId,
+        incomePeriod: data.incomePeriod,
         metadata,
       },
     });
@@ -119,51 +216,109 @@ export const goalService = {
   /**
    * Get all goals for a household with enhanced progress data
    */
-  async getUserGoalsWithProgress(householdId: string) {
-    const goals = await prisma.goal.findMany({
-      where: { householdId },
-      orderBy: [
-        { priority: 'asc' }, // high first
-        { createdAt: 'desc' },
-      ],
-      include: {
-        contributions: {
-          orderBy: { date: 'desc' },
-          include: {
-            transaction: {
-              select: {
-                id: true,
-                name: true,
-                amount: true,
-                date: true,
+  async getUserGoalsWithProgress(
+    householdId: string,
+    periodBoundaries?: { monthStart?: string; yearStart?: string; periodEnd?: string }
+  ) {
+    // Fetch goals and accounts in parallel
+    const [goals, accounts] = await Promise.all([
+      prisma.goal.findMany({
+        where: { householdId },
+        orderBy: [{ priority: 'asc' }, { createdAt: 'desc' }],
+        include: {
+          contributions: {
+            orderBy: { date: 'desc' },
+            include: {
+              transaction: {
+                select: { id: true, name: true, amount: true, date: true },
               },
             },
           },
         },
-      },
-    });
+      }),
+      prisma.account.findMany({
+        where: { householdId, isActive: true },
+      }),
+    ]);
 
-    // Enhance each goal with calculated data
+    // Calculate balances for all active accounts
+    const accountIds = accounts.map((a) => a.id);
+    const balanceMap = accountIds.length > 0
+      ? await calculateAccountBalances(accountIds)
+      : new Map<string, number>();
+
+    // Aggregate balances by account type
+    const accountsByType = new Map<string, number>();
+    for (const account of accounts) {
+      const balance = balanceMap.get(account.id) ?? 0;
+      accountsByType.set(account.type, (accountsByType.get(account.type) ?? 0) + balance);
+    }
+
+    // Fetch income transactions only if there are income goals
+    const hasIncomeGoals = goals.some((g) => g.type === 'income');
+    let incomeThisMonth = 0;
+    let incomeThisYear = 0;
+
+    if (hasIncomeGoals) {
+      const now = new Date();
+      // Use client-provided timezone-aware boundaries when available; fall back to server UTC
+      const monthStartDate = periodBoundaries?.monthStart
+        ? new Date(periodBoundaries.monthStart)
+        : startOfMonth(now);
+      const yearStartDate = periodBoundaries?.yearStart
+        ? new Date(periodBoundaries.yearStart)
+        : startOfYear(now);
+      const periodEndDate = periodBoundaries?.periodEnd
+        ? new Date(periodBoundaries.periodEnd)
+        : endOfDay(now);
+
+      const [monthResult, yearResult] = await Promise.all([
+        prisma.transaction.aggregate({
+          where: {
+            householdId,
+            type: 'income',
+            date: { gte: monthStartDate, lte: periodEndDate },
+          },
+          _sum: { amount: true },
+        }),
+        prisma.transaction.aggregate({
+          where: {
+            householdId,
+            type: 'income',
+            date: { gte: yearStartDate, lte: periodEndDate },
+          },
+          _sum: { amount: true },
+        }),
+      ]);
+      incomeThisMonth = Number(monthResult._sum.amount) || 0;
+      incomeThisYear = Number(yearResult._sum.amount) || 0;
+    }
+
     const enhancedGoals = goals.map((goal) => {
-      const currentAmount = Number(goal.currentAmount);
+      const { calculatedProgress, linkedAccountMissing } = computeGoalProgress(
+        goal,
+        balanceMap,
+        accountsByType,
+        incomeThisMonth,
+        incomeThisYear
+      );
+
       const targetAmount = Number(goal.targetAmount);
+      const cp = Number(calculatedProgress);
+      const progressPercentage = targetAmount > 0
+        ? Math.min((cp / targetAmount) * 100, 100)
+        : 0;
 
-      // Calculate progress percentage
-      const progressPercentage = targetAmount > 0 ? (currentAmount / targetAmount) * 100 : 0;
-
-      // Calculate days remaining
+      // Days remaining
       const daysRemaining = goal.targetDate
         ? differenceInDays(new Date(goal.targetDate), new Date())
         : null;
 
-      // Calculate average monthly contribution
+      // Contribution-based averages (used for projections on manual purchase goals)
       const contributions = goal.contributions;
       let averageMonthlyContribution = 0;
       if (contributions.length > 0) {
-        const totalContributed = contributions.reduce(
-          (sum, c) => sum + Number(c.amount),
-          0
-        );
+        const totalContributed = contributions.reduce((sum, c) => sum + Number(c.amount), 0);
         const firstContribution = contributions[contributions.length - 1];
         if (firstContribution) {
           const monthsSinceFirst = Math.max(
@@ -174,38 +329,33 @@ export const goalService = {
         }
       }
 
-      // Calculate projected completion date
+      // Projections
       let projectedCompletionDate: string | null = null;
       let recommendedMonthlyContribution: number | null = null;
       let isOnTrack = false;
 
-      if (targetAmount > currentAmount) {
-        const remaining = targetAmount - currentAmount;
+      if (targetAmount > calculatedProgress) {
+        const remaining = targetAmount - calculatedProgress;
 
-        // Projected completion based on current contribution rate
         if (averageMonthlyContribution > 0) {
           const monthsToComplete = remaining / averageMonthlyContribution;
           projectedCompletionDate = addMonths(new Date(), monthsToComplete).toISOString();
 
-          // Check if on track
           if (goal.targetDate && daysRemaining !== null) {
             const monthsRemaining = daysRemaining / 30;
             isOnTrack = monthsToComplete <= monthsRemaining;
           }
         }
 
-        // Recommended monthly contribution to meet target date
         if (goal.targetDate && daysRemaining !== null && daysRemaining > 0) {
           const monthsRemaining = Math.max(1, daysRemaining / 30);
           recommendedMonthlyContribution = remaining / monthsRemaining;
 
-          // If we have a contribution rate, check if on track
           if (averageMonthlyContribution > 0) {
             isOnTrack = averageMonthlyContribution >= recommendedMonthlyContribution;
           }
         }
       } else {
-        // Goal is already complete or exceeded
         isOnTrack = true;
       }
 
@@ -220,13 +370,11 @@ export const goalService = {
 
       return {
         ...goal,
-        currentAmount,
         targetAmount,
-        contributions: contributions.map((c) => ({
-          ...c,
-          amount: Number(c.amount),
-        })),
-        progressPercentage: Math.min(progressPercentage, 100),
+        calculatedProgress: cp,
+        linkedAccountMissing,
+        contributions: contributions.map((c) => ({ ...c, amount: Number(c.amount) })),
+        progressPercentage,
         daysRemaining,
         averageMonthlyContribution,
         projectedCompletionDate,
@@ -252,6 +400,16 @@ export const goalService = {
       throw new NotFoundError('Goal not found');
     }
 
+    // Validate linkedAccountId belongs to same household if provided
+    if (data.linkedAccountId) {
+      const account = await prisma.account.findFirst({
+        where: { id: data.linkedAccountId, householdId },
+      });
+      if (!account) {
+        throw new ValidationError('Linked account not found or does not belong to this household');
+      }
+    }
+
     // Validate provided fields
     if (data.name !== undefined && data.name.trim().length === 0) {
       throw new ValidationError('Goal name cannot be empty');
@@ -273,6 +431,8 @@ export const goalService = {
     if (data.priority !== undefined) updateData.priority = data.priority;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.icon !== undefined) updateData.icon = data.icon;
+    if (data.linkedAccountId !== undefined) updateData.linkedAccountId = data.linkedAccountId;
+    if (data.incomePeriod !== undefined) updateData.incomePeriod = data.incomePeriod;
 
     // Merge metadata if provided
     if (data.metadata !== undefined) {
@@ -466,14 +626,9 @@ export const goalService = {
    * Get goal summary statistics for a household
    */
   async getGoalSummary(householdId: string) {
-    const goals = await prisma.goal.findMany({
-      where: { householdId },
-      include: {
-        contributions: true,
-      },
-    });
+    const enhancedGoals = await goalService.getUserGoalsWithProgress(householdId);
 
-    if (goals.length === 0) {
+    if (enhancedGoals.length === 0) {
       return {
         totalSaved: 0,
         totalTarget: 0,
@@ -492,8 +647,8 @@ export const goalService = {
     const byTypeMap = new Map<GoalType, { saved: number; target: number; count: number }>();
     const byPriorityMap = new Map<Priority, { saved: number; target: number; count: number }>();
 
-    goals.forEach((goal) => {
-      const saved = Number(goal.currentAmount);
+    enhancedGoals.forEach((goal) => {
+      const saved = goal.calculatedProgress;
       const target = Number(goal.targetAmount);
 
       totalSaved += saved;

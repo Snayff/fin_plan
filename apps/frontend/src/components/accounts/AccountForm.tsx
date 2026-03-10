@@ -31,6 +31,7 @@ export default function AccountForm({ account, onSuccess, onCancel }: AccountFor
     mutationFn: (data: CreateAccountInput) => accountService.createAccount(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
+      showSuccess('Account created!');
       onSuccess?.();
     },
     onError: (error: Error) => {
@@ -44,7 +45,7 @@ export default function AccountForm({ account, onSuccess, onCancel }: AccountFor
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      showSuccess('Account updated successfully!');
+      showSuccess('Account updated!');
       onSuccess?.();
     },
     onError: (error: Error) => {
