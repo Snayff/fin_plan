@@ -1,4 +1,6 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { Prisma } from "@prisma/client";
+const Decimal = Prisma.Decimal;
 import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
 
 mock.module("../config/database", () => ({
@@ -423,6 +425,45 @@ describe("budgetService.addBudgetItem", () => {
       })
     ).rejects.toThrow("Budget items must be expense categories");
   });
+
+  it("saves itemType, recurringRuleId, entryFrequency, entryAmount when provided", async () => {
+    const mockBudget = buildBudget({ householdId: "household-1" });
+    const mockCategory = buildCategory({ type: "expense" });
+    const mockItem = buildBudgetItem({
+      itemType: "committed",
+      recurringRuleId: "rule-1",
+      entryFrequency: "monthly",
+      entryAmount: new Decimal(1200),
+    });
+
+    prismaMock.budget.findFirst.mockResolvedValue(mockBudget as any);
+    prismaMock.category.findUnique.mockResolvedValue(mockCategory as any);
+    prismaMock.budgetItem.create.mockResolvedValue({
+      ...mockItem,
+      category: { id: mockCategory.id, name: mockCategory.name, color: null, icon: null },
+    } as any);
+
+    const result = await budgetService.addBudgetItem("budget-1", "household-1", {
+      categoryId: mockCategory.id,
+      allocatedAmount: 1200,
+      itemType: "committed",
+      recurringRuleId: "rule-1",
+      entryFrequency: "monthly",
+      entryAmount: 1200,
+    });
+
+    expect(prismaMock.budgetItem.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          itemType: "committed",
+          recurringRuleId: "rule-1",
+          entryFrequency: "monthly",
+          entryAmount: 1200,
+        }),
+      })
+    );
+    expect(result.itemType).toBe("committed");
+  });
 });
 
 describe("budgetService.updateBudgetItem", () => {
@@ -470,6 +511,35 @@ describe("budgetService.updateBudgetItem", () => {
     await expect(
       budgetService.updateBudgetItem("item-1", "household-1", { allocatedAmount: 100 })
     ).rejects.toThrow(NotFoundError);
+  });
+
+  it("nulls out entryFrequency and entryAmount when allocatedAmount is manually updated", async () => {
+    const mockItem = buildBudgetItem({
+      itemType: "discretionary",
+      entryFrequency: "weekly",
+      entryAmount: new Decimal(100),
+      budget: { householdId: "household-1" },
+    });
+
+    prismaMock.budgetItem.findUnique.mockResolvedValue(mockItem as any);
+    prismaMock.budgetItem.update.mockResolvedValue({
+      ...mockItem,
+      allocatedAmount: new Decimal(500),
+      entryFrequency: null,
+      entryAmount: null,
+      category: { id: "cat-1", name: "Groceries", color: null, icon: null },
+    } as any);
+
+    await budgetService.updateBudgetItem("item-1", "household-1", { allocatedAmount: 500 });
+
+    expect(prismaMock.budgetItem.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          entryFrequency: null,
+          entryAmount: null,
+        }),
+      })
+    );
   });
 });
 

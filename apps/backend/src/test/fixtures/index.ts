@@ -178,6 +178,10 @@ export function buildBudgetItem(overrides: Record<string, any> = {}) {
     carryover: false,
     rolloverAmount: null,
     notes: null,
+    itemType: "committed" as const,
+    recurringRuleId: null,
+    entryFrequency: null,
+    entryAmount: null,
     ...overrides,
   };
 }

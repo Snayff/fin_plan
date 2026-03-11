@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { BudgetPeriod } from '@prisma/client';
+import { BudgetItemType, BudgetPeriod, RecurringFrequency } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../utils/errors';
 
 export interface CreateBudgetInput {
@@ -21,6 +21,10 @@ export interface AddBudgetItemInput {
   categoryId: string;
   allocatedAmount: number;
   notes?: string;
+  itemType?: BudgetItemType;
+  recurringRuleId?: string | null;
+  entryFrequency?: RecurringFrequency | null;
+  entryAmount?: number | null;
 }
 
 export interface UpdateBudgetItemInput {
@@ -343,6 +347,10 @@ export const budgetService = {
         categoryId: data.categoryId,
         allocatedAmount: data.allocatedAmount,
         notes: data.notes,
+        itemType: data.itemType ?? 'committed',
+        recurringRuleId: data.recurringRuleId ?? null,
+        entryFrequency: data.entryFrequency ?? null,
+        entryAmount: data.entryAmount ?? null,
       },
       include: {
         category: {
@@ -360,6 +368,7 @@ export const budgetService = {
       ...item,
       allocatedAmount: Number(item.allocatedAmount),
       rolloverAmount: item.rolloverAmount ? Number(item.rolloverAmount) : null,
+      entryAmount: item.entryAmount ? Number(item.entryAmount) : null,
     };
   },
 
@@ -384,7 +393,12 @@ export const budgetService = {
     const updatedItem = await prisma.budgetItem.update({
       where: { id: itemId },
       data: {
-        ...(data.allocatedAmount !== undefined && { allocatedAmount: data.allocatedAmount }),
+        ...(data.allocatedAmount !== undefined && {
+          allocatedAmount: data.allocatedAmount,
+          // Null out frequency metadata — it's now stale (user overrode the calculated amount)
+          entryFrequency: null,
+          entryAmount: null,
+        }),
         ...(data.notes !== undefined && { notes: data.notes }),
       },
       include: {
@@ -403,6 +417,7 @@ export const budgetService = {
       ...updatedItem,
       allocatedAmount: Number(updatedItem.allocatedAmount),
       rolloverAmount: updatedItem.rolloverAmount ? Number(updatedItem.rolloverAmount) : null,
+      entryAmount: updatedItem.entryAmount ? Number(updatedItem.entryAmount) : null,
     };
   },
 
