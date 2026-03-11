@@ -192,12 +192,11 @@ export const budgetService = {
           carryover: boolean;
           rolloverAmount: number | null;
           notes: string | null;
-          category: {
-            id: string;
-            name: string;
-            color: string | null;
-            icon: string | null;
-          };
+          itemType: string;
+          recurringRuleId: string | null;
+          entryFrequency: string | null;
+          entryAmount: number | null;
+          category: { id: string; name: string; color: string | null; icon: string | null };
         }>;
       }
     >();
@@ -216,7 +215,11 @@ export const budgetService = {
       categoryMap.get(categoryId)!.items.push({
         ...item,
         allocatedAmount: Number(item.allocatedAmount),
-        rolloverAmount: item.rolloverAmount ? Number(item.rolloverAmount) : null,
+        rolloverAmount: item.rolloverAmount != null ? Number(item.rolloverAmount) : null,
+        entryAmount: item.entryAmount != null ? Number(item.entryAmount) : null,
+        itemType: item.itemType,
+        recurringRuleId: item.recurringRuleId,
+        entryFrequency: item.entryFrequency,
       });
     }
 
@@ -227,6 +230,10 @@ export const budgetService = {
       const remaining = allocated - spent;
       const percentUsed = allocated > 0 ? (spent / allocated) * 100 : 0;
 
+      // Determine the type of this group (all committed, all discretionary, or mixed)
+      const types = new Set(group.items.map((item) => item.itemType));
+      const groupItemType = types.size === 1 ? (types.values().next().value as 'committed' | 'discretionary') : 'mixed';
+
       return {
         ...group,
         allocated,
@@ -234,6 +241,7 @@ export const budgetService = {
         remaining,
         percentUsed: Math.min(percentUsed, 100),
         isOverBudget: spent > allocated,
+        groupItemType,
       };
     });
 

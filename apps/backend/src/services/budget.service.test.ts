@@ -229,6 +229,42 @@ describe("budgetService.getBudgetWithTracking", () => {
     expect(foodGroup!.remaining).toBe(100);
   });
 
+  it("includes itemType and recurringRuleId on items in categoryGroups", async () => {
+    const mockBudget = buildBudget({ householdId: "household-1" });
+    const mockItem = buildBudgetItem({
+      categoryId: "cat-1",
+      itemType: "committed",
+      recurringRuleId: "rule-1",
+      category: { id: "cat-1", name: "Utilities", color: null, icon: null },
+    });
+    prismaMock.budget.findFirst.mockResolvedValue({ ...mockBudget, budgetItems: [mockItem] } as any);
+    prismaMock.transaction.findMany.mockResolvedValue([]);
+    prismaMock.transaction.aggregate.mockResolvedValue({ _sum: { amount: null } } as any);
+
+    const result = await budgetService.getBudgetWithTracking(mockBudget.id, "household-1");
+
+    const group = result.categoryGroups[0];
+    expect(group.items[0].itemType).toBe("committed");
+    expect(group.items[0].recurringRuleId).toBe("rule-1");
+    expect(group.groupItemType).toBe("committed");
+  });
+
+  it("sets groupItemType to 'discretionary' when all items are discretionary", async () => {
+    const mockBudget = buildBudget({ householdId: "household-1" });
+    const mockItem = buildBudgetItem({
+      categoryId: "cat-1",
+      itemType: "discretionary",
+      category: { id: "cat-1", name: "Groceries", color: null, icon: null },
+    });
+    prismaMock.budget.findFirst.mockResolvedValue({ ...mockBudget, budgetItems: [mockItem] } as any);
+    prismaMock.transaction.findMany.mockResolvedValue([]);
+    prismaMock.transaction.aggregate.mockResolvedValue({ _sum: { amount: null } } as any);
+
+    const result = await budgetService.getBudgetWithTracking(mockBudget.id, "household-1");
+
+    expect(result.categoryGroups[0].groupItemType).toBe("discretionary");
+  });
+
   it("handles over-budget categories", async () => {
     const budget = buildBudget({
       startDate: new Date("2025-01-01"),
