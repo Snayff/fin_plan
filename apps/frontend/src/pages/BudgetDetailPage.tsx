@@ -4,11 +4,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { budgetService } from '../services/budget.service';
 import { categoryService } from '../services/category.service';
 import { showError, showSuccess } from '../lib/toast';
-import { formatCurrency } from '../lib/utils';
-import type { BudgetItem, BudgetPeriod, Category } from '../types';
+import { convertToPeriodTotal, formatCurrency, FREQUENCY_LABELS } from '../lib/utils';
+import type { AddBudgetItemInput, BudgetItem, BudgetPeriod, Category, CategoryBudgetGroup, RecurringFrequency } from '../types';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import BudgetForm from '../components/budgets/BudgetForm';
+import ImportRecurringDialog from '../components/budgets/ImportRecurringDialog';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -54,6 +55,12 @@ export default function BudgetDetailPage() {
   const [addingCategoryId, setAddingCategoryId] = useState<string | null>(null);
   const [addAmount, setAddAmount] = useState('');
   const [addNotes, setAddNotes] = useState('');
+  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+
+  // Discretionary quick-add state
+  const [discretionaryCategoryId, setDiscretionaryCategoryId] = useState('');
+  const [discretionaryAmount, setDiscretionaryAmount] = useState('');
+  const [discretionaryFrequency, setDiscretionaryFrequency] = useState<RecurringFrequency>('monthly');
 
   const {
     data: budgetData,
@@ -77,7 +84,7 @@ export default function BudgetDetailPage() {
   const budget = budgetData?.budget;
 
   const addItemMutation = useMutation({
-    mutationFn: (payload: { categoryId: string; allocatedAmount: number; notes?: string }) =>
+    mutationFn: (payload: AddBudgetItemInput) =>
       budgetService.addBudgetItem(budgetId, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
@@ -86,6 +93,10 @@ export default function BudgetDetailPage() {
       setAddingCategoryId(null);
       setAddAmount('');
       setAddNotes('');
+      // Reset discretionary quick-add
+      setDiscretionaryCategoryId('');
+      setDiscretionaryAmount('');
+      setDiscretionaryFrequency('monthly');
     },
     onError: (error: Error) => {
       showError(error.message || 'Failed to add budget item');
@@ -161,6 +172,36 @@ export default function BudgetDetailPage() {
     return expenseCategories.filter((category) => !includedCategoryIds.has(category.id));
   }, [budget, expenseCategories]);
 
+  // Split category groups into committed and discretionary sections
+  const committedGroups = useMemo(
+    () => (budget?.categoryGroups ?? []).filter((g) => g.groupItemType !== 'discretionary'),
+    [budget?.categoryGroups]
+  );
+
+  const discretionaryGroups = useMemo(
+    () => (budget?.categoryGroups ?? []).filter((g) => g.groupItemType === 'discretionary'),
+    [budget?.categoryGroups]
+  );
+
+  // Set of recurringRuleIds already in this budget (for ImportRecurringDialog deduplication)
+  const existingRecurringRuleIds = useMemo(
+    () =>
+      new Set(
+        (budget?.categoryGroups ?? [])
+          .flatMap((g) => g.items)
+          .map((item) => item.recurringRuleId)
+          .filter((id): id is string => id !== null)
+      ),
+    [budget?.categoryGroups]
+  );
+
+  // Computed live preview of period total for discretionary quick-add
+  const discretionaryPreview = useMemo(() => {
+    const amount = Number(discretionaryAmount);
+    if (!amount || !discretionaryCategoryId) return null;
+    return convertToPeriodTotal(amount, discretionaryFrequency, budget?.period ?? 'monthly');
+  }, [discretionaryAmount, discretionaryFrequency, discretionaryCategoryId, budget?.period]);
+
   const startEditingItem = (item: BudgetItem) => {
     setEditingItemId(item.id);
     setEditingAmount(String(item.allocatedAmount));
@@ -209,9 +250,202 @@ export default function BudgetDetailPage() {
     addItemMutation.mutate({
       categoryId,
       allocatedAmount: parsedAmount,
+      itemType: 'committed',
       notes: addNotes.trim() || undefined,
     });
   };
+
+  const handleAddDiscretionaryItem = () => {
+    if (!discretionaryCategoryId) {
+      showError('Please select a category');
+      return;
+    }
+    const amount = Number(discretionaryAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      showError('Please enter a valid amount');
+      return;
+    }
+    const periodTotal = convertToPeriodTotal(amount, discretionaryFrequency, budget?.period ?? 'monthly');
+    addItemMutation.mutate({
+      categoryId: discretionaryCategoryId,
+      allocatedAmount: periodTotal,
+      itemType: 'discretionary',
+      entryFrequency: discretionaryFrequency,
+      entryAmount: amount,
+    });
+  };
+
+  const renderCategoryGroup = (group: CategoryBudgetGroup) => (
+    <Card key={group.categoryId}>
+      <CardContent className="p-6 space-y-4">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div className="space-y-2 flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span
+                className="inline-block h-3 w-3 rounded-full"
+                style={{ backgroundColor: group.categoryColor || '#94a3b8' }}
+              />
+              <span aria-hidden>{group.categoryIcon || '📁'}</span>
+              <h3 className="font-semibold text-foreground truncate">{group.categoryName}</h3>
+            </div>
+
+            <p className="text-sm text-muted-foreground">
+              {formatCurrency(group.allocated)} allocated / {formatCurrency(group.spent)} spent
+            </p>
+
+            <div>
+              <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all ${
+                    group.isOverBudget ? 'bg-destructive' : 'bg-primary'
+                  }`}
+                  style={{ width: `${group.percentUsed}%` }}
+                />
+              </div>
+              <p
+                className={`text-xs mt-1 ${
+                  group.isOverBudget ? 'text-destructive font-medium' : 'text-muted-foreground'
+                }`}
+              >
+                {group.percentUsed.toFixed(1)}% used
+              </p>
+            </div>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-destructive hover:text-destructive hover:bg-destructive-subtle"
+            onClick={() => removeCategoryMutation.mutate(group.categoryId)}
+            disabled={removeCategoryMutation.isPending}
+          >
+            Remove Category
+          </Button>
+        </div>
+
+        <div className="space-y-2 border-t border-border pt-4">
+          {group.items.map((item) => {
+            const isEditing = editingItemId === item.id;
+
+            if (isEditing) {
+              return (
+                <div key={item.id} className="grid gap-2 md:grid-cols-[1fr_140px_auto]">
+                  <Input
+                    value={editingNotes}
+                    onChange={(event) => setEditingNotes(event.target.value)}
+                    placeholder="Description"
+                    maxLength={500}
+                  />
+
+                  <div className="relative">
+                    <span className="absolute left-3 top-2 text-muted-foreground">£</span>
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editingAmount}
+                      onChange={(event) => setEditingAmount(event.target.value)}
+                      className="pl-8"
+                    />
+                  </div>
+
+                  <div className="flex gap-2">
+                    <Button size="sm" onClick={() => handleUpdateItem(item.id)} disabled={updateItemMutation.isPending}>
+                      Save
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={cancelEditingItem}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              );
+            }
+
+            return (
+              <div
+                key={item.id}
+                className="grid gap-2 md:grid-cols-[1fr_140px_auto] items-center rounded-md border border-border p-3"
+              >
+                <button
+                  type="button"
+                  className="text-left hover:text-primary"
+                  onClick={() => startEditingItem(item)}
+                  title="Click to edit description"
+                >
+                  {item.notes?.trim() ? item.notes : 'No description'}
+                </button>
+
+                <button
+                  type="button"
+                  className="text-left font-medium hover:text-primary"
+                  onClick={() => startEditingItem(item)}
+                  title="Click to edit amount"
+                >
+                  {formatCurrency(item.allocatedAmount)}
+                </button>
+
+                <div className="flex gap-2 md:justify-end">
+                  <Button variant="outline" size="sm" onClick={() => startEditingItem(item)}>
+                    Edit
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-destructive hover:text-destructive hover:bg-destructive-subtle"
+                    onClick={() => deleteItemMutation.mutate(item.id)}
+                    disabled={deleteItemMutation.isPending}
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </div>
+            );
+          })}
+
+          {addingCategoryId === group.categoryId ? (
+            <div className="grid gap-2 md:grid-cols-[1fr_140px_auto] rounded-md border border-border p-3">
+              <Input
+                value={addNotes}
+                onChange={(event) => setAddNotes(event.target.value)}
+                placeholder="Description"
+                maxLength={500}
+              />
+
+              <div className="relative">
+                <span className="absolute left-3 top-2 text-muted-foreground">£</span>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={addAmount}
+                  onChange={(event) => setAddAmount(event.target.value)}
+                  className="pl-8"
+                  placeholder="0.00"
+                />
+              </div>
+
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  onClick={() => handleAddItem(group.categoryId)}
+                  disabled={addItemMutation.isPending}
+                >
+                  Add
+                </Button>
+                <Button size="sm" variant="outline" onClick={cancelAddingItem}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button variant="outline" size="sm" onClick={() => startAddingItem(group.categoryId)}>
+              + Add Item
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   if (!budgetId) {
     return (
@@ -349,188 +583,93 @@ export default function BudgetDetailPage() {
         </Card>
       </div>
 
+      {/* COMMITTED SPEND SECTION */}
       <section className="space-y-4">
-        <h2 className="text-2xl font-semibold text-foreground">Category Groups</h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-foreground">Committed Spend</h2>
+          <Button variant="outline" size="sm" onClick={() => setIsImportDialogOpen(true)}>
+            Import Regular Bills
+          </Button>
+        </div>
 
-        {budget.categoryGroups.length === 0 ? (
+        {committedGroups.length === 0 ? (
           <Card>
-            <CardContent className="p-6 text-center text-muted-foreground">
-              No categories added yet. Add your first category below.
+            <CardContent className="p-6 text-center space-y-3">
+              <p className="text-muted-foreground">No committed spend yet.</p>
+              <Button variant="outline" size="sm" onClick={() => setIsImportDialogOpen(true)}>
+                Import from recurring rules
+              </Button>
             </CardContent>
           </Card>
         ) : (
           <div className="space-y-4">
-            {budget.categoryGroups.map((group) => (
-              <Card key={group.categoryId}>
-                <CardContent className="p-6 space-y-4">
-                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div className="space-y-2 flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className="inline-block h-3 w-3 rounded-full"
-                          style={{ backgroundColor: group.categoryColor || '#94a3b8' }}
-                        />
-                        <span aria-hidden>{group.categoryIcon || '📁'}</span>
-                        <h3 className="font-semibold text-foreground truncate">{group.categoryName}</h3>
-                      </div>
+            {committedGroups.map((group) => renderCategoryGroup(group))}
+          </div>
+        )}
+      </section>
 
-                      <p className="text-sm text-muted-foreground">
-                        {formatCurrency(group.allocated)} allocated / {formatCurrency(group.spent)} spent
-                      </p>
+      {/* DISCRETIONARY SPEND SECTION */}
+      <section className="space-y-4">
+        <h2 className="text-2xl font-semibold text-foreground">Discretionary Spend</h2>
 
-                      <div>
-                        <div className="w-full h-2 rounded-full bg-muted overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              group.isOverBudget ? 'bg-destructive' : 'bg-primary'
-                            }`}
-                            style={{ width: `${group.percentUsed}%` }}
-                          />
-                        </div>
-                        <p
-                          className={`text-xs mt-1 ${
-                            group.isOverBudget ? 'text-destructive font-medium' : 'text-muted-foreground'
-                          }`}
-                        >
-                          {group.percentUsed.toFixed(1)}% used
-                        </p>
-                      </div>
-                    </div>
+        {/* Quick-add row */}
+        <Card>
+          <CardContent className="p-4 space-y-3">
+            <p className="text-sm font-medium text-foreground">Add discretionary spend</p>
+            <div className="grid gap-2 grid-cols-1 sm:grid-cols-[1fr_100px_130px_auto]">
+              <select
+                value={discretionaryCategoryId}
+                onChange={(e) => setDiscretionaryCategoryId(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="">Select category...</option>
+                {expenseCategories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
+              </select>
 
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-destructive hover:text-destructive hover:bg-destructive-subtle"
-                      onClick={() => removeCategoryMutation.mutate(group.categoryId)}
-                      disabled={removeCategoryMutation.isPending}
-                    >
-                      Remove Category
-                    </Button>
-                  </div>
+              <div className="relative">
+                <span className="absolute left-3 top-2 text-muted-foreground">£</span>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={discretionaryAmount}
+                  onChange={(e) => setDiscretionaryAmount(e.target.value)}
+                  className="pl-8"
+                  placeholder="0.00"
+                />
+              </div>
 
-                  <div className="space-y-2 border-t border-border pt-4">
-                    {group.items.map((item) => {
-                      const isEditing = editingItemId === item.id;
+              <select
+                value={discretionaryFrequency}
+                onChange={(e) => setDiscretionaryFrequency(e.target.value as RecurringFrequency)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                {(['weekly', 'biweekly', 'monthly', 'quarterly', 'annually'] as RecurringFrequency[]).map((freq) => (
+                  <option key={freq} value={freq}>{FREQUENCY_LABELS[freq]}</option>
+                ))}
+              </select>
 
-                      if (isEditing) {
-                        return (
-                          <div key={item.id} className="grid gap-2 md:grid-cols-[1fr_140px_auto]">
-                            <Input
-                              value={editingNotes}
-                              onChange={(event) => setEditingNotes(event.target.value)}
-                              placeholder="Description"
-                              maxLength={500}
-                            />
+              <Button
+                onClick={handleAddDiscretionaryItem}
+                disabled={addItemMutation.isPending || !discretionaryCategoryId || !discretionaryAmount}
+              >
+                Add
+              </Button>
+            </div>
 
-                            <div className="relative">
-                              <span className="absolute left-3 top-2 text-muted-foreground">£</span>
-                              <Input
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={editingAmount}
-                                onChange={(event) => setEditingAmount(event.target.value)}
-                                className="pl-8"
-                              />
-                            </div>
+            {discretionaryPreview !== null && (
+              <p className="text-sm text-muted-foreground">
+                → <span className="font-medium text-foreground">{formatCurrency(discretionaryPreview)}</span> per {budget?.period ?? 'month'}
+              </p>
+            )}
+          </CardContent>
+        </Card>
 
-                            <div className="flex gap-2">
-                              <Button size="sm" onClick={() => handleUpdateItem(item.id)} disabled={updateItemMutation.isPending}>
-                                Save
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={cancelEditingItem}>
-                                Cancel
-                              </Button>
-                            </div>
-                          </div>
-                        );
-                      }
-
-                      return (
-                        <div
-                          key={item.id}
-                          className="grid gap-2 md:grid-cols-[1fr_140px_auto] items-center rounded-md border border-border p-3"
-                        >
-                          <button
-                            type="button"
-                            className="text-left hover:text-primary"
-                            onClick={() => startEditingItem(item)}
-                            title="Click to edit description"
-                          >
-                            {item.notes?.trim() ? item.notes : 'No description'}
-                          </button>
-
-                          <button
-                            type="button"
-                            className="text-left font-medium hover:text-primary"
-                            onClick={() => startEditingItem(item)}
-                            title="Click to edit amount"
-                          >
-                            {formatCurrency(item.allocatedAmount)}
-                          </button>
-
-                          <div className="flex gap-2 md:justify-end">
-                            <Button variant="outline" size="sm" onClick={() => startEditingItem(item)}>
-                              Edit
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-destructive hover:text-destructive hover:bg-destructive-subtle"
-                              onClick={() => deleteItemMutation.mutate(item.id)}
-                              disabled={deleteItemMutation.isPending}
-                            >
-                              Delete
-                            </Button>
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {addingCategoryId === group.categoryId ? (
-                      <div className="grid gap-2 md:grid-cols-[1fr_140px_auto] rounded-md border border-border p-3">
-                        <Input
-                          value={addNotes}
-                          onChange={(event) => setAddNotes(event.target.value)}
-                          placeholder="Description"
-                          maxLength={500}
-                        />
-
-                        <div className="relative">
-                          <span className="absolute left-3 top-2 text-muted-foreground">£</span>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={addAmount}
-                            onChange={(event) => setAddAmount(event.target.value)}
-                            className="pl-8"
-                            placeholder="0.00"
-                          />
-                        </div>
-
-                        <div className="flex gap-2">
-                          <Button
-                            size="sm"
-                            onClick={() => handleAddItem(group.categoryId)}
-                            disabled={addItemMutation.isPending}
-                          >
-                            Add
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={cancelAddingItem}>
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <Button variant="outline" size="sm" onClick={() => startAddingItem(group.categoryId)}>
-                        + Add Item
-                      </Button>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+        {discretionaryGroups.length > 0 && (
+          <div className="space-y-4">
+            {discretionaryGroups.map((group) => renderCategoryGroup(group))}
           </div>
         )}
       </section>
@@ -628,6 +767,16 @@ export default function BudgetDetailPage() {
         variant="danger"
         isLoading={deleteBudgetMutation.isPending}
       />
+
+      {budget && (
+        <ImportRecurringDialog
+          isOpen={isImportDialogOpen}
+          onClose={() => setIsImportDialogOpen(false)}
+          budgetId={budgetId}
+          budgetPeriod={budget.period}
+          existingRecurringRuleIds={existingRecurringRuleIds}
+        />
+      )}
     </div>
   );
 }
