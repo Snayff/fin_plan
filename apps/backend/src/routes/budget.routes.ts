@@ -6,6 +6,7 @@ import {
   updateBudgetSchema,
   addBudgetItemSchema,
   updateBudgetItemSchema,
+  addBudgetItemsBatchSchema,
 } from '@finplan/shared';
 
 export async function budgetRoutes(fastify: FastifyInstance) {
@@ -51,6 +52,16 @@ export async function budgetRoutes(fastify: FastifyInstance) {
 
     const result = await budgetService.deleteBudget(id, householdId);
     return reply.send(result);
+  });
+
+  // Batch add items to a budget (used for importing recurring rules)
+  fastify.post('/budgets/:id/items/batch', { preHandler: [authMiddleware] }, async (request, reply) => {
+    const householdId = request.householdId!;
+    const { id } = request.params as { id: string };
+    const validatedData = addBudgetItemsBatchSchema.parse(request.body);
+
+    const result = await budgetService.addBudgetItemsBatch(id, householdId, validatedData.items);
+    return reply.status(201).send(result);
   });
 
   // Add a line item to a budget
