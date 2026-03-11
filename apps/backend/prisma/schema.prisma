@@ -270,7 +270,7 @@ model BudgetItem {
   notes           String?
   itemType        BudgetItemType  @default(committed) @map("item_type")
   recurringRuleId String?         @map("recurring_rule_id")
-  entryFrequency  String?         @map("entry_frequency")
+  entryFrequency  RecurringFrequency? @map("entry_frequency")
   entryAmount     Decimal?        @map("entry_amount") @db.Decimal(15, 2)
   recurringRule   RecurringRule?  @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
   budget          Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
