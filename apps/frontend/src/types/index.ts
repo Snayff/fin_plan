@@ -35,6 +35,8 @@ import type {
   UpdateBudgetInput as SharedUpdateBudgetInput,
   AddBudgetItemInput as SharedAddBudgetItemInput,
   UpdateBudgetItemInput as SharedUpdateBudgetItemInput,
+  BudgetItemType as SharedBudgetItemType,
+  AddBudgetItemsBatchInput as SharedAddBudgetItemsBatchInput,
 } from '@finplan/shared';
 
 // Re-export for backward compatibility
@@ -73,6 +75,8 @@ export type CreateBudgetInput = SharedCreateBudgetInput;
 export type UpdateBudgetInput = SharedUpdateBudgetInput;
 export type AddBudgetItemInput = SharedAddBudgetItemInput;
 export type UpdateBudgetItemInput = SharedUpdateBudgetItemInput;
+export type BudgetItemType = SharedBudgetItemType;
+export type AddBudgetItemsBatchInput = SharedAddBudgetItemsBatchInput;
 
 export interface Account {
   id: string;
@@ -490,6 +494,10 @@ export interface BudgetItem {
   carryover: boolean;
   rolloverAmount: number | null;
   notes: string | null;
+  itemType: BudgetItemType;
+  recurringRuleId: string | null;
+  entryFrequency: string | null;
+  entryAmount: number | null;
   category: {
     id: string;
     name: string;
@@ -522,6 +530,7 @@ export interface CategoryBudgetGroup {
   remaining: number;
   percentUsed: number;
   isOverBudget: boolean;
+  groupItemType: 'committed' | 'discretionary' | 'mixed';
 }
 
 export interface EnhancedBudget {
