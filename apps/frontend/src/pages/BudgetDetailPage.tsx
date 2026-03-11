@@ -22,6 +22,13 @@ const PERIOD_LABELS: Record<BudgetPeriod, string> = {
   custom: 'Custom',
 };
 
+const PERIOD_DISPLAY: Record<string, string> = {
+  monthly: 'month',
+  quarterly: 'quarter',
+  annual: 'year',
+  custom: 'period',
+};
+
 function formatDateRange(startDate: string, endDate: string) {
   const start = new Date(startDate);
   const end = new Date(endDate);
@@ -623,7 +630,7 @@ export default function BudgetDetailPage() {
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
               >
                 <option value="">Select category...</option>
-                {expenseCategories.map((cat) => (
+                {availableCategories.map((cat) => (
                   <option key={cat.id} value={cat.id}>{cat.name}</option>
                 ))}
               </select>
@@ -661,7 +668,7 @@ export default function BudgetDetailPage() {
 
             {discretionaryPreview !== null && (
               <p className="text-sm text-muted-foreground">
-                → <span className="font-medium text-foreground">{formatCurrency(discretionaryPreview)}</span> per {budget?.period ?? 'month'}
+                → <span className="font-medium text-foreground">{formatCurrency(discretionaryPreview)}</span> per {PERIOD_DISPLAY[budget?.period ?? 'monthly'] ?? budget?.period ?? 'period'}
               </p>
             )}
           </CardContent>
