@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
@@ -71,29 +71,10 @@ export function ProtectedAppRoutes() {
   );
 }
 
-const DASHBOARD_PREVIEWS: Record<string, React.ComponentType> = {
-  '/dashboard1': Dashboard1Page,
-  '/dashboard2': Dashboard2Page,
-  '/dashboard3': Dashboard3Page,
-  '/dashboard4': Dashboard4Page,
-  '/dashboard5': Dashboard5Page,
-  '/dashboard6': Dashboard6Page,
-  '/dashboard7': Dashboard7Page,
-  '/dashboard8': Dashboard8Page,
-  '/dashboard9': Dashboard9Page,
-  '/dashboard10': Dashboard10Page,
-  '/dashboard11': Dashboard11Page,
-  '/dashboard12': Dashboard12Page,
-  '/dashboard13': Dashboard13Page,
-  '/dashboard14': Dashboard14Page,
-  '/dashboard15': Dashboard15Page,
-};
-
 function App() {
   const authStatus = useAuthStore((state) => state.authStatus);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
   const isDesignPage = import.meta.env.DEV && window.location.pathname.startsWith('/design');
-  const isDashboardPreview = import.meta.env.DEV && window.location.pathname in DASHBOARD_PREVIEWS;
   const isAuthenticated = authStatus === 'authenticated';
 
   useEffect(() => {
@@ -103,72 +84,47 @@ function App() {
     void initializeAuth();
   }, [initializeAuth, isDesignPage]);
 
-  // Design reference: bypass React Router v7 entirely for this dev-only page
-  if (isDesignPage) {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <Toaster />
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Toaster position="top-right" />
+      {/* Design reference: bypass React Router v7 entirely for this dev-only page */}
+      {isDesignPage ? (
         <DesignPage />
-      </QueryClientProvider>
-    );
-  }
-
-  if (authStatus === 'initializing') {
-    return (
-      <QueryClientProvider client={queryClient}>
-        <Toaster />
+      ) : authStatus === 'initializing' ? (
         <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
           Restoring secure session...
         </div>
-      </QueryClientProvider>
-    );
-  }
+      ) : (
+        <>
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route
+                path="/login"
+                element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />}
+              />
+              <Route
+                path="/register"
+                element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />}
+              />
+              <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
 
-  // Dashboard design previews: render after auth resolves so API calls have a token.
-  if (isDashboardPreview) {
-    const Page = DASHBOARD_PREVIEWS[window.location.pathname]!;
-    return (
-      <QueryClientProvider client={queryClient}>
-        <Toaster />
-        <BrowserRouter>
-          <Routes>
-            <Route path="*" element={<Page />} />
-          </Routes>
-        </BrowserRouter>
-      </QueryClientProvider>
-    );
-  }
-
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <BrowserRouter>
-        <Routes>
-        {/* Public routes */}
-        <Route
-          path="/login"
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />}
-        />
-        <Route
-          path="/register"
-          element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />}
-        />
-        <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
-
-        {/* Protected routes */}
-        <Route
-          path="/*"
-          element={
-            isAuthenticated ? (
-              <ProtectedAppRoutes />
-            ) : (
-              <Navigate to="/login" />
-            )
-          }
-        />
-      </Routes>
-    </BrowserRouter>
-    <ReactQueryDevtools initialIsOpen={false} />
+              {/* Protected routes */}
+              <Route
+                path="/*"
+                element={
+                  isAuthenticated ? (
+                    <ProtectedAppRoutes />
+                  ) : (
+                    <Navigate to="/login" />
+                  )
+                }
+              />
+            </Routes>
+          </BrowserRouter>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </>
+      )}
     </QueryClientProvider>
   );
 }
