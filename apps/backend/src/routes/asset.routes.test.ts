@@ -58,6 +58,12 @@ const mockAsset = {
   purchaseValue: 200000,
   liquidityType: "illiquid",
   userId: "user-1",
+  linkedLiability: {
+    id: "liab-1",
+    name: "Home Mortgage",
+    type: "mortgage",
+    currentBalance: 180000,
+  },
 };
 
 describe("GET /api/assets", () => {
@@ -97,6 +103,7 @@ describe("GET /api/assets/:id", () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json().asset.id).toBe("asset-1");
+    expect(response.json().asset.linkedLiability.id).toBe("liab-1");
   });
 });
 

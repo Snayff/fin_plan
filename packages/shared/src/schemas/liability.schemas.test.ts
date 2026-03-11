@@ -20,7 +20,16 @@ describe("createLiabilitySchema", () => {
   it("accepts valid input with optional fields", () => {
     const result = createLiabilitySchema.safeParse({
       ...validLiabilityInput,
+      linkedAssetId: "00000000-0000-0000-0000-000000000001",
       metadata: { lender: "Test Bank" },
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts null linkedAssetId", () => {
+    const result = createLiabilitySchema.safeParse({
+      ...validLiabilityInput,
+      linkedAssetId: null,
     });
     expect(result.success).toBe(true);
   });
@@ -120,6 +129,15 @@ describe("updateLiabilitySchema", () => {
   it("accepts empty object (all fields optional)", () => {
     const result = updateLiabilitySchema.safeParse({});
     expect(result.success).toBe(true);
+  });
+
+  it("accepts linkedAssetId updates including unlink", () => {
+    expect(
+      updateLiabilitySchema.safeParse({
+        linkedAssetId: "00000000-0000-0000-0000-000000000001",
+      }).success
+    ).toBe(true);
+    expect(updateLiabilitySchema.safeParse({ linkedAssetId: null }).success).toBe(true);
   });
 
   it("rejects empty name when provided", () => {

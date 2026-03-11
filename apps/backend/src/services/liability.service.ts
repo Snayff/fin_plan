@@ -2,6 +2,38 @@ import { prisma } from '../config/database';
 import { LiabilityType, InterestType } from '@prisma/client';
 import { NotFoundError, ValidationError } from '../utils/errors';
 
+const liabilityLinkedAssetSelect = {
+  id: true,
+  name: true,
+  type: true,
+  currentValue: true,
+} as const;
+
+function serializeLinkedAsset(linkedAsset: {
+  id: string;
+  name: string;
+  type: LiabilitySummaryAsset['type'];
+  currentValue: number | { toString(): string };
+} | null) {
+  if (!linkedAsset) {
+    return null;
+  }
+
+  return {
+    id: linkedAsset.id,
+    name: linkedAsset.name,
+    type: linkedAsset.type,
+    currentValue: Number(linkedAsset.currentValue),
+  };
+}
+
+type LiabilitySummaryAsset = {
+  id: string;
+  name: string;
+  type: 'housing' | 'investment' | 'vehicle' | 'business' | 'personal_property' | 'crypto';
+  currentValue: number;
+};
+
 export interface CreateLiabilityInput {
   name: string;
   type: LiabilityType;
@@ -10,6 +42,7 @@ export interface CreateLiabilityInput {
   interestType: InterestType;
   openDate: string | Date;
   termEndDate: string | Date;
+  linkedAssetId?: string | null;
   metadata?: {
     lender?: string;
     notes?: string;
@@ -24,6 +57,7 @@ export interface UpdateLiabilityInput {
   interestType?: InterestType;
   openDate?: string | Date;
   termEndDate?: string | Date;
+  linkedAssetId?: string | null;
   metadata?: Record<string, any>;
 }
 
@@ -42,6 +76,61 @@ function daysBetween(from: Date, to: Date) {
 
 function round2(value: number) {
   return Number(value.toFixed(2));
+}
+
+async function validateLinkedAsset(
+  householdId: string,
+  linkedAssetId: string | null | undefined,
+  currentLiabilityId?: string
+) {
+  if (linkedAssetId === undefined) {
+    return undefined;
+  }
+
+  if (linkedAssetId === null) {
+    return null;
+  }
+
+  const asset = await prisma.asset.findFirst({
+    where: { id: linkedAssetId, householdId },
+  });
+
+  if (!asset) {
+    throw new NotFoundError('Linked asset not found');
+  }
+
+  const existingLink = await prisma.liability.findFirst({
+    where: {
+      householdId,
+      linkedAssetId,
+      ...(currentLiabilityId ? { id: { not: currentLiabilityId } } : {}),
+    },
+    select: { id: true, name: true },
+  });
+
+  if (existingLink) {
+    throw new ValidationError(`Asset is already linked to liability "${existingLink.name}"`);
+  }
+
+  return linkedAssetId;
+}
+
+function serializeLiability<T extends {
+  currentBalance: number | { toString(): string };
+  interestRate: number | { toString(): string };
+  linkedAsset?: {
+    id: string;
+    name: string;
+    type: LiabilitySummaryAsset['type'];
+    currentValue: number | { toString(): string };
+  } | null;
+}>(liability: T) {
+  return {
+    ...liability,
+    currentBalance: Number(liability.currentBalance),
+    interestRate: Number(liability.interestRate),
+    linkedAsset: serializeLinkedAsset(liability.linkedAsset ?? null),
+  };
 }
 
 function simulateProjection(
@@ -155,10 +244,13 @@ export const liabilityService = {
       throw new ValidationError('Term end date must be on or after open date');
     }
 
-    return prisma.liability.create({
+    const linkedAssetId = await validateLinkedAsset(householdId, data.linkedAssetId);
+
+    const liability = await prisma.liability.create({
       data: {
         householdId,
         name: data.name.trim(),
+        linkedAssetId: linkedAssetId ?? null,
         type: data.type,
         currentBalance: data.currentBalance,
         interestRate: data.interestRate,
@@ -167,36 +259,45 @@ export const liabilityService = {
         termEndDate,
         metadata: data.metadata || {},
       },
+      include: {
+        linkedAsset: {
+          select: liabilityLinkedAssetSelect,
+        },
+      },
     });
+
+    return serializeLiability(liability);
   },
 
   async getLiabilityById(liabilityId: string, householdId: string) {
     const liability = await prisma.liability.findFirst({
       where: { id: liabilityId, householdId },
+      include: {
+        linkedAsset: {
+          select: liabilityLinkedAssetSelect,
+        },
+      },
     });
 
     if (!liability) {
       throw new NotFoundError('Liability not found');
     }
 
-    return {
-      ...liability,
-      currentBalance: Number(liability.currentBalance),
-      interestRate: Number(liability.interestRate),
-    };
+    return serializeLiability(liability);
   },
 
   async getUserLiabilities(householdId: string) {
     const liabilities = await prisma.liability.findMany({
       where: { householdId },
       orderBy: [{ createdAt: 'desc' }],
+      include: {
+        linkedAsset: {
+          select: liabilityLinkedAssetSelect,
+        },
+      },
     });
 
-    return liabilities.map((liability) => ({
-      ...liability,
-      currentBalance: Number(liability.currentBalance),
-      interestRate: Number(liability.interestRate),
-    }));
+    return liabilities.map((liability) => serializeLiability(liability));
   },
 
   async getUserLiabilitiesWithForecast(householdId: string) {
@@ -204,6 +305,9 @@ export const liabilityService = {
       where: { householdId },
       orderBy: [{ createdAt: 'desc' }],
       include: {
+        linkedAsset: {
+          select: liabilityLinkedAssetSelect,
+        },
         transactions: {
           where: { type: 'expense' },
           select: {
@@ -237,7 +341,7 @@ export const liabilityService = {
       );
 
       return {
-        ...liability,
+        ...serializeLiability(liability),
         currentBalance,
         interestRate,
         transactions: liability.transactions.map((t) => ({
@@ -273,6 +377,12 @@ export const liabilityService = {
       throw new ValidationError('Term end date must be on or after open date');
     }
 
+    const linkedAssetId = await validateLinkedAsset(
+      householdId,
+      data.linkedAssetId,
+      liabilityId
+    );
+
     const updateData: any = {};
     if (data.name !== undefined) updateData.name = data.name.trim();
     if (data.type !== undefined) updateData.type = data.type;
@@ -281,6 +391,7 @@ export const liabilityService = {
     if (data.interestType !== undefined) updateData.interestType = data.interestType;
     if (data.openDate !== undefined) updateData.openDate = new Date(data.openDate);
     if (data.termEndDate !== undefined) updateData.termEndDate = new Date(data.termEndDate);
+    if (linkedAssetId !== undefined) updateData.linkedAssetId = linkedAssetId;
 
     if (data.metadata !== undefined) {
       const existingMeta = (existingLiability.metadata as Record<string, any>) || {};
@@ -290,13 +401,14 @@ export const liabilityService = {
     const liability = await prisma.liability.update({
       where: { id: liabilityId },
       data: updateData,
+      include: {
+        linkedAsset: {
+          select: liabilityLinkedAssetSelect,
+        },
+      },
     });
 
-    return {
-      ...liability,
-      currentBalance: Number(liability.currentBalance),
-      interestRate: Number(liability.interestRate),
-    };
+    return serializeLiability(liability);
   },
 
   async deleteLiability(liabilityId: string, householdId: string) {

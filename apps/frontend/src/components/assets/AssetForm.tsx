@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { assetService } from '../../services/asset.service';
+import { liabilityService } from '../../services/liability.service';
 import type { AssetType, LiquidityType, CreateAssetInput } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -29,12 +30,29 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
     purchaseValue: '' as string | number,
     purchaseDate: '',
     expectedGrowthRate: 0,
+    linkedLiabilityId: '',
+  });
+
+  const { data: liabilitiesData } = useQuery({
+    queryKey: ['liabilities'],
+    queryFn: () => liabilityService.getLiabilities(),
   });
 
   const createMutation = useMutation({
-    mutationFn: (data: CreateAssetInput) => assetService.createAsset(data),
+    mutationFn: async (data: CreateAssetInput) => {
+      const result = await assetService.createAsset(data);
+
+      if (formData.linkedLiabilityId) {
+        await liabilityService.updateLiability(formData.linkedLiabilityId, {
+          linkedAssetId: result.asset.id,
+        });
+      }
+
+      return result;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
+      queryClient.invalidateQueries({ queryKey: ['liabilities'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
       onSuccess?.();
     },
@@ -53,6 +71,7 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
     createMutation.mutate(submitData);
   };
   const derivedLiquidityType = ASSET_LIQUIDITY_BY_TYPE[formData.type];
+  const liabilities = liabilitiesData?.liabilities || [];
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -154,6 +173,31 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
         <Input value={derivedLiquidityType.replace('_', ' ')} disabled className="capitalize bg-muted" />
         <p className="text-xs text-muted-foreground">
           Liquidity is set automatically based on asset type
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="linkedLiabilityId">Linked Liability (Optional)</Label>
+        <select
+          id="linkedLiabilityId"
+          value={formData.linkedLiabilityId}
+          onChange={(e) => setFormData({ ...formData, linkedLiabilityId: e.target.value })}
+          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <option value="">No linked liability</option>
+          {liabilities.map((liability) => (
+            <option
+              key={liability.id}
+              value={liability.id}
+              disabled={Boolean(liability.linkedAsset)}
+            >
+              {liability.name}
+              {liability.linkedAsset ? ` (already linked to ${liability.linkedAsset.name})` : ''}
+            </option>
+          ))}
+        </select>
+        <p className="text-xs text-muted-foreground">
+          You can link existing liabilities here. Creating a new linked liability is handled from the liability flow.
         </p>
       </div>
 

@@ -12,6 +12,13 @@ const ASSET_LIQUIDITY_BY_TYPE: Record<AssetType, LiquidityType> = {
   crypto: 'liquid',
 };
 
+const assetLinkedLiabilitySelect = {
+  id: true,
+  name: true,
+  type: true,
+  currentBalance: true,
+} as const;
+
 export interface CreateAssetInput {
   name: string;
   type: AssetType;
@@ -40,6 +47,44 @@ export interface UpdateAssetValueInput {
   newValue: number;
   source?: ValueSource;
   date?: string | Date;
+}
+
+function serializeLinkedLiability(linkedLiability: {
+  id: string;
+  name: string;
+  type: 'mortgage' | 'auto_loan' | 'student_loan' | 'credit_card' | 'personal_loan' | 'line_of_credit';
+  currentBalance: number | { toString(): string };
+} | null) {
+  if (!linkedLiability) {
+    return null;
+  }
+
+  return {
+    id: linkedLiability.id,
+    name: linkedLiability.name,
+    type: linkedLiability.type,
+    currentBalance: Number(linkedLiability.currentBalance),
+  };
+}
+
+function serializeAsset<T extends {
+  currentValue: number | { toString(): string };
+  purchaseValue: number | { toString(): string } | null;
+  expectedGrowthRate: number | { toString(): string };
+  linkedLiability?: {
+    id: string;
+    name: string;
+    type: 'mortgage' | 'auto_loan' | 'student_loan' | 'credit_card' | 'personal_loan' | 'line_of_credit';
+    currentBalance: number | { toString(): string };
+  } | null;
+}>(asset: T) {
+  return {
+    ...asset,
+    currentValue: Number(asset.currentValue),
+    purchaseValue: asset.purchaseValue === null ? null : Number(asset.purchaseValue),
+    expectedGrowthRate: Number(asset.expectedGrowthRate),
+    linkedLiability: serializeLinkedLiability(asset.linkedLiability ?? null),
+  };
 }
 
 export const assetService = {
@@ -94,7 +139,7 @@ export const assetService = {
       ORDER BY created_at DESC
     `;
 
-    return rows.map((row) => ({
+    const assets = rows.map((row) => ({
       id: row.id,
       householdId: row.household_id,
       name: row.name,
@@ -107,6 +152,41 @@ export const assetService = {
       metadata: (row.metadata as Record<string, any>) || {},
       createdAt: row.created_at,
       updatedAt: row.updated_at,
+    }));
+
+    if (assets.length === 0) {
+      return assets;
+    }
+
+    const linkedLiabilities = await prisma.liability.findMany({
+      where: {
+        householdId,
+        linkedAssetId: { in: assets.map((asset) => asset.id) },
+      },
+      select: {
+        id: true,
+        name: true,
+        type: true,
+        currentBalance: true,
+        linkedAssetId: true,
+      },
+    });
+
+    const linkedLiabilityMap = new Map(
+      linkedLiabilities.map((liability) => [
+        liability.linkedAssetId!,
+        serializeLinkedLiability({
+          id: liability.id,
+          name: liability.name,
+          type: liability.type,
+          currentBalance: liability.currentBalance,
+        }),
+      ])
+    );
+
+    return assets.map((asset) => ({
+      ...asset,
+      linkedLiability: linkedLiabilityMap.get(asset.id) ?? null,
     }));
   },
 
@@ -137,6 +217,11 @@ export const assetService = {
           liquidityType: ASSET_LIQUIDITY_BY_TYPE[data.type],
           metadata: data.metadata || {},
         },
+        include: {
+          linkedLiability: {
+            select: assetLinkedLiabilitySelect,
+          },
+        },
       });
 
       // Create initial value history entry
@@ -152,7 +237,7 @@ export const assetService = {
       return asset;
     });
 
-    return result;
+    return serializeAsset(result);
   },
 
   /**
@@ -161,13 +246,18 @@ export const assetService = {
   async getAssetById(assetId: string, householdId: string) {
     const asset = await prisma.asset.findFirst({
       where: { id: assetId, householdId },
+      include: {
+        linkedLiability: {
+          select: assetLinkedLiabilitySelect,
+        },
+      },
     });
 
     if (!asset) {
       throw new NotFoundError('Asset not found');
     }
 
-    return asset;
+    return serializeAsset(asset);
   },
 
   /**
@@ -177,9 +267,14 @@ export const assetService = {
     const assets = await prisma.asset.findMany({
       where: { householdId },
       orderBy: [{ createdAt: 'desc' }],
+      include: {
+        linkedLiability: {
+          select: assetLinkedLiabilitySelect,
+        },
+      },
     });
 
-    return assets;
+    return assets.map((asset) => serializeAsset(asset));
   },
 
   /**
@@ -192,6 +287,11 @@ export const assetService = {
       .findMany({
         where: { householdId },
         orderBy: [{ createdAt: 'desc' }],
+        include: {
+          linkedLiability: {
+            select: assetLinkedLiabilitySelect,
+          },
+        },
       })
       .catch(async (error) => {
         if (!this.isLegacyAssetTypeEnumError(error)) {
@@ -248,7 +348,7 @@ export const assetService = {
       }
 
       return {
-        ...asset,
+        ...serializeAsset(asset),
         currentValue,
         purchaseValue,
         expectedGrowthRate: Number(asset.expectedGrowthRate),
@@ -299,9 +399,14 @@ export const assetService = {
     const asset = await prisma.asset.update({
       where: { id: assetId },
       data: updateData,
+      include: {
+        linkedLiability: {
+          select: assetLinkedLiabilitySelect,
+        },
+      },
     });
 
-    return asset;
+    return serializeAsset(asset);
   },
 
   /**
@@ -335,6 +440,11 @@ export const assetService = {
       const asset = await tx.asset.update({
         where: { id: assetId },
         data: { currentValue: newValue },
+        include: {
+          linkedLiability: {
+            select: assetLinkedLiabilitySelect,
+          },
+        },
       });
 
       // Create value history entry
@@ -350,7 +460,7 @@ export const assetService = {
       return asset;
     });
 
-    return result;
+    return serializeAsset(result);
   },
 
   /**
@@ -360,6 +470,11 @@ export const assetService = {
     // Verify asset exists and belongs to household
     const asset = await prisma.asset.findFirst({
       where: { id: assetId, householdId },
+      include: {
+        linkedLiability: {
+          select: { id: true, name: true },
+        },
+      },
     });
 
     if (!asset) {
@@ -392,10 +507,19 @@ export const assetService = {
     // Verify asset exists and belongs to household
     const asset = await prisma.asset.findFirst({
       where: { id: assetId, householdId },
+      include: {
+        linkedLiability: {
+          select: { id: true, name: true },
+        },
+      },
     });
 
     if (!asset) {
       throw new NotFoundError('Asset not found');
+    }
+
+    if (asset.linkedLiability) {
+      throw new ValidationError(`Unlink liability "${asset.linkedLiability.name}" before deleting this asset`);
     }
 
     await prisma.asset.delete({

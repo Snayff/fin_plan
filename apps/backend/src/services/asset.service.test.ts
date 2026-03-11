@@ -60,10 +60,17 @@ describe("assetService.createAsset", () => {
 
 describe("assetService.getAssetById", () => {
   it("returns asset when found", async () => {
-    const asset = buildAsset();
+    const asset = buildAsset({
+      linkedLiability: {
+        id: "liab-1",
+        name: "Test Mortgage",
+        type: "mortgage",
+        currentBalance: 200000,
+      },
+    });
     prismaMock.asset.findFirst.mockResolvedValue(asset);
     const result = await assetService.getAssetById("asset-1", "user-1");
-    expect(result).toEqual(asset);
+    expect(result.linkedLiability?.id).toBe("liab-1");
   });
 
   it("throws NotFoundError when not found", async () => {
@@ -92,6 +99,7 @@ describe("assetService.getUserAssetsWithHistory", () => {
         updated_at: new Date("2025-01-02T00:00:00Z"),
       },
     ]);
+    prismaMock.liability.findMany.mockResolvedValue([]);
     prismaMock.assetValueHistory.findMany.mockResolvedValue([]);
 
     const result = await assetService.getUserAssetsWithHistory("user-1");
@@ -145,10 +153,25 @@ describe("assetService.updateAssetValue", () => {
 
 describe("assetService.deleteAsset", () => {
   it("deletes asset successfully", async () => {
-    prismaMock.asset.findFirst.mockResolvedValue(buildAsset());
+    prismaMock.asset.findFirst.mockResolvedValue(buildAsset({ linkedLiability: null }));
     const result = await assetService.deleteAsset("asset-1", "user-1");
     expect(prismaMock.asset.delete).toHaveBeenCalled();
     expect(result.message).toContain("deleted");
+  });
+
+  it("rejects deleting an asset that is still linked to a liability", async () => {
+    prismaMock.asset.findFirst.mockResolvedValue(
+      buildAsset({
+        linkedLiability: {
+          id: "liab-1",
+          name: "Test Mortgage",
+        },
+      })
+    );
+
+    await expect(assetService.deleteAsset("asset-1", "user-1")).rejects.toThrow(
+      'Unlink liability "Test Mortgage" before deleting this asset'
+    );
   });
 
   it("throws NotFoundError when asset not found", async () => {

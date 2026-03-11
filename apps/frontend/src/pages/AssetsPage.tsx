@@ -36,7 +36,7 @@ export default function AssetsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['assets'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
-      showSuccess('Asset deleted successfully!');
+      showSuccess('Asset deleted!');
       setDeletingAsset(null);
     },
     onError: (error: Error) => {
@@ -210,6 +210,16 @@ export default function AssetsPage() {
                     {formatCurrency(asset.currentValue)}
                   </p>
                 </div>
+
+                {asset.linkedLiability && (
+                  <div className="mb-4 rounded-md border border-border bg-muted/30 p-3">
+                    <p className="text-xs text-muted-foreground">Linked liability</p>
+                    <p className="text-sm font-medium text-foreground">{asset.linkedLiability.name}</p>
+                    <p className="text-xs text-muted-foreground capitalize">
+                      {asset.linkedLiability.type.replace(/_/g, ' ')} · {formatCurrency(asset.linkedLiability.currentBalance)}
+                    </p>
+                  </div>
+                )}
 
                 {/* Value History Chart */}
                 {asset.valueHistory && asset.valueHistory.length > 0 && (

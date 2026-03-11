@@ -86,4 +86,56 @@ describe("liability routes", () => {
 
     expect(response.statusCode).toBe(200);
   });
+
+  it("POST /api/liabilities accepts linkedAssetId", async () => {
+    (liabilityService.createLiability as any).mockResolvedValue({
+      id: "liab-1",
+      linkedAsset: {
+        id: "00000000-0000-0000-0000-000000000001",
+        name: "Main Residence",
+        type: "housing",
+        currentValue: 300000,
+      },
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/liabilities",
+      headers: authHeaders,
+      payload: {
+        name: "Test Mortgage",
+        type: "mortgage",
+        currentBalance: 200000,
+        interestRate: 3.5,
+        interestType: "fixed",
+        openDate: "2020-01-01",
+        termEndDate: "2055-01-01",
+        linkedAssetId: "00000000-0000-0000-0000-000000000001",
+      },
+    });
+
+    expect(response.statusCode).toBe(201);
+    expect(response.json().liability.linkedAsset.id).toBe("00000000-0000-0000-0000-000000000001");
+  });
+
+  it("PUT /api/liabilities accepts linkedAssetId null to unlink", async () => {
+    (liabilityService.updateLiability as any).mockResolvedValue({
+      id: "liab-1",
+      linkedAsset: null,
+    });
+
+    const response = await app.inject({
+      method: "PUT",
+      url: "/api/liabilities/liab-1",
+      headers: authHeaders,
+      payload: { linkedAssetId: null },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(liabilityService.updateLiability).toHaveBeenCalledWith(
+      "liab-1",
+      "household-1",
+      { linkedAssetId: null }
+    );
+  });
 });

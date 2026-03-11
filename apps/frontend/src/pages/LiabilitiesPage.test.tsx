@@ -52,4 +52,12 @@ describe('LiabilitiesPage (MSW)', () => {
       expect(screen.getByRole('button', { name: /add liability/i })).toBeTruthy();
     });
   });
+
+  it('renders linked asset metadata on the liability card', async () => {
+    renderWithProviders(<LiabilitiesPage />);
+    await waitFor(() => {
+      expect(screen.getByText('Linked asset')).toBeTruthy();
+      expect(screen.getByText('Test Property')).toBeTruthy();
+    });
+  });
 });
