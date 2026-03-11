@@ -64,7 +64,7 @@ export default function ProfilePage() {
       const token = useAuthStore.getState().accessToken!;
       setUser(updatedUser, token);
       setNameValue(updatedUser.name);
-      showSuccess('Name updated');
+      showSuccess('Name updated!');
     },
     onError: (err: Error) => showError(err.message || 'Failed to update name'),
   });
@@ -74,7 +74,7 @@ export default function ProfilePage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['household-details', activeHouseholdId] });
       queryClient.invalidateQueries({ queryKey: ['households'] });
-      showSuccess('Household renamed');
+      showSuccess('Household renamed!');
     },
     onError: (err: Error) => showError(err.message || 'Failed to rename household'),
   });
@@ -83,7 +83,7 @@ export default function ProfilePage() {
     mutationFn: (email: string) => householdService.inviteMember(activeHouseholdId!, email),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['household-details', activeHouseholdId] });
-      showSuccess('Invite sent');
+      showSuccess('Invite sent!');
       setInviteEmail('');
     },
     onError: (err: Error) => showError(err.message || 'Failed to send invite'),
@@ -93,7 +93,7 @@ export default function ProfilePage() {
     mutationFn: (memberId: string) => householdService.removeMember(activeHouseholdId!, memberId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['household-details', activeHouseholdId] });
-      showSuccess('Member removed');
+      showSuccess('Member removed!');
     },
     onError: (err: Error) => showError(err.message || 'Failed to remove member'),
   });
@@ -102,7 +102,7 @@ export default function ProfilePage() {
     mutationFn: (inviteId: string) => householdService.cancelInvite(activeHouseholdId!, inviteId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['household-details', activeHouseholdId] });
-      showSuccess('Invite cancelled');
+      showSuccess('Invite cancelled!');
     },
     onError: (err: Error) => showError(err.message || 'Failed to cancel invite'),
   });
@@ -119,7 +119,7 @@ export default function ProfilePage() {
       setUser(updatedUser, token);
       queryClient.invalidateQueries({ queryKey: ['households'] });
       queryClient.invalidateQueries({ queryKey: ['household-details'] });
-      showSuccess(`'${newHousehold.name}' created and set as active`);
+      showSuccess(`'${newHousehold.name}' created!`);
       setNewHouseholdName('');
     },
     onError: (err: Error) => showError(err.message || 'Failed to create household'),

@@ -114,7 +114,7 @@ export default function RecurringRuleForm({
       queryClient.invalidateQueries({ queryKey: ['recurringRules'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      showSuccess('Recurring rule created successfully!');
+      showSuccess('Recurring rule created!');
       onSuccess?.();
     },
     onError: (error: Error) => {
@@ -129,7 +129,7 @@ export default function RecurringRuleForm({
       queryClient.invalidateQueries({ queryKey: ['recurringRules'] });
       queryClient.invalidateQueries({ queryKey: ['transactions'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
-      showSuccess('Recurring rule updated successfully!');
+      showSuccess('Recurring rule updated!');
       onSuccess?.();
     },
     onError: (error: Error) => {
