@@ -635,6 +635,31 @@ describe("budgetService.addBudgetItemsBatch", () => {
       ])
     ).rejects.toThrow("Budget not found");
   });
+
+  it("throws ValidationError if a category is not found", async () => {
+    const mockBudget = buildBudget({ householdId: "household-1" });
+    prismaMock.budget.findFirst.mockResolvedValue(mockBudget as any);
+    prismaMock.category.findMany.mockResolvedValue([]); // no categories found
+
+    await expect(
+      budgetService.addBudgetItemsBatch("budget-1", "household-1", [
+        { categoryId: "nonexistent-cat", allocatedAmount: 100, itemType: "committed" },
+      ])
+    ).rejects.toThrow("not found");
+  });
+
+  it("throws ValidationError if a category is not an expense category", async () => {
+    const mockBudget = buildBudget({ householdId: "household-1" });
+    const incomeCategory = buildCategory({ type: "income" });
+    prismaMock.budget.findFirst.mockResolvedValue(mockBudget as any);
+    prismaMock.category.findMany.mockResolvedValue([incomeCategory] as any);
+
+    await expect(
+      budgetService.addBudgetItemsBatch("budget-1", "household-1", [
+        { categoryId: incomeCategory.id, allocatedAmount: 100, itemType: "committed" },
+      ])
+    ).rejects.toThrow("must be an expense category");
+  });
 });
 
 describe("budgetService.removeCategoryFromBudget", () => {
