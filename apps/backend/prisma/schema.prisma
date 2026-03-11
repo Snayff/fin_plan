@@ -237,6 +237,7 @@ model RecurringRule {
   updatedAt           DateTime           @updatedAt @map("updated_at")
   household           Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
   transactions        Transaction[]
+  budgetItems         BudgetItem[]
 
   @@index([householdId, isActive])
   @@index([startDate, endDate])
@@ -267,6 +268,11 @@ model BudgetItem {
   carryover       Boolean  @default(false)
   rolloverAmount  Decimal? @map("rollover_amount") @db.Decimal(15, 2)
   notes           String?
+  itemType        BudgetItemType  @default(committed) @map("item_type")
+  recurringRuleId String?         @map("recurring_rule_id")
+  entryFrequency  String?         @map("entry_frequency")
+  entryAmount     Decimal?        @map("entry_amount") @db.Decimal(15, 2)
+  recurringRule   RecurringRule?  @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
   budget          Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
   category        Category @relation(fields: [categoryId], references: [id])
 
@@ -453,6 +459,11 @@ enum RecurringFrequency {
   quarterly
   annually
   custom
+}
+
+enum BudgetItemType {
+  committed
+  discretionary
 }
 
 enum BudgetPeriod {
