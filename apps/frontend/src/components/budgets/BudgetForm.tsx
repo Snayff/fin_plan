@@ -114,7 +114,7 @@ export default function BudgetForm({ budget, onSuccess, onCancel }: BudgetFormPr
 
       // On create: advance to step 2 (recurring rules import)
       showSuccess('Budget created!');
-      setCreatedBudgetId((data as any).budget.id);
+      setCreatedBudgetId((data as { budget: { id: string } }).budget.id);
       setCreatedBudgetPeriod(formData.period);
       setStep('recurring');
     },
