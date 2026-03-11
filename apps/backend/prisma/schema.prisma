@@ -139,6 +139,7 @@ model Account {
   description  String?
   household    Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
   transactions Transaction[]
+  linkedGoals  Goal[]        @relation("GoalLinkedAccount")
 
   @@index([householdId, isActive])
   @@map("accounts")
@@ -286,7 +287,10 @@ model Goal {
   icon          String?
   createdAt     DateTime           @default(now()) @map("created_at")
   updatedAt     DateTime           @updatedAt @map("updated_at")
-  metadata      Json?              @default("{}")
+  metadata         Json?              @default("{}")
+  linkedAccountId  String?            @map("linked_account_id")
+  incomePeriod     IncomePeriod?      @map("income_period")
+  linkedAccount    Account?           @relation("GoalLinkedAccount", fields: [linkedAccountId], references: [id], onDelete: SetNull)
   contributions GoalContribution[]
   household     Household          @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
@@ -320,6 +324,7 @@ model Asset {
   createdAt          DateTime            @default(now()) @map("created_at")
   updatedAt          DateTime            @updatedAt @map("updated_at")
   metadata           Json?               @default("{}")
+  linkedLiability    Liability?          @relation("LiabilityLinkedAsset")
   valueHistory       AssetValueHistory[]
   household          Household           @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
@@ -340,6 +345,7 @@ model AssetValueHistory {
 model Liability {
   id             String        @id @default(uuid())
   householdId    String        @map("household_id")
+  linkedAssetId  String?       @unique @map("linked_asset_id")
   name           String
   type           LiabilityType
   currentBalance Decimal       @map("current_balance") @db.Decimal(15, 2)
@@ -351,8 +357,10 @@ model Liability {
   updatedAt      DateTime      @updatedAt @map("updated_at")
   metadata       Json?         @default("{}")
   transactions   Transaction[]
+  linkedAsset    Asset?        @relation("LiabilityLinkedAsset", fields: [linkedAssetId], references: [id], onDelete: Restrict)
   household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
 
+  @@index([householdId, linkedAssetId])
   @@map("liabilities")
 }
 
@@ -473,6 +481,11 @@ enum GoalStatus {
   active
   completed
   archived
+}
+
+enum IncomePeriod {
+  month
+  year
 }
 
 enum AssetType {
