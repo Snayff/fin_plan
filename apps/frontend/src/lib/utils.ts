@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import type { BudgetPeriod, RecurringFrequency } from '../types';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -43,3 +44,44 @@ export const ACCOUNT_TYPE_OPTIONS = [
   { value: 'asset',                  label: 'Asset' },
   { value: 'liability',              label: 'Liability' },
 ] as const;
+
+const PERIOD_DAYS: Record<BudgetPeriod, number> = {
+  monthly: 365.25 / 12,   // 30.4375
+  quarterly: 365.25 / 4,  // 91.3125
+  annual: 365.25,
+  custom: 365.25 / 12,    // fallback — caller should use actual days for custom periods
+};
+
+const FREQUENCY_DAYS: Record<RecurringFrequency, number> = {
+  daily: 1,
+  weekly: 7,
+  biweekly: 14,
+  monthly: 365.25 / 12,
+  quarterly: 365.25 / 4,
+  annually: 365.25,
+  custom: 1,  // fallback
+};
+
+/**
+ * Convert a per-frequency amount to the equivalent budget period total.
+ * E.g. £100/week in a monthly budget = £100 × (30.4375 / 7) = £434.82
+ */
+export function convertToPeriodTotal(
+  amount: number,
+  entryFrequency: RecurringFrequency,
+  budgetPeriod: BudgetPeriod
+): number {
+  const periodDays = PERIOD_DAYS[budgetPeriod];
+  const frequencyDays = FREQUENCY_DAYS[entryFrequency];
+  return Math.round(amount * (periodDays / frequencyDays) * 100) / 100;
+}
+
+export const FREQUENCY_LABELS: Record<RecurringFrequency, string> = {
+  daily: 'Daily',
+  weekly: 'Weekly',
+  biweekly: 'Fortnightly',
+  monthly: 'Monthly',
+  quarterly: 'Quarterly',
+  annually: 'Annually',
+  custom: 'Custom',
+};
