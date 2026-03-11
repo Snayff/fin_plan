@@ -55,6 +55,12 @@ mock.module('../services/category.service', () => ({
   },
 }));
 
+mock.module('../services/recurring.service', () => ({
+  recurringService: {
+    getRecurringRules: async () => ({ recurringRules: [] }),
+  },
+}));
+
 mock.module('../lib/toast', () => ({
   showSuccess: showSuccessMock,
   showError: showErrorMock,
@@ -119,6 +125,7 @@ function buildBudgetPayload() {
           remaining: 300,
           percentUsed: 80,
           isOverBudget: false,
+          groupItemType: 'committed' as const,
           items: [
             {
               id: 'item-rent',
@@ -128,6 +135,10 @@ function buildBudgetPayload() {
               carryover: false,
               rolloverAmount: null,
               notes: 'Rent',
+              itemType: 'committed' as const,
+              recurringRuleId: null,
+              entryFrequency: null,
+              entryAmount: null,
               category: {
                 id: 'cat-housing',
                 name: 'Housing',
