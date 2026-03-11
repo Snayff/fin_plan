@@ -455,6 +455,65 @@ export const budgetService = {
   },
 
   /**
+   * Add multiple budget items in a single transaction (batch import from recurring rules)
+   */
+  async addBudgetItemsBatch(budgetId: string, householdId: string, items: AddBudgetItemInput[]) {
+    // Verify budget ownership once
+    const budget = await prisma.budget.findFirst({
+      where: { id: budgetId, householdId },
+    });
+
+    if (!budget) {
+      throw new NotFoundError('Budget not found');
+    }
+
+    // Verify all categories exist and are expense categories
+    const categoryIds = [...new Set(items.map((item) => item.categoryId))];
+    const categories = await prisma.category.findMany({
+      where: { id: { in: categoryIds } },
+    });
+
+    const categoryMap = new Map(categories.map((c) => [c.id, c]));
+    for (const item of items) {
+      const category = categoryMap.get(item.categoryId);
+      if (!category) throw new ValidationError(`Category ${item.categoryId} not found`);
+      if (category.type !== 'expense') throw new ValidationError(`Category "${category.name}" must be an expense category`);
+    }
+
+    // Create all items in a single DB transaction
+    const createdItems = await prisma.$transaction(
+      items.map((item) =>
+        prisma.budgetItem.create({
+          data: {
+            budgetId,
+            categoryId: item.categoryId,
+            allocatedAmount: item.allocatedAmount,
+            notes: item.notes,
+            itemType: item.itemType ?? 'committed',
+            recurringRuleId: item.recurringRuleId ?? null,
+            entryFrequency: item.entryFrequency ?? null,
+            entryAmount: item.entryAmount ?? null,
+          },
+          include: {
+            category: {
+              select: { id: true, name: true, color: true, icon: true },
+            },
+          },
+        })
+      )
+    );
+
+    return {
+      items: createdItems.map((item) => ({
+        ...item,
+        allocatedAmount: Number(item.allocatedAmount),
+        rolloverAmount: item.rolloverAmount != null ? Number(item.rolloverAmount) : null,
+        entryAmount: item.entryAmount != null ? Number(item.entryAmount) : null,
+      })),
+    };
+  },
+
+  /**
    * Remove all line items for a category from a budget
    */
   async removeCategoryFromBudget(budgetId: string, householdId: string, categoryId: string) {

@@ -600,6 +600,43 @@ describe("budgetService.deleteBudgetItem", () => {
   });
 });
 
+describe("budgetService.addBudgetItemsBatch", () => {
+  it("creates multiple budget items in a transaction", async () => {
+    const mockBudget = buildBudget({ householdId: "household-1" });
+    const mockCategory = buildCategory({ type: "expense" });
+    const mockItem1 = buildBudgetItem({ itemType: "committed", categoryId: mockCategory.id });
+    const mockItem2 = buildBudgetItem({ itemType: "committed", categoryId: mockCategory.id });
+
+    prismaMock.budget.findFirst.mockResolvedValue(mockBudget as any);
+    prismaMock.category.findMany.mockResolvedValue([mockCategory] as any);
+    prismaMock.$transaction.mockImplementation(async (queries: any) => {
+      // queries is an array of Prisma operations
+      return [
+        { ...mockItem1, category: { id: mockCategory.id, name: mockCategory.name, color: null, icon: null } },
+        { ...mockItem2, category: { id: mockCategory.id, name: mockCategory.name, color: null, icon: null } },
+      ];
+    });
+
+    const result = await budgetService.addBudgetItemsBatch("budget-1", "household-1", [
+      { categoryId: mockCategory.id, allocatedAmount: 500, itemType: "committed" },
+      { categoryId: mockCategory.id, allocatedAmount: 300, itemType: "committed" },
+    ]);
+
+    expect(result.items).toHaveLength(2);
+    expect(prismaMock.$transaction).toHaveBeenCalled();
+  });
+
+  it("throws NotFoundError if budget does not belong to household", async () => {
+    prismaMock.budget.findFirst.mockResolvedValue(null);
+
+    await expect(
+      budgetService.addBudgetItemsBatch("budget-1", "household-1", [
+        { categoryId: "cat-1", allocatedAmount: 100, itemType: "committed" },
+      ])
+    ).rejects.toThrow("Budget not found");
+  });
+});
+
 describe("budgetService.removeCategoryFromBudget", () => {
   it("removes all items for category from budget", async () => {
     const budget = buildBudget();
