@@ -3,6 +3,7 @@ import type {
   CreateBudgetInput,
   UpdateBudgetInput,
   AddBudgetItemInput,
+  AddBudgetItemsBatchInput,
   UpdateBudgetItemInput,
   BudgetSummary,
   EnhancedBudget,
@@ -19,6 +20,10 @@ interface BudgetResponse {
 
 interface BudgetItemResponse {
   item: BudgetItem;
+}
+
+interface BudgetItemsBatchResponse {
+  items: BudgetItem[];
 }
 
 interface DeleteResponse {
@@ -87,5 +92,12 @@ export const budgetService = {
    */
   async removeCategoryFromBudget(budgetId: string, categoryId: string): Promise<DeleteResponse> {
     return apiClient.delete<DeleteResponse>(`/api/budgets/${budgetId}/categories/${categoryId}`);
+  },
+
+  /**
+   * Batch add multiple items to a budget (used for importing recurring rules)
+   */
+  async addBudgetItemsBatch(budgetId: string, data: AddBudgetItemsBatchInput): Promise<BudgetItemsBatchResponse> {
+    return apiClient.post<BudgetItemsBatchResponse>(`/api/budgets/${budgetId}/items/batch`, data);
   },
 };
