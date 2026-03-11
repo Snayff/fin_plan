@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { addMonths, format, subDays } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import { budgetService } from '../../services/budget.service';
 import { showError, showSuccess } from '../../lib/toast';
 import type { BudgetPeriod, CreateBudgetInput, UpdateBudgetInput } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import RecurringRulesStep from './RecurringRulesStep';
 
 interface EditableBudget {
   id: string;
@@ -77,9 +79,13 @@ function calculateEndDate(startDate: string, period: BudgetPeriod): string {
 
 export default function BudgetForm({ budget, onSuccess, onCancel }: BudgetFormProps) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const isEditMode = Boolean(budget);
   const [formData, setFormData] = useState<BudgetFormState>(() => getInitialFormData(budget));
   const [errors, setErrors] = useState<BudgetFormErrors>({});
+  const [step, setStep] = useState<'details' | 'recurring'>('details');
+  const [createdBudgetId, setCreatedBudgetId] = useState<string | null>(null);
+  const [createdBudgetPeriod, setCreatedBudgetPeriod] = useState<BudgetPeriod>('monthly');
 
   useEffect(() => {
     setFormData(getInitialFormData(budget));
@@ -94,14 +100,23 @@ export default function BudgetForm({ budget, onSuccess, onCancel }: BudgetFormPr
 
       return budgetService.createBudget(data as CreateBudgetInput);
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['budgets'] });
       if (budget?.id) {
         queryClient.invalidateQueries({ queryKey: ['budget', budget.id] });
       }
 
-      showSuccess(isEditMode ? 'Budget updated successfully!' : 'Budget created successfully!');
-      onSuccess?.();
+      if (isEditMode) {
+        showSuccess('Budget updated successfully!');
+        onSuccess?.();
+        return;
+      }
+
+      // On create: advance to step 2 (recurring rules import)
+      showSuccess('Budget created!');
+      setCreatedBudgetId((data as any).budget.id);
+      setCreatedBudgetPeriod(formData.period);
+      setStep('recurring');
     },
     onError: (error: Error) => {
       showError(error.message || (isEditMode ? 'Failed to update budget' : 'Failed to create budget'));
@@ -195,6 +210,23 @@ export default function BudgetForm({ budget, onSuccess, onCancel }: BudgetFormPr
 
     submitMutation.mutate(payload as CreateBudgetInput);
   };
+
+  if (step === 'recurring' && createdBudgetId) {
+    return (
+      <RecurringRulesStep
+        budgetId={createdBudgetId}
+        budgetPeriod={createdBudgetPeriod}
+        onComplete={() => {
+          onSuccess?.();
+          navigate(`/budget/${createdBudgetId}`);
+        }}
+        onSkip={() => {
+          onSuccess?.();
+          navigate(`/budget/${createdBudgetId}`);
+        }}
+      />
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
