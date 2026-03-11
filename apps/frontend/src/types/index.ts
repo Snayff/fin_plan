@@ -263,6 +263,12 @@ export interface Asset {
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;
+  linkedLiability?: {
+    id: string;
+    name: string;
+    type: LiabilityType;
+    currentBalance: number;
+  } | null;
 }
 
 export interface AssetValueHistory {
@@ -306,6 +312,12 @@ export interface Liability {
   metadata: Record<string, any>;
   createdAt: string;
   updatedAt: string;
+  linkedAsset?: {
+    id: string;
+    name: string;
+    type: AssetType;
+    currentValue: number;
+  } | null;
 }
 
 export interface EnhancedLiability extends Liability {
@@ -411,6 +423,8 @@ export interface Goal {
   type: GoalType;
   targetAmount: number;
   currentAmount: number;
+  linkedAccountId: string | null;
+  incomePeriod: 'month' | 'year' | null;
   targetDate: string | null;
   priority: Priority;
   status: GoalStatus;
@@ -438,6 +452,8 @@ export interface GoalContribution {
 
 export interface EnhancedGoal extends Goal {
   contributions: GoalContribution[];
+  calculatedProgress: number;
+  linkedAccountMissing?: boolean;
   progressPercentage: number;
   daysRemaining: number | null;
   averageMonthlyContribution: number;
