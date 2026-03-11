@@ -367,8 +367,8 @@ export const budgetService = {
     return {
       ...item,
       allocatedAmount: Number(item.allocatedAmount),
-      rolloverAmount: item.rolloverAmount ? Number(item.rolloverAmount) : null,
-      entryAmount: item.entryAmount ? Number(item.entryAmount) : null,
+      rolloverAmount: item.rolloverAmount != null ? Number(item.rolloverAmount) : null,
+      entryAmount: item.entryAmount != null ? Number(item.entryAmount) : null,
     };
   },
 
@@ -416,8 +416,8 @@ export const budgetService = {
     return {
       ...updatedItem,
       allocatedAmount: Number(updatedItem.allocatedAmount),
-      rolloverAmount: updatedItem.rolloverAmount ? Number(updatedItem.rolloverAmount) : null,
-      entryAmount: updatedItem.entryAmount ? Number(updatedItem.entryAmount) : null,
+      rolloverAmount: updatedItem.rolloverAmount != null ? Number(updatedItem.rolloverAmount) : null,
+      entryAmount: updatedItem.entryAmount != null ? Number(updatedItem.entryAmount) : null,
     };
   },
 
