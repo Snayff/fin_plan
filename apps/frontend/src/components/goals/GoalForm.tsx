@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { createGoalSchema, updateGoalSchema } from '@finplan/shared';
+import { accountService } from '../../services/account.service';
 import { goalService } from '../../services/goal.service';
+import { getIncomePeriodRange } from '../../lib/date-utils';
 import type {
   Goal,
   GoalType,
@@ -32,6 +35,15 @@ const GOAL_ICON_OPTIONS = Array.from(
   new Set([...Object.values(GOAL_TYPE_ICONS), '🎯', '🏠', '🚗', '✈️', '🎓', '🧳', '🔧', '📚'])
 );
 
+const GOAL_TYPE_GUIDANCE: Record<GoalType, string> = {
+  savings: 'Progress is automatically calculated from your savings and ISA account balances.',
+  investment: 'Progress is automatically calculated from your investment account balances.',
+  net_worth: 'Progress is automatically calculated as total assets minus all liabilities.',
+  debt_payoff: 'Link the liability account you want to pay off. Progress updates automatically.',
+  purchase: 'Link a dedicated account to track automatically, or log contributions manually.',
+  income: 'Income transactions are automatically counted for the selected period.',
+};
+
 interface GoalFormState {
   name: string;
   description: string;
@@ -41,6 +53,9 @@ interface GoalFormState {
   priority: Priority;
   status: GoalStatus;
   icon: string;
+  linkedAccountId: string;
+  incomePeriod: 'month' | 'year';
+  purchaseTrackingMode: 'account' | 'manual';
 }
 
 function getInitialFormData(goal?: Goal): GoalFormState {
@@ -53,6 +68,9 @@ function getInitialFormData(goal?: Goal): GoalFormState {
     priority: (goal?.priority as Priority) ?? 'medium',
     status: (goal?.status as GoalStatus) ?? 'active',
     icon: goal?.icon ?? GOAL_TYPE_ICONS[goal?.type as GoalType] ?? '🎯',
+    linkedAccountId: goal?.linkedAccountId ?? '',
+    incomePeriod: (goal?.incomePeriod as 'month' | 'year') ?? 'month',
+    purchaseTrackingMode: goal?.linkedAccountId ? 'account' : 'manual',
   };
 }
 
@@ -60,6 +78,13 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
   const queryClient = useQueryClient();
   const isEditMode = Boolean(goal);
   const [formData, setFormData] = useState<GoalFormState>(() => getInitialFormData(goal));
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
+
+  const { data: accountsData } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => accountService.getAccounts(),
+  });
+  const accounts = accountsData?.accounts ?? [];
 
   useEffect(() => {
     setFormData(getInitialFormData(goal));
@@ -82,18 +107,39 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+
+    const targetAmount = Number(formData.targetAmount);
+    const extraErrors: Record<string, string> = {};
+    if (!formData.targetAmount || targetAmount <= 0) {
+      extraErrors.targetAmount = 'Target amount must be greater than 0';
+    }
 
     if (isEditMode) {
       const submitData: UpdateGoalInput = {
         name: formData.name,
         description: formData.description || undefined,
         type: formData.type,
-        targetAmount: Number(formData.targetAmount),
+        targetAmount,
         targetDate: formData.targetDate || undefined,
         priority: formData.priority,
         status: formData.status,
         icon: formData.icon,
+        linkedAccountId: formData.linkedAccountId || null,
+        incomePeriod: formData.type === 'income' ? formData.incomePeriod : null,
       };
+      const result = updateGoalSchema.safeParse(submitData);
+      if (!result.success || Object.keys(extraErrors).length > 0) {
+        const errors = { ...extraErrors };
+        if (!result.success) {
+          for (const issue of result.error.issues) {
+            const path = issue.path[0] as string;
+            if (path && !errors[path]) errors[path] = issue.message;
+          }
+        }
+        setFormErrors(errors);
+        return;
+      }
       submitMutation.mutate(submitData);
       return;
     }
@@ -102,11 +148,25 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
       name: formData.name,
       description: formData.description || undefined,
       type: formData.type,
-      targetAmount: Number(formData.targetAmount),
+      targetAmount,
       targetDate: formData.targetDate || undefined,
       priority: formData.priority,
       icon: formData.icon,
+      linkedAccountId: formData.linkedAccountId || undefined,
+      incomePeriod: formData.type === 'income' ? formData.incomePeriod : undefined,
     };
+    const result = createGoalSchema.safeParse(submitData);
+    if (!result.success || Object.keys(extraErrors).length > 0) {
+      const errors = { ...extraErrors };
+      if (!result.success) {
+        for (const issue of result.error.issues) {
+          const path = issue.path[0] as string;
+          if (path && !errors[path]) errors[path] = issue.message;
+        }
+      }
+      setFormErrors(errors);
+      return;
+    }
 
     submitMutation.mutate(submitData);
   };
@@ -116,7 +176,10 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
       ...formData,
       type: newType,
       icon: GOAL_TYPE_ICONS[newType] || '🎯',
+      linkedAccountId: '',
+      purchaseTrackingMode: 'manual',
     });
+    setFormErrors({});
   };
 
   return (
@@ -126,11 +189,18 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
         <Input
           type="text"
           id="name"
-          required
           value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          onChange={(e) => {
+            setFormData({ ...formData, name: e.target.value });
+            if (formErrors.name) setFormErrors(prev => { const n = {...prev}; delete n.name; return n; });
+          }}
+          onBlur={() => {
+            if (!formData.name.trim()) setFormErrors(prev => ({ ...prev, name: 'Goal name is required' }));
+          }}
           placeholder="e.g., Emergency Fund, New Car, Retirement"
+          aria-invalid={!!formErrors.name}
         />
+        {formErrors.name && <p className="text-destructive text-sm mt-1">{formErrors.name}</p>}
       </div>
 
       <div className="space-y-2">
@@ -161,6 +231,117 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
           <option value="income">Income</option>
         </select>
       </div>
+
+      {/* Guidance banner */}
+      <div className="rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-200">
+        {GOAL_TYPE_GUIDANCE[formData.type]}
+      </div>
+
+      {/* Debt payoff: required liability account selector */}
+      {formData.type === 'debt_payoff' && (
+        <div className="space-y-2">
+          <Label htmlFor="linkedAccountId">
+            Linked Account <span className="text-destructive">*</span>
+          </Label>
+          <select
+            id="linkedAccountId"
+            value={formData.linkedAccountId}
+            onChange={(e) => {
+              setFormData({ ...formData, linkedAccountId: e.target.value });
+              if (formErrors.linkedAccountId) setFormErrors(prev => { const n = {...prev}; delete n.linkedAccountId; return n; });
+            }}
+            className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${formErrors.linkedAccountId ? 'border-destructive' : 'border-input'}`}
+          >
+            <option value="">Select the account to pay off...</option>
+            {accounts
+              .filter((a) => ['credit', 'loan', 'liability'].includes(a.type))
+              .map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name} ({a.type.replace(/_/g, ' ')})
+                </option>
+              ))}
+          </select>
+          {formErrors.linkedAccountId && <p className="text-destructive text-sm mt-1">{formErrors.linkedAccountId}</p>}
+        </div>
+      )}
+
+      {/* Purchase: optional account link or manual tracking */}
+      {formData.type === 'purchase' && (
+        <div className="space-y-3">
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, purchaseTrackingMode: 'account', linkedAccountId: '' })}
+              className={`flex-1 rounded-md border px-3 py-2 text-sm transition-colors ${
+                formData.purchaseTrackingMode === 'account'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-input hover:bg-muted'
+              }`}
+            >
+              Link an account
+            </button>
+            <button
+              type="button"
+              onClick={() => setFormData({ ...formData, purchaseTrackingMode: 'manual', linkedAccountId: '' })}
+              className={`flex-1 rounded-md border px-3 py-2 text-sm transition-colors ${
+                formData.purchaseTrackingMode === 'manual'
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-input hover:bg-muted'
+              }`}
+            >
+              Track manually
+            </button>
+          </div>
+          {formData.purchaseTrackingMode === 'account' && (
+            <div className="space-y-2">
+              <Label htmlFor="linkedAccountIdPurchase">Linked Account</Label>
+              <select
+                id="linkedAccountIdPurchase"
+                value={formData.linkedAccountId}
+                onChange={(e) => setFormData({ ...formData, linkedAccountId: e.target.value })}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+              >
+                <option value="">Select account...</option>
+                {accounts.map((a) => (
+                  <option key={a.id} value={a.id}>
+                    {a.name} ({a.type.replace(/_/g, ' ')})
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Income: period selector */}
+      {formData.type === 'income' && (
+        <div className="space-y-2">
+          <Label>Income Period <span className="text-destructive">*</span></Label>
+          <div className="flex gap-3">
+            {(['month', 'year'] as const).map((period) => (
+              <button
+                key={period}
+                type="button"
+                onClick={() => {
+                  setFormData({ ...formData, incomePeriod: period });
+                  if (formErrors.incomePeriod) setFormErrors(prev => { const n = {...prev}; delete n.incomePeriod; return n; });
+                }}
+                className={`flex-1 rounded-md border px-3 py-2 text-sm capitalize transition-colors ${
+                  formData.incomePeriod === period
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-input hover:bg-muted'
+                }`}
+              >
+                {period === 'month' ? 'Monthly' : 'Annually'}
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Counting transactions {getIncomePeriodRange(formData.incomePeriod)}
+          </p>
+          {formErrors.incomePeriod && <p className="text-destructive text-sm mt-1">{formErrors.incomePeriod}</p>}
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label>Icon</Label>
@@ -197,16 +378,26 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
             type="number"
             id="targetAmount"
             step="0.01"
-            required
             value={formData.targetAmount}
-            onChange={(e) => setFormData({ ...formData, targetAmount: e.target.value })}
-            className="pl-8"
+            onChange={(e) => {
+              setFormData({ ...formData, targetAmount: e.target.value });
+              if (formErrors.targetAmount) setFormErrors(prev => { const n = {...prev}; delete n.targetAmount; return n; });
+            }}
+            onBlur={() => {
+              const n = Number(formData.targetAmount);
+              if (!formData.targetAmount || n <= 0) {
+                setFormErrors(prev => ({ ...prev, targetAmount: 'Target amount must be greater than 0' }));
+              }
+            }}
+            className={`pl-8 ${formErrors.targetAmount ? 'border-destructive' : ''}`}
             placeholder="0.00"
+            aria-invalid={!!formErrors.targetAmount}
           />
         </div>
-        {goal && (
+        {formErrors.targetAmount && <p className="text-destructive text-sm mt-1">{formErrors.targetAmount}</p>}
+        {goal && goal.type === 'purchase' && !goal.linkedAccountId && (
           <p className="text-xs text-muted-foreground">
-            Current progress: £{goal.currentAmount.toLocaleString('en-GB', { minimumFractionDigits: 2 })}
+            Current progress: £{(goal.currentAmount ?? 0).toLocaleString('en-GB', { minimumFractionDigits: 2 })}
           </p>
         )}
       </div>

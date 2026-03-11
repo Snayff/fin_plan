@@ -126,3 +126,89 @@ describe("linkTransactionToGoalSchema", () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe('createGoalSchema — linkedAccountId and incomePeriod', () => {
+  it('accepts debt_payoff goal with linkedAccountId', () => {
+    const result = createGoalSchema.safeParse({
+      name: 'Pay off credit card',
+      type: 'debt_payoff',
+      targetAmount: 5000,
+      linkedAccountId: 'a0000000-0000-0000-0000-000000000001',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects debt_payoff goal without linkedAccountId', () => {
+    const result = createGoalSchema.safeParse({
+      name: 'Pay off credit card',
+      type: 'debt_payoff',
+      targetAmount: 5000,
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toContain('linkedAccountId');
+  });
+
+  it('accepts income goal with incomePeriod', () => {
+    const result = createGoalSchema.safeParse({
+      name: 'Earn £5k/month',
+      type: 'income',
+      targetAmount: 5000,
+      incomePeriod: 'month',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects income goal without incomePeriod', () => {
+    const result = createGoalSchema.safeParse({
+      name: 'Earn £5k/month',
+      type: 'income',
+      targetAmount: 5000,
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toContain('incomePeriod');
+  });
+
+  it('accepts purchase goal without linkedAccountId (manual tracking)', () => {
+    const result = createGoalSchema.safeParse({
+      name: 'Holiday fund',
+      type: 'purchase',
+      targetAmount: 2000,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('accepts savings goal without linkedAccountId', () => {
+    const result = createGoalSchema.safeParse({
+      name: 'Emergency fund',
+      type: 'savings',
+      targetAmount: 10000,
+    });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe('updateGoalSchema — cross-field validation', () => {
+  it('rejects update that sets type=debt_payoff while explicitly clearing linkedAccountId', () => {
+    const result = updateGoalSchema.safeParse({
+      type: 'debt_payoff',
+      linkedAccountId: null,
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toContain('linkedAccountId');
+  });
+
+  it('allows update that only changes name (no cross-field violation)', () => {
+    const result = updateGoalSchema.safeParse({
+      name: 'Updated name',
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it('allows update that sets type=debt_payoff with a linkedAccountId', () => {
+    const result = updateGoalSchema.safeParse({
+      type: 'debt_payoff',
+      linkedAccountId: 'a0000000-0000-0000-0000-000000000001',
+    });
+    expect(result.success).toBe(true);
+  });
+});
