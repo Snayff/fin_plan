@@ -5,6 +5,28 @@ mock.module("../config/database", () => ({
   prisma: prismaMock,
 }));
 
+describe("addBudgetItemSchema validation", () => {
+  it("accepts itemType field", () => {
+    const { addBudgetItemSchema } = require('@finplan/shared');
+    const result = addBudgetItemSchema.parse({
+      categoryId: "00000000-0000-0000-0000-000000000001",
+      allocatedAmount: 100,
+      itemType: "committed",
+    });
+    expect(result.itemType).toBe("committed");
+  });
+
+  it("accepts batch schema with array of items", () => {
+    const { addBudgetItemsBatchSchema } = require('@finplan/shared');
+    const result = addBudgetItemsBatchSchema.parse({
+      items: [
+        { categoryId: "00000000-0000-0000-0000-000000000001", allocatedAmount: 100, itemType: "committed" },
+      ],
+    });
+    expect(result.items).toHaveLength(1);
+  });
+});
+
 import { budgetService } from "./budget.service";
 import { NotFoundError, ValidationError } from "../utils/errors";
 import { buildBudget, buildBudgetItem, buildCategory } from "../test/fixtures";

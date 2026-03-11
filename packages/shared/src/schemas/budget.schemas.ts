@@ -1,13 +1,10 @@
 import { z } from 'zod';
+import { RecurringFrequencyEnum } from './recurring.schemas';
 
-/**
- * Budget period enum
- */
 export const BudgetPeriodEnum = z.enum(['monthly', 'quarterly', 'annual', 'custom']);
 
-/**
- * Schema for creating a budget (items are added separately on the detail page)
- */
+export const BudgetItemTypeEnum = z.enum(['committed', 'discretionary']);
+
 export const createBudgetSchema = z.object({
   name: z.string().min(1, 'Budget name is required').max(200),
   period: BudgetPeriodEnum,
@@ -23,9 +20,6 @@ export const createBudgetSchema = z.object({
     .transform((val) => (typeof val === 'string' ? val : val.toISOString())),
 });
 
-/**
- * Schema for updating a budget
- */
 export const updateBudgetSchema = z.object({
   name: z.string().min(1, 'Budget name cannot be empty').max(200).optional(),
   period: BudgetPeriodEnum.optional(),
@@ -42,9 +36,6 @@ export const updateBudgetSchema = z.object({
   isActive: z.boolean().optional(),
 });
 
-/**
- * Schema for adding a line item to a budget
- */
 export const addBudgetItemSchema = z.object({
   categoryId: z.string().uuid('Invalid category ID'),
   allocatedAmount: z.number({
@@ -52,21 +43,25 @@ export const addBudgetItemSchema = z.object({
     invalid_type_error: 'Allocated amount must be a number',
   }).min(0, 'Allocated amount must be non-negative'),
   notes: z.string().max(500).optional(),
+  itemType: BudgetItemTypeEnum.optional().default('committed'),
+  recurringRuleId: z.string().uuid().nullable().optional(),
+  entryFrequency: RecurringFrequencyEnum.nullable().optional(),
+  entryAmount: z.number().positive().nullable().optional(),
 });
 
-/**
- * Schema for updating a budget line item
- */
 export const updateBudgetItemSchema = z.object({
   allocatedAmount: z.number().min(0, 'Allocated amount must be non-negative').optional(),
   notes: z.string().max(500).optional(),
 });
 
-/**
- * Type exports
- */
+export const addBudgetItemsBatchSchema = z.object({
+  items: z.array(addBudgetItemSchema).min(1, 'At least one item required').max(50, 'Maximum 50 items per batch'),
+});
+
 export type BudgetPeriod = z.infer<typeof BudgetPeriodEnum>;
+export type BudgetItemType = z.infer<typeof BudgetItemTypeEnum>;
 export type CreateBudgetInput = z.infer<typeof createBudgetSchema>;
 export type UpdateBudgetInput = z.infer<typeof updateBudgetSchema>;
 export type AddBudgetItemInput = z.infer<typeof addBudgetItemSchema>;
 export type UpdateBudgetItemInput = z.infer<typeof updateBudgetItemSchema>;
+export type AddBudgetItemsBatchInput = z.infer<typeof addBudgetItemsBatchSchema>;

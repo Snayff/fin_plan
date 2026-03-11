@@ -105,12 +105,16 @@ export {
   updateBudgetSchema,
   addBudgetItemSchema,
   updateBudgetItemSchema,
+  addBudgetItemsBatchSchema,
   BudgetPeriodEnum,
+  BudgetItemTypeEnum,
   type BudgetPeriod,
+  type BudgetItemType,
   type CreateBudgetInput,
   type UpdateBudgetInput,
   type AddBudgetItemInput,
   type UpdateBudgetItemInput,
+  type AddBudgetItemsBatchInput,
 } from './budget.schemas';
 
 // Household schemas and types
