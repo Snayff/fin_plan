@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { budgetService } from '../services/budget.service';
 import { categoryService } from '../services/category.service';
+import { recurringService } from '../services/recurring.service';
 import { showError, showSuccess } from '../lib/toast';
 import { convertToPeriodTotal, formatCurrency, FREQUENCY_LABELS } from '../lib/utils';
 import type { AddBudgetItemInput, BudgetItem, BudgetPeriod, Category, CategoryBudgetGroup, RecurringFrequency } from '../types';
@@ -88,6 +89,11 @@ export default function BudgetDetailPage() {
     queryFn: () => categoryService.getCategories(),
   });
 
+  const { data: recurringRulesData } = useQuery({
+    queryKey: ['recurring-rules'],
+    queryFn: () => recurringService.getRecurringRules(),
+  });
+
   const budget = budgetData?.budget;
 
   const addItemMutation = useMutation({
@@ -165,6 +171,19 @@ export default function BudgetDetailPage() {
     },
   });
 
+  const syncItemMutation = useMutation({
+    mutationFn: ({ itemId, allocatedAmount }: { itemId: string; allocatedAmount: number }) =>
+      budgetService.updateBudgetItem(budgetId, itemId, { allocatedAmount }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['budget', budgetId] });
+      queryClient.invalidateQueries({ queryKey: ['budgets'] });
+      showSuccess('Budget item synced with recurring rule!');
+    },
+    onError: (error: Error) => {
+      showError(error.message || 'Failed to sync item');
+    },
+  });
+
   const expenseCategories = useMemo(() => {
     const allCategories = categoriesData?.categories || [];
     return allCategories.filter((category) => category.type === 'expense');
@@ -201,6 +220,23 @@ export default function BudgetDetailPage() {
       ),
     [budget?.categoryGroups]
   );
+
+  // Map of ruleId → expected period total (for stale detection)
+  const ruleExpectedAmounts = useMemo(() => {
+    const map = new Map<string, number>();
+    if (!budget || !recurringRulesData?.recurringRules) return map;
+    for (const rule of recurringRulesData.recurringRules) {
+      map.set(
+        rule.id,
+        convertToPeriodTotal(
+          rule.templateTransaction.amount,
+          rule.frequency as RecurringFrequency,
+          budget.period
+        )
+      );
+    }
+    return map;
+  }, [recurringRulesData?.recurringRules, budget?.period]);
 
   // Computed live preview of period total for discretionary quick-add
   const discretionaryPreview = useMemo(() => {
@@ -382,14 +418,54 @@ export default function BudgetDetailPage() {
                   {item.notes?.trim() ? item.notes : 'No description'}
                 </button>
 
-                <button
-                  type="button"
-                  className="text-left font-medium hover:text-primary"
-                  onClick={() => startEditingItem(item)}
-                  title="Click to edit amount"
-                >
-                  {formatCurrency(item.allocatedAmount)}
-                </button>
+                <div>
+                  <button
+                    type="button"
+                    className="text-left font-medium hover:text-primary"
+                    onClick={() => startEditingItem(item)}
+                    title="Click to edit amount"
+                  >
+                    {formatCurrency(item.allocatedAmount)}
+                  </button>
+
+                  {/* Stale rule indicator — only show for committed items with a linked rule */}
+                  {(() => {
+                    if (!item.recurringRuleId || item.entryFrequency === null) return null;
+                    const expected = ruleExpectedAmounts.get(item.recurringRuleId);
+                    if (expected === undefined) return null;
+                    const isStale = Math.abs(expected - item.allocatedAmount) > 0.01;
+                    if (!isStale) return null;
+
+                    return (
+                      <div className="flex items-center gap-1 mt-1">
+                        <span className="inline-flex items-center rounded-full bg-yellow-100 px-2 py-0.5 text-xs font-medium text-yellow-800">
+                          Rule updated
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="h-6 px-2 text-xs text-yellow-700 hover:text-yellow-900"
+                          onClick={() =>
+                            syncItemMutation.mutate({
+                              itemId: item.id,
+                              allocatedAmount: expected,
+                            })
+                          }
+                          disabled={syncItemMutation.isPending}
+                        >
+                          Sync
+                        </Button>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Entry metadata sub-label for discretionary items */}
+                  {item.entryFrequency && item.entryAmount && item.itemType === 'discretionary' && (
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {formatCurrency(item.entryAmount)} / {FREQUENCY_LABELS[item.entryFrequency as RecurringFrequency] ?? item.entryFrequency}
+                    </p>
+                  )}
+                </div>
 
                 <div className="flex gap-2 md:justify-end">
                   <Button variant="outline" size="sm" onClick={() => startEditingItem(item)}>
