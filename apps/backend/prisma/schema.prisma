@@ -276,6 +276,7 @@ model BudgetItem {
   budget          Budget   @relation(fields: [budgetId], references: [id], onDelete: Cascade)
   category        Category @relation(fields: [categoryId], references: [id])
 
+  @@index([recurringRuleId])
   @@map("budget_items")
 }
 
