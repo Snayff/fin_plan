@@ -226,7 +226,7 @@ describe('BudgetDetailPage', () => {
     expect(screen.getByText('Remaining')).toBeTruthy();
     expect(screen.getByText('Unallocated')).toBeTruthy();
 
-    expect(screen.getByText('Category Groups')).toBeTruthy();
+    expect(screen.getByText('Committed Spend')).toBeTruthy();
     expect(screen.getByText('Housing')).toBeTruthy();
     expect(screen.getByText('Rent')).toBeTruthy();
 

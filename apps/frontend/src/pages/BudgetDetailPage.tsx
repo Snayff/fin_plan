@@ -283,7 +283,7 @@ export default function BudgetDetailPage() {
     setAddNotes('');
   };
 
-  const handleAddItem = (categoryId: string) => {
+  const handleAddItem = (categoryId: string, itemType: 'committed' | 'discretionary' = 'committed') => {
     const parsedAmount = Number(addAmount);
     if (!Number.isFinite(parsedAmount) || parsedAmount < 0) {
       showError('Allocated amount must be a non-negative number');
@@ -293,7 +293,7 @@ export default function BudgetDetailPage() {
     addItemMutation.mutate({
       categoryId,
       allocatedAmount: parsedAmount,
-      itemType: 'committed',
+      itemType,
       notes: addNotes.trim() || undefined,
     });
   };
@@ -510,7 +510,7 @@ export default function BudgetDetailPage() {
               <div className="flex gap-2">
                 <Button
                   size="sm"
-                  onClick={() => handleAddItem(group.categoryId)}
+                  onClick={() => handleAddItem(group.categoryId, group.groupItemType === 'discretionary' ? 'discretionary' : 'committed')}
                   disabled={addItemMutation.isPending}
                 >
                   Add
