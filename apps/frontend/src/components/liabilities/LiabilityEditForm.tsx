@@ -7,6 +7,8 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import { updateLiabilitySchema, createAssetSchema } from '@finplan/shared';
+import { showError } from '../../lib/toast';
 
 interface LiabilityEditFormProps {
   liability: Liability;
@@ -45,6 +47,7 @@ export default function LiabilityEditForm({ liability, onSuccess, onCancel }: Li
   });
 
   const [pendingSubmitData, setPendingSubmitData] = useState<UpdateLiabilityInput | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const { data: assetsData } = useQuery({
     queryKey: ['assets'],
@@ -79,10 +82,39 @@ export default function LiabilityEditForm({ liability, onSuccess, onCancel }: Li
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
       onSuccess?.();
     },
+    onError: (error: Error) => {
+      showError(error.message || 'Failed to update liability');
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+
+    // Validate nested asset when creating new
+    if (formData.linkMode === 'new') {
+      const assetData = {
+        name: formData.newAssetName,
+        type: formData.newAssetType,
+        currentValue: Number(formData.newAssetCurrentValue),
+        purchaseValue: formData.newAssetPurchaseValue === '' ? undefined : Number(formData.newAssetPurchaseValue),
+        purchaseDate: formData.newAssetPurchaseDate || undefined,
+        expectedGrowthRate: formData.newAssetExpectedGrowthRate,
+      };
+      const assetResult = createAssetSchema.safeParse(assetData);
+      if (!assetResult.success) {
+        const errors: Record<string, string> = {};
+        for (const issue of assetResult.error.issues) {
+          const rawKey = String(issue.path[0] ?? 'form');
+          const key = `newAsset${rawKey.charAt(0).toUpperCase()}${rawKey.slice(1)}`;
+          if (!errors[key]) errors[key] = issue.message;
+        }
+        setFormErrors(errors);
+        showError('Please fix the errors below.');
+        return;
+      }
+    }
+
     const submitData: UpdateLiabilityInput = {
       name: formData.name,
       type: formData.type,
@@ -99,6 +131,19 @@ export default function LiabilityEditForm({ liability, onSuccess, onCancel }: Li
           : undefined,
       metadata: formData.lender ? { lender: formData.lender } : undefined,
     };
+
+    const result = updateLiabilitySchema.safeParse(submitData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0] ?? 'form');
+        if (!errors[key]) errors[key] = issue.message;
+      }
+      setFormErrors(errors);
+      showError('Please fix the errors below.');
+      return;
+    }
+
     const previousAssetId = liability.linkedAsset?.id || null;
     const linkIsChanging =
       previousAssetId !== null &&
@@ -120,6 +165,7 @@ export default function LiabilityEditForm({ liability, onSuccess, onCancel }: Li
       <div className="space-y-2">
         <Label htmlFor="name">Liability Name *</Label>
         <Input id="name" required value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
+        {formErrors.name && <p className="text-sm text-destructive mt-1">{formErrors.name}</p>}
       </div>
 
       <div className="space-y-2">
@@ -143,12 +189,14 @@ export default function LiabilityEditForm({ liability, onSuccess, onCancel }: Li
       <div className="space-y-2">
         <Label htmlFor="currentBalance">Current Balance *</Label>
         <Input type="number" id="currentBalance" step="0.01" required value={formData.currentBalance} onChange={(e) => setFormData({ ...formData, currentBalance: Number(e.target.value) })} />
+        {formErrors.currentBalance && <p className="text-sm text-destructive mt-1">{formErrors.currentBalance}</p>}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="interestRate">Interest Rate (%) *</Label>
           <Input type="number" id="interestRate" step="0.01" required value={formData.interestRate} onChange={(e) => setFormData({ ...formData, interestRate: Number(e.target.value) })} />
+          {formErrors.interestRate && <p className="text-sm text-destructive mt-1">{formErrors.interestRate}</p>}
         </div>
 
         <div className="space-y-2">
@@ -170,10 +218,12 @@ export default function LiabilityEditForm({ liability, onSuccess, onCancel }: Li
         <div className="space-y-2">
           <Label htmlFor="openDate">Open Date *</Label>
           <Input type="date" id="openDate" required value={formData.openDate} onChange={(e) => setFormData({ ...formData, openDate: e.target.value })} />
+          {formErrors.openDate && <p className="text-sm text-destructive mt-1">{formErrors.openDate}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="termEndDate">Term End Date *</Label>
           <Input type="date" id="termEndDate" required value={formData.termEndDate} onChange={(e) => setFormData({ ...formData, termEndDate: e.target.value })} />
+          {formErrors.termEndDate && <p className="text-sm text-destructive mt-1">{formErrors.termEndDate}</p>}
         </div>
       </div>
 
@@ -251,6 +301,7 @@ export default function LiabilityEditForm({ liability, onSuccess, onCancel }: Li
                 value={formData.newAssetName}
                 onChange={(e) => setFormData({ ...formData, newAssetName: e.target.value })}
               />
+              {formErrors.newAssetName && <p className="text-sm text-destructive mt-1">{formErrors.newAssetName}</p>}
             </div>
 
             <div className="space-y-2">
@@ -280,6 +331,7 @@ export default function LiabilityEditForm({ liability, onSuccess, onCancel }: Li
                 value={formData.newAssetCurrentValue}
                 onChange={(e) => setFormData({ ...formData, newAssetCurrentValue: e.target.value })}
               />
+              {formErrors.newAssetCurrentValue && <p className="text-sm text-destructive mt-1">{formErrors.newAssetCurrentValue}</p>}
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -326,12 +378,6 @@ export default function LiabilityEditForm({ liability, onSuccess, onCancel }: Li
           </div>
         )}
       </div>
-
-      {updateMutation.error && (
-        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
-          {(updateMutation.error as Error).message}
-        </div>
-      )}
 
       <div className="flex justify-end space-x-3 pt-4">
         {onCancel && <Button type="button" onClick={onCancel} variant="secondary">Cancel</Button>}
