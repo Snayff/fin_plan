@@ -41,9 +41,9 @@ describe("renameHouseholdSchema", () => {
 });
 
 describe("createHouseholdInviteSchema", () => {
-  it("accepts empty payload", () => {
+  it("rejects missing email", () => {
     const result = createHouseholdInviteSchema.safeParse({});
-    expect(result.success).toBe(true);
+    expect(result.success).toBe(false);
   });
 
   it("accepts a valid email", () => {
@@ -57,10 +57,9 @@ describe("createHouseholdInviteSchema", () => {
     expect(result.data?.email).toBe("alice@example.com");
   });
 
-  it("treats blank email as undefined", () => {
+  it("rejects blank email", () => {
     const result = createHouseholdInviteSchema.safeParse({ email: "   " });
-    expect(result.success).toBe(true);
-    expect(result.data?.email).toBeUndefined();
+    expect(result.success).toBe(false);
   });
 
   it("rejects invalid email", () => {

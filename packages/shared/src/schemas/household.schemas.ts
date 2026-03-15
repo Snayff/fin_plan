@@ -4,21 +4,12 @@ export const createHouseholdSchema = z.object({
   name: z.string().min(1, 'Household name is required'),
 });
 
-const optionalInviteEmailSchema = z.preprocess(
-  (value) => {
-    if (typeof value !== 'string') return value;
-    const trimmed = value.trim();
-    return trimmed === '' ? undefined : trimmed;
-  },
-  z.string().trim().email('A valid email address is required').optional()
-);
-
 export const renameHouseholdSchema = z.object({
   name: z.string().min(1, 'Household name is required'),
 });
 
 export const createHouseholdInviteSchema = z.object({
-  email: optionalInviteEmailSchema,
+  email: z.string().trim().email('A valid email address is required'),
 });
 
 export const acceptInviteSchema = z.object({
