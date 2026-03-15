@@ -66,7 +66,7 @@ model HouseholdMember {
 model HouseholdInvite {
   id              String    @id @default(uuid())
   householdId     String    @map("household_id")
-  email           String?
+  email           String
   tokenHash       String    @unique @map("token_hash")
   expiresAt       DateTime  @map("expires_at")
   usedAt          DateTime? @map("used_at")
