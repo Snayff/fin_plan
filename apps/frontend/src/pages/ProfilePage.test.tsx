@@ -168,10 +168,10 @@ describe('ProfilePage — Household tab layout', () => {
     await user.click(screen.getByRole('tab', { name: /household/i }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/invite email \(optional\)/i)).toBeTruthy();
+      expect(screen.getByLabelText(/invite email/i)).toBeTruthy();
     });
 
-    await user.type(screen.getByLabelText(/invite email \(optional\)/i), 'invitee@example.com');
+    await user.type(screen.getByLabelText(/invite email/i), 'invitee@example.com');
     await user.click(screen.getByRole('button', { name: /get invite link/i }));
 
     await waitFor(() => {
