@@ -21,7 +21,10 @@ export const createBudgetSchema = z.object({
     .min(1, 'End date is required')
     .or(z.date())
     .transform((val) => (typeof val === 'string' ? val : val.toISOString())),
-});
+}).refine(
+  (data) => new Date(data.endDate) > new Date(data.startDate),
+  { message: 'End date must be after start date', path: ['endDate'] }
+);
 
 /**
  * Schema for updating a budget
