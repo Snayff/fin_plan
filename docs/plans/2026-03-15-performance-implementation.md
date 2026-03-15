@@ -71,6 +71,8 @@ git commit -m "perf(db): add composite index on transactions(accountId, date)"
 
 ---
 
+> **Note — Tasks 2, 3, and 4 are independent.** They touch different functions and different test files. They can be worked in any order, or in parallel across worktrees.
+
 ## Task 2: Fix `getNetWorthTrend` — O(N×3) → O(3) queries
 
 **Files:**
@@ -118,7 +120,14 @@ describe("dashboardService.getNetWorthTrend", () => {
     expect(result[0]).toHaveProperty("liabilities");
     expect(result[0]).toHaveProperty("netWorth");
 
-    // netWorth must equal cash + assets - liabilities
+    // The last snapshot covers all transactions — cash must be income - expense = 5000 - 1000 = 4000
+    const last = result[result.length - 1];
+    expect(last.cash).toBe(4000);
+    expect(last.assets).toBe(100000);
+    expect(last.liabilities).toBe(50000);
+    expect(last.netWorth).toBe(54000); // 4000 + 100000 - 50000
+
+    // netWorth must equal cash + assets - liabilities for every point
     for (const point of result) {
       expect(point.netWorth).toBe(
         (point.cash ?? 0) + (point.assets ?? 0) - (point.liabilities ?? 0)
@@ -214,7 +223,11 @@ async getNetWorthTrend(householdId: string, months: number = 6) {
 },
 ```
 
-Note: `endOfDay` is already imported from `../utils/balance.utils` at the top of the file.
+**Important — update the import at the top of `dashboard.service.ts`.** The file currently only imports `calculateAccountBalances`. The refactored `getNetWorthTrend` also needs `endOfDay`. Change line 2 to:
+
+```typescript
+import { calculateAccountBalances, endOfDay } from '../utils/balance.utils';
+```
 
 **Step 4: Run the test to confirm it passes**
 
@@ -419,6 +432,34 @@ describe("calculateAccountsBalanceHistory", () => {
     expect(latestSnapshot.balance).toBe(800);
   });
 
+  it("does not bleed transactions between accounts", async () => {
+    const now = new Date();
+    const createdAt = new Date(now);
+    createdAt.setDate(createdAt.getDate() - 14);
+
+    // acc-1 has income, acc-2 has expense — balances must not cross over
+    prismaMock.transaction.findMany.mockResolvedValue([
+      buildTransaction({ accountId: "acc-1", amount: 500, type: "income", date: new Date(createdAt) }),
+      buildTransaction({ accountId: "acc-2", amount: 300, type: "expense", date: new Date(createdAt) }),
+    ]);
+
+    const creationDates = new Map([
+      ["acc-1", createdAt],
+      ["acc-2", createdAt],
+    ]);
+
+    const result = await calculateAccountsBalanceHistory(["acc-1", "acc-2"], creationDates, 30);
+
+    const hist1 = result.get("acc-1")!;
+    const hist2 = result.get("acc-2")!;
+
+    const latest1 = hist1[hist1.length - 1];
+    const latest2 = hist2[hist2.length - 1];
+
+    expect(latest1.balance).toBe(500);   // acc-1: income only
+    expect(latest2.balance).toBe(-300);  // acc-2: expense only
+  });
+
   it("returns empty history for account with no creation date", async () => {
     prismaMock.transaction.findMany.mockResolvedValue([]);
     const result = await calculateAccountsBalanceHistory(
@@ -524,11 +565,35 @@ cd apps/backend && bun run test
 
 Expected: All tests pass
 
-**Step 6: Commit**
+**Step 6: Remove the dead `calculateAccountBalanceHistory` (singular) function**
+
+`balance.utils.ts` exports two similarly named functions:
+- `calculateAccountsBalanceHistory` (plural) — just refactored above, called from `account.service.ts`
+- `calculateAccountBalanceHistory` (singular, lines 108–132) — same N-query pattern, **never imported anywhere outside this file**
+
+Delete the entire `calculateAccountBalanceHistory` function (lines 108–132). It calls `calculateAccountBalance` in a loop for each weekly snapshot — the same pattern we just fixed. Since nothing outside `balance.utils.ts` uses it, deletion is safe.
+
+Verify nothing imports it:
+
+```bash
+grep -rn "calculateAccountBalanceHistory" apps/backend/src --include="*.ts"
+```
+
+Expected: only appears inside `balance.utils.ts` itself (the function definition). If any other file imports it, stop and investigate before deleting.
+
+**Step 7: Run all backend tests**
+
+```bash
+cd apps/backend && bun run test
+```
+
+Expected: All tests pass
+
+**Step 8: Commit**
 
 ```bash
 git add apps/backend/src/utils/balance.utils.ts apps/backend/src/utils/balance.utils.test.ts
-git commit -m "perf(balance): rewrite calculateAccountsBalanceHistory from O(N×M) to O(1) queries"
+git commit -m "perf(balance): rewrite calculateAccountsBalanceHistory from O(N×M) to O(1) queries, remove dead calculateAccountBalanceHistory"
 ```
 
 ---
@@ -847,6 +912,8 @@ git commit -m "perf(cache): add Redis cache to dashboard route handlers with 2-5
 - Modify: `apps/backend/src/routes/transaction.routes.ts`
 - Modify: `apps/backend/src/routes/asset.routes.ts`
 - Modify: `apps/backend/src/routes/liability.routes.ts`
+- Modify: `apps/backend/src/routes/recurring.routes.ts`
+- Modify: `apps/backend/src/routes/account.routes.ts`
 
 **Step 1: Add invalidation helper to `transaction.routes.ts`**
 
@@ -890,7 +957,24 @@ void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
 
 Same pattern — add the import and the `invalidatePattern` call in each mutating handler.
 
-**Step 4: Run all backend tests**
+**Step 4: Add invalidation to `recurring.routes.ts`**
+
+Recurring rules auto-generate transactions when created or updated, which changes dashboard transaction totals. Add the import and the `invalidatePattern` call in the POST, PUT, and DELETE handlers.
+
+```typescript
+import { cacheService } from '../services/cache.service';
+```
+
+In each mutating handler, after the successful DB operation:
+```typescript
+void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
+```
+
+**Step 5: Add invalidation to `account.routes.ts`**
+
+Creating or deactivating an account changes the account list and balance aggregates on the dashboard. Add the same import and `invalidatePattern` call in the POST, PUT, and DELETE handlers.
+
+**Step 6: Run all backend tests**
 
 ```bash
 cd apps/backend && bun run test
@@ -898,11 +982,11 @@ cd apps/backend && bun run test
 
 Expected: All tests pass
 
-**Step 5: Commit**
+**Step 7: Commit**
 
 ```bash
-git add apps/backend/src/routes/transaction.routes.ts apps/backend/src/routes/asset.routes.ts apps/backend/src/routes/liability.routes.ts
-git commit -m "perf(cache): invalidate dashboard cache on transaction/asset/liability writes"
+git add apps/backend/src/routes/transaction.routes.ts apps/backend/src/routes/asset.routes.ts apps/backend/src/routes/liability.routes.ts apps/backend/src/routes/recurring.routes.ts apps/backend/src/routes/account.routes.ts
+git commit -m "perf(cache): invalidate dashboard cache on all writes that affect dashboard aggregates"
 ```
 
 ---
