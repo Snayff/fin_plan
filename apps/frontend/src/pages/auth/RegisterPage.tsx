@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
 import type { ApiError } from "../../lib/api";
 import { Input } from "@/components/ui/input";
+import { showError } from "../../lib/toast";
 
 function getPasswordStrength(pwd: string): { level: number; label: string; color: string } {
   if (pwd.length === 0) return { level: 0, label: "", color: "" };
@@ -29,11 +30,13 @@ export default function RegisterPage() {
 
     if (password !== confirmPassword) {
       setError("Passwords do not match");
+      showError("Please fix the errors below.");
       return;
     }
 
     if (password.length < 12) {
       setError("Password must be at least 12 characters");
+      showError("Please fix the errors below.");
       return;
     }
 
@@ -44,6 +47,7 @@ export default function RegisterPage() {
     } catch (err) {
       const apiError = err as ApiError;
       setError(apiError?.message || "Registration failed");
+      showError(apiError?.message || "Registration failed");
     } finally {
       setIsLoading(false);
     }

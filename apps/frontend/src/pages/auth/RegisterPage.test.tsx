@@ -6,8 +6,16 @@ import { setUnauthenticated } from "../../test/helpers/auth";
 import RegisterPage from "./RegisterPage";
 import { useAuthStore } from "../../stores/authStore";
 
+const showErrorMock = mock(() => {});
+
+mock.module("../../lib/toast", () => ({
+  showError: showErrorMock,
+  showSuccess: mock(() => {}),
+}));
+
 beforeEach(() => {
   setUnauthenticated();
+  showErrorMock.mockReset();
 });
 
 describe("RegisterPage", () => {
@@ -45,6 +53,21 @@ describe("RegisterPage", () => {
     });
   });
 
+  it("calls showError toast when passwords do not match", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "Test User");
+    await user.type(screen.getByLabelText(/^email$/i), "test@test.com");
+    await user.type(screen.getByLabelText(/^password$/i), "password123456");
+    await user.type(screen.getByLabelText(/confirm password/i), "differentpass12");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(showErrorMock).toHaveBeenCalledWith("Please fix the errors below.");
+    });
+  });
+
   it("shows error when password is too short", async () => {
     const user = userEvent.setup();
     renderWithProviders(<RegisterPage />);
@@ -57,6 +80,21 @@ describe("RegisterPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText(/at least 12 characters/i)).toBeTruthy();
+    });
+  });
+
+  it("calls showError toast when password is too short", async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "Test User");
+    await user.type(screen.getByLabelText(/^email$/i), "test@test.com");
+    await user.type(screen.getByLabelText(/^password$/i), "short");
+    await user.type(screen.getByLabelText(/confirm password/i), "short");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(showErrorMock).toHaveBeenCalledWith("Please fix the errors below.");
     });
   });
 
@@ -97,6 +135,42 @@ describe("RegisterPage", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Email already exists")).toBeTruthy();
+    });
+  });
+
+  it("calls showError toast with API error message on registration failure", async () => {
+    const user = userEvent.setup();
+    const registerMock = mock(() => Promise.reject({ message: "Email already exists" }));
+    useAuthStore.setState({ register: registerMock } as any);
+
+    renderWithProviders(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "Test User");
+    await user.type(screen.getByLabelText(/^email$/i), "test@test.com");
+    await user.type(screen.getByLabelText(/^password$/i), "password123456");
+    await user.type(screen.getByLabelText(/confirm password/i), "password123456");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(showErrorMock).toHaveBeenCalledWith("Email already exists");
+    });
+  });
+
+  it("calls showError toast with fallback message when API error has no message", async () => {
+    const user = userEvent.setup();
+    const registerMock = mock(() => Promise.reject({}));
+    useAuthStore.setState({ register: registerMock } as any);
+
+    renderWithProviders(<RegisterPage />);
+
+    await user.type(screen.getByLabelText(/full name/i), "Test User");
+    await user.type(screen.getByLabelText(/^email$/i), "test@test.com");
+    await user.type(screen.getByLabelText(/^password$/i), "password123456");
+    await user.type(screen.getByLabelText(/confirm password/i), "password123456");
+    await user.click(screen.getByRole("button", { name: /create account/i }));
+
+    await waitFor(() => {
+      expect(showErrorMock).toHaveBeenCalledWith("Registration failed");
     });
   });
 });
