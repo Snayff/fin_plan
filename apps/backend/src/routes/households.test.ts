@@ -332,12 +332,12 @@ describe('POST /api/households/:id/switch', () => {
 });
 
 describe('POST /api/households/:id/invite', () => {
-  it('returns 201 with a token', async () => {
+  it('returns 201 with a token when email is provided', async () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/households/household-1/invite',
       headers: authHeaders,
-      payload: {},
+      payload: { email: 'invitee@example.com' },
     });
 
     expect(response.statusCode).toBe(201);
@@ -345,7 +345,18 @@ describe('POST /api/households/:id/invite', () => {
     expect(typeof body.token).toBe('string');
   });
 
-  it('calls service with householdId, userId, and email when provided', async () => {
+  it('returns 400 when email is missing', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/households/household-1/invite',
+      headers: authHeaders,
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it('calls service with householdId, userId, and email', async () => {
     await app.inject({
       method: 'POST',
       url: '/api/households/household-1/invite',
