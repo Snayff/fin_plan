@@ -2,8 +2,10 @@
 import { describe, it, expect, beforeEach } from 'bun:test';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { setAuthenticated, mockUser } from '../test/helpers/auth';
 import { renderWithProviders } from '../test/helpers/render';
+import { server } from '../test/msw/server';
 import ProfilePage from './ProfilePage';
 
 describe('ProfilePage (MSW)', () => {
@@ -133,6 +135,48 @@ describe('ProfilePage — Household tab layout', () => {
       expect(screen.getByText('Invite to Household')).toBeTruthy();
       // The "No pending invites." message should appear inside the same card area
       expect(screen.getByText('No pending invites.')).toBeTruthy();
+    });
+  });
+
+  it('allows creating an email-restricted invite', async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get('/api/households/:id', ({ request }) => {
+        const auth = request.headers.get('authorization');
+        if (!auth?.startsWith('Bearer ')) {
+          return HttpResponse.json({ error: { message: 'Unauthorized' } }, { status: 401 });
+        }
+
+        return HttpResponse.json({ household: { id: 'household-1', name: 'My Household', members: [], invites: [] } });
+      }),
+      http.post('/api/households/:id/invite', async ({ request }) => {
+        const auth = request.headers.get('authorization');
+        if (!auth?.startsWith('Bearer ')) {
+          return HttpResponse.json({ error: { message: 'Unauthorized' } }, { status: 401 });
+        }
+
+        const body = (await request.json()) as { email?: string };
+        return HttpResponse.json(
+          { token: 'email-bound-token', invitedEmail: body.email ?? null },
+          { status: 201 }
+        );
+      })
+    );
+
+    renderWithProviders(<ProfilePage />);
+    await user.click(screen.getByRole('tab', { name: /household/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/invite email \(optional\)/i)).toBeTruthy();
+    });
+
+    await user.type(screen.getByLabelText(/invite email \(optional\)/i), 'invitee@example.com');
+    await user.click(screen.getByRole('button', { name: /get invite link/i }));
+
+    await waitFor(() => {
+      expect(screen.getByText(/this invite is restricted to/i)).toBeTruthy();
+      expect(screen.getByText(/invitee@example.com/i)).toBeTruthy();
     });
   });
 });

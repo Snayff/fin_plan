@@ -76,7 +76,7 @@ services:
     networks:
       - finplan-network
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:3001/health || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3001/health || exit 1"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -96,6 +96,7 @@ services:
       BACKEND_URL: http://backend:3001
       # Development mode
       NODE_ENV: development
+    command: sh -c "cd /workspace && bun install && cd /workspace/apps/frontend && bun run dev -- --host 0.0.0.0"
     volumes:
       # Mount source code for hot reload
       - ./apps/frontend/src:/workspace/apps/frontend/src

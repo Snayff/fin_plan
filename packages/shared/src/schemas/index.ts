@@ -117,10 +117,10 @@ export {
 export {
   createHouseholdSchema,
   renameHouseholdSchema,
-  inviteMemberSchema,
+  createHouseholdInviteSchema,
   acceptInviteSchema,
   type CreateHouseholdInput,
   type RenameHouseholdInput,
-  type InviteMemberInput,
+  type CreateHouseholdInviteInput,
   type AcceptInviteInput,
 } from './household.schemas';

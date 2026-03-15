@@ -9,13 +9,13 @@ import { Input } from '@/components/ui/input';
 type PageState =
   | { status: 'loading' }
   | { status: 'invalid'; message: string }
-  | { status: 'ready'; householdName: string; email: string }
+  | { status: 'ready'; householdName: string; emailRequired: boolean; maskedInvitedEmail: string | null }
   | { status: 'success'; householdName: string };
 
 export default function AcceptInvitePage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
-  const { isAuthenticated, setUser, user, login } = useAuthStore();
+  const { isAuthenticated, setUser, login } = useAuthStore();
 
   const [pageState, setPageState] = useState<PageState>({ status: 'loading' });
   // Toggle between new-user signup and existing-user login
@@ -23,10 +23,12 @@ export default function AcceptInvitePage() {
 
   // Signup fields
   const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  // Login field (email comes from invite)
+  // Login fields
+  const [loginEmail, setLoginEmail] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,7 +43,12 @@ export default function AcceptInvitePage() {
     householdService
       .validateInvite(token)
       .then((info) => {
-        setPageState({ status: 'ready', householdName: info.householdName, email: info.email });
+        setPageState({
+          status: 'ready',
+          householdName: info.householdName,
+          emailRequired: info.emailRequired,
+          maskedInvitedEmail: info.maskedInvitedEmail,
+        });
       })
       .catch(() => {
         setPageState({
@@ -80,7 +87,7 @@ export default function AcceptInvitePage() {
     try {
       const result = await householdService.acceptInvite(token, {
         name,
-        email: pageState.email,
+        email,
         password,
       });
       setUser(result.user, result.accessToken);
@@ -99,7 +106,7 @@ export default function AcceptInvitePage() {
     setIsSubmitting(true);
     setError('');
     try {
-      await login({ email: pageState.email, password: loginPassword });
+      await login({ email: loginEmail, password: loginPassword });
       // After login the store updates; the component re-renders and shows the join button
     } catch (err) {
       setError((err as ApiError).message || 'Sign in failed');
@@ -140,10 +147,10 @@ export default function AcceptInvitePage() {
     );
   }
 
-  const { householdName, email } = pageState;
+  const { householdName, emailRequired, maskedInvitedEmail } = pageState;
 
-  // Logged-in user with matching email: show join confirmation
-  if (isAuthenticated && user?.email === email) {
+  // Logged-in user: show join confirmation
+  if (isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="w-full max-w-md p-8 space-y-6 bg-card rounded-lg shadow-lg">
@@ -153,6 +160,12 @@ export default function AcceptInvitePage() {
               Join <strong>{householdName}</strong>
             </p>
           </div>
+
+          {emailRequired && maskedInvitedEmail && (
+            <div className="p-3 text-sm rounded-md border bg-muted/40 text-foreground">
+              This invite must be completed using the invited email address <strong>{maskedInvitedEmail}</strong>.
+            </div>
+          )}
 
           {error && (
             <div className="p-3 text-sm text-destructive-foreground bg-destructive/10 rounded-md border border-destructive">
@@ -172,21 +185,6 @@ export default function AcceptInvitePage() {
     );
   }
 
-  // Logged in but wrong email
-  if (isAuthenticated && user?.email !== email) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-full max-w-md p-8 text-center bg-card rounded-lg shadow-lg space-y-4">
-          <h1 className="text-2xl font-bold text-foreground">Wrong Account</h1>
-          <p className="text-muted-foreground">
-            This invite is for <strong>{email}</strong>, but you're logged in as{' '}
-            <strong>{user?.email}</strong>. Please sign out and use the correct account.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   // Not logged in — show mode toggle + form
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
@@ -197,6 +195,12 @@ export default function AcceptInvitePage() {
             Join <strong>{householdName}</strong>
           </p>
         </div>
+
+        {emailRequired && maskedInvitedEmail && (
+          <div className="p-3 text-sm rounded-md border bg-muted/40 text-foreground">
+            This invite must be completed using the invited email address <strong>{maskedInvitedEmail}</strong>.
+          </div>
+        )}
 
         {/* Mode toggle */}
         <div className="flex rounded-md border border-border overflow-hidden">
@@ -255,11 +259,12 @@ export default function AcceptInvitePage() {
               <Input
                 id="email"
                 type="email"
+                required
                 value={email}
-                disabled
-                className="mt-1 opacity-70"
+                onChange={(e) => setEmail(e.target.value)}
+                className="mt-1"
+                placeholder="your@email.com"
               />
-              <p className="mt-1 text-xs text-muted-foreground">This invite is for this email address only.</p>
             </div>
 
             <div>
@@ -310,9 +315,11 @@ export default function AcceptInvitePage() {
               <Input
                 id="login-email"
                 type="email"
-                value={email}
-                disabled
-                className="mt-1 opacity-70"
+                required
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className="mt-1"
+                placeholder="your@email.com"
               />
             </div>
 

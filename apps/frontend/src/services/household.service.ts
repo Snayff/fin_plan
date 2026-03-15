@@ -21,9 +21,14 @@ export interface HouseholdMember {
 
 export interface HouseholdInvite {
   id: string;
-  email: string;
+  email?: string | null;
   expiresAt: string;
   createdAt: string;
+}
+
+export interface CreateInviteResponse {
+  token: string;
+  invitedEmail?: string | null;
 }
 
 export interface HouseholdDetails extends Household {
@@ -44,7 +49,8 @@ export interface Membership {
 export interface InviteInfo {
   householdId: string;
   householdName: string;
-  email: string;
+  emailRequired: boolean;
+  maskedInvitedEmail: string | null;
 }
 
 export const householdService = {
@@ -68,8 +74,19 @@ export const householdService = {
     return apiClient.patch<{ household: Household }>(`/api/households/${id}`, { name });
   },
 
-  async inviteMember(householdId: string, email: string): Promise<{ success: boolean }> {
-    return apiClient.post<{ success: boolean }>(`/api/households/${householdId}/invite`, { email });
+  async inviteMember(householdId: string, email?: string): Promise<CreateInviteResponse> {
+    return apiClient.post<CreateInviteResponse>(`/api/households/${householdId}/invite`, {
+      ...(email ? { email } : {}),
+    });
+  },
+
+  async regenerateInvite(
+    householdId: string,
+    inviteId: string,
+    email?: string | null
+  ): Promise<CreateInviteResponse> {
+    await this.cancelInvite(householdId, inviteId);
+    return this.inviteMember(householdId, email ?? undefined);
   },
 
   async removeMember(householdId: string, memberId: string): Promise<{ success: boolean }> {

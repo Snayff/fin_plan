@@ -48,7 +48,14 @@
       "Bash(curl -s http://localhost:3001/api/auth/csrf-token)",
       "Bash(curl -s http://localhost:3001/health)",
       "Bash(curl -v http://localhost:3000/api/auth/csrf-token)",
-      "Bash(xargs -I{} git diff-tree --no-commit-id -r {} --name-only)"
+      "Bash(xargs -I{} git diff-tree --no-commit-id -r {} --name-only)",
+      "Bash(find c:UsersGabrielDocumentsDevfin_plan -path */node_modules -prune -o -path */.worktrees -prune -o -type f \\\\\\(-name *household* -o -name *invite* \\\\\\) -print)",
+      "Bash(xargs grep:*)",
+      "Bash(find c:UsersGabrielDocumentsDevfin_plan -path */node_modules -prune -o -path */.worktrees -prune -o -type f \\\\\\(-name .env* -o -name *env.ts -o -name *config* \\\\\\) -print)",
+      "Bash(npx prisma:*)",
+      "Bash(./node_modules/.bin/prisma migrate:*)",
+      "Bash(./node_modules/.bin/prisma db:*)",
+      "Bash(./node_modules/.bin/prisma generate:*)"
     ]
   }
 }

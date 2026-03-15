@@ -89,7 +89,7 @@ beforeEach(() => {
     ...mockHousehold,
     name: 'Renamed Household',
   });
-  (householdService.inviteMember as any).mockResolvedValue(undefined);
+  (householdService.inviteMember as any).mockResolvedValue({ token: 'mock-invite-token' });
   (householdService.removeMember as any).mockResolvedValue(undefined);
   (householdService.cancelInvite as any).mockResolvedValue(undefined);
 
@@ -332,35 +332,7 @@ describe('POST /api/households/:id/switch', () => {
 });
 
 describe('POST /api/households/:id/invite', () => {
-  it('returns 201 with success', async () => {
-    const response = await app.inject({
-      method: 'POST',
-      url: '/api/households/household-1/invite',
-      headers: authHeaders,
-      payload: { email: 'invitee@test.com' },
-    });
-
-    expect(response.statusCode).toBe(201);
-    const body = response.json();
-    expect(body.success).toBe(true);
-  });
-
-  it('calls service with householdId, userId, and email', async () => {
-    await app.inject({
-      method: 'POST',
-      url: '/api/households/household-1/invite',
-      headers: authHeaders,
-      payload: { email: 'newmember@example.com' },
-    });
-
-    expect(householdService.inviteMember).toHaveBeenCalledWith(
-      'household-1',
-      'user-1',
-      'newmember@example.com'
-    );
-  });
-
-  it('returns 400 when email is missing', async () => {
+  it('returns 201 with a token', async () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/households/household-1/invite',
@@ -368,31 +340,60 @@ describe('POST /api/households/:id/invite', () => {
       payload: {},
     });
 
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(201);
     const body = response.json();
-    expect(body.error).toBeDefined();
-    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(typeof body.token).toBe('string');
   });
 
-  it('returns 400 when email is invalid', async () => {
+  it('calls service with householdId, userId, and email when provided', async () => {
+    await app.inject({
+      method: 'POST',
+      url: '/api/households/household-1/invite',
+      headers: authHeaders,
+      payload: { email: 'invitee@example.com' },
+    });
+
+    expect(householdService.inviteMember).toHaveBeenCalledWith(
+      'household-1',
+      'user-1',
+      'invitee@example.com'
+    );
+  });
+
+  it('returns invitedEmail when invite is email-bound', async () => {
+    (householdService.inviteMember as any).mockResolvedValue({
+      token: 'mock-invite-token',
+      email: 'invitee@example.com',
+    });
+
     const response = await app.inject({
       method: 'POST',
       url: '/api/households/household-1/invite',
       headers: authHeaders,
-      payload: { email: 'not-a-valid-email' },
+      payload: { email: 'invitee@example.com' },
+    });
+
+    expect(response.statusCode).toBe(201);
+    const body = response.json();
+    expect(body.invitedEmail).toBe('invitee@example.com');
+  });
+
+  it('returns 400 for invalid email payload', async () => {
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/households/household-1/invite',
+      headers: authHeaders,
+      payload: { email: 'bad-email' },
     });
 
     expect(response.statusCode).toBe(400);
-    const body = response.json();
-    expect(body.error).toBeDefined();
-    expect(body.error.code).toBe('VALIDATION_ERROR');
   });
 
   it('returns 401 without auth', async () => {
     const response = await app.inject({
       method: 'POST',
       url: '/api/households/household-1/invite',
-      payload: { email: 'invitee@test.com' },
+      payload: {},
     });
 
     expect(response.statusCode).toBe(401);

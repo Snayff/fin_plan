@@ -208,7 +208,7 @@ export function buildHouseholdInvite(overrides: Record<string, any> = {}) {
   return {
     id,
     householdId: "household-1",
-    email: "invitee@test.com",
+    email: null,
     tokenHash: "a".repeat(64),
     expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
     usedAt: null,
