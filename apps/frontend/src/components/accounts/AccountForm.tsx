@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { accountService } from '../../services/account.service';
 import { showSuccess, showError } from '../../lib/toast';
 import { ACCOUNT_TYPE_OPTIONS } from '../../lib/utils';
+import { createAccountSchema, updateAccountSchema } from '@finplan/shared';
 import type { Account, AccountType, CreateAccountInput } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -17,6 +18,8 @@ interface AccountFormProps {
 export default function AccountForm({ account, onSuccess, onCancel }: AccountFormProps) {
   const isEditing = !!account;
   const queryClient = useQueryClient();
+
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     name: account?.name ?? '',
@@ -54,26 +57,51 @@ export default function AccountForm({ account, onSuccess, onCancel }: AccountFor
   });
 
   const isPending = createMutation.isPending || updateMutation.isPending;
-  const error = createMutation.error || updateMutation.error;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+
     if (isEditing) {
-      updateMutation.mutate({
+      const submitData = {
         name: formData.name,
         type: formData.type,
         description: formData.description,
         currency: formData.currency,
         isActive: formData.isActive,
-      });
+      };
+      const result = updateAccountSchema.safeParse(submitData);
+      if (!result.success) {
+        const errors: Record<string, string> = {};
+        for (const issue of result.error.issues) {
+          const key = String(issue.path[0] ?? 'form');
+          if (!errors[key]) errors[key] = issue.message;
+        }
+        setFormErrors(errors);
+        showError('Please fix the errors below.');
+        return;
+      }
+      updateMutation.mutate(submitData);
     } else {
-      createMutation.mutate({
+      const submitData = {
         name: formData.name,
         type: formData.type,
         currency: formData.currency,
         description: formData.description,
         openingBalance: formData.openingBalance === '' ? 0 : Number(formData.openingBalance),
-      });
+      };
+      const result = createAccountSchema.safeParse(submitData);
+      if (!result.success) {
+        const errors: Record<string, string> = {};
+        for (const issue of result.error.issues) {
+          const key = String(issue.path[0] ?? 'form');
+          if (!errors[key]) errors[key] = issue.message;
+        }
+        setFormErrors(errors);
+        showError('Please fix the errors below.');
+        return;
+      }
+      createMutation.mutate(submitData);
     }
   };
 
@@ -89,6 +117,9 @@ export default function AccountForm({ account, onSuccess, onCancel }: AccountFor
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g., Main Current Account"
         />
+        {formErrors.name && (
+          <p className="text-sm text-destructive mt-1">{formErrors.name}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -130,6 +161,9 @@ export default function AccountForm({ account, onSuccess, onCancel }: AccountFor
           onChange={(e) => setFormData({ ...formData, currency: e.target.value.toUpperCase() })}
           placeholder="GBP"
         />
+        {formErrors.currency && (
+          <p className="text-sm text-destructive mt-1">{formErrors.currency}</p>
+        )}
       </div>
 
       {!isEditing && (
@@ -165,12 +199,6 @@ export default function AccountForm({ account, onSuccess, onCancel }: AccountFor
           <Label htmlFor="isActive" className="font-normal cursor-pointer">
             Account is active
           </Label>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
-          {(error as Error).message}
         </div>
       )}
 
