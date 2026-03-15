@@ -12,6 +12,7 @@ import type {
   CreateGoalInput,
   UpdateGoalInput,
 } from '../../types';
+import { showError } from '../../lib/toast';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
@@ -103,6 +104,9 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
       onSuccess?.();
     },
+    onError: (error: Error) => {
+      showError(error.message || 'Failed to save goal');
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -138,6 +142,7 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
           }
         }
         setFormErrors(errors);
+        showError('Please fix the errors below.');
         return;
       }
       submitMutation.mutate(submitData);
@@ -165,6 +170,7 @@ export default function GoalForm({ goal, onSuccess, onCancel }: GoalFormProps) {
         }
       }
       setFormErrors(errors);
+      showError('Please fix the errors below.');
       return;
     }
 
