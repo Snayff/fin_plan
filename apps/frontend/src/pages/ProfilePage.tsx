@@ -85,7 +85,7 @@ export default function ProfilePage() {
   });
 
   const inviteMutation = useMutation({
-    mutationFn: () => householdService.inviteMember(activeHouseholdId!, inviteEmail.trim() || undefined),
+    mutationFn: () => householdService.inviteMember(activeHouseholdId!, inviteEmail.trim()),
     onSuccess: ({ token, invitedEmail }) => {
       queryClient.invalidateQueries({ queryKey: ['household-details', activeHouseholdId] });
       setInviteToken(token);
@@ -97,7 +97,7 @@ export default function ProfilePage() {
   });
 
   const regenerateInviteMutation = useMutation({
-    mutationFn: (invite: { id: string; email?: string | null }) =>
+    mutationFn: (invite: { id: string; email: string }) =>
       householdService.regenerateInvite(activeHouseholdId!, invite.id, invite.email),
     onSuccess: ({ token, invitedEmail }) => {
       queryClient.invalidateQueries({ queryKey: ['household-details', activeHouseholdId] });
@@ -336,7 +336,7 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="pt-0 space-y-4">
                 <div className="space-y-2 max-w-sm">
-                  <Label htmlFor="invite-email">Invite email (optional)</Label>
+                  <Label htmlFor="invite-email">Invite email</Label>
                   <Input
                     id="invite-email"
                     type="email"
@@ -345,12 +345,12 @@ export default function ProfilePage() {
                     placeholder="jane@example.com"
                   />
                   <p className="text-xs text-muted-foreground">
-                    Add an email to restrict this QR code and invite link to that address only.
+                    Enter the email address of the person you want to invite.
                   </p>
                 </div>
                 <Button
                   onClick={() => inviteMutation.mutate()}
-                  disabled={inviteMutation.isPending}
+                  disabled={inviteMutation.isPending || !inviteEmail.trim()}
                 >
                   {inviteMutation.isPending ? 'Generating...' : 'Get Invite Link'}
                 </Button>
@@ -372,7 +372,7 @@ export default function ProfilePage() {
                         >
                           <div>
                             <p className="text-sm font-medium text-foreground">
-                              {invite.email ? invite.email : 'Anyone with the link'}
+                              {invite.email}
                             </p>
                             <p className="text-xs text-muted-foreground">
                               Expires {new Date(invite.expiresAt).toLocaleDateString('en-GB')}
