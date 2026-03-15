@@ -5,6 +5,7 @@ import { accountService } from '../../services/account.service';
 import { categoryService } from '../../services/category.service';
 import { liabilityService } from '../../services/liability.service';
 import { showSuccess, showError } from '../../lib/toast';
+import { createTransactionSchema, updateTransactionSchema } from '@finplan/shared';
 import type { TransactionType, CreateTransactionInput, Transaction } from '../../types';
 import { format } from 'date-fns';
 import { Button } from '../ui/button';
@@ -20,6 +21,8 @@ interface TransactionFormProps {
 export default function TransactionForm({ transaction, onSuccess, onCancel }: TransactionFormProps) {
   const queryClient = useQueryClient();
   const isEditing = !!transaction;
+
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const [formData, setFormData] = useState({
     accountId: transaction?.accountId || '',
@@ -98,6 +101,7 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
 
     const submitData = {
       ...formData,
@@ -106,6 +110,19 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
       categoryId: formData.categoryId || undefined,
       description: formData.description || undefined,
     };
+
+    const schema = isEditing ? updateTransactionSchema : createTransactionSchema;
+    const result = schema.safeParse(submitData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0] ?? 'form');
+        if (!errors[key]) errors[key] = issue.message;
+      }
+      setFormErrors(errors);
+      showError('Please fix the errors below.');
+      return;
+    }
 
     if (isEditing) {
       updateMutation.mutate({
@@ -183,6 +200,9 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g., Monthly Salary, Grocery Shopping"
         />
+        {formErrors.name && (
+          <p className="text-sm text-destructive mt-1">{formErrors.name}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -233,6 +253,9 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
             </option>
           ))}
         </select>
+        {formErrors.accountId && (
+          <p className="text-sm text-destructive mt-1">{formErrors.accountId}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -251,6 +274,9 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
             placeholder="0.00"
           />
         </div>
+        {formErrors.amount && (
+          <p className="text-sm text-destructive mt-1">{formErrors.amount}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -262,6 +288,9 @@ export default function TransactionForm({ transaction, onSuccess, onCancel }: Tr
           value={formData.date}
           onChange={(e) => setFormData({ ...formData, date: e.target.value })}
         />
+        {formErrors.date && (
+          <p className="text-sm text-destructive mt-1">{formErrors.date}</p>
+        )}
       </div>
 
       <div className="space-y-2">
