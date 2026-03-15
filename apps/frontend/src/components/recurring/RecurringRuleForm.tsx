@@ -4,6 +4,7 @@ import { recurringService } from '../../services/recurring.service';
 import { accountService } from '../../services/account.service';
 import { categoryService } from '../../services/category.service';
 import { showSuccess, showError } from '../../lib/toast';
+import { createRecurringRuleSchema, updateRecurringRuleSchema } from '@finplan/shared';
 import type {
   RecurringRule,
   RecurringFrequency,
@@ -50,6 +51,8 @@ export default function RecurringRuleForm({
     categoryId: recurringRule?.templateTransaction.categoryId || '',
     description: recurringRule?.templateTransaction.description || '',
   });
+
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   // Preview occurrences
   const [preview, setPreview] = useState<string[]>([]);
@@ -139,6 +142,7 @@ export default function RecurringRuleForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
 
     const templateTransaction = {
       accountId: formData.accountId,
@@ -149,7 +153,7 @@ export default function RecurringRuleForm({
       description: formData.description || undefined,
     };
 
-    const recurringRuleData: CreateRecurringRuleInput = {
+    const submitData: CreateRecurringRuleInput = {
       frequency: formData.frequency,
       interval: formData.interval,
       startDate: new Date(formData.startDate),
@@ -163,10 +167,23 @@ export default function RecurringRuleForm({
       templateTransaction,
     };
 
+    const schema = isEditing ? updateRecurringRuleSchema : createRecurringRuleSchema;
+    const result = schema.safeParse(submitData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[issue.path.length - 1] ?? 'form');
+        if (!errors[key]) errors[key] = issue.message;
+      }
+      setFormErrors(errors);
+      showError('Please fix the errors below.');
+      return;
+    }
+
     if (isEditing) {
-      updateMutation.mutate(recurringRuleData);
+      updateMutation.mutate(submitData);
     } else {
-      createMutation.mutate(recurringRuleData);
+      createMutation.mutate(submitData);
     }
   };
 
@@ -217,6 +234,9 @@ export default function RecurringRuleForm({
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             placeholder="e.g., Rent, Salary, Netflix Subscription"
           />
+          {formErrors.name && (
+            <p className="text-sm text-destructive mt-1">{formErrors.name}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -260,6 +280,9 @@ export default function RecurringRuleForm({
               placeholder="0.00"
             />
           </div>
+          {formErrors.amount && (
+            <p className="text-sm text-destructive mt-1">{formErrors.amount}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -278,6 +301,9 @@ export default function RecurringRuleForm({
               </option>
             ))}
           </select>
+          {formErrors.accountId && (
+            <p className="text-sm text-destructive mt-1">{formErrors.accountId}</p>
+          )}
         </div>
 
         <div className="space-y-2">
@@ -346,6 +372,9 @@ export default function RecurringRuleForm({
                 setFormData({ ...formData, interval: parseInt(e.target.value) || 1 })
               }
             />
+            {formErrors.interval && (
+              <p className="text-sm text-destructive mt-1">{formErrors.interval}</p>
+            )}
             <p className="text-xs text-muted-foreground">
               {formData.interval} {formData.frequency}(s)
             </p>
@@ -361,6 +390,9 @@ export default function RecurringRuleForm({
             value={formData.startDate}
             onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
           />
+          {formErrors.startDate && (
+            <p className="text-sm text-destructive mt-1">{formErrors.startDate}</p>
+          )}
         </div>
 
         <div className="space-y-3">
@@ -405,6 +437,9 @@ export default function RecurringRuleForm({
                 value={formData.endDate}
                 onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
               />
+              {formErrors.endDate && (
+                <p className="text-sm text-destructive mt-1">{formErrors.endDate}</p>
+              )}
               <p className="text-xs text-muted-foreground">
                 Leave blank for indefinite recurrence
               </p>
