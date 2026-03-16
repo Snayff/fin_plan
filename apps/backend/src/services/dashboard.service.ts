@@ -207,7 +207,7 @@ export const dashboardService = {
       monthlyDates.push(date);
     }
 
-    const lastDate = monthlyDates[monthlyDates.length - 1];
+    const lastDate = monthlyDates[monthlyDates.length - 1]!;
     const cutoff = endOfDay(lastDate);
 
     // 3 queries total regardless of how many months are requested
@@ -291,11 +291,12 @@ export const dashboardService = {
       if (!monthlyData[row.month]) {
         monthlyData[row.month] = { income: 0, expense: 0 };
       }
+      const entry = monthlyData[row.month]!;
       const amount = parseFloat(row.total);
       if (row.type === 'income') {
-        monthlyData[row.month].income = amount;
+        entry.income = amount;
       } else {
-        monthlyData[row.month].expense = amount;
+        entry.expense = amount;
       }
     }
 
