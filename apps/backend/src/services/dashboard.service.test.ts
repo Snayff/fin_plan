@@ -201,4 +201,22 @@ describe("dashboardService.getIncomeExpenseTrend", () => {
     const result = await dashboardService.getIncomeExpenseTrend("user-1", 6);
     expect(result).toEqual([]);
   });
+
+  it("excludes transfer transactions from the trend", async () => {
+    // Simulate a DB that correctly excluded transfers at query time
+    // (i.e., returns no rows for months with only transfers)
+    prismaMock.$queryRaw.mockResolvedValue([
+      { month: "2025-03", type: "income", total: "500" },
+      // no transfer row — SQL WHERE clause filtered it before returning
+    ]);
+
+    const result = await dashboardService.getIncomeExpenseTrend("user-1", 6);
+
+    const mar = result.find((d) => d.month === "2025-03");
+    expect(mar).toBeDefined();
+    expect(mar!.income).toBe(500);
+    expect(mar!.expense).toBe(0);
+    // No transfer field on the result
+    expect(mar).not.toHaveProperty("transfer");
+  });
 });

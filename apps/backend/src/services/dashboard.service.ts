@@ -275,9 +275,10 @@ export const dashboardService = {
       SELECT
         TO_CHAR(DATE_TRUNC('month', date), 'YYYY-MM') AS month,
         type,
-        SUM(amount)::text AS total
+        COALESCE(SUM(amount), 0)::text AS total
       FROM transactions
       WHERE household_id = ${householdId}
+        AND type IN ('income', 'expense')
         AND date >= ${startDate}
         AND date <= ${endDate}
       GROUP BY DATE_TRUNC('month', date), type
