@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { assetService } from '../services/asset.service';
+import { cacheService } from '../services/cache.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import {
   createAssetSchema,
@@ -43,6 +44,7 @@ export async function assetRoutes(fastify: FastifyInstance) {
     const validatedData = createAssetSchema.parse(request.body);
 
     const asset = await assetService.createAsset(householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.status(201).send({ asset });
   });
 
@@ -53,6 +55,7 @@ export async function assetRoutes(fastify: FastifyInstance) {
     const validatedData = updateAssetSchema.parse(request.body);
 
     const asset = await assetService.updateAsset(id, householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send({ asset });
   });
 
@@ -69,6 +72,7 @@ export async function assetRoutes(fastify: FastifyInstance) {
       validatedData.source,
       validatedData.date ? new Date(validatedData.date) : undefined
     );
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send({ asset });
   });
 
@@ -78,6 +82,7 @@ export async function assetRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     const result = await assetService.deleteAsset(id, householdId);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send(result);
   });
 

@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { liabilityService } from '../services/liability.service';
+import { cacheService } from '../services/cache.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import {
   createLiabilitySchema,
@@ -47,6 +48,7 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     const validatedData = createLiabilitySchema.parse(request.body);
 
     const liability = await liabilityService.createLiability(householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.status(201).send({ liability });
   });
 
@@ -57,6 +59,7 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     const validatedData = updateLiabilitySchema.parse(request.body);
 
     const liability = await liabilityService.updateLiability(id, householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send({ liability });
   });
 
@@ -67,6 +70,7 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     const result = await liabilityService.deleteLiability(id, householdId);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send(result);
   });
 

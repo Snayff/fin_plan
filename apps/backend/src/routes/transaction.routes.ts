@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { transactionService } from '../services/transaction.service';
 import { auditService } from '../services/audit.service';
+import { cacheService } from '../services/cache.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { createTransactionSchema, updateTransactionSchema, UpdateScopeEnum } from '@finplan/shared';
 
@@ -101,6 +102,7 @@ export async function transactionRoutes(fastify: FastifyInstance) {
       const validatedData = createTransactionSchema.parse(request.body);
 
       const transaction = await transactionService.createTransaction(householdId, validatedData);
+      void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
 
       auditService.log({ userId, action: 'TRANSACTION_CREATED', resource: 'transaction', resourceId: transaction.id, ipAddress: request.ip });
 
@@ -138,6 +140,7 @@ export async function transactionRoutes(fastify: FastifyInstance) {
         validatedData,
         validatedScope
       );
+      void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
 
       return reply.send({ transaction });
     }
@@ -153,6 +156,7 @@ export async function transactionRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
 
       const result = await transactionService.deleteTransaction(id, householdId);
+      void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
 
       auditService.log({ userId, action: 'TRANSACTION_DELETED', resource: 'transaction', resourceId: id, ipAddress: request.ip });
 
