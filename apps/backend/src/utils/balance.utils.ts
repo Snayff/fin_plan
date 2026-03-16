@@ -99,39 +99,6 @@ export async function calculateAccountBalances(
 }
 
 /**
- * Calculate historical balance snapshots for an account at weekly intervals
- * 
- * @param accountId - Account to calculate balance history for
- * @param daysBack - Number of days to look back (default 90)
- * @returns Array of balance snapshots with date and balance
- */
-export async function calculateAccountBalanceHistory(
-  accountId: string,
-  daysBack: number = 90
-): Promise<Array<{ date: Date; balance: number }>> {
-  const now = new Date();
-  const startDate = new Date(now);
-  startDate.setDate(startDate.getDate() - daysBack);
-
-  // Calculate weekly snapshots
-  const snapshots: Array<{ date: Date; balance: number }> = [];
-  const weeksBack = Math.ceil(daysBack / 7);
-
-  for (let i = weeksBack; i >= 0; i--) {
-    const snapshotDate = new Date(now);
-    snapshotDate.setDate(snapshotDate.getDate() - (i * 7));
-    
-    const balance = await calculateAccountBalance(accountId, snapshotDate);
-    snapshots.push({
-      date: snapshotDate,
-      balance,
-    });
-  }
-
-  return snapshots;
-}
-
-/**
  * Calculate account flow (income and expenses) for a date range
  * 
  * @param accountId - Account to calculate flow for
@@ -233,7 +200,8 @@ export async function calculateAccountsMonthlyFlow(
 /**
  * Calculate balance history for multiple accounts efficiently
  * Returns weekly snapshots over the specified period, starting from account creation or daysBack, whichever is later
- * 
+ * Uses a single DB query for all accounts and computes snapshots in memory.
+ *
  * @param accountIds - Array of account IDs
  * @param accountCreationDates - Map of accountId to creation date
  * @param daysBack - Number of days to look back (default 90)
@@ -252,41 +220,49 @@ export async function calculateAccountsBalanceHistory(
   const defaultStartDate = new Date(now);
   defaultStartDate.setDate(defaultStartDate.getDate() - daysBack);
 
-  // Initialize result map
+  // ONE query for all accounts across all time — compute snapshots in memory
+  const allTransactions = await prisma.transaction.findMany({
+    where: {
+      accountId: { in: accountIds },
+      date: { lte: endOfDay(now) },
+    },
+    select: {
+      accountId: true,
+      amount: true,
+      type: true,
+      date: true,
+    },
+  });
+
   const historiesMap = new Map<string, Array<{ date: Date; balance: number }>>();
   accountIds.forEach(id => historiesMap.set(id, []));
 
-  // Calculate history for each account individually (since they may have different start dates)
   for (const accountId of accountIds) {
     const creationDate = accountCreationDates.get(accountId);
     if (!creationDate) continue;
 
-    // Use the later of: account creation date or 90 days ago
     const startDate = creationDate > defaultStartDate ? creationDate : defaultStartDate;
-    
-    // Calculate how many weeks from start date to now
     const daysDiff = Math.ceil((now.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
     const weeksBack = Math.ceil(daysDiff / 7);
 
-    // Generate snapshot dates (weekly) for this account
-    const snapshotDates: Date[] = [];
+    // Transactions for this account only — filter in memory
+    const accountTxs = allTransactions.filter(t => t.accountId === accountId);
+
     for (let i = weeksBack; i >= 0; i--) {
       const snapshotDate = new Date(now);
       snapshotDate.setDate(snapshotDate.getDate() - (i * 7));
-      
-      // Only include dates on or after the start date
-      if (snapshotDate >= startDate) {
-        snapshotDates.push(snapshotDate);
-      }
-    }
 
-    // Calculate balance at each snapshot date for this account
-    for (const snapshotDate of snapshotDates) {
-      const balance = await calculateAccountBalance(accountId, snapshotDate);
-      historiesMap.get(accountId)!.push({
-        date: snapshotDate,
-        balance,
-      });
+      if (snapshotDate < startDate) continue;
+
+      const snapshotCutoff = endOfDay(snapshotDate);
+      const balance = accountTxs
+        .filter(t => t.date <= snapshotCutoff)
+        .reduce((sum, t) => {
+          const amount = Number(t.amount);
+          return sum + (t.type === 'income' ? amount : -amount);
+        }, 0);
+
+      historiesMap.get(accountId)!.push({ date: snapshotDate, balance });
     }
   }
 
