@@ -12,6 +12,7 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
       const householdId = request.householdId!;
       const { startDate, endDate } = request.query as any;
 
+      const now = new Date();
       const options: any = {};
       if (startDate) options.startDate = new Date(startDate);
       if (endDate) options.endDate = new Date(endDate);
@@ -19,8 +20,13 @@ export async function dashboardRoutes(fastify: FastifyInstance) {
       // Cache key includes year-month so different date range requests don't collide
       const yearMonth = options.startDate
         ? `${options.startDate.getFullYear()}-${String(options.startDate.getMonth() + 1).padStart(2, '0')}`
-        : `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-      const cacheKey = `dashboard:summary:${householdId}:${yearMonth}`;
+        : `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const endMonth = options.endDate
+        ? `${options.endDate.getFullYear()}-${String(options.endDate.getMonth() + 1).padStart(2, '0')}`
+        : null;
+      const cacheKey = endMonth
+        ? `dashboard:summary:${householdId}:${yearMonth}:${endMonth}`
+        : `dashboard:summary:${householdId}:${yearMonth}`;
 
       const cached = await cacheService.get(cacheKey);
       if (cached) return reply.send(cached);

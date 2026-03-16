@@ -24,6 +24,13 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     return reply.send({ liabilities });
   });
 
+  // Get liability summary (analytics)
+  fastify.get('/liabilities/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
+    const householdId = request.householdId!;
+    const summary = await liabilityService.getLiabilitySummary(householdId);
+    return reply.send(summary);
+  });
+
   // Get single liability by ID
   fastify.get('/liabilities/:id', { preHandler: [authMiddleware] }, async (request, reply) => {
     const householdId = request.householdId!;
@@ -72,12 +79,5 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     const result = await liabilityService.deleteLiability(id, householdId);
     void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send(result);
-  });
-
-  // Get liability summary (analytics)
-  fastify.get('/liabilities/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const householdId = request.householdId!;
-    const summary = await liabilityService.getLiabilitySummary(householdId);
-    return reply.send(summary);
   });
 }

@@ -18,6 +18,13 @@ export async function assetRoutes(fastify: FastifyInstance) {
     return reply.send({ assets });
   });
 
+  // Get asset summary (analytics)
+  fastify.get('/assets/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
+    const householdId = request.householdId!;
+    const summary = await assetService.getAssetSummary(householdId);
+    return reply.send(summary);
+  });
+
   // Get single asset by ID
   fastify.get('/assets/:id', { preHandler: [authMiddleware] }, async (request, reply) => {
     const householdId = request.householdId!;
@@ -84,12 +91,5 @@ export async function assetRoutes(fastify: FastifyInstance) {
     const result = await assetService.deleteAsset(id, householdId);
     void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send(result);
-  });
-
-  // Get asset summary (analytics)
-  fastify.get('/assets/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const householdId = request.householdId!;
-    const summary = await assetService.getAssetSummary(householdId);
-    return reply.send(summary);
   });
 }
