@@ -138,6 +138,76 @@ describe('ProfilePage — Household tab layout', () => {
     });
   });
 
+  it('shows an error and does not open the invite modal when email is already a member', async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get('/api/households/:id', ({ request }) => {
+        const auth = request.headers.get('authorization');
+        if (!auth?.startsWith('Bearer ')) {
+          return HttpResponse.json({ error: { message: 'Unauthorized' } }, { status: 401 });
+        }
+        return HttpResponse.json({
+          household: {
+            id: 'household-1', name: 'My Household',
+            members: [{ userId: 'user-2', role: 'member', user: { id: 'user-2', name: 'Jane', email: 'jane@example.com' } }],
+            invites: [],
+          },
+        });
+      })
+    );
+
+    renderWithProviders(<ProfilePage />);
+    await user.click(screen.getByRole('tab', { name: /household/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/email for new user/i)).toBeTruthy();
+    });
+
+    await user.type(screen.getByLabelText(/email for new user/i), 'jane@example.com');
+    await user.click(screen.getByRole('button', { name: /get invite link/i }));
+
+    // Modal should not open — mutation was blocked
+    await waitFor(() => {
+      expect(screen.queryByText(/share invite link/i)).toBeNull();
+    });
+  });
+
+  it('shows an error and does not open the invite modal when email already has a pending invite', async () => {
+    const user = userEvent.setup();
+
+    server.use(
+      http.get('/api/households/:id', ({ request }) => {
+        const auth = request.headers.get('authorization');
+        if (!auth?.startsWith('Bearer ')) {
+          return HttpResponse.json({ error: { message: 'Unauthorized' } }, { status: 401 });
+        }
+        return HttpResponse.json({
+          household: {
+            id: 'household-1', name: 'My Household',
+            members: [],
+            invites: [{ id: 'inv-1', email: 'pending@example.com', expiresAt: '2026-12-31T00:00:00Z' }],
+          },
+        });
+      })
+    );
+
+    renderWithProviders(<ProfilePage />);
+    await user.click(screen.getByRole('tab', { name: /household/i }));
+
+    await waitFor(() => {
+      expect(screen.getByLabelText(/email for new user/i)).toBeTruthy();
+    });
+
+    await user.type(screen.getByLabelText(/email for new user/i), 'pending@example.com');
+    await user.click(screen.getByRole('button', { name: /get invite link/i }));
+
+    // Modal should not open — mutation was blocked
+    await waitFor(() => {
+      expect(screen.queryByText(/share invite link/i)).toBeNull();
+    });
+  });
+
   it('allows creating an email-restricted invite', async () => {
     const user = userEvent.setup();
 
@@ -168,10 +238,10 @@ describe('ProfilePage — Household tab layout', () => {
     await user.click(screen.getByRole('tab', { name: /household/i }));
 
     await waitFor(() => {
-      expect(screen.getByLabelText(/invite email/i)).toBeTruthy();
+      expect(screen.getByLabelText(/email for new user/i)).toBeTruthy();
     });
 
-    await user.type(screen.getByLabelText(/invite email/i), 'invitee@example.com');
+    await user.type(screen.getByLabelText(/email for new user/i), 'invitee@example.com');
     await user.click(screen.getByRole('button', { name: /get invite link/i }));
 
     await waitFor(() => {

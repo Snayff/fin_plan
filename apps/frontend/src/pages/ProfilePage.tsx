@@ -4,6 +4,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/auth.service';
 import { householdService } from '../services/household.service';
+import { createHouseholdInviteSchema } from '@finplan/shared';
 import { showSuccess, showError } from '../lib/toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -336,7 +337,7 @@ export default function ProfilePage() {
               </CardHeader>
               <CardContent className="pt-0 space-y-4">
                 <div className="space-y-2 max-w-sm">
-                  <Label htmlFor="invite-email">Invite email</Label>
+                  <Label htmlFor="invite-email">Email For New User</Label>
                   <Input
                     id="invite-email"
                     type="email"
@@ -349,7 +350,23 @@ export default function ProfilePage() {
                   </p>
                 </div>
                 <Button
-                  onClick={() => inviteMutation.mutate()}
+                  onClick={() => {
+                    const result = createHouseholdInviteSchema.safeParse({ email: inviteEmail });
+                    if (!result.success) {
+                      showError(result.error.errors[0]?.message ?? 'Invalid email address');
+                      return;
+                    }
+                    const normalised = inviteEmail.trim().toLowerCase();
+                    if (household?.members.some((m) => m.user.email.toLowerCase() === normalised)) {
+                      showError('This person is already a member of the household');
+                      return;
+                    }
+                    if (household?.invites.some((i) => i.email?.toLowerCase() === normalised)) {
+                      showError('This email already has a pending invite');
+                      return;
+                    }
+                    inviteMutation.mutate();
+                  }}
                   disabled={inviteMutation.isPending || !inviteEmail.trim()}
                 >
                   {inviteMutation.isPending ? 'Generating...' : 'Get Invite Link'}
