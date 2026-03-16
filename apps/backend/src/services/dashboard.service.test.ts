@@ -172,20 +172,33 @@ describe("dashboardService.getNetWorthTrend", () => {
 });
 
 describe("dashboardService.getIncomeExpenseTrend", () => {
-  it("groups transactions by month", async () => {
-    prismaMock.transaction.findMany.mockResolvedValue([
-      buildTransaction({ date: new Date("2025-01-15"), amount: 1000, type: "income" }),
-      buildTransaction({ date: new Date("2025-01-20"), amount: 500, type: "expense" }),
-      buildTransaction({ date: new Date("2025-02-10"), amount: 2000, type: "income" }),
+  it("groups transactions by month using DB aggregation", async () => {
+    // $queryRaw returns pre-aggregated rows — one row per month per type
+    prismaMock.$queryRaw.mockResolvedValue([
+      { month: "2025-01", type: "income", total: "1000" },
+      { month: "2025-01", type: "expense", total: "500" },
+      { month: "2025-02", type: "income", total: "2000" },
     ]);
 
     const result = await dashboardService.getIncomeExpenseTrend("user-1", 6);
 
     expect(result.length).toBeGreaterThanOrEqual(2);
+
     const jan = result.find((d) => d.month === "2025-01");
     expect(jan).toBeDefined();
     expect(jan!.income).toBe(1000);
     expect(jan!.expense).toBe(500);
     expect(jan!.net).toBe(500);
+
+    const feb = result.find((d) => d.month === "2025-02");
+    expect(feb).toBeDefined();
+    expect(feb!.income).toBe(2000);
+    expect(feb!.expense).toBe(0);
+  });
+
+  it("returns empty array when no transactions", async () => {
+    prismaMock.$queryRaw.mockResolvedValue([]);
+    const result = await dashboardService.getIncomeExpenseTrend("user-1", 6);
+    expect(result).toEqual([]);
   });
 });

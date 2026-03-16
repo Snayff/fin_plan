@@ -269,46 +269,40 @@ export const dashboardService = {
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - months);
 
-    // Get transactions grouped by month and type
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        householdId,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      select: {
-        date: true,
-        amount: true,
-        type: true,
-      },
-    });
+    type RawRow = { month: string; type: string; total: string };
 
-    // Group by month
-    const monthlyData: { [key: string]: { income: number; expense: number } } = {};
+    const rows = await prisma.$queryRaw<RawRow[]>`
+      SELECT
+        TO_CHAR(DATE_TRUNC('month', date), 'YYYY-MM') AS month,
+        type,
+        SUM(amount)::text AS total
+      FROM transactions
+      WHERE household_id = ${householdId}
+        AND date >= ${startDate}
+        AND date <= ${endDate}
+      GROUP BY DATE_TRUNC('month', date), type
+      ORDER BY DATE_TRUNC('month', date)
+    `;
 
-    transactions.forEach((t) => {
-      const monthKey = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { income: 0, expense: 0 };
+    const monthlyData: Record<string, { income: number; expense: number }> = {};
+
+    for (const row of rows) {
+      if (!monthlyData[row.month]) {
+        monthlyData[row.month] = { income: 0, expense: 0 };
       }
-
-      if (t.type === 'income') {
-        monthlyData[monthKey].income += Number(t.amount);
+      const amount = parseFloat(row.total);
+      if (row.type === 'income') {
+        monthlyData[row.month].income = amount;
       } else {
-        monthlyData[monthKey].expense += Number(t.amount);
+        monthlyData[row.month].expense = amount;
       }
-    });
+    }
 
-    // Convert to array format
-    const trendData = Object.entries(monthlyData).map(([month, data]) => ({
+    return Object.entries(monthlyData).map(([month, data]) => ({
       month,
       income: data.income,
       expense: data.expense,
       net: data.income - data.expense,
     }));
-
-    return trendData.sort((a, b) => a.month.localeCompare(b.month));
   },
 };
