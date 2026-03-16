@@ -92,7 +92,7 @@ describe("cacheService.invalidatePattern", () => {
   });
 });
 
-describe("cacheService — no Redis client (REDIS_URL absent)", () => {
+describe("cacheService — Redis errors are swallowed silently", () => {
   it("get returns null when no client", async () => {
     // Force getRedis to return null by making the constructor throw
     mockGet.mockImplementation(() => { throw new Error("should not be called"); });
@@ -114,10 +114,7 @@ describe("cacheService — no Redis client (REDIS_URL absent)", () => {
   });
 
   it("invalidatePattern resolves without throwing when no client", async () => {
-    // mock scan to throw to simulate Redis unavailability
-    const mockScan = mock(() => Promise.reject(new Error("ECONNREFUSED")));
-    // We need to patch the client — use the error path since client is already initialised
-    mockKeys.mockRejectedValue(new Error("ECONNREFUSED"));
+    mockScan.mockRejectedValue(new Error("ECONNREFUSED"));
     await expect(cacheService.invalidatePattern("dashboard:*")).resolves.toBeUndefined();
   });
 });
