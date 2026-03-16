@@ -108,14 +108,24 @@ describe("dashboardService.getNetWorthTrend", () => {
     expect(result).toEqual([]);
   });
 
-  it("returns monthly data points with correct structure", async () => {
+  it("returns monthly data points with correct structure and net worth calculation", async () => {
     prismaMock.account.findMany.mockResolvedValue([buildAccount({ id: "acc-1" })]);
 
-    const { calculateAccountBalances } = await import("../utils/balance.utils");
-    (calculateAccountBalances as any).mockResolvedValue(new Map([["acc-1", 5000]]));
+    // Single batch: all transactions across all months
+    prismaMock.transaction.findMany.mockResolvedValue([
+      buildTransaction({ accountId: "acc-1", amount: 5000, type: "income", date: new Date("2025-01-01") }),
+      buildTransaction({ accountId: "acc-1", amount: 1000, type: "expense", date: new Date("2025-01-15") }),
+    ]);
 
-    prismaMock.asset.aggregate.mockResolvedValue({ _sum: { currentValue: 100000 } });
-    prismaMock.liability.aggregate.mockResolvedValue({ _sum: { currentBalance: 50000 } });
+    // Single batch: all assets
+    prismaMock.asset.findMany.mockResolvedValue([
+      { currentValue: 100000, createdAt: new Date("2024-01-01") },
+    ]);
+
+    // Single batch: all liabilities
+    prismaMock.liability.findMany.mockResolvedValue([
+      { currentBalance: 50000, createdAt: new Date("2024-01-01") },
+    ]);
 
     const result = await dashboardService.getNetWorthTrend("user-1", 3);
 
@@ -126,7 +136,20 @@ describe("dashboardService.getNetWorthTrend", () => {
     expect(result[0]).toHaveProperty("assets");
     expect(result[0]).toHaveProperty("liabilities");
     expect(result[0]).toHaveProperty("netWorth");
-    expect(result[0].netWorth).toBe((result[0].cash || 0) + (result[0].assets || 0) - (result[0].liabilities || 0));
+
+    // The last snapshot covers all transactions — cash must be income - expense = 5000 - 1000 = 4000
+    const last = result[result.length - 1];
+    expect(last.cash).toBe(4000);
+    expect(last.assets).toBe(100000);
+    expect(last.liabilities).toBe(50000);
+    expect(last.netWorth).toBe(54000); // 4000 + 100000 - 50000
+
+    // netWorth must equal cash + assets - liabilities for every point
+    for (const point of result) {
+      expect(point.netWorth).toBe(
+        (point.cash ?? 0) + (point.assets ?? 0) - (point.liabilities ?? 0)
+      );
+    }
   });
 });
 
