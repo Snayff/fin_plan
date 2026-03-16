@@ -180,6 +180,7 @@ model Transaction {
   @@index([householdId, date])
   @@index([householdId, categoryId, date])
   @@index([recurringRuleId, date])
+  @@index([accountId, date])
   @@map("transactions")
 }
 
