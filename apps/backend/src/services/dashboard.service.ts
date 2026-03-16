@@ -200,7 +200,8 @@ export const dashboardService = {
     const accountIds = accounts.map(a => a.id);
     if (accountIds.length === 0) return [];
 
-    // Generate month-end dates
+    // Generate month-end dates: `months` past months plus the current month
+    // (i.e. months=6 yields 7 data points: 6 completed months + current month-to-date)
     const monthlyDates: Date[] = [];
     for (let i = 0; i <= months; i++) {
       const date = new Date(now.getFullYear(), now.getMonth() - months + i + 1, 0);
@@ -300,6 +301,8 @@ export const dashboardService = {
       }
     }
 
+    // Note: only months with transactions appear in the result — months with no
+    // activity are omitted. Callers should not assume a contiguous date series.
     return Object.entries(monthlyData).map(([month, data]) => ({
       month,
       income: data.income,

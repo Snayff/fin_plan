@@ -64,7 +64,10 @@ export const cacheService = {
         keys.push(...batch);
       } while (cursor !== '0');
       if (keys.length > 0) {
-        await client.del(...keys);
+        const CHUNK_SIZE = 500;
+        for (let i = 0; i < keys.length; i += CHUNK_SIZE) {
+          await client.del(...keys.slice(i, i + CHUNK_SIZE));
+        }
       }
     } catch {
       // Silent

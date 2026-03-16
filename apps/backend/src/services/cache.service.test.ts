@@ -90,6 +90,21 @@ describe("cacheService.invalidatePattern", () => {
     await cacheService.invalidatePattern("dashboard:*:hh-1:*");
     expect(mockDel).not.toHaveBeenCalled();
   });
+
+  it("iterates through multiple scan pages until cursor returns '0'", async () => {
+    mockScan
+      .mockResolvedValueOnce(['42', ['dashboard:summary:hh-1:2026-02']])
+      .mockResolvedValueOnce(['0', ['dashboard:summary:hh-1:2026-03']]);
+    mockDel.mockResolvedValue(2);
+
+    await cacheService.invalidatePattern("dashboard:summary:hh-1:*");
+
+    expect(mockScan).toHaveBeenCalledTimes(2);
+    expect(mockDel).toHaveBeenCalledWith(
+      'dashboard:summary:hh-1:2026-02',
+      'dashboard:summary:hh-1:2026-03'
+    );
+  });
 });
 
 describe("cacheService — Redis errors are swallowed silently", () => {

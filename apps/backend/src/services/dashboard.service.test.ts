@@ -129,7 +129,7 @@ describe("dashboardService.getNetWorthTrend", () => {
 
     const result = await dashboardService.getNetWorthTrend("user-1", 3);
 
-    expect(result.length).toBeGreaterThan(0);
+    expect(result.length).toBe(4); // months=3 → 3 past months + current month
     expect(result[0]).toHaveProperty("month");
     expect(result[0]).toHaveProperty("cash");
     expect(result[0]).toHaveProperty("balance");
