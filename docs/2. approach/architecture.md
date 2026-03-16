@@ -1,6 +1,6 @@
 # Architecture (Current State)
 
-Last updated: 2026-02-14
+Last updated: 2026-03-15
 
 This document reflects the **implemented architecture** in the repository today (not just the original target vision).
 
@@ -107,6 +107,36 @@ So: local-first remains a roadmap direction, not current runtime behavior.
 
 This removes duplicated token plumbing from feature services.
 
+### Frontend Validation Pattern
+
+Form submissions follow a two-stage validation approach:
+
+1. **Schema validation** — Zod schemas from `@finplan/shared` validate format and required fields before any mutation is called.
+2. **Pre-flight conflict checks** — where the data needed to detect a conflict is already loaded in component state (via `useQuery`), validate against it _before_ calling `mutation.mutate()`. This prevents unnecessary network round-trips and avoids browser console errors from server-returned 409s.
+
+```ts
+const handleSubmit = () => {
+  // Stage 1: schema/format validation
+  const result = mySchema.safeParse({ field: value });
+  if (!result.success) {
+    showError(result.error.errors[0]?.message ?? 'Invalid input');
+    return;
+  }
+
+  // Stage 2: conflict check against already-loaded state
+  if (loadedItems.some((item) => item.field === value.trim())) {
+    showError('This item already exists');
+    return;
+  }
+
+  mutation.mutate();
+};
+```
+
+**Where this applies:** only when the loaded collection is a natural part of the page's existing data requirements. Do not add new queries solely for conflict detection — the server `onError` toast is sufficient in those cases.
+
+Current examples: `ProfilePage` (duplicate invite email checked against `household.members` / `household.invites`), `BudgetDetailPage` (duplicate category checked against `budget.categoryGroups`).
+
 ---
 
 ## 4) Shared Contract Pattern
@@ -127,6 +157,7 @@ This enforces contract consistency between frontend forms and backend routes.
 3. **Per-user ownership checks in services**
 4. **Use DB transactions for multi-step writes**
 5. **Centralize cross-cutting concerns** (auth, errors, API token handling)
+6. **Pre-flight conflict checks on the frontend** — validate against already-loaded state before calling mutations where possible (see Frontend Validation Pattern in section 3)
 
 ---
 
