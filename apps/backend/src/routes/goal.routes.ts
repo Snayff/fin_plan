@@ -2,6 +2,7 @@ import { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { goalService } from '../services/goal.service';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { cacheService } from '../services/cache.service';
 import {
   createGoalSchema,
   updateGoalSchema,
@@ -72,6 +73,7 @@ export async function goalRoutes(fastify: FastifyInstance) {
     const validatedData = createGoalSchema.parse(request.body);
 
     const goal = await goalService.createGoal(householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.status(201).send({ goal });
   });
 
@@ -82,6 +84,7 @@ export async function goalRoutes(fastify: FastifyInstance) {
     const validatedData = updateGoalSchema.parse(request.body);
 
     const goal = await goalService.updateGoal(id, householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send({ goal });
   });
 
@@ -92,6 +95,7 @@ export async function goalRoutes(fastify: FastifyInstance) {
     const validatedData = createGoalContributionSchema.parse(request.body);
 
     const result = await goalService.addContribution(id, householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.status(201).send(result);
   });
 
@@ -102,6 +106,7 @@ export async function goalRoutes(fastify: FastifyInstance) {
     const validatedData = linkTransactionToGoalSchema.parse(request.body);
 
     const result = await goalService.linkTransactionToGoal(id, householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send(result);
   });
 
@@ -111,6 +116,7 @@ export async function goalRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     const result = await goalService.deleteGoal(id, householdId);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send(result);
   });
 }
