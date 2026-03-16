@@ -55,7 +55,14 @@
       "Bash(npx prisma:*)",
       "Bash(./node_modules/.bin/prisma migrate:*)",
       "Bash(./node_modules/.bin/prisma db:*)",
-      "Bash(./node_modules/.bin/prisma generate:*)"
+      "Bash(./node_modules/.bin/prisma generate:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(cd:*)",
+      "Bash(git add:*)",
+      "Bash(node:*)",
+      "Bash(npx jest:*)",
+      "Bash(cat:*)"
     ]
-  }
+  },
+  "outputStyle": "default"
 }
