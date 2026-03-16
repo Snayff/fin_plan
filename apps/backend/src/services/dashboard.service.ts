@@ -221,11 +221,11 @@ export const dashboardService = {
       }),
       prisma.asset.findMany({
         where: { householdId },
-        select: { currentValue: true, createdAt: true },
+        select: { currentValue: true, purchaseDate: true, createdAt: true },
       }),
       prisma.liability.findMany({
         where: { householdId },
-        select: { currentBalance: true, createdAt: true },
+        select: { currentBalance: true, openDate: true },
       }),
     ]);
 
@@ -240,11 +240,11 @@ export const dashboardService = {
         }, 0);
 
       const totalAssets = allAssets
-        .filter(a => a.createdAt <= monthCutoff)
+        .filter(a => (a.purchaseDate ?? a.createdAt) <= monthCutoff)
         .reduce((sum, a) => sum + Number(a.currentValue), 0);
 
       const totalLiabilities = allLiabilities
-        .filter(l => l.createdAt <= monthCutoff)
+        .filter(l => l.openDate <= monthCutoff)
         .reduce((sum, l) => sum + Number(l.currentBalance), 0);
 
       const netWorth = cash + totalAssets - totalLiabilities;

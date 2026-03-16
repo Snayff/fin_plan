@@ -119,12 +119,12 @@ describe("dashboardService.getNetWorthTrend", () => {
 
     // Single batch: all assets
     prismaMock.asset.findMany.mockResolvedValue([
-      { currentValue: 100000, createdAt: new Date("2024-01-01") },
+      { currentValue: 100000, purchaseDate: new Date("2020-01-01"), createdAt: new Date("2026-01-01") },
     ]);
 
     // Single batch: all liabilities
     prismaMock.liability.findMany.mockResolvedValue([
-      { currentBalance: 50000, createdAt: new Date("2024-01-01") },
+      { currentBalance: 50000, openDate: new Date("2020-01-01") },
     ]);
 
     const result = await dashboardService.getNetWorthTrend("user-1", 3);
@@ -149,6 +149,24 @@ describe("dashboardService.getNetWorthTrend", () => {
       expect(point.netWorth).toBe(
         (point.cash ?? 0) + (point.assets ?? 0) - (point.liabilities ?? 0)
       );
+    }
+  });
+
+  it("includes assets by purchaseDate not createdAt", async () => {
+    prismaMock.account.findMany.mockResolvedValue([buildAccount({ id: "acc-1" })]);
+    prismaMock.transaction.findMany.mockResolvedValue([]);
+
+    // Asset purchased in 2020 but added to the app today — should appear in all historical months
+    prismaMock.asset.findMany.mockResolvedValue([
+      { currentValue: 200000, purchaseDate: new Date("2020-01-01"), createdAt: new Date() },
+    ]);
+    prismaMock.liability.findMany.mockResolvedValue([]);
+
+    const result = await dashboardService.getNetWorthTrend("user-1", 3);
+
+    // All months should include the asset
+    for (const point of result) {
+      expect(point.assets).toBe(200000);
     }
   });
 });
