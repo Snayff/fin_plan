@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { goalService } from '../services/goal.service';
 import { accountService } from '../services/account.service';
@@ -109,7 +109,7 @@ export default function GoalsPage() {
     },
   });
 
-  const goals = (data?.goals || []) as EnhancedGoal[];
+  const goals = useMemo(() => (data?.goals || []) as EnhancedGoal[], [data?.goals]);
 
   // Detect when any goal crosses the 100% threshold and trigger a celebration
   useEffect(() => {
