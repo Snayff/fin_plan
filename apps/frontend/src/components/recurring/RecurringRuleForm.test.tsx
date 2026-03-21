@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from 'bun:test';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '../../test/helpers/render';
 
 const ACCOUNT_ID = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa';
