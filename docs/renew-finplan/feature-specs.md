@@ -14,8 +14,8 @@ The primary view of the app. Users land here by default. It is the only page mos
 ┌─────────────────────────────────────────────────────────────────┐
 │  finplan          Overview  Wealth  Planner  Settings    Josh ▾ │
 ├─────────────────────────────────────────────────────────────────┤
-│  Overview                             March 2026   [Review ▸]  │
-│  ◂  Jan 2025 ··· Apr 2025 ··· Jan 2026 ··· [Now]  ▸            │
+│  Overview                             March 2026   [Review ▸]   │
+│  ◂  Jan 2025 ··· Apr 2025 ··· Jan 2026 ··· [Now]  ▸             │
 │       ●               ●              ●                          │
 │   Yr Review       Yr Review      Salary +£200                   │
 ├───────────────────────────┬─────────────────────────────────────┤
@@ -28,7 +28,7 @@ The primary view of the app. Users land here by default. It is the only page mos
 │                           │                                     │
 │  ▼ COMMITTED     £4,817   │                                     │
 │  ├─ Monthly      £4,575   │                                     │
-│  └─ Yearly (÷12)   £242 ⚠│                                     │
+│  └─ Yearly (÷12)   £242 ⚠ │                                     │
 │                           │                                     │
 │  ─────────────────────    │                                     │
 │                           │                                     │
@@ -38,13 +38,13 @@ The primary view of the app. Users land here by default. It is the only page mos
 │  │   ├─ Tandem     £700   │                                     │
 │  │   └─ Trading    £300   │                                     │
 │  ├─ Petrol         £100   │                                     │
-│  └─ ··· 12 more          │                                     │
+│  └─ ··· 12 more           │                                     │
 │                           │                                     │
 │  ─────────────────────    │                                     │
 │                           │                                     │
 │  ▼ SURPLUS         £209   │                                     │
 │  ├─ Unallocated    £209   │                                     │
-│  └─ [Allocate to goal ▸] │                                     │
+│  └─ [Increase savings ▸]  │                                     │
 │                           │                                     │
 └───────────────────────────┴─────────────────────────────────────┘
 ```
@@ -59,6 +59,18 @@ The primary view of the app. Users land here by default. It is the only page mos
 | **Discretionary** | Chosen spending categories (food, petrol, takeaways, etc.) | Savings is a special sub-type here |
 | **Surplus** | Income minus all committed and discretionary | First-class citizen; never buried |
 
+### Income Sources
+
+All income is entered as net (take-home, after tax and deductions). Each source captures: name, net amount, frequency, owner (household member), and — for one-off income — an expected month.
+
+| Frequency | Waterfall treatment |
+|---|---|
+| **Monthly** | Included directly in the monthly income total |
+| **Annual** | Divided by 12; displayed with a ÷12 indicator below the source name, same pattern as Yearly Bills |
+| **One-off** | Not included in the monthly total; shown as a separate entry below regular income sources with a one-off badge and its expected month |
+
+One-off income sources are also visible in the cashflow calendar (Yearly Bills view) as positive entries in the month they are expected.
+
 ### Surplus Indicator
 
 When surplus falls below a configurable threshold (default: 10% of income), a subtle indicator appears with a tooltip:
@@ -66,6 +78,27 @@ When surplus falls below a configurable threshold (default: 10% of income), a su
 > "A monthly surplus of around 10% of income is a common planning benchmark."
 
 This is informational only. No recommendation is made.
+
+### Surplus — Increase Savings Link
+
+The `[Increase savings ▸]` link in the Surplus section selects the Savings row within the Discretionary section of the waterfall, populating the right panel with the savings detail. This guides the user to add or increase a savings allocation — the natural home for unallocated surplus.
+
+### Overview — Empty State
+
+When the waterfall has no data (new household or rebuilt from scratch), the left panel shows:
+
+```
+┌───────────────────────────┬─────────────────────────────────────┐
+│                           │                                     │
+│  Your waterfall is empty. │                                     │
+│                           │                                     │
+│  [ Set up your waterfall  │                                     │
+│    from scratch ▸ ]       │                                     │
+│                           │                                     │
+└───────────────────────────┴─────────────────────────────────────┘
+```
+
+This CTA launches the Waterfall Creation Wizard.
 
 ### Right Panel — Item Detail
 
@@ -78,11 +111,11 @@ Clicking any line item in the waterfall populates the right panel:
 │  Last reviewed: Jan 2026  ✓      │
 │                                  │
 │  History (24 months)             │
-│  £5.2k ┤          ╭──────────   │
+│  £5.2k ┤          ╭──────────    │
 │  £4.9k ┤    ╭─────╯              │
 │  £4.5k ┤────╯                    │
 │                                  │
-│  [ Edit ]   [ Still correct ✓ ] │
+│  [ Edit ]   [ Still correct ✓ ]  │
 └──────────────────────────────────┘
 ```
 
@@ -116,7 +149,7 @@ All values, totals, and history graphs reflect what was true at that snapshot. E
 
 ## 2. Yearly Bills — Cashflow Calendar
 
-Accessible from the Committed — Yearly row in the waterfall (right panel, or dedicated sub-view).
+Accessible from the Committed — Yearly row in the waterfall. When that row is selected, the right panel shows the ÷12 monthly total with a link at the top: **"View cashflow calendar ▸"**. Clicking this replaces the right panel content with the scrollable 12-month calendar. A breadcrumb `← Committed / Yearly Bills` returns to the summary. No full-page navigation is triggered.
 
 ### Purpose
 
@@ -178,10 +211,10 @@ Tracks the household's total financial picture: savings, pensions, investments, 
 │  £258,122            │                                          │
 │  ↑ £14,200 this yr   │                                          │
 │                      │                                          │
-│  By liquidity:       │                                          │
-│  Liquid     £47,311  │                                          │
-│  Semi-liq  £162,922  │                                          │
-│  Illiquid   £47,889  │                                          │
+│  By liquidity:            │                                     │
+│  Cash & Savings  £47,311  │                                     │
+│  Inv. & Pensions £162,922 │                                     │
+│  Property & Veh. £47,889  │                                     │
 │                      │                                          │
 │  ───────────────────  │                                         │
 │                      │                                          │
@@ -204,7 +237,7 @@ Tracks the household's total financial picture: savings, pensions, investments, 
 ### Left Panel
 
 - **Total net worth**: headline figure with year-to-date change
-- **By liquidity**: secondary breakdown (liquid / semi-liquid / illiquid) — analytical only, not navigation
+- **By liquidity**: secondary breakdown (Cash & Savings / Investments & Pensions / Property & Vehicles) — analytical only, not navigation
 - **Asset classes**: Savings, Pensions, Investments, Property, Vehicles, Other — primary navigation
 - **Held on behalf of**: ring-fenced section for trust savings; excluded from net worth
 
@@ -259,6 +292,10 @@ Clicking an account steps one level deeper within the right panel:
 
 "Update valuation" opens a form with two fields: new balance and valuation date (defaults to today, can be set to any past date).
 
+### ISA Allowance Tracking
+
+The ISA allowance bar reflects the combined contributions across all of a person's ISA accounts for the current tax year. It is tracked per person, not per account. Where multiple household members hold ISA accounts, separate allowance bars appear per person (e.g. Josh: £8,400 of £20,000; Cat: £3,200 of £20,000).
+
 ### Nudge Rules (Savings)
 
 | Situation | Nudge? |
@@ -296,12 +333,12 @@ Tracks two types of planned discretionary spending that sit outside the monthly 
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  Planner                                         2026           │
+│  Planner                             ‹ 2025   2026 ›            │
 ├──────────────────────┬──────────────────────────────────────────┤
 │                      │  (right panel — purchase list by default)│
 │  PURCHASES         ● │                                          │
 │  Budget    £6,000    │  ● London Trip        £1,000   In prog   │
-│  Committed £10,110 ⚠ │  ● Kitchen repaint    £2,000   In prog   │
+│  Scheduled £10,110 ⚠ │  ● Kitchen repaint    £2,000   In prog   │
 │  Spent      £5,172   │  ✓ Backdoor           £1,117   Done      │
 │                      │  ● Bay window           £650   In prog   │
 │  ───────────────────  │  ● Network cabling      £800   In prog  │
@@ -325,7 +362,7 @@ Clicking a purchase steps into its detail:
 │  Estimated cost   £1,000                                        │
 │  Priority         Low                                           │
 │  Funding source   Holiday, Outing                               │
-│  Committed        Yes                                           │
+│  Scheduled        Yes                                           │
 │  Spent            £395.75                                       │
 │  Status           In progress                                   │
 │  Reason           Get it in before she starts school            │
@@ -345,54 +382,127 @@ Clicking a purchase steps into its detail:
 | Date added | Date | |
 | Estimated cost | Currency | |
 | Priority | Enum | Lowest / Low / Medium / High |
-| Committed for current year | Boolean | Drives "Estimated cost for year" total |
+| Scheduled for this year | Boolean | Drives "Scheduled cost for year" total |
 | Funding source | Multi-select | Savings, Bonus, Purchasing budget, Holiday budget, etc. |
+| Funding account | Optional | Dropdown of Wealth savings accounts; visible when Funding source includes Savings. If linked, the Wealth page projects a planned withdrawal from that account. |
 | Spent | Currency | Actual amount paid |
 | Status | Enum | Not started / In progress / Done |
 | Reason | Text | Why we want this |
 | Comment | Text | Practical notes (quotes, contacts, bookings) |
 
-Budget summary: manually set yearly budget vs sum of estimated costs where committed = Yes (red if over).
+Budget summary: manually set yearly budget vs sum of estimated costs where scheduled = Yes (red if over).
+
+The year selector (`‹ 2025  2026 ›`) in the Planner header allows viewing previous years. Prior years are read-only.
 
 ### Gifts — Right Panel
 
-Selecting Gifts in the left panel shows a people-and-events grid in the right panel. Birthdays and Christmas are shown as sub-sections. Clicking a person steps into their detail:
+Gifts are organised by **person**. Each person has one or more events assigned to them, each with its own budget and spend. Selecting Gifts in the left panel opens the right panel in the default **Upcoming** view.
+
+#### Right Panel — Upcoming View (Default)
+
+Events are sorted chronologically by upcoming date across all people:
 
 ```
-│  Gifts                                                          │
+│  Gifts                                         [By person ▾]   │
 │  ─────────────────────────────────────────────────────────────  │
-│  Birthdays           £856 spent  /  £1,272 budget              │
-│  Cat      Budget £100   Spent £100  ✓                           │
-│  Josh     Budget £100   Spent £0                                │
-│  LR       Budget £150   Spent £150  ✓                           │
-│  Dex      Budget £160   Spent £160  ✓                           │
-│  Lorraine  Budget £50   Spent £38   ⚠ partial                  │
-│  ··· 20 more                                                    │
+│  Coming up                                                      │
+│  Cat · Birthday       14 Apr   Budget £20    Spent £0    ○     │
+│  LR · Birthday        02 May   Budget £150   Spent £0    ○     │
+│  Josh · Birthday      15 Jun   Budget £100   Spent £0    ○     │
+│  Christmas            25 Dec   Budget £1,128 Spent £324  ○     │
 │                                                                 │
-│  Christmas           £324 spent  /  £1,128 budget              │
-│  Cat      Budget £100   Spent £0                                │
-│  Josh     Budget £100   Spent £0                                │
-│  ··· 20 more                                                    │
-│                                                                 │
-│  Other                                                          │
-│  Mothers Day  Budget £115   Spent £115  ✓                       │
-│  Fathers Day   Budget £50   Spent £0                            │
+│  Done this year                                                 │
+│  Cat · Christmas      ✓        Budget £100   Spent £100        │
+│  Mothers Day          ✓        Budget £115   Spent £115        │
 │                                                                 │
 │  [ + Add person ]                                               │
 ```
 
-### Gifts — Fields per Person
+Clicking any event row navigates to the detail for that person (breadcrumb: `← Gifts / Cat`).
+
+#### Right Panel — By Person View
+
+The "By person" toggle lists people with their combined budget and spend:
+
+```
+│  Gifts                                         [Upcoming ▾]    │
+│  ─────────────────────────────────────────────────────────────  │
+│  Cat        Budget £220   Spent £100  ○                        │
+│  Josh       Budget £100   Spent £0    ○                        │
+│  LR         Budget £150   Spent £0    ○                        │
+│  Dex        Budget £160   Spent £160  ✓                        │
+│  Lorraine   Budget £50    Spent £38   ○                        │
+│  ··· 20 more                                                    │
+│                                                                 │
+│  [ + Add person ]                                               │
+```
+
+#### Right Panel — Person Detail
+
+Clicking a person shows their events:
+
+```
+│  ← Gifts / Cat                                                 │
+│  ─────────────────────────────────────────────────────────────  │
+│  Birthday     14 Apr    Budget £20    Spent £0     ○           │
+│  Christmas    25 Dec    Budget £100   Spent £100   ✓           │
+│                                                                 │
+│  Total  Budget £120   Spent £100                               │
+│                                                                 │
+│  Notes:                                                         │
+│                                                                 │
+│  [ + Add event ]   [ Edit person ]                             │
+```
+
+Clicking an event row expands it inline (budget, spent, notes). No additional panel depth is used.
+
+#### Status Indicators
+
+| Symbol | Meaning |
+|---|---|
+| ✓ | Spent ≥ budget (complete) |
+| ○ | Upcoming or partially spent (neutral) |
+| ⚠ | Over budget (spent > budget) |
+
+#### Gifts — Event Types
+
+When adding an event to a person, the event type is selected from a predefined list or defined as custom.
+
+**Predefined (recurring annually):**
+
+| Event | Date |
+|---|---|
+| Birthday | User sets day and month |
+| Christmas | Fixed: 25 December |
+| Mother's Day | UK date, auto-calculated annually |
+| Father's Day | UK date, auto-calculated annually |
+| Valentine's Day | Fixed: 14 February |
+| Anniversary | User sets day and month |
+
+**Custom:**
+- User-defined name
+- Recurrence: **Annual** (user sets day and month) or **One-off** (user sets specific date)
+- Examples: Graduation, Wedding, New Baby
+
+#### Gifts — Fields per Person
 
 | Field | Notes |
 |---|---|
 | Name | |
-| Birthday budget | |
-| Birthday spent | Highlighted green when spent ≥ budget |
-| Christmas budget | |
-| Christmas spent | |
-| Notes | Optional free text |
+| Notes | Optional free text about this person |
 
-Annual gift budget is a single manually-set figure. Estimated total is the sum of all birthday + Christmas budgets + Other events.
+#### Gifts — Fields per Event
+
+| Field | Notes |
+|---|---|
+| Event type | Predefined or Custom (with name) |
+| Date | Day/month for annual events; full date for one-off custom events |
+| Recurrence | Annual or One-off (custom events only) |
+| Budget | |
+| Spent | |
+| Notes | Optional |
+
+Annual gift budget is a single manually-set figure. Estimated total is the sum of all event budgets for the current year (one-off events included only if they fall within the year).
 
 ---
 
@@ -410,8 +520,8 @@ Walk the user through every section of the waterfall, surface stale items, and c
 ┌─────────────────────────────────────────────────────────────────┐
 │  Annual Review — March 2026                           [✕ Exit]  │
 │                                                                 │
-│  ●────────●────────○────────○────────○                          │
-│  Income  Bills  Yearly  Discret.  Summary                       │
+│  ●────────●────────○────────○────────○────────○                  │
+│  Income  Bills  Yearly  Discret.   Wealth  Summary              │
 ├─────────────────────────────────────────────────────────────────┤
 │  (step content)                                                 │
 └─────────────────────────────────────────────────────────────────┘
@@ -423,7 +533,8 @@ Walk the user through every section of the waterfall, surface stale items, and c
 **Step 2 — Monthly Bills**
 **Step 3 — Yearly Bills**
 **Step 4 — Discretionary**
-**Step 5 — Summary**
+**Step 5 — Wealth**
+**Step 6 — Summary**
 
 Within each step, items are shown as cards. Stale items appear first, with their age clearly displayed. For each item, two actions are available:
 
@@ -432,7 +543,7 @@ Within each step, items are shown as cards. Stale items appear first, with their
 │  Cat Salary                                    ⚠ 14 months     │
 │  £3,708 / month · Last reviewed: Jan 2025                      │
 │                                                                 │
-│                    [ ✓ Still correct ]   [ Update ]            │
+│                    [ Update ]   [ Still correct ✓ ]            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -445,7 +556,25 @@ Items that are not stale are shown below stale items, condensed, with a "confirm
 
 The wizard can be exited at any time. Partial progress is saved. On re-entry, the wizard resumes from the last incomplete step. Items already confirmed in the session retain their confirmed state.
 
-### Step 5 — Summary
+### Step 5 — Wealth
+
+Surfaces stale Wealth valuations across all asset classes. Uses the same card format:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Tandem ISA                                    ⚠ 14 months     │
+│  £17,300 · Last updated: Jan 2025                               │
+│                                                                 │
+│          [ Update valuation ]   [ Still correct ✓ ]            │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+- **Still correct**: confirms the valuation as current; resets the staleness clock
+- **Update valuation**: expands an inline form (new balance, valuation date)
+
+Stale accounts appear first. Accounts with no staleness are shown condensed with a "confirm all remaining" shortcut.
+
+### Step 6 — Summary
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -480,8 +609,13 @@ The snapshot name is pre-populated with the month and year. It is editable. Savi
 | 1 January each year | Automatic snapshot: "January [Year] — Auto" |
 | Review Wizard completed | Named snapshot with user-editable name |
 | Significant value change | Prompt: "Save a snapshot before updating?" |
+| Manual | User can save a snapshot at any time via a `[+ Save snapshot]` control adjacent to the timeline navigator on the Overview page. The name field is pre-populated with the current month and year, and is editable before saving. |
 
 A "significant value change" is any change to income sources or the mortgage/primary housing cost.
+
+### Naming Rules
+
+Snapshot names must be unique within a household. If a user enters a name already in use, the save field highlights with: *"A snapshot with this name already exists — choose a different name."* Auto-generated names (e.g. "January 2026 — Auto") are reserved and cannot be duplicated by user-created snapshots.
 
 ### Timeline Navigator
 
@@ -498,43 +632,13 @@ A "significant value change" is any change to income sources or the mortgage/pri
 
 ### Per-Item History
 
-Independent of snapshots. Every line item in the waterfall and every account on the Wealth page maintains a complete history of values with dates. This history is always visible in the right panel detail view, regardless of whether the user is in snapshot mode.
+Independent of snapshots. Every line item in the waterfall and every account on the Wealth page maintains a complete history of values with dates. The history graph always shows the full all-time record — it is never truncated in snapshot mode. When viewing a snapshot, the headline value in the right panel reflects the snapshot date, and a vertical marker on the graph indicates that date for orientation.
 
 ---
 
 ## 7. Mobile Experience
 
-### Layout
-
-On mobile, the two-panel layout collapses to a single column of summary cards:
-
-```
-┌─────────────────────┐
-│  finplan       Josh │
-├─────────────────────┤
-│  March 2026         │
-│                     │
-│  INCOME      £8,856 │ ▸
-│  COMMITTED   £4,817 │ ▸  ⚠
-│  DISCRETIONARY      │
-│              £3,830 │ ▸
-│  SURPLUS       £209 │ ▸
-└─────────────────────┘
-```
-
-Tapping a card expands it to show the line items within that section. Tapping a line item opens a full-screen edit sheet with a number pad for quick value entry.
-
-### Mobile Use Cases
-
-Mobile is optimised for:
-- Quick value updates ("this bill just went up by £3")
-- Spot checks ("what is my current surplus?")
-- Staleness acknowledgement ("still correct" on a single item)
-
-Mobile is **not** designed for:
-- Initial setup
-- The Review Wizard (desktop only)
-- Deep analysis or forecasting
+Not yet designed. See `backlog.md`.
 
 ---
 
@@ -551,3 +655,93 @@ Accessible via the top nav. Contains configuration that applies across the app.
 | **Household** | Manage members, roles, and invitations |
 | **Snapshot management** | View, rename, and delete snapshots |
 | **Trust accounts** | Manage "held on behalf of" names |
+| **Waterfall** | "Rebuild waterfall from scratch" — launches the Waterfall Creation Wizard after confirmation |
+
+---
+
+## 9. Waterfall Creation Wizard
+
+A guided full-screen setup wizard for new users or users rebuilding from scratch. Full-screen; exempt from the two-panel layout rule.
+
+### Entry Points
+
+- **Overview empty state**: CTA "Set up your waterfall from scratch ▸" when the waterfall has no data
+- **Settings → Waterfall**: "Rebuild waterfall from scratch" — requires confirmation before clearing existing data
+
+### Layout
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Waterfall Setup                                      [✕ Exit]  │
+│                                                                 │
+│  ○────────○────────○────────○────────○────────○────────○        │
+│  Household Income  Bills  Yearly  Discret. Savings  Summary     │
+├─────────────────────────────────────────────────────────────────┤
+│  (step content)                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Steps
+
+**Step 1 — Household**: Confirm or add household members and their roles.
+
+**Step 2 — Income**: Add income sources per person (salary, freelance, rental, etc.). Each source captures: name, amount, frequency, and owner.
+
+**Step 3 — Monthly Bills**: Add fixed committed outgoings (mortgage, subscriptions, phone, etc.).
+
+**Step 4 — Yearly Bills**: Add annual bills with due months. The ÷12 monthly contribution is calculated automatically.
+
+**Step 5 — Discretionary**: Add spending categories and monthly budgets (food, petrol, takeaways, etc.).
+
+**Step 6 — Savings**: Set savings allocations within Discretionary, and optionally link each allocation to a Wealth account.
+
+**Step 7 — Summary**: Review the completed waterfall showing all layers and the resulting surplus. Option to save an opening snapshot named "Initial setup — [Month Year]" (editable).
+
+### Exit and Resume
+
+The wizard can be exited at any time. Partial progress is saved per step. On re-entry, the wizard resumes from where it left off. Saving is not required to preserve entered data within a session.
+
+---
+
+## 10. Household Management
+
+Accessible via Settings → Household, and via the household switcher in the top navigation bar.
+
+### Roles
+
+| Role | Capabilities |
+|---|---|
+| **Owner** | View and edit all financial data; rename the household; invite and remove members; cancel and regenerate invites |
+| **Member** | View and edit all financial data; cannot manage members or invites |
+
+### Household Switcher
+
+A dropdown in the top navigation bar lists all households the user belongs to. Selecting a household sets it as the active household; all pages immediately reflect that household's data.
+
+### Creating a Household
+
+Any user can create a new household from Settings. The creator becomes the owner. New households start with an empty waterfall, wealth picture, and planner.
+
+### Inviting Members
+
+Owners invite members by email address. The system generates a single-use invite link (valid for 24 hours) and displays it as both a QR code and a copyable URL. No email is sent by the app — the owner shares the link manually.
+
+**New users** (no FinPlan account): click the invite link to create an account and join the household in a single flow. The email used to register must match the invited email.
+
+**Existing users**: click the invite link and confirm joining. Their account email must match the invited address.
+
+Pending invites are visible in household settings. Owners can cancel a pending invite or regenerate it (creates a new 24-hour link). Duplicate active invites to the same address are prevented.
+
+Rate limit: 5 invites per hour per household.
+
+### Removing Members
+
+Owners can remove a member from the household. Removed members lose access immediately. Owners cannot remove themselves.
+
+### Renaming a Household
+
+Owners can rename the household from Settings → Household.
+
+### Leaving a Household
+
+Members can leave a household at any time. Owners cannot leave while they are the sole owner. Ownership transfer and household deletion are not yet implemented.
