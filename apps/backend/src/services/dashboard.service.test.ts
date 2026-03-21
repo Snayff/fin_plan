@@ -108,43 +108,115 @@ describe("dashboardService.getNetWorthTrend", () => {
     expect(result).toEqual([]);
   });
 
-  it("returns monthly data points with correct structure", async () => {
+  it("returns monthly data points with correct structure and net worth calculation", async () => {
     prismaMock.account.findMany.mockResolvedValue([buildAccount({ id: "acc-1" })]);
 
-    const { calculateAccountBalances } = await import("../utils/balance.utils");
-    (calculateAccountBalances as any).mockResolvedValue(new Map([["acc-1", 5000]]));
+    // Single batch: all transactions across all months
+    prismaMock.transaction.findMany.mockResolvedValue([
+      buildTransaction({ accountId: "acc-1", amount: 5000, type: "income", date: new Date("2025-01-01") }),
+      buildTransaction({ accountId: "acc-1", amount: 1000, type: "expense", date: new Date("2025-01-15") }),
+    ]);
 
-    prismaMock.asset.aggregate.mockResolvedValue({ _sum: { currentValue: 100000 } });
-    prismaMock.liability.aggregate.mockResolvedValue({ _sum: { currentBalance: 50000 } });
+    // Single batch: all assets
+    prismaMock.asset.findMany.mockResolvedValue([
+      { currentValue: 100000, purchaseDate: new Date("2020-01-01"), createdAt: new Date("2026-01-01") },
+    ]);
+
+    // Single batch: all liabilities
+    prismaMock.liability.findMany.mockResolvedValue([
+      { currentBalance: 50000, openDate: new Date("2020-01-01") },
+    ]);
 
     const result = await dashboardService.getNetWorthTrend("user-1", 3);
 
-    expect(result.length).toBeGreaterThan(0);
+    expect(result.length).toBe(4); // months=3 → 3 past months + current month
     expect(result[0]).toHaveProperty("month");
     expect(result[0]).toHaveProperty("cash");
     expect(result[0]).toHaveProperty("balance");
     expect(result[0]).toHaveProperty("assets");
     expect(result[0]).toHaveProperty("liabilities");
     expect(result[0]).toHaveProperty("netWorth");
-    expect(result[0].netWorth).toBe((result[0].cash || 0) + (result[0].assets || 0) - (result[0].liabilities || 0));
+
+    // The last snapshot covers all transactions — cash must be income - expense = 5000 - 1000 = 4000
+    const last = result[result.length - 1];
+    expect(last.cash).toBe(4000);
+    expect(last.assets).toBe(100000);
+    expect(last.liabilities).toBe(50000);
+    expect(last.netWorth).toBe(54000); // 4000 + 100000 - 50000
+
+    // netWorth must equal cash + assets - liabilities for every point
+    for (const point of result) {
+      expect(point.netWorth).toBe(
+        (point.cash ?? 0) + (point.assets ?? 0) - (point.liabilities ?? 0)
+      );
+    }
+  });
+
+  it("includes assets by purchaseDate not createdAt", async () => {
+    prismaMock.account.findMany.mockResolvedValue([buildAccount({ id: "acc-1" })]);
+    prismaMock.transaction.findMany.mockResolvedValue([]);
+
+    // Asset purchased in 2020 but added to the app today — should appear in all historical months
+    prismaMock.asset.findMany.mockResolvedValue([
+      { currentValue: 200000, purchaseDate: new Date("2020-01-01"), createdAt: new Date() },
+    ]);
+    prismaMock.liability.findMany.mockResolvedValue([]);
+
+    const result = await dashboardService.getNetWorthTrend("user-1", 3);
+
+    // All months should include the asset
+    for (const point of result) {
+      expect(point.assets).toBe(200000);
+    }
   });
 });
 
 describe("dashboardService.getIncomeExpenseTrend", () => {
-  it("groups transactions by month", async () => {
-    prismaMock.transaction.findMany.mockResolvedValue([
-      buildTransaction({ date: new Date("2025-01-15"), amount: 1000, type: "income" }),
-      buildTransaction({ date: new Date("2025-01-20"), amount: 500, type: "expense" }),
-      buildTransaction({ date: new Date("2025-02-10"), amount: 2000, type: "income" }),
+  it("groups transactions by month using DB aggregation", async () => {
+    // $queryRaw returns pre-aggregated rows — one row per month per type
+    prismaMock.$queryRaw.mockResolvedValue([
+      { month: "2025-01", type: "income", total: "1000" },
+      { month: "2025-01", type: "expense", total: "500" },
+      { month: "2025-02", type: "income", total: "2000" },
     ]);
 
     const result = await dashboardService.getIncomeExpenseTrend("user-1", 6);
 
     expect(result.length).toBeGreaterThanOrEqual(2);
+
     const jan = result.find((d) => d.month === "2025-01");
     expect(jan).toBeDefined();
     expect(jan!.income).toBe(1000);
     expect(jan!.expense).toBe(500);
     expect(jan!.net).toBe(500);
+
+    const feb = result.find((d) => d.month === "2025-02");
+    expect(feb).toBeDefined();
+    expect(feb!.income).toBe(2000);
+    expect(feb!.expense).toBe(0);
+  });
+
+  it("returns empty array when no transactions", async () => {
+    prismaMock.$queryRaw.mockResolvedValue([]);
+    const result = await dashboardService.getIncomeExpenseTrend("user-1", 6);
+    expect(result).toEqual([]);
+  });
+
+  it("excludes transfer transactions from the trend", async () => {
+    // Simulate a DB that correctly excluded transfers at query time
+    // (i.e., returns no rows for months with only transfers)
+    prismaMock.$queryRaw.mockResolvedValue([
+      { month: "2025-03", type: "income", total: "500" },
+      // no transfer row — SQL WHERE clause filtered it before returning
+    ]);
+
+    const result = await dashboardService.getIncomeExpenseTrend("user-1", 6);
+
+    const mar = result.find((d) => d.month === "2025-03");
+    expect(mar).toBeDefined();
+    expect(mar!.income).toBe(500);
+    expect(mar!.expense).toBe(0);
+    // No transfer field on the result
+    expect(mar).not.toHaveProperty("transfer");
   });
 });

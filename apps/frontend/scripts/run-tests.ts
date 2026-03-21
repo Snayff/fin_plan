@@ -8,6 +8,7 @@
 
 import { Glob } from "bun";
 
+const preload = "./src/test/setup.ts";
 const testDir = "src";
 
 const glob = new Glob("**/*.test.{ts,tsx}");
@@ -34,11 +35,14 @@ const failures: string[] = [];
 
 for (const file of filesToRun) {
   const filePath = `${testDir}/${file}`;
-  const proc = Bun.spawn(["bun", "test", ...(coverage ? ["--coverage"] : []), filePath], {
+  const proc = Bun.spawn(
+    ["bun", "test", ...(coverage ? ["--coverage"] : []), "--preload", preload, filePath],
+    {
     stdout: "inherit",
     stderr: "inherit",
     env: process.env,
-  });
+    }
+  );
 
   const exitCode = await proc.exited;
 

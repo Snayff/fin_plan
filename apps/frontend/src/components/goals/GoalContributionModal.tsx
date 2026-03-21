@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createGoalContributionSchema } from '@finplan/shared';
 import { goalService } from '../../services/goal.service';
+import { showError } from '../../lib/toast';
 import type { EnhancedGoal, CreateGoalContributionInput } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
@@ -23,6 +25,7 @@ export default function GoalContributionModal({
     date: new Date().toISOString().split('T')[0],
     notes: '',
   });
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const addContributionMutation = useMutation({
     mutationFn: (data: CreateGoalContributionInput) =>
@@ -32,15 +35,33 @@ export default function GoalContributionModal({
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
       onSuccess?.();
     },
+    onError: (error: Error) => {
+      showError(error.message || 'Failed to add contribution');
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+
     const submitData: CreateGoalContributionInput = {
       amount: Number(formData.amount),
       date: formData.date,
       notes: formData.notes || undefined,
     };
+
+    const result = createGoalContributionSchema.safeParse(submitData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0] ?? 'form');
+        if (!errors[key]) errors[key] = issue.message;
+      }
+      setFormErrors(errors);
+      showError('Please fix the errors below.');
+      return;
+    }
+
     addContributionMutation.mutate(submitData);
   };
 
@@ -96,6 +117,9 @@ export default function GoalContributionModal({
             placeholder="0.00"
           />
         </div>
+        {formErrors.amount && (
+          <p className="text-sm text-destructive mt-1">{formErrors.amount}</p>
+        )}
         <p className="text-xs text-muted-foreground">
           Quick fill: Remaining amount is £{remaining.toFixed(2)}
         </p>
@@ -118,6 +142,9 @@ export default function GoalContributionModal({
           value={formData.date}
           onChange={(e) => setFormData({ ...formData, date: e.target.value })}
         />
+        {formErrors.date && (
+          <p className="text-sm text-destructive mt-1">{formErrors.date}</p>
+        )}
       </div>
 
       <div className="space-y-2">

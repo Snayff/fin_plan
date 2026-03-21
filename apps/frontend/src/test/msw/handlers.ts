@@ -402,7 +402,22 @@ export const householdHandlers = [
   }),
   http.post('/api/households/:id/invite', ({ request }) => {
     const err = requireAuth(request);
-    return err ?? HttpResponse.json({ success: true }, { status: 201 });
+    return err ?? HttpResponse.json({ token: 'mock-invite-token', invitedEmail: 'invitee@example.com' }, { status: 201 });
+  }),
+  http.get('/api/auth/invite/:token', () =>
+    HttpResponse.json({
+      householdId: 'household-1',
+      householdName: 'My Household',
+      emailRequired: true,
+      maskedInvitedEmail: 'i******@example.com',
+    })
+  ),
+  http.post('/api/auth/invite/:token/accept', () =>
+    HttpResponse.json({ user: mockUser, accessToken: 'test-token' }, { status: 201 })
+  ),
+  http.post('/api/auth/invite/:token/join', ({ request }) => {
+    const err = requireAuth(request);
+    return err ?? HttpResponse.json({ household: mockHousehold });
   }),
   http.delete('/api/households/:id/members/:memberId', ({ request }) => {
     const err = requireAuth(request);

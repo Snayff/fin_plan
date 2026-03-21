@@ -8,8 +8,8 @@ export const renameHouseholdSchema = z.object({
   name: z.string().min(1, 'Household name is required'),
 });
 
-export const inviteMemberSchema = z.object({
-  email: z.string().email('A valid email address is required'),
+export const createHouseholdInviteSchema = z.object({
+  email: z.string().trim().email('A valid email address is required'),
 });
 
 export const acceptInviteSchema = z.object({
@@ -20,5 +20,5 @@ export const acceptInviteSchema = z.object({
 
 export type CreateHouseholdInput = z.infer<typeof createHouseholdSchema>;
 export type RenameHouseholdInput = z.infer<typeof renameHouseholdSchema>;
-export type InviteMemberInput = z.infer<typeof inviteMemberSchema>;
+export type CreateHouseholdInviteInput = z.infer<typeof createHouseholdInviteSchema>;
 export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>;

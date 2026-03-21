@@ -11,10 +11,6 @@ mock.module("../config/database", () => ({
   prisma: prismaMock,
 }));
 
-mock.module("./email.service", () => ({
-  sendInviteEmail: mock(() => Promise.resolve()),
-}));
-
 // JWT utils used by acceptInvite
 mock.module("../utils/jwt", () => ({
   generateAccessToken: mock(() => "access-token"),
@@ -304,5 +300,89 @@ describe("householdService.validateInviteToken", () => {
     await expect(
       householdService.validateInviteToken("expired-token")
     ).rejects.toThrow(ValidationError);
+  });
+});
+
+describe("householdService.inviteMember", () => {
+  it("stores normalized invite email when provided", async () => {
+    const owner = buildUser();
+    const household = buildHousehold();
+    const ownerMember = buildHouseholdMember({
+      householdId: household.id,
+      userId: owner.id,
+      role: "owner",
+    });
+
+    prismaMock.householdMember.findUnique.mockResolvedValue(ownerMember);
+    prismaMock.household.findUnique.mockResolvedValue(household);
+    prismaMock.householdMember.findFirst.mockResolvedValue(null);
+    prismaMock.householdInvite.findFirst.mockResolvedValue(null);
+    prismaMock.householdInvite.create.mockResolvedValue(buildHouseholdInvite({ email: 'invitee@test.com' }));
+
+    const result = await householdService.inviteMember(household.id, owner.id, ' Invitee@Test.com ');
+
+    expect(prismaMock.householdInvite.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          householdId: household.id,
+          email: 'invitee@test.com',
+          createdByUserId: owner.id,
+        }),
+      })
+    );
+    expect(result.email).toBe('invitee@test.com');
+  });
+
+  it("rejects invite when email already belongs to a household member", async () => {
+    const owner = buildUser();
+    const household = buildHousehold();
+    const ownerMember = buildHouseholdMember({
+      householdId: household.id,
+      userId: owner.id,
+      role: "owner",
+    });
+
+    prismaMock.householdMember.findUnique.mockResolvedValue(ownerMember);
+    prismaMock.household.findUnique.mockResolvedValue(household);
+    prismaMock.householdMember.findFirst.mockResolvedValue(buildHouseholdMember({ userId: 'member-2' }));
+
+    await expect(
+      householdService.inviteMember(household.id, owner.id, 'member@example.com')
+    ).rejects.toThrow(ConflictError);
+  });
+});
+
+describe("householdService.acceptInvite", () => {
+  it("rejects new-user signup when email does not match email-bound invite", async () => {
+    const invite = buildHouseholdInvite({
+      email: 'invitee@example.com',
+      household: { id: 'household-1', name: 'Test Household' },
+    });
+
+    prismaMock.householdInvite.findUnique.mockResolvedValue(invite);
+
+    await expect(
+      householdService.acceptInvite('valid-token', {
+        name: 'Alice',
+        email: 'other@example.com',
+        password: 'verysecure123',
+      })
+    ).rejects.toThrow(ValidationError);
+  });
+});
+
+describe("householdService.joinViaInvite", () => {
+  it("rejects existing user when account email does not match email-bound invite", async () => {
+    const invite = buildHouseholdInvite({
+      email: 'invitee@example.com',
+      household: { id: 'household-1', name: 'Test Household' },
+    });
+
+    prismaMock.householdInvite.findUnique.mockResolvedValue(invite);
+    prismaMock.user.findUnique.mockResolvedValue(buildUser({ id: 'user-1', email: 'wrong@example.com' }));
+
+    await expect(householdService.joinViaInvite('valid-token', 'user-1')).rejects.toThrow(
+      ValidationError
+    );
   });
 });

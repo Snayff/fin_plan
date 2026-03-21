@@ -3,6 +3,15 @@ import { householdService } from '../services/household.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import { acceptInviteSchema } from '@finplan/shared';
 
+function maskInviteEmail(email: string): string {
+  const atIndex = email.indexOf('@');
+  const localPart = atIndex >= 0 ? email.slice(0, atIndex) : email;
+  const domain = atIndex >= 0 ? email.slice(atIndex + 1) : '';
+  const visibleLocal = localPart.slice(0, 1);
+  const maskedLocal = `${visibleLocal}${'*'.repeat(Math.max(2, localPart.length - 1))}`;
+  return `${maskedLocal}@${domain}`;
+}
+
 export async function inviteRoutes(fastify: FastifyInstance) {
   // Validate an invite token — returns household name and invited email
   // No auth required (used to show invite landing page before signup)
@@ -14,7 +23,8 @@ export async function inviteRoutes(fastify: FastifyInstance) {
       return reply.send({
         householdId: invite.householdId,
         householdName: invite.household.name,
-        email: invite.email,
+        emailRequired: Boolean(invite.email),
+        maskedInvitedEmail: invite.email ? maskInviteEmail(invite.email) : null,
       });
     }
   );

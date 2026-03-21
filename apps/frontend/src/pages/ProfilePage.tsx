@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { QRCodeSVG } from 'qrcode.react';
 import { useAuthStore } from '../stores/authStore';
 import { authService } from '../services/auth.service';
 import { householdService } from '../services/household.service';
+import { createHouseholdInviteSchema } from '@finplan/shared';
 import { showSuccess, showError } from '../lib/toast';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -11,6 +13,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Badge } from '../components/ui/badge';
 import { Skeleton } from '../components/ui/skeleton';
+import Modal from '../components/ui/Modal';
 
 export default function ProfilePage() {
   const queryClient = useQueryClient();
@@ -23,8 +26,11 @@ export default function ProfilePage() {
   // Household tab — rename state
   const [renameValue, setRenameValue] = useState('');
 
-  // Household tab — invite state
+  // Household tab — invite modal state
+  const [inviteToken, setInviteToken] = useState<string | null>(null);
   const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRestrictionText, setInviteRestrictionText] = useState<string | null>(null);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
   // Household tab — create new household state
   const [newHouseholdName, setNewHouseholdName] = useState('');
@@ -80,13 +86,27 @@ export default function ProfilePage() {
   });
 
   const inviteMutation = useMutation({
-    mutationFn: (email: string) => householdService.inviteMember(activeHouseholdId!, email),
-    onSuccess: () => {
+    mutationFn: () => householdService.inviteMember(activeHouseholdId!, inviteEmail.trim()),
+    onSuccess: ({ token, invitedEmail }) => {
       queryClient.invalidateQueries({ queryKey: ['household-details', activeHouseholdId] });
-      showSuccess('Invite sent!');
+      setInviteToken(token);
+      setInviteRestrictionText(invitedEmail ?? null);
       setInviteEmail('');
+      setShowInviteModal(true);
     },
-    onError: (err: Error) => showError(err.message || 'Failed to send invite'),
+    onError: (err: Error) => showError(err.message || 'Failed to generate invite'),
+  });
+
+  const regenerateInviteMutation = useMutation({
+    mutationFn: (invite: { id: string; email: string }) =>
+      householdService.regenerateInvite(activeHouseholdId!, invite.id, invite.email),
+    onSuccess: ({ token, invitedEmail }) => {
+      queryClient.invalidateQueries({ queryKey: ['household-details', activeHouseholdId] });
+      setInviteToken(token);
+      setInviteRestrictionText(invitedEmail ?? null);
+      setShowInviteModal(true);
+    },
+    onError: (err: Error) => showError(err.message || 'Failed to regenerate invite'),
   });
 
   const removeMemberMutation = useMutation({
@@ -139,13 +159,6 @@ export default function ProfilePage() {
     const trimmed = renameValue.trim();
     if (!trimmed || trimmed === household?.name) return;
     renameMutation.mutate(trimmed);
-  };
-
-  const handleInviteSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmed = inviteEmail.trim();
-    if (!trimmed) return;
-    inviteMutation.mutate(trimmed);
   };
 
   const handleCreateHousehold = (e: React.FormEvent) => {
@@ -323,21 +336,41 @@ export default function ProfilePage() {
                 <CardTitle>Invite to Household</CardTitle>
               </CardHeader>
               <CardContent className="pt-0 space-y-4">
-                <form onSubmit={handleInviteSubmit} className="flex items-center gap-3">
+                <div className="space-y-2 max-w-sm">
+                  <Label htmlFor="invite-email">Email For New User</Label>
                   <Input
+                    id="invite-email"
                     type="email"
                     value={inviteEmail}
                     onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="Email address"
-                    className="max-w-sm"
+                    placeholder="jane@example.com"
                   />
-                  <Button
-                    type="submit"
-                    disabled={inviteMutation.isPending || !inviteEmail.trim()}
-                  >
-                    {inviteMutation.isPending ? 'Sending...' : 'Send Invite'}
-                  </Button>
-                </form>
+                  <p className="text-xs text-muted-foreground">
+                    Enter the email address of the person you want to invite.
+                  </p>
+                </div>
+                <Button
+                  onClick={() => {
+                    const result = createHouseholdInviteSchema.safeParse({ email: inviteEmail });
+                    if (!result.success) {
+                      showError(result.error.errors[0]?.message ?? 'Invalid email address');
+                      return;
+                    }
+                    const normalised = inviteEmail.trim().toLowerCase();
+                    if (household?.members.some((m) => m.user.email.toLowerCase() === normalised)) {
+                      showError('This person is already a member of the household');
+                      return;
+                    }
+                    if (household?.invites.some((i) => i.email?.toLowerCase() === normalised)) {
+                      showError('This email already has a pending invite');
+                      return;
+                    }
+                    inviteMutation.mutate();
+                  }}
+                  disabled={inviteMutation.isPending || !inviteEmail.trim()}
+                >
+                  {inviteMutation.isPending ? 'Generating...' : 'Get Invite Link'}
+                </Button>
 
                 <div className="border-t border-border pt-4">
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
@@ -355,20 +388,32 @@ export default function ProfilePage() {
                           className="flex items-center justify-between py-2 border-b border-border last:border-0"
                         >
                           <div>
-                            <p className="text-sm font-medium text-foreground">{invite.email}</p>
+                            <p className="text-sm font-medium text-foreground">
+                              {invite.email}
+                            </p>
                             <p className="text-xs text-muted-foreground">
                               Expires {new Date(invite.expiresAt).toLocaleDateString('en-GB')}
                             </p>
                           </div>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="text-destructive hover:text-destructive hover:bg-destructive-subtle"
-                            onClick={() => cancelInviteMutation.mutate(invite.id)}
-                            disabled={cancelInviteMutation.isPending}
-                          >
-                            Cancel
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => regenerateInviteMutation.mutate(invite)}
+                              disabled={regenerateInviteMutation.isPending}
+                            >
+                              Regenerate
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-destructive hover:text-destructive hover:bg-destructive-subtle"
+                              onClick={() => cancelInviteMutation.mutate(invite.id)}
+                              disabled={cancelInviteMutation.isPending}
+                            >
+                              Cancel
+                            </Button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -376,6 +421,46 @@ export default function ProfilePage() {
                 </div>
               </CardContent>
             </Card>
+          )}
+
+          {/* Invite QR Modal */}
+          {inviteToken && (
+            <Modal
+              isOpen={showInviteModal}
+              onClose={() => {
+                setShowInviteModal(false);
+                setInviteToken(null);
+                setInviteRestrictionText(null);
+              }}
+              title="Share Invite Link"
+            >
+              <div className="flex flex-col items-center gap-4">
+                <p className="text-sm text-muted-foreground text-center">
+                  Share this QR code or copy the link. Expires in 24 hours.
+                </p>
+                {inviteRestrictionText && (
+                  <p className="text-sm text-center text-foreground">
+                    This invite is restricted to <strong>{inviteRestrictionText}</strong>.
+                  </p>
+                )}
+                <QRCodeSVG
+                  value={`${window.location.origin}/accept-invite/${inviteToken}`}
+                  size={200}
+                />
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    navigator.clipboard.writeText(
+                      `${window.location.origin}/accept-invite/${inviteToken}`
+                    );
+                    showSuccess('Link copied!');
+                  }}
+                >
+                  Copy Link
+                </Button>
+              </div>
+            </Modal>
           )}
 
         </TabsContent>

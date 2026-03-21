@@ -112,4 +112,29 @@ describe('BudgetForm', () => {
       expect(showSuccessMock).toHaveBeenCalledWith('Budget updated successfully!');
     });
   });
+
+  it('shows toast error when submitting with no name', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<BudgetForm />);
+
+    fireEvent.change(screen.getByLabelText(/start date/i), { target: { value: '2026-01-01' } });
+    await user.click(screen.getByRole('button', { name: /create budget/i }));
+
+    expect(showErrorMock).toHaveBeenCalledWith('Please fix the errors below.');
+    expect(createBudgetMock).not.toHaveBeenCalled();
+  });
+
+  it('shows toast error when endDate is before startDate (custom period)', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<BudgetForm />);
+
+    fireEvent.change(screen.getByLabelText(/budget name/i), { target: { value: 'Test Budget' } });
+    fireEvent.change(screen.getByLabelText(/period/i), { target: { value: 'custom' } });
+    fireEvent.change(screen.getByLabelText(/start date/i), { target: { value: '2026-06-01' } });
+    fireEvent.change(screen.getByLabelText(/end date/i), { target: { value: '2026-01-01' } });
+    await user.click(screen.getByRole('button', { name: /create budget/i }));
+
+    expect(showErrorMock).toHaveBeenCalledWith('Please fix the errors below.');
+    expect(createBudgetMock).not.toHaveBeenCalled();
+  });
 });

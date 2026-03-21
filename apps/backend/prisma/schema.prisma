@@ -76,7 +76,6 @@ model HouseholdInvite {
   createdBy       User      @relation(fields: [createdByUserId], references: [id])
 
   @@index([householdId])
-  @@index([email])
   @@map("household_invites")
 }
 
@@ -181,6 +180,7 @@ model Transaction {
   @@index([householdId, date])
   @@index([householdId, categoryId, date])
   @@index([recurringRuleId, date])
+  @@index([accountId, date])
   @@map("transactions")
 }
 

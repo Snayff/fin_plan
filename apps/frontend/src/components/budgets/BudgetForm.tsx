@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { addMonths, format, subDays } from 'date-fns';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createBudgetSchema } from '@finplan/shared';
 import { budgetService } from '../../services/budget.service';
 import { showError, showSuccess } from '../../lib/toast';
 import type { BudgetPeriod, CreateBudgetInput, UpdateBudgetInput } from '../../types';
@@ -138,48 +139,8 @@ export default function BudgetForm({ budget, onSuccess, onCancel }: BudgetFormPr
     setErrors((prev) => ({ ...prev, startDate: undefined, endDate: undefined }));
   };
 
-  const validateForm = (): boolean => {
-    const nextErrors: BudgetFormErrors = {};
-
-    if (!formData.name.trim()) {
-      nextErrors.name = 'Budget name is required';
-    }
-
-    if (!formData.startDate) {
-      nextErrors.startDate = 'Start date is required';
-    }
-
-    if (!formData.endDate) {
-      nextErrors.endDate = 'End date is required';
-    }
-
-    if (formData.startDate && formData.endDate) {
-      const start = new Date(`${formData.startDate}T00:00:00`);
-      const end = new Date(`${formData.endDate}T00:00:00`);
-
-      if (Number.isNaN(start.getTime())) {
-        nextErrors.startDate = 'Please enter a valid start date';
-      }
-
-      if (Number.isNaN(end.getTime())) {
-        nextErrors.endDate = 'Please enter a valid end date';
-      }
-
-      if (!Number.isNaN(start.getTime()) && !Number.isNaN(end.getTime()) && end <= start) {
-        nextErrors.endDate = 'End date must be after start date';
-      }
-    }
-
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (!validateForm()) {
-      return;
-    }
 
     const payload = {
       name: formData.name.trim(),
@@ -187,6 +148,18 @@ export default function BudgetForm({ budget, onSuccess, onCancel }: BudgetFormPr
       startDate: formData.startDate,
       endDate: formData.endDate,
     };
+
+    const result = createBudgetSchema.safeParse(payload);
+    if (!result.success) {
+      const nextErrors: BudgetFormErrors = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0] ?? 'form') as keyof BudgetFormErrors;
+        if (!nextErrors[key]) nextErrors[key] = issue.message;
+      }
+      setErrors(nextErrors);
+      showError('Please fix the errors below.');
+      return;
+    }
 
     if (isEditMode) {
       submitMutation.mutate(payload as UpdateBudgetInput);

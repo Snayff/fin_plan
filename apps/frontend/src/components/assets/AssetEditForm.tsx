@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { updateAssetSchema } from '@finplan/shared';
 import { assetService } from '../../services/asset.service';
 import { liabilityService } from '../../services/liability.service';
 import type { Asset, AssetType, LiquidityType, UpdateAssetInput } from '../../types';
@@ -7,6 +8,7 @@ import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
 import ConfirmDialog from '../ui/ConfirmDialog';
+import { showError } from '../../lib/toast';
 
 interface AssetEditFormProps {
   asset: Asset;
@@ -26,6 +28,7 @@ const ASSET_LIQUIDITY_BY_TYPE: Record<AssetType, LiquidityType> = {
 export default function AssetEditForm({ asset, onSuccess, onCancel }: AssetEditFormProps) {
   const queryClient = useQueryClient();
   const [pendingSubmitData, setPendingSubmitData] = useState<UpdateAssetInput | null>(null);
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: asset.name,
     type: asset.type as AssetType,
@@ -64,10 +67,15 @@ export default function AssetEditForm({ asset, onSuccess, onCancel }: AssetEditF
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
       onSuccess?.();
     },
+    onError: (error: Error) => {
+      showError(error.message || 'Failed to update asset');
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+
     const submitData: UpdateAssetInput = {
       name: formData.name,
       type: formData.type,
@@ -75,6 +83,19 @@ export default function AssetEditForm({ asset, onSuccess, onCancel }: AssetEditF
       purchaseDate: formData.purchaseDate || undefined,
       expectedGrowthRate: formData.expectedGrowthRate,
     };
+
+    const result = updateAssetSchema.safeParse(submitData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0] ?? 'form');
+        if (!errors[key]) errors[key] = issue.message;
+      }
+      setFormErrors(errors);
+      showError('Please fix the errors below.');
+      return;
+    }
+
     const previousLiabilityId = asset.linkedLiability?.id || null;
     const nextLiabilityId = formData.linkedLiabilityId || null;
     if (previousLiabilityId && previousLiabilityId !== nextLiabilityId) {
@@ -98,6 +119,9 @@ export default function AssetEditForm({ asset, onSuccess, onCancel }: AssetEditF
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g., Main Residence, Investment Portfolio"
         />
+        {formErrors.name && (
+          <p className="text-sm text-destructive mt-1">{formErrors.name}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -213,12 +237,6 @@ export default function AssetEditForm({ asset, onSuccess, onCancel }: AssetEditF
           Switching the linked liability will unlink the previous one automatically.
         </p>
       </div>
-
-      {updateMutation.error && (
-        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
-          {(updateMutation.error as Error).message}
-        </div>
-      )}
 
       <div className="flex justify-end space-x-3 pt-4">
         {onCancel && (

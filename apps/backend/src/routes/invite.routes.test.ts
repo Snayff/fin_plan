@@ -39,7 +39,7 @@ const authHeaders = { authorization: 'Bearer valid-token' };
 
 const mockInvite = {
   householdId: 'household-1',
-  email: 'invited@example.com',
+  email: null,
   household: { id: 'household-1', name: 'Smith Family' },
 };
 
@@ -80,7 +80,21 @@ describe('GET /api/auth/invite/:token', () => {
     const body = JSON.parse(res.body);
     expect(body.householdId).toBe('household-1');
     expect(body.householdName).toBe('Smith Family');
-    expect(body.email).toBe('invited@example.com');
+    expect(body.emailRequired).toBe(false);
+    expect(body.maskedInvitedEmail).toBeNull();
+  });
+
+  it('returns masked invite email when token is email-bound', async () => {
+    (householdService.validateInviteToken as any).mockResolvedValue({
+      ...mockInvite,
+      email: 'alice@example.com',
+    });
+
+    const res = await app.inject({ method: 'GET', url: '/api/auth/invite/valid-token' });
+    expect(res.statusCode).toBe(200);
+    const body = JSON.parse(res.body);
+    expect(body.emailRequired).toBe(true);
+    expect(body.maskedInvitedEmail).toBe('a****@example.com');
   });
 
   it('returns 404 when the token does not exist', async () => {

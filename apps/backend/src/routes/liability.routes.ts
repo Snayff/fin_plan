@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { liabilityService } from '../services/liability.service';
+import { cacheService } from '../services/cache.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import {
   createLiabilitySchema,
@@ -21,6 +22,13 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     // Otherwise return basic data
     const liabilities = await liabilityService.getUserLiabilities(householdId);
     return reply.send({ liabilities });
+  });
+
+  // Get liability summary (analytics)
+  fastify.get('/liabilities/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
+    const householdId = request.householdId!;
+    const summary = await liabilityService.getLiabilitySummary(householdId);
+    return reply.send(summary);
   });
 
   // Get single liability by ID
@@ -47,6 +55,7 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     const validatedData = createLiabilitySchema.parse(request.body);
 
     const liability = await liabilityService.createLiability(householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.status(201).send({ liability });
   });
 
@@ -57,6 +66,7 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     const validatedData = updateLiabilitySchema.parse(request.body);
 
     const liability = await liabilityService.updateLiability(id, householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send({ liability });
   });
 
@@ -67,13 +77,7 @@ export async function liabilityRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     const result = await liabilityService.deleteLiability(id, householdId);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send(result);
-  });
-
-  // Get liability summary (analytics)
-  fastify.get('/liabilities/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const householdId = request.householdId!;
-    const summary = await liabilityService.getLiabilitySummary(householdId);
-    return reply.send(summary);
   });
 }

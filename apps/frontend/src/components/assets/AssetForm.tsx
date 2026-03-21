@@ -1,11 +1,13 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createAssetSchema } from '@finplan/shared';
 import { assetService } from '../../services/asset.service';
 import { liabilityService } from '../../services/liability.service';
 import type { AssetType, LiquidityType, CreateAssetInput } from '../../types';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
+import { showError } from '../../lib/toast';
 
 interface AssetFormProps {
   onSuccess?: () => void;
@@ -23,6 +25,7 @@ const ASSET_LIQUIDITY_BY_TYPE: Record<AssetType, LiquidityType> = {
 
 export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
   const queryClient = useQueryClient();
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [formData, setFormData] = useState({
     name: '',
     type: 'investment' as AssetType,
@@ -56,10 +59,15 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
       queryClient.invalidateQueries({ queryKey: ['dashboard-summary'] });
       onSuccess?.();
     },
+    onError: (error: Error) => {
+      showError(error.message || 'Failed to create asset');
+    },
   });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setFormErrors({});
+
     const submitData: CreateAssetInput = {
       name: formData.name,
       type: formData.type,
@@ -68,6 +76,19 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
       purchaseDate: formData.purchaseDate || undefined,
       expectedGrowthRate: formData.expectedGrowthRate,
     };
+
+    const result = createAssetSchema.safeParse(submitData);
+    if (!result.success) {
+      const errors: Record<string, string> = {};
+      for (const issue of result.error.issues) {
+        const key = String(issue.path[0] ?? 'form');
+        if (!errors[key]) errors[key] = issue.message;
+      }
+      setFormErrors(errors);
+      showError('Please fix the errors below.');
+      return;
+    }
+
     createMutation.mutate(submitData);
   };
   const derivedLiquidityType = ASSET_LIQUIDITY_BY_TYPE[formData.type];
@@ -85,6 +106,9 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           placeholder="e.g., Main Residence, Investment Portfolio"
         />
+        {formErrors.name && (
+          <p className="text-sm text-destructive mt-1">{formErrors.name}</p>
+        )}
       </div>
 
       <div className="space-y-2">
@@ -119,6 +143,9 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
             className="pl-8"
             placeholder="0.00"
           />
+          {formErrors.currentValue && (
+            <p className="text-sm text-destructive mt-1">{formErrors.currentValue}</p>
+          )}
         </div>
       </div>
 
@@ -200,12 +227,6 @@ export default function AssetForm({ onSuccess, onCancel }: AssetFormProps) {
           You can link existing liabilities here. Creating a new linked liability is handled from the liability flow.
         </p>
       </div>
-
-      {createMutation.error && (
-        <div className="bg-destructive-subtle border border-destructive text-destructive-foreground px-4 py-3 rounded-md text-sm">
-          {(createMutation.error as Error).message}
-        </div>
-      )}
 
       <div className="flex justify-end space-x-3 pt-4">
         {onCancel && (

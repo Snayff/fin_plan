@@ -1,5 +1,5 @@
 import { prisma } from '../config/database';
-import { calculateAccountBalances } from '../utils/balance.utils';
+import { calculateAccountBalances, endOfDay } from '../utils/balance.utils';
 
 export const dashboardService = {
   /**
@@ -191,71 +191,75 @@ export const dashboardService = {
    */
   async getNetWorthTrend(householdId: string, months: number = 6) {
     const now = new Date();
-    const startDate = new Date();
-    startDate.setMonth(startDate.getMonth() - months);
 
-    // Get all user accounts
     const accounts = await prisma.account.findMany({
       where: { householdId, isActive: true },
       select: { id: true },
     });
 
     const accountIds = accounts.map(a => a.id);
-    
-    // If no accounts, return empty trend data
-    if (accountIds.length === 0) {
-      return [];
-    }
-    
-    // Generate array of month-end dates
+    if (accountIds.length === 0) return [];
+
+    // Generate month-end dates: `months` past months plus the current month
+    // (i.e. months=6 yields 7 data points: 6 completed months + current month-to-date)
     const monthlyDates: Date[] = [];
     for (let i = 0; i <= months; i++) {
-      const date = new Date(now.getFullYear(), now.getMonth() - months + i + 1, 0); // Last day of month
+      const date = new Date(now.getFullYear(), now.getMonth() - months + i + 1, 0);
       monthlyDates.push(date);
     }
 
-    // Calculate balances for each month-end
-    const trendData = await Promise.all(
-      monthlyDates.map(async (date) => {
-        const balances = await calculateAccountBalances(accountIds, date);
-        const totalCash = Array.from(balances.values()).reduce((sum, bal) => sum + bal, 0);
+    const lastDate = monthlyDates[monthlyDates.length - 1]!;
+    const cutoff = endOfDay(lastDate);
 
-        // Get assets created before or on this date
-        const assetAgg = await prisma.asset.aggregate({
-          where: {
-            householdId,
-            createdAt: { lte: date },
-          },
-          _sum: { currentValue: true },
-        });
-        const totalAssets = Number(assetAgg._sum.currentValue) || 0;
+    // 3 queries total regardless of how many months are requested
+    const [allTransactions, allAssets, allLiabilities] = await Promise.all([
+      prisma.transaction.findMany({
+        where: {
+          accountId: { in: accountIds },
+          date: { lte: cutoff },
+        },
+        select: { accountId: true, amount: true, type: true, date: true },
+      }),
+      prisma.asset.findMany({
+        where: { householdId },
+        select: { currentValue: true, purchaseDate: true, createdAt: true },
+      }),
+      prisma.liability.findMany({
+        where: { householdId },
+        select: { currentBalance: true, openDate: true },
+      }),
+    ]);
 
-        // Get liabilities created before or on this date
-        const liabilityAgg = await prisma.liability.aggregate({
-          where: {
-            householdId,
-            createdAt: { lte: date },
-          },
-          _sum: { currentBalance: true },
-        });
-        const totalLiabilities = Number(liabilityAgg._sum.currentBalance) || 0;
+    return monthlyDates.map(date => {
+      const monthCutoff = endOfDay(date);
 
-        // Calculate net worth consistently: cash + assets - liabilities
-        const netWorth = totalCash + totalAssets - totalLiabilities;
+      const cash = allTransactions
+        .filter(t => t.date <= monthCutoff)
+        .reduce((sum, t) => {
+          const amount = Number(t.amount);
+          return sum + (t.type === 'income' ? amount : -amount);
+        }, 0);
 
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        return {
-          month: monthKey,
-          balance: totalCash,
-          cash: totalCash,
-          assets: totalAssets,
-          liabilities: totalLiabilities,
-          netWorth,
-        };
-      })
-    );
+      const totalAssets = allAssets
+        .filter(a => (a.purchaseDate ?? a.createdAt) <= monthCutoff)
+        .reduce((sum, a) => sum + Number(a.currentValue), 0);
 
-    return trendData;
+      const totalLiabilities = allLiabilities
+        .filter(l => l.openDate <= monthCutoff)
+        .reduce((sum, l) => sum + Number(l.currentBalance), 0);
+
+      const netWorth = cash + totalAssets - totalLiabilities;
+      const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+
+      return {
+        month: monthKey,
+        balance: cash,
+        cash,
+        assets: totalAssets,
+        liabilities: totalLiabilities,
+        netWorth,
+      };
+    });
   },
 
   /**
@@ -266,46 +270,44 @@ export const dashboardService = {
     const startDate = new Date();
     startDate.setMonth(startDate.getMonth() - months);
 
-    // Get transactions grouped by month and type
-    const transactions = await prisma.transaction.findMany({
-      where: {
-        householdId,
-        date: {
-          gte: startDate,
-          lte: endDate,
-        },
-      },
-      select: {
-        date: true,
-        amount: true,
-        type: true,
-      },
-    });
+    type RawRow = { month: string; type: string; total: string };
 
-    // Group by month
-    const monthlyData: { [key: string]: { income: number; expense: number } } = {};
+    const rows = await prisma.$queryRaw<RawRow[]>`
+      SELECT
+        TO_CHAR(DATE_TRUNC('month', date), 'YYYY-MM') AS month,
+        type,
+        COALESCE(SUM(amount), 0)::text AS total
+      FROM transactions
+      WHERE household_id = ${householdId}
+        AND type IN ('income', 'expense')
+        AND date >= ${startDate}
+        AND date <= ${endDate}
+      GROUP BY DATE_TRUNC('month', date), type
+      ORDER BY DATE_TRUNC('month', date)
+    `;
 
-    transactions.forEach((t) => {
-      const monthKey = `${t.date.getFullYear()}-${String(t.date.getMonth() + 1).padStart(2, '0')}`;
-      if (!monthlyData[monthKey]) {
-        monthlyData[monthKey] = { income: 0, expense: 0 };
+    const monthlyData: Record<string, { income: number; expense: number }> = {};
+
+    for (const row of rows) {
+      if (!monthlyData[row.month]) {
+        monthlyData[row.month] = { income: 0, expense: 0 };
       }
-
-      if (t.type === 'income') {
-        monthlyData[monthKey].income += Number(t.amount);
+      const entry = monthlyData[row.month]!;
+      const amount = parseFloat(row.total);
+      if (row.type === 'income') {
+        entry.income = amount;
       } else {
-        monthlyData[monthKey].expense += Number(t.amount);
+        entry.expense = amount;
       }
-    });
+    }
 
-    // Convert to array format
-    const trendData = Object.entries(monthlyData).map(([month, data]) => ({
+    // Note: only months with transactions appear in the result — months with no
+    // activity are omitted. Callers should not assume a contiguous date series.
+    return Object.entries(monthlyData).map(([month, data]) => ({
       month,
       income: data.income,
       expense: data.expense,
       net: data.income - data.expense,
     }));
-
-    return trendData.sort((a, b) => a.month.localeCompare(b.month));
   },
 };

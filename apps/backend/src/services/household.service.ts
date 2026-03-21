@@ -13,11 +13,16 @@ import {
   ConflictError,
   ValidationError,
 } from '../utils/errors.js';
-import { sendInviteEmail } from './email.service.js';
 
 const INVITE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 const IDLE_SESSION_MS = 7 * 24 * 60 * 60 * 1000;
 const ABSOLUTE_SESSION_MS = 30 * 24 * 60 * 60 * 1000;
+
+function normalizeEmail(email?: string | null): string | null {
+  if (!email) return null;
+  const normalized = email.trim().toLowerCase();
+  return normalized || null;
+}
 
 function generateInviteToken(): string {
   return randomBytes(32).toString('hex');
@@ -119,22 +124,23 @@ export const householdService = {
   async inviteMember(householdId: string, ownerUserId: string, email: string) {
     await assertOwner(householdId, ownerUserId);
 
-    const household = await prisma.household.findUnique({
-      where: { id: householdId },
-      include: { members: { include: { user: { select: { email: true } } } } },
-    });
+    const household = await prisma.household.findUnique({ where: { id: householdId } });
     if (!household) throw new NotFoundError('Household not found');
 
-    const normalizedEmail = email.toLowerCase();
+    const normalizedEmail = normalizeEmail(email)!;
 
-    // Already a member?
-    const alreadyMember = household.members.some(
-      (m) => m.user.email.toLowerCase() === normalizedEmail
-    );
-    if (alreadyMember) throw new ConflictError('This person is already a member of the household');
+    const existingMember = await prisma.householdMember.findFirst({
+      where: {
+        householdId,
+        user: { email: normalizedEmail },
+      },
+    });
 
-    // Active invite already exists?
-    const existing = await prisma.householdInvite.findFirst({
+    if (existingMember) {
+      throw new ConflictError('A user with this email is already a member of this household');
+    }
+
+    const existingInvite = await prisma.householdInvite.findFirst({
       where: {
         householdId,
         email: normalizedEmail,
@@ -142,7 +148,10 @@ export const householdService = {
         expiresAt: { gt: new Date() },
       },
     });
-    if (existing) throw new ConflictError('An active invitation already exists for this email');
+
+    if (existingInvite) {
+      throw new ConflictError('An active invite already exists for this email');
+    }
 
     const rawToken = generateInviteToken();
     const tokenHash = hashInviteToken(rawToken);
@@ -158,11 +167,7 @@ export const householdService = {
       },
     });
 
-    const inviter = await prisma.user.findUnique({
-      where: { id: ownerUserId },
-      select: { name: true },
-    });
-    await sendInviteEmail(normalizedEmail, household.name, rawToken, inviter?.name ?? 'Someone');
+    return { token: rawToken, email: normalizedEmail };
   },
 
   async cancelInvite(householdId: string, ownerUserId: string, inviteId: string) {
@@ -196,18 +201,19 @@ export const householdService = {
     newUser: { name: string; email: string; password: string }
   ) {
     const invite = await this.validateInviteToken(token);
-
-    if (invite.email !== newUser.email.toLowerCase()) {
-      throw new AuthorizationError('This invitation was sent to a different email address');
-    }
+    const normalizedEmail = normalizeEmail(newUser.email);
 
     // Validate password (mirrors authService rules)
     if (newUser.password.length < 12) {
       throw new ValidationError('Password must be at least 12 characters long');
     }
 
+    if (normalizedEmail !== invite.email) {
+      throw new ValidationError('This invite must be used with the invited email address');
+    }
+
     const existingUser = await prisma.user.findUnique({
-      where: { email: newUser.email.toLowerCase() },
+      where: { email: normalizedEmail! },
     });
     if (existingUser) {
       throw new ConflictError(
@@ -221,7 +227,7 @@ export const householdService = {
     const user = await prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
         data: {
-          email: newUser.email.toLowerCase(),
+          email: normalizedEmail!,
           passwordHash,
           name: newUser.name,
           preferences: {
@@ -289,8 +295,10 @@ export const householdService = {
     const user = await prisma.user.findUnique({ where: { id: existingUserId } });
     if (!user) throw new NotFoundError('User not found');
 
-    if (user.email !== invite.email) {
-      throw new AuthorizationError('This invitation was sent to a different email address');
+    if (normalizeEmail(user.email) !== invite.email) {
+      throw new ValidationError(
+        'This invite is for a different email address. Please sign in with the invited account.'
+      );
     }
 
     const existing = await prisma.householdMember.findUnique({

@@ -83,6 +83,27 @@ describe("createBudgetSchema", () => {
     });
     expect(result.success).toBe(false);
   });
+
+  it("rejects when endDate is before startDate", () => {
+    const result = createBudgetSchema.safeParse({
+      name: "Invalid Budget",
+      period: "monthly",
+      startDate: "2025-01-31",
+      endDate: "2025-01-01",
+    });
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.path).toContain('endDate');
+  });
+
+  it("rejects when endDate equals startDate", () => {
+    const result = createBudgetSchema.safeParse({
+      name: "Same Day Budget",
+      period: "custom",
+      startDate: "2025-06-01",
+      endDate: "2025-06-01",
+    });
+    expect(result.success).toBe(false);
+  });
 });
 
 describe("updateBudgetSchema", () => {

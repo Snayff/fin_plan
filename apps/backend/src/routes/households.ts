@@ -3,8 +3,8 @@ import { householdService } from '../services/household.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import {
   createHouseholdSchema,
+  createHouseholdInviteSchema,
   renameHouseholdSchema,
-  inviteMemberSchema,
 } from '@finplan/shared';
 
 export async function householdRoutes(fastify: FastifyInstance) {
@@ -87,9 +87,9 @@ export async function householdRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user!.userId;
       const { id } = request.params as { id: string };
-      const { email } = inviteMemberSchema.parse(request.body);
-      await householdService.inviteMember(id, userId, email);
-      return reply.status(201).send({ success: true });
+      const { email } = createHouseholdInviteSchema.parse(request.body ?? {});
+      const { token, email: invitedEmail } = await householdService.inviteMember(id, userId, email);
+      return reply.status(201).send({ token, invitedEmail });
     }
   );
 

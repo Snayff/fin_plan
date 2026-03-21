@@ -2,7 +2,7 @@ import { describe, it, expect } from "bun:test";
 import {
   createHouseholdSchema,
   renameHouseholdSchema,
-  inviteMemberSchema,
+  createHouseholdInviteSchema,
   acceptInviteSchema,
 } from "./household.schemas";
 
@@ -40,24 +40,30 @@ describe("renameHouseholdSchema", () => {
   });
 });
 
-describe("inviteMemberSchema", () => {
-  it("accepts valid email", () => {
-    const result = inviteMemberSchema.safeParse({ email: "user@example.com" });
+describe("createHouseholdInviteSchema", () => {
+  it("rejects missing email", () => {
+    const result = createHouseholdInviteSchema.safeParse({});
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts a valid email", () => {
+    const result = createHouseholdInviteSchema.safeParse({ email: "alice@example.com" });
     expect(result.success).toBe(true);
   });
 
-  it("rejects invalid email format", () => {
-    const result = inviteMemberSchema.safeParse({ email: "not-an-email" });
+  it("trims email values", () => {
+    const result = createHouseholdInviteSchema.safeParse({ email: "  alice@example.com  " });
+    expect(result.success).toBe(true);
+    expect(result.data?.email).toBe("alice@example.com");
+  });
+
+  it("rejects blank email", () => {
+    const result = createHouseholdInviteSchema.safeParse({ email: "   " });
     expect(result.success).toBe(false);
   });
 
-  it("rejects empty email", () => {
-    const result = inviteMemberSchema.safeParse({ email: "" });
-    expect(result.success).toBe(false);
-  });
-
-  it("rejects missing email", () => {
-    const result = inviteMemberSchema.safeParse({});
+  it("rejects invalid email", () => {
+    const result = createHouseholdInviteSchema.safeParse({ email: "bad-email" });
     expect(result.success).toBe(false);
   });
 });

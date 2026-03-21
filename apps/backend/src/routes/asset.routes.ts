@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { assetService } from '../services/asset.service';
+import { cacheService } from '../services/cache.service';
 import { authMiddleware } from '../middleware/auth.middleware';
 import {
   createAssetSchema,
@@ -15,6 +16,13 @@ export async function assetRoutes(fastify: FastifyInstance) {
     // Always return enhanced data (with value history) for consistency
     const assets = await assetService.getUserAssetsWithHistory(householdId);
     return reply.send({ assets });
+  });
+
+  // Get asset summary (analytics)
+  fastify.get('/assets/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
+    const householdId = request.householdId!;
+    const summary = await assetService.getAssetSummary(householdId);
+    return reply.send(summary);
   });
 
   // Get single asset by ID
@@ -43,6 +51,7 @@ export async function assetRoutes(fastify: FastifyInstance) {
     const validatedData = createAssetSchema.parse(request.body);
 
     const asset = await assetService.createAsset(householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.status(201).send({ asset });
   });
 
@@ -53,6 +62,7 @@ export async function assetRoutes(fastify: FastifyInstance) {
     const validatedData = updateAssetSchema.parse(request.body);
 
     const asset = await assetService.updateAsset(id, householdId, validatedData);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send({ asset });
   });
 
@@ -69,6 +79,7 @@ export async function assetRoutes(fastify: FastifyInstance) {
       validatedData.source,
       validatedData.date ? new Date(validatedData.date) : undefined
     );
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send({ asset });
   });
 
@@ -78,13 +89,7 @@ export async function assetRoutes(fastify: FastifyInstance) {
     const { id } = request.params as { id: string };
 
     const result = await assetService.deleteAsset(id, householdId);
+    void cacheService.invalidatePattern(`dashboard:*:${householdId}:*`);
     return reply.send(result);
-  });
-
-  // Get asset summary (analytics)
-  fastify.get('/assets/summary', { preHandler: [authMiddleware] }, async (request, reply) => {
-    const householdId = request.householdId!;
-    const summary = await assetService.getAssetSummary(householdId);
-    return reply.send(summary);
   });
 }
