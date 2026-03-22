@@ -611,7 +611,7 @@ The snapshot name is pre-populated with the month and year. It is editable. Savi
 | Significant value change | Prompt: "Save a snapshot before updating?" |
 | Manual | User can save a snapshot at any time via a `[+ Save snapshot]` control adjacent to the timeline navigator on the Overview page. The name field is pre-populated with the current month and year, and is editable before saving. |
 
-A "significant value change" is any change to income sources or the mortgage/primary housing cost.
+A "significant value change" is any change to an income source amount.
 
 ### Naming Rules
 
@@ -632,7 +632,7 @@ Snapshot names must be unique within a household. If a user enters a name alread
 
 ### Per-Item History
 
-Independent of snapshots. Every line item in the waterfall and every account on the Wealth page maintains a complete history of values with dates. The history graph always shows the full all-time record — it is never truncated in snapshot mode. When viewing a snapshot, the headline value in the right panel reflects the snapshot date, and a vertical marker on the graph indicates that date for orientation.
+Independent of snapshots. Every line item in the waterfall and every account on the Wealth page maintains a complete history of values with dates. The full all-time record is preserved in the database. The history graph displays the most recent 24 months (or since creation, whichever is shorter) — this display limit does not change when viewing a snapshot. When viewing a snapshot, the headline value in the right panel reflects the snapshot date, and a vertical marker on the graph indicates that date for orientation.
 
 ---
 

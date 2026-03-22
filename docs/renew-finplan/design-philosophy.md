@@ -163,7 +163,7 @@ Snapshots appear as dots on a timeline navigator at the top of the Overview page
 
 Snapshot names must be unique within a household. If a user enters a name already in use, the save field is highlighted with a validation message. Auto-generated names (e.g. "January 2026 — Auto") are reserved and cannot be duplicated by user-created snapshots.
 
-Per-item history (a graph of how an individual value has changed over time) is always available in the right panel detail view, independent of snapshots. The history graph always shows the full all-time record — it is never truncated in snapshot mode. When viewing a snapshot, the headline value in the right panel reflects the snapshot date, and the history graph shows a vertical marker at that date for orientation.
+Per-item history (a graph of how an individual value has changed over time) is always available in the right panel detail view, independent of snapshots. The history graph displays the last 24 months of data (or since creation, whichever is shorter) — the full all-time record is preserved in the database, but the graph is limited to 24 months for readability. When viewing a snapshot, the headline value in the right panel reflects the snapshot date, and the history graph shows a vertical marker at that date for orientation.
 
 ### Liquidity Classification
 
