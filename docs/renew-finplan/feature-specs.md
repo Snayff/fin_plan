@@ -1,6 +1,6 @@
 # FinPlan — Feature Specifications
 
-> Detailed specs for each section of the redesigned app. Read alongside `design-philosophy.md` for the UX principles and patterns that underpin these decisions.
+> This document contains the detailed UX flows and specifications for every section of the FinPlan rebuild. It translates the principles in `design-philosophy.md` and the rules in `design-system.md` into concrete, section-by-section behaviour. Reference this document during implementation of each page or feature — it is the authoritative source for *what* each part of the app does.
 
 ---
 
@@ -9,6 +9,8 @@
 The primary view of the app. Users land here by default. It is the only page most users will need during a routine monthly check.
 
 ### Layout
+
+**Left panel: tier summaries only.** Individual items (income sources, bills, discretionary categories) are never shown in the left panel — they appear in the right panel when a tier is selected. The left panel is the household at a glance.
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
@@ -20,33 +22,39 @@ The primary view of the app. Users land here by default. It is the only page mos
 │   Yr Review       Yr Review      Salary +£200                   │
 ├───────────────────────────┬─────────────────────────────────────┤
 │                           │  (right panel — contextual)         │
-│  ▼ INCOME        £8,856   │                                     │
-│  ├─ Josh Salary  £5,148   │  Click any item to see its          │
-│  └─ Cat Salary   £3,708   │  detail, history, and edit.         │
-│                           │                                     │
+│  INCOME          £8,856   │                                     │
+│  │                        │  Select a tier to see its items,    │
+│  → minus committed spend  │  history, and edit controls.        │
+│  │                        │                                     │
+│  COMMITTED       £4,817   │                                     │
+│  │                        │                                     │
+│  → minus discretionary    │                                     │
+│  │                        │                                     │
+│  DISCRETIONARY   £3,830   │                                     │
+│  │                        │                                     │
 │  ─────────────────────    │                                     │
 │                           │                                     │
-│  ▼ COMMITTED     £4,817   │                                     │
-│  ├─ Monthly      £4,575   │                                     │
-│  └─ Yearly (÷12)   £242 ⚠ │                                     │
-│                           │                                     │
-│  ─────────────────────    │                                     │
-│                           │                                     │
-│  ▼ DISCRETIONARY £3,830   │                                     │
-│  ├─ Food           £650   │                                     │
-│  ├─ ▼ Savings    £1,000   │                                     │
-│  │   ├─ Tandem     £700   │                                     │
-│  │   └─ Trading    £300   │                                     │
-│  ├─ Petrol         £100   │                                     │
-│  └─ ··· 12 more           │                                     │
-│                           │                                     │
-│  ─────────────────────    │                                     │
-│                           │                                     │
-│  ▼ SURPLUS         £209   │                                     │
-│  ├─ Unallocated    £209   │                                     │
-│  └─ [Increase savings ▸]  │                                     │
+│  SURPLUS    £209 · 2.4%   │                                     │
 │                           │                                     │
 └───────────────────────────┴─────────────────────────────────────┘
+```
+
+When the user selects a tier (e.g. INCOME), the right panel shows the item list for that tier:</p>
+
+```
+│  INCOME          £8,856   │  Income                             │
+│  │                        │  ─────────────────────────────────  │
+│  → minus committed spend  │  Josh Salary              £5,148   │
+│  │                        │  Cat Salary               £3,708   │
+│  ● COMMITTED     £4,817 ⚑ │                                     │
+│  │                        │  [ + Add income source ]            │
+│  → minus discretionary    │                                     │
+│  │                        │                                     │
+│  DISCRETIONARY   £3,830   │                                     │
+│  │                        │                                     │
+│  ─────────────────────    │                                     │
+│                           │                                     │
+│  SURPLUS    £209 · 2.4%   │                                     │
 ```
 
 ### Waterfall Layers
@@ -339,14 +347,13 @@ Tracks two types of planned discretionary spending that sit outside the monthly 
 │  PURCHASES         ● │                                          │
 │  Budget    £6,000    │  ● London Trip        £1,000   In prog   │
 │  Scheduled £10,110 ⚠ │  ● Kitchen repaint    £2,000   In prog   │
-│  Spent      £5,172   │  ✓ Backdoor           £1,117   Done      │
-│                      │  ● Bay window           £650   In prog   │
-│  ───────────────────  │  ● Network cabling      £800   In prog  │
-│                      │  ✓ sofas               £3,500   Done     │
-│  GIFTS               │  ✓ Pillows               £160   Done     │
-│  Budget    £2,400    │  ● Guttering             £300            │
-│  Estimated £2,623 ⚠  │  ··· 11 more                            │
-│  Spent     £1,180    │                                          │
+│                      │  ✓ Backdoor           £1,117   Done      │
+│  ───────────────────  │  ● Bay window           £650   In prog  │
+│                      │  ● Network cabling      £800   In prog   │
+│  GIFTS               │  ✓ sofas               £3,500   Done     │
+│  Budget    £2,400    │  ✓ Pillows               £160   Done     │
+│  Estimated £2,623 ⚠  │  ● Guttering             £300            │
+│                      │  ··· 11 more                            │
 │                      │  [ + Add purchase ]                      │
 │                      │                                          │
 └──────────────────────┴──────────────────────────────────────────┘
@@ -363,13 +370,11 @@ Clicking a purchase steps into its detail:
 │  Priority         Low                                           │
 │  Funding source   Holiday, Outing                               │
 │  Scheduled        Yes                                           │
-│  Spent            £395.75                                       │
 │  Status           In progress                                   │
 │  Reason           Get it in before she starts school            │
 │  Comment          Hotel booked 23/24 Jun                        │
 │                                                                 │
 │  Added: 03 Jan 2026                                             │
-│  Spent £395.75 on 14 Feb 2026                                   │
 │                                                                 │
 │  [ Edit ]   [ Mark complete ]                                   │
 ```
@@ -385,7 +390,6 @@ Clicking a purchase steps into its detail:
 | Scheduled for this year | Boolean | Drives "Scheduled cost for year" total |
 | Funding source | Multi-select | Savings, Bonus, Purchasing budget, Holiday budget, etc. |
 | Funding account | Optional | Dropdown of Wealth savings accounts; visible when Funding source includes Savings. If linked, the Wealth page projects a planned withdrawal from that account. |
-| Spent | Currency | Actual amount paid |
 | Status | Enum | Not started / In progress / Done |
 | Reason | Text | Why we want this |
 | Comment | Text | Practical notes (quotes, contacts, bookings) |
@@ -406,14 +410,14 @@ Events are sorted chronologically by upcoming date across all people:
 │  Gifts                                         [By person ▾]   │
 │  ─────────────────────────────────────────────────────────────  │
 │  Coming up                                                      │
-│  Cat · Birthday       14 Apr   Budget £20    Spent £0    ○     │
-│  LR · Birthday        02 May   Budget £150   Spent £0    ○     │
-│  Josh · Birthday      15 Jun   Budget £100   Spent £0    ○     │
-│  Christmas            25 Dec   Budget £1,128 Spent £324  ○     │
+│  Cat · Birthday       14 Apr   Budget £20                      │
+│  LR · Birthday        02 May   Budget £150                     │
+│  Josh · Birthday      15 Jun   Budget £100                     │
+│  Christmas            25 Dec   Budget £1,128                   │
 │                                                                 │
 │  Done this year                                                 │
-│  Cat · Christmas      ✓        Budget £100   Spent £100        │
-│  Mothers Day          ✓        Budget £115   Spent £115        │
+│  Cat · Christmas      ✓        Budget £100                     │
+│  Mothers Day          ✓        Budget £115                     │
 │                                                                 │
 │  [ + Add person ]                                               │
 ```
@@ -427,11 +431,11 @@ The "By person" toggle lists people with their combined budget and spend:
 ```
 │  Gifts                                         [Upcoming ▾]    │
 │  ─────────────────────────────────────────────────────────────  │
-│  Cat        Budget £220   Spent £100  ○                        │
-│  Josh       Budget £100   Spent £0    ○                        │
-│  LR         Budget £150   Spent £0    ○                        │
-│  Dex        Budget £160   Spent £160  ✓                        │
-│  Lorraine   Budget £50    Spent £38   ○                        │
+│  Cat        Budget £220                                        │
+│  Josh       Budget £100                                        │
+│  LR         Budget £150                                        │
+│  Dex        Budget £160                                        │
+│  Lorraine   Budget £50                                         │
 │  ··· 20 more                                                    │
 │                                                                 │
 │  [ + Add person ]                                               │
@@ -444,25 +448,25 @@ Clicking a person shows their events:
 ```
 │  ← Gifts / Cat                                                 │
 │  ─────────────────────────────────────────────────────────────  │
-│  Birthday     14 Apr    Budget £20    Spent £0     ○           │
-│  Christmas    25 Dec    Budget £100   Spent £100   ✓           │
+│  Birthday     14 Apr    Budget £20                             │
+│  Christmas    25 Dec    Budget £100   ✓                        │
 │                                                                 │
-│  Total  Budget £120   Spent £100                               │
+│  Total  Budget £120                                            │
 │                                                                 │
 │  Notes:                                                         │
 │                                                                 │
 │  [ + Add event ]   [ Edit person ]                             │
 ```
 
-Clicking an event row expands it inline (budget, spent, notes). No additional panel depth is used.
+Clicking an event row expands it inline (budget, notes). No additional panel depth is used.
 
-#### Status Indicators
+#### Status Indicators (Purchases only)
 
 | Symbol | Meaning |
 |---|---|
-| ✓ | Spent ≥ budget (complete) |
-| ○ | Upcoming or partially spent (neutral) |
-| ⚠ | Over budget (spent > budget) |
+| ✓ | Status: Done |
+| ○ | Status: Not started or In progress |
+| ⚠ | Scheduled cost exceeds budget |
 
 #### Gifts — Event Types
 
@@ -499,7 +503,6 @@ When adding an event to a person, the event type is selected from a predefined l
 | Date | Day/month for annual events; full date for one-off custom events |
 | Recurrence | Annual or One-off (custom events only) |
 | Budget | |
-| Spent | |
 | Notes | Optional |
 
 Annual gift budget is a single manually-set figure. Estimated total is the sum of all event budgets for the current year (one-off events included only if they fall within the year).
