@@ -203,6 +203,164 @@ Linking is optional. Both pages function independently without it.
 
 The ISA annual allowance is tracked per person, not per account. Where a person holds multiple ISA accounts, contributions are summed against a single person-level annual limit. Household members each have independent allowance tracking.
 
+### No Emojis
+
+Emojis must not be used anywhere in the UI. Icons from the approved library are the only acceptable pictographic elements. Emojis are inconsistent across operating systems and typefaces, and undermine the calm, professional tone.
+
+### Icon Library
+
+Icons must be sourced in priority order:
+
+1. **Lucide** — primary library (already a dependency via shadcn/ui)
+2. **Phosphor** — secondary (only when Lucide lacks a suitable option; use Regular weight for stroke consistency with Lucide)
+3. Any other interface library — last resort; document why it was needed
+
+Do not mix icon styles within a single component.
+
+### Icon Consistency
+
+One icon means one thing, everywhere in the app. The same icon must never be used for two different meanings in different contexts. A canonical icon map is maintained in `design-system.md`.
+
+### Tooltips on Icons
+
+Any standalone icon that carries meaning — one not accompanied by visible label text — must have a tooltip on hover that explains what it represents. This extends the existing tooltip rule (financial term definitions) to all icon-only UI elements.
+
+Tooltip copy for functional icons (staleness indicator, linkage, snapshot dot, etc.) is maintained in `definitions.md` alongside the financial term definitions.
+
+### Images as Identifiers
+
+Data entries across the app may be assigned a main image to aid visual identification. This applies to any named entity: savings accounts, pension providers, income sources, bills, discretionary categories.
+
+**Sources:** user-uploaded image, or selected from the in-app curated library of institution and provider logos.
+
+**Fallback:** when no image is assigned, display a coloured placeholder using the entry's initial(s), derived from the entry name.
+
+**Curated library:** common UK banks, pension providers, and utilities are included as a starting set. The library is expandable over time.
+
+### Information Hierarchy
+
+Size, colour, and position communicate importance consistently:
+
+- Most important information appears at the top of each discrete section
+- More saturated or prominent colour signals higher importance — income (teal) and primary actions (orange) are the most visually prominent
+- The waterfall cascade is the primary expression of this principle: Income is the most prominent row; Surplus is quieter at the bottom
+- Primary figures use larger type or heavier weight; secondary labels are smaller and lighter
+- Headline figures in the left panel summary are always the dominant visual element per page
+
+### Spacing — Grouping
+
+Proximity signals relatedness; distance signals separation.
+
+- **Within a group** (e.g. items inside the same waterfall tier): tight row spacing, line height 1.25
+- **Between groups** (e.g. between the Committed Spend section and the Discretionary section): relaxed spacing or a structural divider
+
+Apply consistently to all list and panel layouts throughout the app.
+
+### Header Typography
+
+Heading elements use tighter typographic treatment than body text:
+
+- Letter spacing: −0.025em (approximately −2.5%)
+- Line height: 1.15 (115%)
+
+These values are defined as dedicated heading tokens in `design-tokens.ts`. They do not apply to body text, labels, or numerical values.
+
+### Icons with Text
+
+When an icon appears inline beside associated text:
+
+- Icon size = cap height of the adjacent text (approximately equal to the font size for Inter's proportions)
+- Gap between icon and text: 4–6px at 16px base size (half to one grid unit)
+- Icon and text are vertically centred on the same baseline
+
+Proximity reinforces association. The gap must not exceed one grid unit (8px).
+
+### Button Padding
+
+Horizontal padding is always 2× vertical padding:
+
+| Size | Height | Vertical padding | Horizontal padding |
+|---|---|---|---|
+| sm | 32px | 8px | 16px |
+| md | 40px | 10px | 20px |
+| lg | 48px | 12px | 24px |
+
+### Button States
+
+All interactive buttons provide five states:
+
+| State | Trigger |
+|---|---|
+| Default | Resting |
+| Hovered | Cursor over button |
+| Pressed | Mousedown / active |
+| Disabled | Action unavailable |
+| Loading | Async operation in progress |
+
+The loading state replaces or overlays the button label with a spinner. The disabled state uses reduced opacity — not colour alone — to clearly signal non-interactivity.
+
+### Input States
+
+All form inputs provide six states:
+
+| State | Trigger |
+|---|---|
+| Unselected | Default resting |
+| Focused | Keyboard focus or click |
+| Error | Failed validation |
+| Warning | Value is valid but noteworthy (e.g. outside expected range) |
+| Disabled | Field is read-only or locked |
+| Success / Valid | Inline validation passed |
+
+Error uses the red token (`destructive`) sparingly. Warning uses amber (`staleness`). Success uses teal (`income`). This is consistent with the existing colour signal rules — red is reserved for genuine problems.
+
+### Action and Reaction
+
+Every user action that changes state produces visible feedback:
+
+- **Instant actions** (copy, toggle, confirm): micro-interaction — for example, a copy icon transforms into a "Copied!" chip for 2 seconds
+- **Async actions** (save, sync): loading state on the triggering button, followed by a success or error notification
+- **Staleness confirmation** ("Still correct ✓"): a brief teal acknowledgement on the button
+
+Notifications are non-blocking (toast style), anchored consistently, and auto-dismiss. Modals are not used for non-destructive action feedback.
+
+### Micro-Animations
+
+Meaningful motion communicates spatial relationships:
+
+- Right panel navigating deeper (tier list → item detail): slide-left entrance
+- Right panel navigating shallower (breadcrumb back): slide-right entrance
+- Wizard step forward: slide-left
+- Wizard step back: slide-right
+- Toast notification: fade-up entrance, fade-out exit
+
+Rules:
+- Duration: 150–200ms. Motion must never feel like a delay.
+- Easing: ease-out for entrances, ease-in for exits
+- All animations must be trivially disableable via `prefers-reduced-motion`. Reduced-motion support is deferred (see `backlog.md`) but animations must be structured so it is a single toggle.
+
+### Micro Charts
+
+Micro charts are preferred over tables for time series and comparative data:
+
+- History sparklines in the right panel detail view (24-month window, as specified under Snapshots)
+- Comparison bars for the Wealth liquidity breakdown
+- ISA allowance remaining as a progress bar
+
+**Rule:** no more than 2–3 micro charts visible simultaneously in any single view. When a view would otherwise require more, display the most contextually relevant and link to the full breakdown.
+
+Chart library: Recharts (already in the stack).
+
+### Progressive Disclosure
+
+Forms capture only mandatory fields by default. Optional fields are hidden behind a clearly labelled reveal action (e.g. "+ More options").
+
+Rules:
+- Mandatory fields: always visible
+- Optional fields with no existing data: hidden by default
+- Optional fields with existing data: shown automatically — never hide information a user has already entered
+- Apply to: all add and edit forms in the Waterfall Creation Wizard, Review Wizard, Wealth page, and Planner
+
 ---
 
 ## Navigation Structure
