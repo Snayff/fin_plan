@@ -1,5 +1,7 @@
 # FinPlan Renew — Full App Rebuild Plan
 
+> This is the active 15-phase build plan for the FinPlan rebuild. It is the primary reference during development — work through it task by task. For UX decisions not covered here, consult `feature-specs.md` and `design-system.md`. For the overall structure of the docs, see `design-readme.md`.
+>
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
 **Goal:** Rebuild FinPlan as a waterfall-based personal financial planning tool, reusing only auth and household management, deleting everything else, and building fresh.
@@ -392,7 +394,6 @@ model PurchaseItem {
   scheduledThisYear Boolean          @default(false)
   fundingSources    String[]         // e.g. ["savings","bonus","purchasing_budget"]
   fundingAccountId  String?
-  spent             Float            @default(0)
   status            PurchaseStatus   @default(not_started)
   reason            String?
   comment           String?
@@ -452,7 +453,6 @@ model GiftYearRecord {
   giftEventId String
   year        Int
   budget      Float     @default(0)
-  spent       Float     @default(0)
   notes       String?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -863,7 +863,7 @@ Key methods:
 - `getPurchases(householdId, year)` — list PurchaseItems where yearAdded === year
 - `getPlannerBudget(householdId, year)` — get or create PlannerYearBudget (default 0)
 - `getGiftsUpcoming(householdId, year)` — all events with computed nextDate, sorted chronologically; include GiftYearRecord for year (or empty defaults)
-- `getGiftsByPerson(householdId, year)` — persons with aggregated budget/spent totals for year
+- `getGiftsByPerson(householdId, year)` — persons with aggregated budget totals for year
 - `getPersonDetail(personId, year)` — person with all events + year records
 
 ### Task 5.3: Create `apps/backend/src/routes/planner.routes.ts`
@@ -871,7 +871,7 @@ Key methods:
 ```
 // Purchases
 GET    /api/planner/purchases                → getPurchases(year? defaults current year)
-POST   /api/planner/purchases                → create { name, estimatedCost, priority?, scheduledThisYear?, fundingSources?, fundingAccountId?, spent?, status?, reason?, comment? }
+POST   /api/planner/purchases                → create { name, estimatedCost, priority?, scheduledThisYear?, fundingSources?, fundingAccountId?, status?, reason?, comment? }
 PATCH  /api/planner/purchases/:id            → update any fields
 DELETE /api/planner/purchases/:id            → delete
 
@@ -889,7 +889,7 @@ PATCH  /api/planner/gifts/events/:id                → update event fields
 DELETE /api/planner/gifts/events/:id                → delete
 
 // Gift Year Records
-PUT    /api/planner/gifts/events/:id/year/:year     → upsert { budget, spent, notes? }
+PUT    /api/planner/gifts/events/:id/year/:year     → upsert { budget, notes? }
 
 // Planner budgets
 GET    /api/planner/budget/:year             → get PlannerYearBudget (auto-create with defaults if missing)
@@ -1449,14 +1449,12 @@ export const usePlannerBudget  = (year: number) => useQuery({ queryKey: ['planne
 PURCHASES  ●
 Budget      £6,000
 Scheduled  £10,110 ⚠   (amber/red when scheduled > budget)
-Spent        £5,172
 
 ──────────────────
 
 GIFTS
 Budget      £2,400
 Estimated   £2,623 ⚠
-Spent        £1,180
 ```
 
 Clicking "PURCHASES" or "GIFTS" sets `selectedSection`.
@@ -1484,37 +1482,37 @@ Gifts                           [Upcoming ▾]  (dropdown to switch to "By perso
 **Upcoming view** (default, sorted by nextDate):
 ```
 Coming up
-  Cat · Birthday     14 Apr   Budget £20    Spent £0     ○
-  LR · Birthday      02 May   Budget £150   Spent £0     ○
+  Cat · Birthday     14 Apr   Budget £20
+  LR · Birthday      02 May   Budget £150
   ...
 Done this year
-  Cat · Christmas    ✓         Budget £100   Spent £100
+  Cat · Christmas    ✓         Budget £100
 [ + Add person ]
 ```
 
 **By person view**:
 ```
-Cat        Budget £220   Spent £100  ○
-Josh       Budget £100   Spent £0    ○
+Cat        Budget £220
+Josh       Budget £100
 ...
 [ + Add person ]
 ```
 
 Clicking any person or event row → `GiftPersonDetailPanel` (breadcrumb: `← Gifts / {Name}`):
 ```
-Birthday     14 Apr    Budget £20    Spent £0     ○
-Christmas    25 Dec    Budget £100   Spent £100   ✓
+Birthday     14 Apr    Budget £20
+Christmas    25 Dec    Budget £100   ✓
 
-Total  Budget £120   Spent £100
+Total  Budget £120
 
 Notes:
 
 [ + Add event ]   [ Edit person ]
 ```
 
-Clicking an event row: expands it inline showing budget, spent, notes fields (editable). No deeper panel depth.
+Clicking an event row: expands it inline showing budget, notes fields (editable). No deeper panel depth.
 
-Status symbols: ✓ (spent ≥ budget), ○ (upcoming or partial), ⚠ (over budget).
+Status symbols (purchases only): ✓ (Status: Done), ○ (Not started or In progress), ⚠ (scheduled cost exceeds budget).
 
 **Commit:** `feat: planner page — purchases, gifts, upcoming/by-person views`
 
