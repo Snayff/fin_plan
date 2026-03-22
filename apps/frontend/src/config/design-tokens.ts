@@ -1,13 +1,15 @@
 /**
  * Design Token Configuration
- * 
+ *
  * This file serves as the single source of truth for all design decisions.
  * All colors, typography, spacing, and animation values are defined here
  * and can be easily configured and amended.
- * 
- * Based on the design palette and principles defined in:
- * - docs/3. design/palette.md
- * - docs/3. design/design_book.md
+ *
+ * Design rules and constraints: docs/renew-finplan/design-system.md
+ *
+ * NOTE: Specific colour values (HSL numbers) are intentionally placeholder
+ * until confirmed during implementation. The semantic role of each token is
+ * the authoritative decision — not the specific value.
  */
 
 // ============================================================================
@@ -38,26 +40,26 @@ export const primitiveColors = {
   actionPrimaryHover: { h: 25, s: 88, l: 49 }, // #E66D15
   actionPrimarySubtle: { h: 25, s: 32, l: 17 }, // #3B2A1E
   
-  // Progress (Teal - Calm Positive)
-  progress: { h: 177, s: 95, l: 39 },          // #07BEB8
-  progressHover: { h: 177, s: 95, l: 35 },     // #06A9A3
-  progressSubtle: { h: 190, s: 38, l: 20 },    // #1F3F46
-  
-  // Highlight (Magenta - Supportive Emphasis)
-  highlight: { h: 306, s: 44, l: 40 },         // #8F3985
-  highlightSubtle: { h: 277, s: 28, l: 17 },   // #2F2038
-  
-  // Attention (Warm Orange - Neutral Awareness)
-  attention: { h: 30, s: 61, l: 70 },          // #E0B084
-  attentionSubtle: { h: 30, s: 24, l: 18 },    // #3A3123
-  
-  // Expense (Dark Slate - Discrete, Harmonious)
-  expense: { h: 215, s: 25, l: 35 },           // Dark slate grey
-  expenseSubtle: { h: 215, s: 25, l: 20 },     // Very dark slate grey
-  
-  // Error (Red - Rare, Explicit Only)
-  error: { h: 358, s: 75, l: 59 },             // #E5484D
-  errorSubtle: { h: 350, s: 33, l: 19 },       // #402024
+  // Income / Surplus (Teal - Positive flow)
+  // Used for: tier-income, tier-surplus, income values, surplus-positive signal
+  income: { h: 177, s: 95, l: 39 },            // #07BEB8
+  incomeHover: { h: 177, s: 95, l: 35 },       // #06A9A3
+  incomeSubtle: { h: 190, s: 38, l: 20 },      // #1F3F46
+
+  // Committed (Blue-slate - Neutral / Obligatory)
+  // Used for: tier-committed accent
+  committed: { h: 230, s: 35, l: 63 },         // placeholder ~#8090C0
+  committedSubtle: { h: 230, s: 27, l: 22 },   // placeholder
+
+  // Staleness / Surplus-warning (Warm Amber - Neutral Awareness)
+  // Used for: staleness indicator, surplus-warning signal, stale count badges
+  staleness: { h: 30, s: 61, l: 70 },          // #E0B084
+  stalenessSubtle: { h: 30, s: 24, l: 18 },    // #3A3123
+
+  // Shortfall / Destructive (Red - Rare, Explicit Only)
+  // Used for: genuine cashflow shortfalls, data loss actions
+  destructive: { h: 358, s: 75, l: 59 },       // #E5484D
+  destructiveSubtle: { h: 350, s: 33, l: 19 }, // #402024
 } as const;
 
 /**
@@ -107,43 +109,41 @@ export const semanticColors = {
   accentForeground: primitiveColors.textPrimary,
   accentSubtle: primitiveColors.brandSubtle,
   
-  // Progress/Success (Teal)
-  success: primitiveColors.progress,
-  successForeground: primitiveColors.textPrimary,
-  successHover: primitiveColors.progressHover,
-  successSubtle: primitiveColors.progressSubtle,
-  
-  // Highlight
-  highlight: primitiveColors.highlight,
-  highlightForeground: primitiveColors.textPrimary,
-  highlightSubtle: primitiveColors.highlightSubtle,
-  
-  // Expense (Muted Teal - Discrete)
-  expense: primitiveColors.expense,
-  expenseForeground: primitiveColors.textPrimary,
-  expenseSubtle: primitiveColors.expenseSubtle,
-  
-  // Attention/Warning (Magenta - Supportive Emphasis)
-  warning: primitiveColors.highlight,
-  warningForeground: primitiveColors.textPrimary,
-  warningSubtle: primitiveColors.highlightSubtle,
-  
-  // Destructive/Error (Used sparingly)
-  destructive: primitiveColors.error,
+  // Income / Surplus-positive (Teal — positive flow)
+  income: primitiveColors.income,
+  incomeForeground: primitiveColors.textPrimary,
+  incomeHover: primitiveColors.incomeHover,
+  incomeSubtle: primitiveColors.incomeSubtle,
+
+  // Waterfall tier accents
+  tierIncome: primitiveColors.income,
+  tierSurplus: primitiveColors.income,          // Surplus shares income's teal
+  tierCommitted: primitiveColors.committed,
+  tierCommittedSubtle: primitiveColors.committedSubtle,
+  tierDiscretionary: primitiveColors.staleness, // Discretionary uses warm amber
+  tierDiscretionarySubtle: primitiveColors.stalenessSubtle,
+
+  // Staleness / Surplus-warning (Amber — neutral awareness)
+  staleness: primitiveColors.staleness,
+  stalenessForeground: primitiveColors.textPrimary,
+  stalenessSubtle: primitiveColors.stalenessSubtle,
+
+  // Shortfall / Destructive (Red — rare, explicit only)
+  destructive: primitiveColors.destructive,
   destructiveForeground: primitiveColors.textPrimary,
-  destructiveSubtle: primitiveColors.errorSubtle,
+  destructiveSubtle: primitiveColors.destructiveSubtle,
   
   // Borders & Inputs
   border: primitiveColors.border,
   input: primitiveColors.border,
   ring: primitiveColors.actionPrimary,
   
-  // Chart colors (for Recharts)
-  chart1: primitiveColors.progress,          // Teal (Income)
-  chart2: primitiveColors.expense,           // Muted Teal (Expenses)
-  chart3: primitiveColors.brandPrimary,      // Purple/Rose
-  chart4: primitiveColors.highlight,         // Magenta
-  chart5: primitiveColors.actionPrimary,     // Orange (for CTAs in charts)
+  // Chart colors (for Recharts — waterfall and history graphs)
+  chart1: primitiveColors.income,            // Teal (income / surplus-positive)
+  chart2: primitiveColors.staleness,         // Amber (discretionary / staleness)
+  chart3: primitiveColors.committed,         // Blue-slate (committed spend)
+  chart4: primitiveColors.brandPrimary,      // Purple/Rose (tertiary series)
+  chart5: primitiveColors.actionPrimary,     // Orange (CTAs, highlights in charts)
 } as const;
 
 // ============================================================================
@@ -200,13 +200,15 @@ export const typography = {
   
   // Line Heights (generous for readability)
   lineHeight: {
+    heading: 1.15,   // 115% — for h1–h3 heading elements (110–120% range)
     tight: 1.25,
     normal: 1.5,
     relaxed: 1.75,
   },
-  
+
   // Letter Spacing
   letterSpacing: {
+    heading: '-0.025em',  // −2.5% — for h1–h3 heading elements (−2% to −3% range)
     tight: '-0.025em',
     normal: '0',
     wide: '0.025em',
@@ -321,11 +323,13 @@ export const components = {
       md: '2.5rem',    // 40px - generous tap target
       lg: '3rem',      // 48px
     },
+    // Padding rule: horizontal = 2× vertical
     padding: {
-      sm: '0.5rem 1rem',
-      md: '0.75rem 1.5rem',
-      lg: '1rem 2rem',
+      sm: '0.5rem 1rem',       // 8px / 16px
+      md: '0.625rem 1.25rem',  // 10px / 20px
+      lg: '0.75rem 1.5rem',    // 12px / 24px
     },
+    // All five states must be provisioned: default, hovered, pressed, disabled, loading
   },
   
   input: {
@@ -334,6 +338,9 @@ export const components = {
       md: '2.5rem',    // 40px
       lg: '3rem',      // 48px
     },
+    // All six states must be provisioned:
+    // unselected, focused (ring: actionPrimary), error (destructive), warning (staleness),
+    // disabled (opacity-50), success/valid (income/teal)
   },
   
   card: {
@@ -375,9 +382,20 @@ export const accessibility = {
 // EXPORT ALL TOKENS
 // ============================================================================
 
+/**
+ * Typography font roles.
+ * font-ui   → Inter     — all labels, copy, navigation, headings
+ * font-numeric → JetBrains Mono — all monetary values and numerical data
+ */
+export const fontRoles = {
+  ui: 'Inter, system-ui, -apple-system, sans-serif',
+  numeric: '"JetBrains Mono", Consolas, Monaco, monospace',
+} as const;
+
 export const designTokens = {
   primitiveColors,
   semanticColors,
+  fontRoles,
   typography,
   spacing,
   borderRadius,
