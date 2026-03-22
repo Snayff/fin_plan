@@ -147,3 +147,67 @@
 **Appears in**: Wealth page account detail (projected balance label), savings account list
 
 **Tooltip**: An estimated future balance calculated from the current value plus the linked monthly contribution, compounded at the recorded interest rate. Projections are illustrative only.
+
+---
+
+# Functional Icon Tooltips
+
+> These tooltips appear on hover over icon-only UI elements — icons that carry meaning but are not accompanied by visible label text. They explain what tapping or clicking the icon does (or what it represents), in plain English.
+
+---
+
+## Staleness Indicator (amber dot ●)
+
+**Appears in**: Item rows in the right panel, right panel detail view
+
+**Tooltip**: This value hasn't been reviewed recently — it may no longer be accurate. Click to open the item and confirm it.
+
+---
+
+## Still Correct (checkmark confirm button)
+
+**Appears in**: `ButtonPair` in the right panel detail view, Review Wizard item card
+
+**Tooltip**: Confirm this value is still accurate. Updates the last-reviewed date to today without changing the value.
+
+---
+
+## Snapshot Dot (timeline navigator)
+
+**Appears in**: Timeline navigator above the Overview waterfall
+
+**Tooltip**: [snapshot name] — [date]. Click to view your waterfall as it was on this date (read-only).
+
+*Note: the tooltip is dynamic — it shows the actual snapshot name and date on hover.*
+
+---
+
+## Savings ↔ Waterfall Link Icon
+
+**Appears in**: Wealth page savings account row, waterfall discretionary savings row
+
+**Tooltip**: This savings account is linked to a waterfall allocation. Contributions from your plan are used for projections on this account.
+
+---
+
+## Surplus Percentage
+
+**Appears in**: Surplus row in the waterfall left panel (alongside the absolute figure)
+
+**Tooltip**: Your surplus as a percentage of your total net income. A common benchmark is 10% or above, though the right level depends on your circumstances.
+
+---
+
+## Yearly Bill Cashflow Shortfall Indicator
+
+**Appears in**: Committed Spend tier row (left panel), when a cashflow shortfall is projected
+
+**Tooltip**: One or more yearly bills may not be fully covered in their due month. Open Committed Spend to see the cashflow calendar.
+
+---
+
+## Held on Behalf Of Badge
+
+**Appears in**: Wealth page trust savings section (account row badge)
+
+**Tooltip**: This account is managed by your household but is owned by [name]. It is excluded from your household net worth.
