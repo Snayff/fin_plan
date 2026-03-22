@@ -82,6 +82,38 @@
     /* Text Hierarchy - Additional tokens */
     --text-secondary: 230 23% 82%;       /* #C7CAD9 - Secondary Text */
     --text-tertiary: 230 20% 67%;        /* #9DA1B8 - Tertiary Text */
+
+    /* -------------------------------------------------------------------------
+       Renew design system tokens
+       These replace the legacy ledger tokens (success, warning, highlight, expense)
+       when the renew app is built. Both sets are present during the transition.
+    ------------------------------------------------------------------------- */
+
+    /* Income / Surplus-positive (Teal — positive flow) */
+    /* Replaces: --success */
+    --income: 177 95% 39%;               /* #07BEB8 - Teal */
+    --income-foreground: 230 29% 96%;
+    --income-hover: 177 95% 35%;
+    --income-subtle: 190 38% 20%;        /* #1F3F46 */
+
+    /* Staleness / Surplus-warning (Warm Amber — neutral awareness) */
+    /* Replaces: --warning (magenta → warm amber in renew) */
+    --staleness: 30 61% 70%;             /* #E0B084 - Warm amber */
+    --staleness-foreground: 230 29% 96%;
+    --staleness-subtle: 30 24% 18%;      /* #3A3123 */
+
+    /* Waterfall tier accent tokens */
+    --tier-income: 177 95% 39%;          /* Teal — same as income */
+    --tier-surplus: 177 95% 39%;         /* Teal — same as income (positive side) */
+    --tier-committed: 230 35% 63%;       /* Blue-slate — neutral/obligatory */
+    --tier-committed-subtle: 230 27% 22%;
+    --tier-discretionary: 30 61% 70%;    /* Warm amber — chosen, human */
+    --tier-discretionary-subtle: 30 24% 18%;
+
+    /* Brand token (explicit alias for accent) */
+    --brand: 320 23% 62%;               /* #B38BA3 - Purple/rose */
+    --brand-foreground: 230 29% 96%;
+    --brand-subtle: 270 20% 22%;        /* #3A2F44 */
   }
 }
 

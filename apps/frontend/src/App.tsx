@@ -23,6 +23,7 @@ const GoalsPage = lazy(() => import("./pages/GoalsPage"));
 const BudgetsPage = lazy(() => import("./pages/BudgetsPage"));
 const BudgetDetailPage = lazy(() => import("./pages/BudgetDetailPage"));
 const DesignPage = lazy(() => import("./pages/DesignPage"));
+const DesignRenewPage = lazy(() => import("./pages/DesignRenewPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
@@ -56,13 +57,15 @@ export function ProtectedAppRoutes() {
 function App() {
   const authStatus = useAuthStore((state) => state.authStatus);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
-  const isDesignPage = import.meta.env.DEV && window.location.pathname.startsWith('/design');
+  const pathname = window.location.pathname;
+  const isDesignPage = import.meta.env.DEV && pathname === '/design';
+  const isDesignRenewPage = import.meta.env.DEV && pathname === '/design-renew';
   const isAuthenticated = authStatus === 'authenticated';
 
   useEffect(() => {
-    if (isDesignPage) return;
+    if (isDesignPage || isDesignRenewPage) return;
     void initializeAuth();
-  }, [initializeAuth, isDesignPage]);
+  }, [initializeAuth, isDesignPage, isDesignRenewPage]);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -70,6 +73,10 @@ function App() {
       {isDesignPage ? (
         <Suspense fallback={<PageLoader />}>
           <DesignPage />
+        </Suspense>
+      ) : isDesignRenewPage ? (
+        <Suspense fallback={<PageLoader />}>
+          <DesignRenewPage />
         </Suspense>
       ) : authStatus === 'initializing' ? (
         <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">

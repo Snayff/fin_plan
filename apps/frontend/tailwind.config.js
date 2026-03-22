@@ -82,6 +82,31 @@ export default {
   			text: {
   				secondary: 'hsl(var(--text-secondary))',
   				tertiary: 'hsl(var(--text-tertiary))'
+  			},
+  			// Renew design system tokens
+  			income: {
+  				DEFAULT: 'hsl(var(--income))',
+  				foreground: 'hsl(var(--income-foreground))',
+  				hover: 'hsl(var(--income-hover))',
+  				subtle: 'hsl(var(--income-subtle))'
+  			},
+  			staleness: {
+  				DEFAULT: 'hsl(var(--staleness))',
+  				foreground: 'hsl(var(--staleness-foreground))',
+  				subtle: 'hsl(var(--staleness-subtle))'
+  			},
+  			brand: {
+  				DEFAULT: 'hsl(var(--brand))',
+  				foreground: 'hsl(var(--brand-foreground))',
+  				subtle: 'hsl(var(--brand-subtle))'
+  			},
+  			tier: {
+  				income: 'hsl(var(--tier-income))',
+  				surplus: 'hsl(var(--tier-surplus))',
+  				committed: 'hsl(var(--tier-committed))',
+  				'committed-subtle': 'hsl(var(--tier-committed-subtle))',
+  				discretionary: 'hsl(var(--tier-discretionary))',
+  				'discretionary-subtle': 'hsl(var(--tier-discretionary-subtle))'
   			}
   		},
   		borderRadius: {
