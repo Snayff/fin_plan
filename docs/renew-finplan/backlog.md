@@ -1,6 +1,6 @@
 # FinPlan — Feature Backlog
 
-> Features in this document are intentionally deferred — they are not yet designed and are not detailed in any other document. When a feature moves out of backlog into active design, the relevant section here should be removed and the spec written in the appropriate document.
+> This document tracks features that are intentionally out of scope for the current build. Nothing here is designed or specced — these are placeholders that acknowledge a gap without committing to a solution. When a feature moves into active design, remove it from this document and write its spec in `feature-specs.md`.
 
 ---
 

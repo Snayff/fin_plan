@@ -1,6 +1,6 @@
 # FinPlan — Definitions
 
-> Canonical reference for tooltip definitions. When a term in the UI has a specific financial meaning — or a specific meaning within FinPlan — a tooltip is surfaced on hover. The text in this document is the authoritative source for those tooltips.
+> This is the canonical reference for all tooltip text in FinPlan. When a term in the UI has a specific financial meaning — or a specific meaning within FinPlan — a tooltip is surfaced on hover. The text here is the authoritative source for those tooltips; it should be copied verbatim into implementation. Consult this document when writing or reviewing any UI copy involving financial terms or icon-only elements.
 >
 > Format per entry: the term as it appears in the UI, the contexts where the tooltip applies, and the tooltip text itself (1–2 sentences, plain English).
 
