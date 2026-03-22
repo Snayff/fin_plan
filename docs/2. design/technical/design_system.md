@@ -1,5 +1,13 @@
 # Design System Documentation
 
+> **DEPRECATED — built for the old transaction ledger app.**
+> The current design system for the FinPlan rebuild is at:
+> **`docs/renew-finplan/design-system.md`**
+>
+> This file is retained for reference only. Do not use it for new development.
+
+---
+
 ## Overview
 
 This design system implements a comprehensive token-based approach to ensure consistent UI/UX across the application. All design decisions flow from the design tokens defined in `apps/frontend/src/config/design-tokens.ts`.
