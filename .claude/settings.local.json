@@ -61,7 +61,23 @@
       "Bash(git add:*)",
       "Bash(node:*)",
       "Bash(npx jest:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(curl -s http://localhost:52956)",
+      "Bash(bash \"c:/Users/Gabriel/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh\" --project-dir \"c:/Users/Gabriel/Documents/Dev/fin_plan\")",
+      "Bash(sort -t- -k2 -n)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node -e \"let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>{const f=JSON.parse(d)?.tool_input?.file_path;if(f)process.stdout.write(f);})\" | { read -r f; [ -n \"$f\" ] && bunx prettier --write \"$f\"; } 2>/dev/null || true"
+          }
+        ]
+      }
     ]
   },
   "outputStyle": "default"

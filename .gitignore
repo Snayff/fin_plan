@@ -53,6 +53,10 @@ Thumbs.db
 # Docker
 docker-compose.override.yml
 
+# superpowers
+.superpowers
+
+
 # Misc
 .cache/
 temp/
