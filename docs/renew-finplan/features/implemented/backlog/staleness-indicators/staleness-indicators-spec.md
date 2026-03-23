@@ -11,11 +11,11 @@ implemented_date:
 
 ## Intention
 
-Users need to know when a financial value hasn't been reviewed recently and may no longer reflect reality. The staleness system surfaces this passively — ambient warnings that prompt action without blocking the user.
+Users need to know when a financial value hasn't been reviewed recently and may no longer reflect reality. The staleness system surfaces this passively — ambient indicators that prompt action without blocking the user.
 
 ## Description
 
-Every waterfall item and wealth account records a `lastReviewedAt` timestamp. A staleness threshold (configured per item type in Settings) defines how many months before an item is considered stale. When stale, an amber ⚠ indicator appears inline on the item. When fresh, nothing is shown — silence means approval.
+Every waterfall item and wealth account records a `lastReviewedAt` timestamp. A staleness threshold (configured per item type in Settings) defines how many months before an item is considered stale. When stale, a 5px amber dot (●) indicator appears inline on the item with amber detail text showing the age (e.g. "14mo ago"). When fresh, nothing is shown — silence means approval.
 
 ## User Stories
 
@@ -28,7 +28,7 @@ Every waterfall item and wealth account records a `lastReviewedAt` timestamp. A 
 ### StalenessIndicator component
 
 - [ ] Renders nothing when the item is not stale
-- [ ] Renders an amber ⚠ icon when stale, with a tooltip: "Not reviewed for X months"
+- [ ] Renders a 5px amber dot (●, `attention` token) when stale, with amber detail text showing age (e.g. "14mo ago") and tooltip: "Last reviewed: N months ago"
 - [ ] Accepts `lastReviewedAt: string` (ISO date) and `thresholdMonths: number` as props
 
 ### Staleness utility (`staleness.ts`)
@@ -41,12 +41,13 @@ Every waterfall item and wealth account records a `lastReviewedAt` timestamp. A 
 
 ### Overview page placement
 
-- [ ] Each item row in WaterfallLeftPanel shows `<StalenessIndicator>` using the per-type threshold from HouseholdSettings
-- [ ] ItemDetailPanel shows `stalenessLabel()` text below the item value; prefixed with ⚠ if stale
+- [ ] Each tier row in WaterfallLeftPanel shows a tier-level attention badge (amber dot + stale count text, e.g. "● 3 stale") when ≥1 item in the tier is stale; absent when all items are current (silence = approval)
+- [ ] Each item row in the right panel (State 2 item list) shows `<StalenessIndicator>` (5px amber dot before label + amber detail text) using the per-type threshold from HouseholdSettings
+- [ ] ItemDetailPanel shows `stalenessLabel()` text below the item value; shown in amber (`attention` token) if stale
 
 ### Wealth page placement
 
-- [ ] Each account row in AccountListPanel shows staleness state ("Updated [date] ✓" if fresh; amber ⚠ if stale)
+- [ ] Each account row in AccountListPanel shows staleness state: amber dot (●) + amber detail text when stale; nothing when fresh (silence = approval)
 - [ ] AccountDetailPanel shows `stalenessLabel()` below the balance
 
 ### Thresholds
