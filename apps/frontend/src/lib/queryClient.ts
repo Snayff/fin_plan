@@ -1,11 +1,22 @@
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient } from "@tanstack/react-query";
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       refetchOnWindowFocus: false,
-      retry: 1,
+      // Don't retry on 401 — token refresh is handled by the API client
+      retry: (failureCount, error: any) => error?.statusCode !== 401 && failureCount < 1,
       staleTime: 5 * 60 * 1000, // 5 minutes
+    },
+    mutations: {
+      onError: (error: any) => {
+        if (error?.statusCode === 401) {
+          import("../stores/authStore").then(({ useAuthStore }) => {
+            useAuthStore.getState().setUnauthenticated();
+            window.location.href = "/login";
+          });
+        }
+      },
     },
   },
 });
