@@ -1,0 +1,1148 @@
+# FinPlan Design System
+
+> This document defines the concrete rules and constraints for the FinPlan UI: colour tokens, typography, layout, components, interaction patterns, and UX patterns. It is the _what_ of the design — the specifications that follow from the principles in `design-philosophy.md`.
+
+---
+
+## 1. Foundations
+
+### 1.1 Theme
+
+Dark theme only. No light mode. No theme switching. If this changes in future, the token layer (not component code) is the only thing that needs updating.
+
+---
+
+### 1.2 Colour Tokens
+
+The colour system has three layers: **primitives** (raw values) → **semantic roles** (what it means) → **component tokens** (where it's used).
+
+#### Background & Depth
+
+| Token          | Value            | Role                                                                       |
+| -------------- | ---------------- | -------------------------------------------------------------------------- |
+| `background`   | `#080a14`        | Main app background — deep navy, almost black with blue undertone          |
+| `ambient-glow` | Radial gradients | Indigo/violet at top-right, teal at bottom-left — subtle depth, never flat |
+
+The background is never a plain solid. Ambient radial glows give the canvas depth and warmth without competing with content.
+
+#### Surfaces
+
+Three elevation levels with wide steps (~8–10 lightness points) for clear visual hierarchy.
+
+| Token              | Background | Border    | Used for                                |
+| ------------------ | ---------- | --------- | --------------------------------------- |
+| `surface`          | `#0d1120`  | `#1a1f35` | Cards, panels, sidebars                 |
+| `surface-elevated` | `#141b2e`  | `#222c45` | Modals, popovers, selected rows         |
+| `surface-overlay`  | `#1c2540`  | `#2a3558` | Dropdowns, tooltips, top-layer elements |
+
+**Rule:** cards and panels use surface elevation to distinguish themselves from the page background. No shadows — the dark theme relies on border contrast, not elevation shadows.
+
+#### Text
+
+All text uses a blue-white tint for cohesion with the cool palette. The base tint is `rgb(238, 242, 255)` at varying opacities.
+
+| Token            | Value                       | Used for                                    |
+| ---------------- | --------------------------- | ------------------------------------------- |
+| `text-primary`   | `rgba(238, 242, 255, 0.92)` | Headlines, key values, primary labels       |
+| `text-secondary` | `rgba(238, 242, 255, 0.65)` | Item names, descriptions, body text         |
+| `text-tertiary`  | `rgba(238, 242, 255, 0.40)` | Metadata, helper text, timestamps           |
+| `text-muted`     | `rgba(238, 242, 255, 0.25)` | Placeholders, disabled text, divider labels |
+
+#### Tier Colours
+
+One colour per waterfall tier, used exclusively for that tier's heading, accent bar, and value text. Each colour carries strict semantic meaning and must never be repurposed.
+
+| Token                | Value     | Tier            | Semantic intent                       |
+| -------------------- | --------- | --------------- | ------------------------------------- |
+| `tier-income`        | `#0ea5e9` | Income          | The source — energetic, electric blue |
+| `tier-committed`     | `#6366f1` | Committed Spend | Neutral obligation — settled indigo   |
+| `tier-discretionary` | `#a855f7` | Discretionary   | Chosen spend — expressive purple      |
+| `tier-surplus`       | `#4adcd0` | Surplus         | The answer — rewarding teal-mint      |
+
+**Rule:** Tier colours are semantically protected. They must only appear in their tier context — heading text, accent bar, value text, and contextual interactive states (hover/selected backgrounds at reduced opacity). They must never be repurposed for status indicators, attention signals, buttons, or any non-tier UI element.
+
+#### Accent & Action
+
+| Token         | Value     | Used for                                                       | Notes                                                                           |
+| ------------- | --------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| `action`      | `#7c3aed` | Buttons, focus rings, CTAs, primary interactive elements       | Electric violet — the app's action colour                                       |
+| `page-accent` | `#8b5cf6` | Breadcrumbs, section headers, nav indicators on non-tier pages | Soft violet — bluer and cooler than Discretionary, never reads as a tier signal |
+
+#### Callout Gradients
+
+Gradient text for engagement and special highlights. Applied via `background-clip: text`. The gradient treatment should feel special and inviting — "look at this exciting thing."
+
+| Token               | Value                                 | Used for                                             |
+| ------------------- | ------------------------------------- | ---------------------------------------------------- |
+| `callout-primary`   | `#0ea5e9` → `#a855f7` (blue → purple) | Hero emphasis, key phrases, primary standout moments |
+| `callout-secondary` | `#a855f7` → `#4adcd0` (purple → teal) | Secondary emphasis, variety                          |
+
+**Rule:** Callout gradients are for engagement only — hero headlines, wordmark, key summary phrases, standout CTAs. Never use them for warnings, attention items, informational alerts, or tier headings.
+
+#### Attention
+
+One colour, one pattern. Amber is the universal "noteworthy" signal — staleness, financial attention, anything that deserves a second look. It does not judge, it highlights.
+
+| Token              | Value                      | Used for                                                            |
+| ------------------ | -------------------------- | ------------------------------------------------------------------- |
+| `attention`        | `#f59e0b`                  | Dot indicator, text detail, inline labels — always this exact value |
+| `attention-bg`     | `rgba(245, 158, 11, 0.04)` | Nudge card background tint only                                     |
+| `attention-border` | `rgba(245, 158, 11, 0.08)` | Nudge card border only                                              |
+
+**Rule:** Amber is one colour, one pattern. `#f59e0b` everywhere — staleness dots, staleness text, cashflow attention dots, cashflow attention text, nudge card dots. The only variations are the subtle bg/border tints on nudge cards. No variations in hue or saturation across contexts.
+
+#### Status
+
+The app is **non-judgemental**. Financial values are never colour-coded as good or bad. Whether you have money or no money, the app does not judge — it helps.
+
+| Token     | Value     | Used for                                                                              | Never for                                                   |
+| --------- | --------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| `error`   | `#ef4444` | App errors only — validation failures, system errors, destructive action confirmation | Financial shortfalls, negative balances, over-budget states |
+| `success` | `#22c55e` | UI confirmations only — saved, completed, synced                                      | Positive balances, surplus amounts, financial "good" states |
+
+**Removed tokens (from previous design system):**
+
+- `shortfall` — was red for cashflow shortfalls; now handled by the attention system (amber), not error red
+- `surplus-positive` / `surplus-warning` — removed; the app does not colour-code financial positions as good/bad
+- `expense` — ledger concept, no equivalent in the planning model
+- `highlight` — not used in the waterfall model
+
+---
+
+### 1.3 Typography
+
+**Three fonts, strict roles.**
+
+| Token          | Font               | Weights       | Used for                                                                   |
+| -------------- | ------------------ | ------------- | -------------------------------------------------------------------------- |
+| `font-heading` | **Outfit**         | 700, 800      | Tier names, headlines, wordmark, button labels, nav links, section headers |
+| `font-body`    | **Nunito Sans**    | 400, 500, 600 | Item labels, descriptions, metadata, helper text, breadcrumbs, body copy   |
+| `font-numeric` | **JetBrains Mono** | 400, 500, 600 | All monetary values, percentages, and numerical data                       |
+
+**Inter is not used anywhere.**
+
+The visual distinction between `font-heading`, `font-body`, and `font-numeric` is intentional and load-bearing. Outfit communicates structure and hierarchy. Nunito Sans communicates content and detail. JetBrains Mono communicates "this is a number worth reading."
+
+**Rule: tabular numerals always.** Any context where numbers stack vertically or need to align uses `font-variant-numeric: tabular-nums`, regardless of whether `font-numeric` is in use.
+
+#### Tier Headings
+
+Tier names use **solid colour** (their tier primary), not gradient. `font-heading`, weight 800, uppercase, letter-spacing 0.09em.
+
+#### Callout Words
+
+Gradient text is reserved for **callout words** — special engagement phrases, hero headlines, and standout moments. These use the callout gradient tokens, not tier colours. `font-heading`, weight 800.
+
+#### Waterfall Type Hierarchy
+
+Six levels, each a clear visual step:
+
+| Level                | Size | Weight | Font                         | Context                                                       |
+| -------------------- | ---- | ------ | ---------------------------- | ------------------------------------------------------------- |
+| Right panel headline | 30px | 800    | `font-numeric`               | Selected item's value in detail view                          |
+| Surplus value        | 24px | 700    | `font-numeric`               | The answer at the bottom of the waterfall                     |
+| Tier total value     | 18px | 600    | `font-numeric`               | Sum at the bottom of each tier                                |
+| Tier heading         | —    | 800    | `font-heading`               | `INCOME`, `COMMITTED SPEND`, etc. (uppercase, 0.09em spacing) |
+| Row item             | 16px | 500    | `font-body` + `font-numeric` | Label and value for each line item                            |
+| Metadata             | 12px | 500    | `font-body`                  | Staleness age, dates, helper text                             |
+
+The surplus value is the most prominent number on the page. It is the answer — the number the user came to see.
+
+**Heading typography token:** heading elements use tighter treatment than body text — letter spacing: −0.025em; line height: 1.15. These are defined as dedicated heading tokens in `design-tokens.ts`. They do not apply to body text, labels, or numerical values.
+
+---
+
+### 1.4 Spacing and Layout
+
+**8px grid.** All spacing values are multiples of 4px (half-grid) or 8px (full grid). Generous by default — the "calm by default" principle applies to space as much as colour.
+
+**Two-panel shell:**
+
+- Left panel: fixed width **360px**
+- Right panel: fills all remaining horizontal space
+- Single `border` token separates the panels — no gap, no shadow, no divider chrome
+- Top navigation bar: full width, above both panels
+
+**Rule: left panel never scrolls horizontally.** Long labels truncate with an ellipsis.
+
+**Rule: both panels are vertically scrollable.** The left panel is _designed_ to never require scrolling — its content is intentionally minimal. The right panel routinely scrolls for long detail views.
+
+**Spacing — grouping rule:** proximity signals relatedness; distance signals separation.
+
+- Within a group (e.g. items inside the same waterfall tier): tight row spacing, line height 1.25
+- Between groups (e.g. between the Committed Spend section and the Discretionary section): relaxed spacing or a structural divider
+
+Apply consistently to all list and panel layouts throughout the app.
+
+**Information hierarchy:** size, colour, and position communicate importance.
+
+- Most important information appears at the top of each discrete section
+- The waterfall cascade is the primary expression: Income row is most prominent; Surplus is the visual terminus
+- Headline figures in the left panel summary are always the dominant visual element per page
+
+---
+
+### 1.5 Interactive States
+
+Interactive states use the contextual tier colour at varying opacities. On non-tier pages, use `page-accent`.
+
+| State          | Treatment                                                                      |
+| -------------- | ------------------------------------------------------------------------------ |
+| **Hover**      | ~5% tier/accent colour opacity background                                      |
+| **Selected**   | ~14% tier/accent colour opacity background + left border in tier/accent colour |
+| **Active nav** | Solid tier/accent colour text + 2px bottom underline bar                       |
+| **Focus**      | `action` colour focus ring (2px)                                               |
+| **Disabled**   | Reduced opacity (0.4) — not colour change alone                                |
+
+---
+
+## 2. Component Catalogue
+
+### `WaterfallTierRow`
+
+Used in the left panel of the Overview page. Represents one tier of the waterfall (Income, Committed Spend, Discretionary, or Surplus).
+
+**Anatomy:**
+
+```
+[ TIER NAME ········· (badge) · £ Total ]
+```
+
+- Tier name: uppercase, `font-heading`, weight 800, solid tier colour, letter-spacing 0.09em
+- Total: right-aligned, `font-numeric`, weight 600
+- Attention badge: amber dot + count text (`attention` token), only rendered when ≥1 item in the tier needs attention (e.g. `● 3 stale`). Absent when everything is current — silence = approval.
+
+**Behaviour:**
+
+- Clickable — selecting a tier loads its item list in the right panel
+- Selected state: left border in tier colour + ~14% tier colour background
+- Hover state: ~5% tier colour background, no colour change on the tier name
+
+**Rule:** the Surplus row shows both absolute amount and percentage of income (e.g. `£270 · 7.4%`).
+
+---
+
+### `WaterfallConnector`
+
+The cascade element between tier rows. Reinforces the waterfall mental model.
+
+**Anatomy:**
+
+```
+  │
+  → minus committed spend
+  │
+```
+
+- Subtle vertical line in `border` colour
+- Annotation text in `text-muted`, `font-body`, 12px: "minus committed spend", "minus discretionary", "equals"
+- **Rule:** connectors are structural — they must not draw the eye. Muted colour, small text, no animation.
+
+---
+
+### `StalenessIndicator`
+
+Inline on any item row in the right panel. Communicates that a value has not been reviewed within its staleness threshold. Uses the attention system.
+
+**At row level:**
+
+- A 5px amber dot (`attention` token), no text
+- Position: immediately before the item label
+- Amber detail text after the label: e.g. "14mo ago" (`attention` token, `font-body`, 9px)
+
+**On hover:**
+
+- Tooltip: "Last reviewed: N months ago"
+
+**In right panel detail view:**
+
+- Expanded as text: "Last reviewed: 14 months ago" at 12px, `text-tertiary`
+
+**Rules:**
+
+- Informational only — never blocking
+- Uses `attention` amber — staleness is not an error, never red
+- Absent when the item is current — silence = approval
+
+---
+
+### `ButtonPair`
+
+The standard confirm/edit pattern used throughout the app.
+
+**Anatomy:**
+
+```
+[ Edit ]   [ Still correct ✓ ]
+```
+
+**Rule: the rightmost button is always the affirmative action. No exceptions.**
+
+This applies to all variants:
+
+- `[ Edit ]   [ Still correct ✓ ]`
+- `[ Update ]   [ Still correct ✓ ]`
+- `[ Cancel ]   [ Save ]`
+- `[ Back ]   [ Confirm ]`
+
+**Behaviour of "Still correct ✓":**
+
+- Resets the item's `lastReviewedAt` timestamp to now
+- Does not open a form or modal
+- Provides immediate visual confirmation (brief state change on the button)
+- Removes the staleness indicator from the item
+
+**Button sizing:**
+
+| Size | Height | Vertical padding | Horizontal padding |
+| ---- | ------ | ---------------- | ------------------ |
+| sm   | 32px   | 8px              | 16px               |
+| md   | 40px   | 10px             | 20px               |
+| lg   | 48px   | 12px             | 24px               |
+
+Horizontal padding is always 2× vertical padding.
+
+**Button states** (all interactive buttons must implement all five):
+
+| State    | Trigger                     |
+| -------- | --------------------------- |
+| Default  | Resting                     |
+| Hovered  | Cursor over button          |
+| Pressed  | Mousedown / active          |
+| Disabled | Action unavailable          |
+| Loading  | Async operation in progress |
+
+The loading state replaces the button label with a spinner. The disabled state uses reduced opacity — not colour alone.
+
+**Button colours:**
+
+- Primary/CTA buttons: `action` token (`#7c3aed`) background
+- Secondary buttons: `surface-elevated` background, `text-secondary` text
+- Destructive buttons: `error` token background — only for irreversible actions, always behind a confirmation modal
+
+---
+
+### `FormInput`
+
+All form inputs provide six states:
+
+| State           | Trigger                       | Visual                                   |
+| --------------- | ----------------------------- | ---------------------------------------- |
+| Unselected      | Default resting               | `surface` background, `border`           |
+| Focused         | Keyboard focus or click       | `action` focus ring (2px)                |
+| Error           | Failed validation             | `error` token border and helper text     |
+| Warning         | Value is valid but noteworthy | `attention` token border and helper text |
+| Disabled        | Field is read-only or locked  | Reduced opacity                          |
+| Success / Valid | Inline validation passed      | `success` token border                   |
+
+---
+
+### `NudgeCard`
+
+A contextual prompt in the right panel. Surfaces a mechanical action or observation when one is available. Uses the attention system for visual treatment.
+
+**Anatomy:**
+
+- Amber dot (`attention` token, 5px) in the header
+- Title: `font-heading`, weight 700, `text-primary`
+- Body: `font-body`, `text-secondary`, with `font-numeric` for values
+- Optional action link (e.g. "See ISA accounts")
+- Background: `attention-bg` — subtle amber tint
+- Border: `attention-border` — subtle amber border
+
+**Rules:**
+
+- Right panel only — never in the left panel, never inline in a list
+- One at a time — nudges are never stacked
+- Absent when no opportunity exists — silence = approval
+- Language: arithmetic and options only, never recommendations
+  - ✓ "Committed bills total **£2,140** in March, **£120 more than your income**"
+  - ✓ "Redirecting £50/mo to this account could earn ~£180 more per year"
+  - ✗ "You should move your savings to this account"
+
+---
+
+### `TimelineNavigator`
+
+A row of snapshot dots displayed above the two-panel area on the Overview page.
+
+**Anatomy:**
+
+- Horizontal row of dots, one per snapshot
+- Current live plan: no dot (it is the default state, not a snapshot)
+- Historical snapshots: outline dots
+- Currently viewed snapshot: filled dot
+
+**Behaviour:**
+
+- Hover: tooltip with snapshot name and date
+- Click: loads that snapshot in read-only mode
+- Read-only mode: "Viewing: [snapshot name]" banner replaces the timeline navigator for the duration of the session
+- Returning to live plan: banner dismissed, timeline navigator restored
+
+---
+
+### `ItemRow`
+
+Used in the right panel item list (State 2 — tier selected). Each row represents one waterfall item within the selected tier.
+
+**Anatomy:**
+
+```
+[ ● Label  detail ················ £ Value ]
+```
+
+- Staleness dot (●): `attention` amber, 5px — appears before the label when the item is stale; absent when current
+- Staleness detail: `attention` amber text, `font-body`, 9px — e.g. "14mo ago"
+- Label: `font-body`, weight 500, `text-secondary`, truncates with ellipsis if too long
+- Value: `font-numeric`, weight 500, `text-secondary`, right-aligned, tabular numerals
+- No avatar — the left panel and item list are text-only
+
+**Behaviour:**
+
+- Clickable — clicking transitions the right panel to State 3 (item detail)
+- Hover state: ~5% tier colour background
+- Selected state: ~14% tier colour background (persists when item is loaded in State 3)
+
+---
+
+### `EntityAvatar`
+
+Displays an identity image for a named entity. Used in right panel detail views only — not in the left panel or item list rows.
+
+**Sources (in priority order):**
+
+1. Logo selected from the curated library (common UK banks, pension providers, utilities, streaming services)
+2. User-uploaded image
+3. Initials fallback — when no image is assigned
+
+**Initials fallback:**
+
+- Background: a deterministic colour derived from the entity name (consistent across sessions and users)
+- Content: 1–2 initials, `font-heading`, white
+
+**Sizes:**
+| Name | Size | Context |
+|---|---|---|
+| `sm` | 24px | Compact list rows |
+| `md` | 32px | Standard detail contexts |
+| `lg` | 48px | Right panel detail headline |
+
+**Display rules:**
+
+- Always circular (`border-radius: full`) at all sizes
+- The fallback is the default expected state for new entries — it must not feel like an error
+
+---
+
+### `SnapshotBanner`
+
+Replaces the `TimelineNavigator` when a historical snapshot is being viewed. Communicates clearly that the user is not viewing live data.
+
+**Anatomy:**
+
+```
+  Viewing: March 2026 Review  ·  [ Return to current ▸ ]
+```
+
+- Full-width bar anchored directly below the top navigation bar, above both panels
+- Background: `surface` token with a subtle `border`
+- Text: `font-body`, 12px, `text-secondary`
+- "Return to current ▸" is a link/button — clicking it dismisses the banner and restores the live plan and `TimelineNavigator`
+
+**Behaviour:**
+
+- All edit controls (edit buttons, `ButtonPair`, add actions) are hidden while the banner is visible
+- The waterfall left panel and right panel values all reflect the snapshot date
+- The history graph shows a vertical marker at the snapshot date
+
+---
+
+### `SkeletonLoader`
+
+Displayed during initial data loading to preserve layout and reduce perceived wait time.
+
+**Left panel variant:**
+
+- Four tier-row shaped blocks (matching the height of a `WaterfallTierRow`)
+- Three connector-shaped thin lines between them
+- Shimmer animation (left-to-right gradient sweep)
+
+**Right panel variant:**
+
+- One large block (matching the headline value area)
+- One medium block (matching a sparkline chart height)
+- Two small inline blocks side by side (matching a `ButtonPair`)
+- Same shimmer animation
+
+**Rules:**
+
+- Background: `surface` token
+- Duration of shimmer cycle: 1.5s, looped
+- Must be trivially disableable via `prefers-reduced-motion` (no shimmer; static blocks instead)
+
+---
+
+### `StaleDataBanner`
+
+Displayed when the app has failed to sync with the backend but is showing cached data.
+
+**Anatomy:**
+
+```
+  Data may be outdated — last synced [N minutes ago]  ·  [ Retry ]
+```
+
+- Full-width bar anchored below the top navigation bar (same position as `SnapshotBanner`, but the two never appear simultaneously)
+- Background: `attention-bg` amber tint
+- Border-bottom: `attention-border`
+- Dot: `attention` amber, 5px
+- Text: `font-body`, 12px
+- "Retry" triggers an immediate resync attempt
+
+**Behaviour:**
+
+- Auto-dismisses when a successful sync completes
+- Does not block or replace any UI — the user can still navigate, view, and interact with the cached data
+- Never uses `error` (red) — this is informational, not an error state
+
+---
+
+## 3. Page Patterns
+
+### 3.1 Two-Panel Shell
+
+Applies to: Overview, Wealth, Planner. Exempt: Review Wizard, Waterfall Creation Wizard (full-screen modes).
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  TOP NAV                                                        │
+├──────────────────┬──────────────────────────────────────────────┤
+│                  │                                              │
+│  LEFT PANEL      │  RIGHT PANEL                                 │
+│  Fixed width     │  Fills remaining space                       │
+│  Tier headings   │  Empty / Item list / Item detail             │
+│  + totals        │                                              │
+│                  │                                              │
+└──────────────────┴──────────────────────────────────────────────┘
+```
+
+**Left panel rules:**
+
+- Always visible; never replaced or navigated away from
+- Contains only tier headings and summary totals — no individual items
+- Clicking a tier selects it (selected state: left border accent + ~14% tier colour background)
+- Designed to never require vertical scrolling — content is intentionally minimal
+
+**Right panel rules:**
+
+- Default state: empty (muted placeholder prompt)
+- Updates based on left panel selection
+- Supports one level of internal depth (tier list → item detail), navigated via breadcrumb
+- Never triggers a full page navigation
+
+---
+
+### 3.2 Right Panel States
+
+**State 1 — Empty (nothing selected)**
+
+- Muted placeholder: "Select any item to see its detail"
+- No structural chrome, no CTA
+- Exception: if the page has no data at all, this state shows the relevant empty-state CTA instead
+
+**State 2 — Tier selected (item list view)**
+
+- Breadcrumb: tier name only, in tier colour (`font-body`, weight 600, 9px, uppercase, 0.08em letter-spacing)
+- List of all items in the tier, each as an `ItemRow`
+- "Add item" row at the bottom of the list — inline, not a modal trigger
+- Clicking an item transitions to State 3
+
+**State 3 — Item selected (detail view)**
+
+- Breadcrumb: `← Tier name / Item name` — the `←` navigates back to State 2
+- Item value at 30px, `font-numeric`, weight 800, `text-primary`
+- "Last reviewed" text at 12px, `text-tertiary` (amber attention text if stale)
+- 24-month history graph (sparkline)
+- `ButtonPair`: `[ Edit ]  [ Still correct ✓ ]`
+- `NudgeCard`: shown below the button pair when relevant; absent otherwise
+
+**Transitions:** direction-aware slide, 150–200ms, ease-out on entrance / ease-in on exit:
+
+- Navigating deeper (State 2 → State 3): slide-left entrance
+- Navigating shallower (State 3 → State 2 via breadcrumb): slide-right entrance
+- Returning to empty (State 2/3 → State 1): fade-out
+
+All transitions must be trivially disableable via `prefers-reduced-motion`.
+
+---
+
+### 3.3 Left Panel — Overview Specifics
+
+**The left panel shows tier summaries only.** Individual waterfall items (income sources, bills, discretionary categories) are never displayed in the left panel — they appear in the right panel when a tier is selected.
+
+The Overview left panel layout from top to bottom:
+
+```
+  Timeline navigator (snapshot dots)
+  ─────────────────────────────────
+  ● INCOME                  £8,856     ← #0ea5e9 electric blue
+  │
+  → minus committed spend
+  │
+  ● COMMITTED SPEND         £4,817     ← #6366f1 indigo     [● 3 stale]
+  │
+  → minus discretionary
+  │
+  ● DISCRETIONARY           £3,830     ← #a855f7 purple
+  │
+  ─────────────────────────────────
+  = SURPLUS           £209 · 2.4%      ← #4adcd0 teal-mint
+```
+
+- Four `WaterfallTierRow` components — tier name in solid tier colour, total, and optional attention badge
+- Three `WaterfallConnector` components between them
+- Surplus row is visually distinct — heavier weight, 24px value, the visual terminus of the cascade
+
+---
+
+### 3.4 Empty States
+
+Every empty state includes a clear call to action. A blank view is never acceptable.
+
+| Context                        | Empty state treatment                                                       |
+| ------------------------------ | --------------------------------------------------------------------------- |
+| Overview — no waterfall data   | CTA to launch the Waterfall Creation Wizard (replaces the full right panel) |
+| Right panel — nothing selected | Muted placeholder: "Select any item to see its detail"                      |
+| Any tier with no items         | Inline "Add first item" action in the right panel (State 2)                 |
+
+**Rule:** silence = approval _only when data exists_. When data is absent, the app guides the user forward.
+
+---
+
+### 3.5 Full-Screen Modes (Wizards)
+
+The Review Wizard and Waterfall Creation Wizard are exempt from the two-panel layout rule. They are focused, full-screen flows with dedicated step navigation.
+
+**Rules that still apply inside wizards:**
+
+- `ButtonPair` rightmost-is-affirmative rule
+- Language rules (budgeted/planned, not spent/paid)
+- Staleness principles (informational, not blocking)
+
+---
+
+### 3.6 Card Component
+
+Used in the Review Wizard, Waterfall Creation Wizard summary step, and anywhere a discrete item needs visual separation.
+
+**Anatomy:**
+
+- Background: `surface` token
+- Border: 1px, `surface` border token (`#1a1f35`)
+- Border-radius: 8px
+- Padding: 24px (`p-6`)
+- No shadow
+
+**Variants:**
+
+- **Default** — `surface` background + border
+- **Stale** — same as default, but `StalenessIndicator` is present with attention amber detail text
+
+**Rule:** cards use `surface` elevation to distinguish themselves from the page background. No shadows.
+
+---
+
+### 3.7 Liquidity Classification
+
+Assets are classified into three liquidity tiers for analytical purposes. These are **not** used as primary navigation — users navigate by asset class (Savings, Pensions, Property, etc.). Liquidity is surfaced as a secondary breakdown in the Wealth page summary.
+
+| Tier                   | Description                           | Examples                                       |
+| ---------------------- | ------------------------------------- | ---------------------------------------------- |
+| Cash & Savings         | Accessible immediately                | Cash, savings accounts, ISAs                   |
+| Investments & Pensions | Accessible with delay or restrictions | Pensions, stocks & shares, investment accounts |
+| Property & Vehicles    | Not readily convertible to cash       | Property equity, vehicles, physical assets     |
+
+---
+
+### 3.8 Trust Savings (Held on Behalf Of)
+
+Some savings are managed by the household but legally owned by a third party (e.g. a child's Junior ISA). These accounts are:
+
+- Tracked with the same features as household savings (history, staleness, contributions)
+- Clearly labelled "Held on behalf of [Name]"
+- **Excluded from household net worth calculations**
+- Displayed in a ring-fenced section below the main Wealth summary
+
+---
+
+### 3.9 Asset Valuation
+
+Assets are recorded at **equity value** — what the user owns outright, not the total asset value. This avoids separately tracking associated debt (e.g. a property worth £300,000 with a £200,000 mortgage = equity value £100,000).
+
+Every valuation update requires a **valuation date**, which defaults to today but can be set to any past date. This ensures the history graph accurately reflects when a value was true, not when it was entered.
+
+---
+
+### 3.10 Savings ↔ Waterfall Linkage
+
+Monthly savings allocations are defined in the waterfall (Discretionary → Savings). Each allocation can optionally be linked to a specific account on the Wealth page. When linked:
+
+- The Wealth page uses the contribution rate for forward projections
+- The system can check ISA annual allowance limits per linked account
+- Rate optimisation nudges can compare contribution rates across linked accounts
+
+Linking is optional. Both pages function independently without it.
+
+**ISA allowance is tracked per person, not per account.** Where a person holds multiple ISA accounts, contributions are summed against a single person-level annual limit. Household members each have independent allowance tracking.
+
+---
+
+## 4. Interaction Rules
+
+### 4.1 Language
+
+**Always use:** "budgeted", "planned", "allocated", "expected", "set aside"
+
+**Never use:** "spent", "paid", "charged"
+
+The app tracks what users _intend_, not what they _did_. Language must consistently reflect that.
+
+---
+
+### 4.2 Staleness
+
+- Every value carries a `lastReviewedAt` timestamp
+- Stale threshold is configurable per category (defaults: salary 12 months, energy 6 months)
+- Staleness is communicated through the attention system: amber dot + amber detail text
+- **Staleness is informational only — it never blocks user action**
+- A user can always proceed, edit, confirm, or navigate regardless of stale state
+- Stale items surface first in the Review Wizard
+
+---
+
+### 4.3 Nudges
+
+- Appear in the right panel only, contextual to the selected item
+- One at a time — never stacked
+- Phrased as information + arithmetic, never as recommendations
+- Use the attention system visual treatment (amber-tinted card)
+- Absent when no opportunity exists — silence = approval
+- Examples:
+  - ✓ "Your ISA allowance has £11,600 remaining before April"
+  - ✓ "Redirecting £50/mo to this account could earn ~£180 more per year"
+  - ✗ "You should top up your ISA"
+  - ✗ "We recommend moving your savings"
+
+---
+
+### 4.4 Colour Signal Rules
+
+1. **Tier colours are semantically protected** — Income blue, Committed indigo, Discretionary purple, and Surplus teal are exclusively reserved for their waterfall tier. Never repurpose for status, attention, or other UI signals.
+2. **Callout gradients are for engagement only** — the gradient text treatment is special and inviting. Never use it for warnings, attention items, or informational alerts.
+3. **Red is only for app errors** — validation failures, system errors, destructive action confirmation. Never for financial shortfalls, negative balances, or over-budget states.
+4. **Green is only for UI confirmations** — saved, completed, synced. Never for positive balances, surplus amounts, or any financial value.
+5. **Amber is the attention colour** — one colour (`#f59e0b`), one pattern (dot + text). Used for staleness, cashflow warnings, and anything "noteworthy." No variations in hue or saturation.
+6. **Tier headings are solid colours** — the tier's primary colour, not gradient. Gradient text is reserved for callout words.
+7. **If a value is fine, show nothing** — silence = approval. No green ticks, no "all good" badges.
+
+---
+
+### 4.5 Snapshot Read-Only Mode
+
+When a historical snapshot is loaded:
+
+- A "Viewing: [snapshot name]" banner replaces the timeline navigator
+- All values are read-only — no edit controls, no `ButtonPair`
+- The history graph shows a vertical marker at the snapshot date for orientation
+- Right panel headline value reflects the snapshot date, not current value
+- Returning to the live plan: banner dismissed, full edit controls restored
+
+**Snapshot naming rules:**
+
+- Names must be unique within a household
+- If a user enters a duplicate name, highlight the save field with a validation message
+- Auto-generated names (e.g. "January 2026 — Auto") are reserved and cannot be duplicated by user-created snapshots
+
+---
+
+### 4.6 Tooltips
+
+- Used for three purposes: (1) staleness age on `StalenessIndicator` hover, (2) term definitions on hover for financial terminology, (3) explanations on hover for any standalone icon that carries meaning but has no visible label text
+- Tooltip definitions for financial terms and functional icons are maintained in `definitions.md`
+- No in-app glossary — contextual tooltips are the only explanation mechanism
+- Tooltip text: 12px, `font-body`, `surface-overlay` background
+- **Rule:** any icon not accompanied by visible label text must have a tooltip. No icon-only UI element may be left without one.
+
+---
+
+### 4.7 Action Feedback
+
+Every user action that changes state must produce visible feedback.
+
+| Action type                                | Feedback mechanism                                                               |
+| ------------------------------------------ | -------------------------------------------------------------------------------- |
+| Instant (copy, toggle, confirm)            | Micro-interaction on the element itself (e.g. copy icon → "Copied!" chip for 2s) |
+| Async (save, sync)                         | Loading state on triggering button → success/error toast on completion           |
+| Staleness confirmation ("Still correct ✓") | Brief `success` colour flash on the button, then normal                          |
+| Wizard step completion                     | Brief confirmation before advancing to next step                                 |
+| Destructive confirmation (delete)          | Modal confirmation before proceeding                                             |
+
+Toast notifications: non-blocking, anchor consistently (bottom-right), auto-dismiss after 4s, dismissable manually. Background: `surface-elevated`.
+
+### 4.8 Micro-Animations
+
+Meaningful motion communicates spatial relationships. All animations follow this spec:
+
+| Transition                              | Direction            | Duration  | Easing   |
+| --------------------------------------- | -------------------- | --------- | -------- |
+| Right panel deeper (State 2 → State 3)  | Slide-left entrance  | 150–200ms | ease-out |
+| Right panel shallower (breadcrumb back) | Slide-right entrance | 150–200ms | ease-out |
+| Wizard step forward                     | Slide-left           | 150–200ms | ease-out |
+| Wizard step back                        | Slide-right          | 150–200ms | ease-out |
+| Toast entrance                          | Fade-up              | 150ms     | ease-out |
+| Toast exit                              | Fade-out             | 150ms     | ease-in  |
+
+**Rules:**
+
+- Duration: 150–200ms. Motion must never feel like a delay.
+- Easing: ease-out for entrances, ease-in for exits
+- All animations must be trivially disableable via a single toggle on `prefers-reduced-motion`
+
+---
+
+### 4.9 Micro Charts
+
+Prefer micro charts over tables for time-series and comparative data:
+
+- History sparklines in the right panel detail view (24-month window)
+- Comparison bars for the Wealth liquidity breakdown
+- ISA allowance remaining as a progress bar
+
+**Rule:** no more than 2–3 micro charts visible simultaneously in any single view. When a view would otherwise require more, show the most contextually relevant ones and link to a full breakdown.
+
+Chart library: Recharts.
+
+---
+
+### 4.11 Progressive Disclosure
+
+Forms capture only mandatory fields by default.
+
+| Field condition                   | Visibility                                                  |
+| --------------------------------- | ----------------------------------------------------------- |
+| Mandatory field                   | Always visible                                              |
+| Optional field, no existing data  | Hidden behind "+ More options" reveal                       |
+| Optional field, has existing data | Always shown — never hide a user's own data behind a toggle |
+
+The reveal action label: "+ More options" or "+ Optional details". It is always present if optional fields exist, even if all optional fields are already shown (because data is pre-populated).
+
+---
+
+### 4.12 Inline Edit Form (Transform in Place)
+
+When the user clicks `[ Edit ]` in a right panel detail view (State 3), the form opens **in place** — the existing detail view converts to an edit form. No navigation occurs. The breadcrumb does not change.
+
+**Before click (detail view):**
+
+```
+  ← Committed / British Gas
+  £122 / month
+  Last reviewed: Jan 2026 ✓
+  [sparkline]
+  [ Edit ]   [ Still correct ✓ ]
+```
+
+**After click (edit form, same panel position):**
+
+```
+  ← Committed / British Gas
+  Name   [ British Gas         ]
+  Amount [ 122                 ]
+  + More options
+  [ Cancel ]   [ Save ]
+```
+
+**Rules:**
+
+- The breadcrumb (`← Committed / British Gas`) remains unchanged — the user has not navigated
+- The sparkline history disappears during edit; it returns when the form is saved or cancelled
+- `[ Cancel ]` reverts to the detail view without saving
+- `[ Save ]` saves the changes and returns to the detail view, updated
+- The rightmost button is always the affirmative action — `[ Save ]` is always on the right
+
+---
+
+### 4.13 Loading Strategy
+
+The app uses **skeleton screens** for all data-loading states — never a full-page spinner.
+
+**On initial page load or household switch:**
+
+- Left panel: render the `SkeletonLoader` left panel variant (4 tier-row blocks + connectors)
+- Right panel: render the empty placeholder state (not a skeleton — the right panel has nothing to load until a tier is selected)
+
+**On tier selection (right panel loading):**
+
+- If data loads in under 150ms: render directly, no skeleton shown
+- If data takes longer: show the `SkeletonLoader` right panel variant until the data arrives
+
+**Rules:**
+
+- Skeletons mirror the layout they will replace — same heights, same positions
+- Never use a spinner in place of a skeleton for panel-level loading
+- Async button operations (save, confirm) use the button loading state (spinner in the button), not a panel skeleton
+
+---
+
+### 4.14 Error Handling
+
+When a data sync fails, the app retains the last known data and surfaces the failure non-destructively.
+
+**On sync failure:**
+
+1. Show a toast (bottom-right, error variant): "Couldn't connect — using last synced data"
+2. Show the `StaleDataBanner` above the panels (attention amber): "Data may be outdated — last synced [N minutes ago]"
+3. Continue showing cached data; the user can still navigate and view
+
+**Auto-retry:**
+
+- The app retries silently in the background
+- On successful resync: the `StaleDataBanner` auto-dismisses; a success toast confirms: "Data refreshed"
+- Manual retry: the "Retry" link in the `StaleDataBanner` triggers an immediate attempt
+
+**Rules:**
+
+- Never use `error` (red) for connectivity failures — this is `attention` amber
+- Never blank out the UI or show an error page for a connectivity failure
+- If data has never loaded (fresh session, first load fails): show an inline error in the panel with a prominent retry button
+
+---
+
+## 5. Icons
+
+### 5.1 Library Priority
+
+Icons must be sourced in this order:
+
+1. **Lucide** — primary (already a dependency via shadcn/ui)
+2. **Phosphor** — secondary, Regular weight only (for stroke consistency with Lucide)
+3. Any other interface library — last resort; add a comment explaining why
+
+Do not mix icon styles within a single component. Never use emojis as icon substitutes.
+
+### 5.2 One Icon, One Meaning
+
+The same icon must not be reused for two different meanings anywhere in the app. If a concept needs a visual representation, it gets a dedicated icon. The canonical icon map below is the authoritative reference.
+
+**Canonical Icon Map** (extend as icons are confirmed during implementation):
+
+| Meaning                  | Icon name          | Library |
+| ------------------------ | ------------------ | ------- |
+| Staleness / needs review | `AlertCircle`      | Lucide  |
+| Snapshot                 | `Camera`           | Lucide  |
+| Edit / modify            | `Pencil`           | Lucide  |
+| Delete / remove          | `Trash2`           | Lucide  |
+| Link / connected         | `Link2`            | Lucide  |
+| Confirmed / reviewed     | `CheckCircle2`     | Lucide  |
+| Add / create             | `Plus`             | Lucide  |
+| Navigate back            | `ChevronLeft`      | Lucide  |
+| Navigate deeper          | `ChevronRight`     | Lucide  |
+| Settings                 | `Settings`         | Lucide  |
+| Household / members      | `Users`            | Lucide  |
+| Income source            | `Wallet`           | Lucide  |
+| Copy                     | `Copy`             | Lucide  |
+| Close / dismiss          | `X`                | Lucide  |
+| Information              | `Info`             | Lucide  |
+| Loading / pending        | Spinner (animated) | custom  |
+
+### 5.3 Icons with Text
+
+When an icon appears inline beside label text:
+
+- Icon size = cap height of the adjacent text
+- Gap: 4–6px (half to one grid unit)
+- Alignment: vertically centred on the text baseline
+- Gap must not exceed 8px (one grid unit)
+
+### 5.4 Icon-Only Elements
+
+Any icon without accompanying visible label text must have a tooltip on hover (see Section 4.6).
+
+---
+
+## 6. Images as Identifiers
+
+### 6.1 Scope
+
+Any named data entry may be assigned a main image. This applies across:
+
+- Wealth page: savings accounts, pension providers, investment platforms, property
+- Overview waterfall: income sources, bill items, discretionary categories
+- Planner: purchases, gift recipients
+
+### 6.2 Sources
+
+Images may be:
+
+1. **Selected from the curated library** — logos for common UK institutions and providers, bundled or statically served
+2. **User-uploaded** — stored per household; max file size and accepted formats confirmed at implementation
+
+**Curated library starting set:**
+
+| Category                 | Examples                                                             |
+| ------------------------ | -------------------------------------------------------------------- |
+| Banks / current accounts | Monzo, Barclays, HSBC, Lloyds, NatWest, Starling, Santander, Halifax |
+| Savings / ISA platforms  | Marcus, Zopa, Chase, NS&I                                            |
+| Pension providers        | Vanguard, Aviva, Legal & General, Scottish Widows, Nest, PensionBee  |
+| Investment platforms     | Vanguard, Fidelity, Hargreaves Lansdown, Trading 212                 |
+| Utilities                | British Gas, Octopus Energy, EDF, E.ON                               |
+| Telecoms / broadband     | Sky, Virgin Media, BT, Vodafone, EE, Three                           |
+| Streaming                | Netflix, Spotify, Apple, Disney+, Amazon                             |
+
+### 6.3 Fallback
+
+When no image is assigned, display an `EntityAvatar` placeholder:
+
+- Background: a deterministic colour derived from the entry name (using the existing colour token palette)
+- Content: 1–2 initials from the entry name, `font-heading`, white
+
+The placeholder must not feel like an error state — it is the default, expected appearance for new entries.
+
+### 6.4 Display Rules
+
+- Displayed at a consistent size per context (exact dimensions confirmed at implementation)
+- Images are always circular (border-radius: full) at row/list scale; may be rounded-square at larger detail scale
+- No image border unless needed for contrast against background — use a subtle border token ring if required
+
+---
+
+## 7. Top Navigation Bar
+
+The top navigation bar spans the full width above both panels, present on all pages.
+
+**Anatomy:**
+
+```
+  finplan    Overview  Wealth  Planner  Settings    [Household ▾]  [User ▾]
+```
+
+- **Wordmark**: left-aligned, `font-heading` weight 800, links to Overview. May use `callout-primary` gradient treatment.
+- **Navigation links**: `Overview`, `Wealth`, `Planner`, `Settings` — `font-heading`, weight 500
+- **Household switcher**: right-aligned, dropdown listing all households the user belongs to; active household name is always visible
+- **User menu**: rightmost, user's name or avatar; contains account settings and sign out
+
+**Active state:**
+
+- Active nav item: `action` colour underline, 2px, below the link text; text in `text-primary`
+- Inactive items: `text-secondary`
+- Hover: `text-primary`, no underline
+
+**Bar treatment:**
+
+- Background: `background` token (same as page — flush, no border below, no shadow)
+- Height: 48px
+- The bar is visually continuous with the page — only the content below it is sectioned by the panel border
+
+**Rules:**
+
+- The household switcher label always shows the name of the currently active household
+- Switching households reloads the active page's data immediately
+- On tier-specific pages (Overview), the active nav item uses the `action` colour, not a tier colour — the nav is a global element
+
+---
+
+## 8. Settings Page
+
+Settings follows the same two-panel layout as Overview, Wealth, and Planner.
+
+**Left panel:** lists the settings categories. Each is a plain text row using `page-accent` (`#8b5cf6`) for the selected state — Settings is not a waterfall page, so no tier colour applies.
+
+```
+  Income sources
+  ▶ Staleness thresholds
+  Surplus benchmark
+  ISA tax year
+  Household
+  Snapshot management
+  Trust accounts
+  Waterfall
+```
+
+**Right panel:** displays the selected category's form/controls. Follows the same empty/content states as other right panels, but without item list depth — Settings categories open directly to their form/controls (no State 2 intermediate list).
+
+**Section headers** within Settings use `page-accent` (`#8b5cf6`), `font-heading`, weight 700, uppercase, 0.06em letter-spacing.
+
+**Destructive actions in Settings** (e.g. "Rebuild waterfall from scratch", "Remove member") must always be:
+
+- Visually separated from non-destructive actions (below a divider)
+- Labelled clearly with the consequence ("This will clear all waterfall data")
+- Confirmed via modal before proceeding
+
+---
+
+## 9. Page-Specific Colour Notes
+
+### Overview
+
+Each tier uses its own semantic colour for headings, accent bars, and value text. The left panel is a vertical cascade of four distinct colours reinforcing the waterfall mental model.
+
+### Wealth & Planner
+
+These pages sit outside the core waterfall tier-colour system. Section headings and breadcrumbs use `page-accent` (`#8b5cf6` soft violet), giving them a distinct visual identity without borrowing from or conflicting with the four tier colours.
+
+Status indicators within these pages follow the standard rules:
+
+- Attention items (noteworthy observations): `attention` amber
+- App errors: `error` red
+- UI confirmations: `success` green
+- Financial values: never colour-coded as good/bad
+
+---
+
+## 10. Design Personality
+
+- **Bold type** — Outfit 800 for all tier headings and headlines
+- **Ambient background depth** — radial glows, never flat black
+- **Callout word gradients** — reserved for engagement highlights, not tier headings
+- **Generous deliberate spacing** — 8px grid, spacious by default
+- **Colour as signal, not decoration** — used sparingly and meaningfully
+- **Monochromatic cool palette** — indigo / blue / violet / teal family throughout
+- **Non-judgemental** — no good/bad colour coding of financial positions
+
+---
+
+## Appendix: Full Token Reference
+
+Quick-reference table of every colour token in the system.
+
+| Token                     | Value                       | Category |
+| ------------------------- | --------------------------- | -------- |
+| `background`              | `#080a14`                   | Base     |
+| `surface`                 | `#0d1120`                   | Surface  |
+| `surface-border`          | `#1a1f35`                   | Surface  |
+| `surface-elevated`        | `#141b2e`                   | Surface  |
+| `surface-elevated-border` | `#222c45`                   | Surface  |
+| `surface-overlay`         | `#1c2540`                   | Surface  |
+| `surface-overlay-border`  | `#2a3558`                   | Surface  |
+| `text-primary`            | `rgba(238, 242, 255, 0.92)` | Text     |
+| `text-secondary`          | `rgba(238, 242, 255, 0.65)` | Text     |
+| `text-tertiary`           | `rgba(238, 242, 255, 0.40)` | Text     |
+| `text-muted`              | `rgba(238, 242, 255, 0.25)` | Text     |
+| `tier-income`             | `#0ea5e9`                   | Tier     |
+| `tier-committed`          | `#6366f1`                   | Tier     |
+| `tier-discretionary`      | `#a855f7`                   | Tier     |
+| `tier-surplus`            | `#4adcd0`                   | Tier     |
+| `action`                  | `#7c3aed`                   | Accent   |
+| `page-accent`             | `#8b5cf6`                   | Accent   |
+| `callout-primary`         | `#0ea5e9 → #a855f7`         | Callout  |
+| `callout-secondary`       | `#a855f7 → #4adcd0`         | Callout  |
+| `attention`               | `#f59e0b`                   | Status   |
+| `attention-bg`            | `rgba(245, 158, 11, 0.04)`  | Status   |
+| `attention-border`        | `rgba(245, 158, 11, 0.08)`  | Status   |
+| `error`                   | `#ef4444`                   | Status   |
+| `success`                 | `#22c55e`                   | Status   |
+
+---
+
+_Last updated: March 2026 — design system for the FinPlan rebuild._

@@ -22,7 +22,7 @@ apps/frontend/src/pages/auth/          (LoginPage, RegisterPage, AcceptInvitePag
 apps/frontend/src/stores/authStore.ts
 apps/frontend/src/services/auth.service.ts
 apps/frontend/src/services/household.service.ts
-apps/frontend/src/components/layout/HouseholdSwitcher.tsx
+apps/frontend/src/components/layout/HouseholdSwitcher.tsx  (currently embedded in Layout.tsx — extract in Phase 7.0a)
 packages/shared/                       (auth + household Zod schemas only)
 All infra: Docker, docker-compose, CI, Prisma client config, Bun workspace
 ```
@@ -114,7 +114,11 @@ Each feature spec's `## Implementation → Schema` section contains the relevant
 
 Create `apps/backend/src/services/waterfall.service.ts` and `apps/backend/src/routes/waterfall.routes.ts`. All routes, types, and business logic (WaterfallSummary shape, CashflowMonth algorithm, history recording, confirm) are specified in the spec Implementation sections above.
 
+Also implement `POST /api/waterfall/confirm-batch` — accepts `{ items: [{ type: WaterfallItemType, id: string }] }`, updates `lastReviewedAt` on all specified items in a single transaction.
+
 Also update `packages/shared/src/schemas/` — add Zod schemas for waterfall types.
+
+**Testing:** Test that `POST /api/waterfall/:type/:id/confirm` updates `lastReviewedAt` to current timestamp. Test that `POST /api/waterfall/confirm-batch` updates all specified items. Test that editing an item value also updates `lastReviewedAt`. These tests form the contract that Phase 12 (staleness indicators) relies on.
 
 **Commit:** `feat: waterfall APIs — income, bills, discretionary, savings, history`
 
@@ -126,6 +130,12 @@ Also update `packages/shared/src/schemas/` — add Zod schemas for waterfall typ
 
 Create `apps/backend/src/services/wealth.service.ts` and `apps/backend/src/routes/wealth.routes.ts`. WealthSummary shape, projection formula, ISA allowance calculation, and ytdChange logic are all in the spec Implementation sections.
 
+Also update `packages/shared/src/schemas/` — add Zod schemas for wealth types (WealthAccount, WealthSummary, AssetClass enum, WealthAccountHistory).
+
+Also implement `POST /api/wealth/accounts/confirm-batch` — accepts `{ ids: string[] }`, updates `lastReviewedAt` on all specified accounts.
+
+**Testing:** Test that `POST /api/wealth/accounts/:id/confirm` and `POST /api/wealth/accounts/confirm-batch` update `lastReviewedAt`. Test that `POST /api/wealth/accounts/:id/valuation` updates both `valuationDate` and `lastReviewedAt`. These tests form the contract that Phase 12 (staleness indicators) relies on.
+
 **Commit:** `feat: wealth APIs — accounts, valuation history, ISA allowance, projections`
 
 ---
@@ -135,6 +145,8 @@ Create `apps/backend/src/services/wealth.service.ts` and `apps/backend/src/route
 **Specs:** [planner-purchases](backlog/planner-purchases/planner-purchases-spec.md) · [planner-gifts](backlog/planner-gifts/planner-gifts-spec.md)
 
 Create `apps/backend/src/utils/gift-dates.ts` (ukMothersDay, ukFathersDay, nextEventDate), `apps/backend/src/services/planner.service.ts`, and `apps/backend/src/routes/planner.routes.ts`. Gift date algorithm signatures and all API routes are in the spec Implementation sections.
+
+Also update `packages/shared/src/schemas/` — add Zod schemas for planner types (PurchaseItem, PurchasePriority, PurchaseStatus, GiftPerson, GiftEvent, GiftEventType, GiftRecurrence, GiftYearRecord, PlannerYearBudget).
 
 **Commit:** `feat: planner APIs — purchases, gift persons/events, UK date utilities`
 
@@ -146,15 +158,23 @@ Create `apps/backend/src/utils/gift-dates.ts` (ukMothersDay, ukFathersDay, nextE
 
 Create four route files: `settings.routes.ts`, `snapshots.routes.ts`, `review-session.routes.ts`, `setup-session.routes.ts`. Note: snapshot creation auto-populates `data` by calling `waterfallService.getWaterfallSummary()`. Auto Jan 1 snapshot logic lives in the waterfall summary endpoint.
 
+Also update `packages/shared/src/schemas/` — add Zod schemas for settings, snapshot, review session, and setup session types.
+
 **Commit:** `feat: settings, snapshot, and wizard session APIs`
 
 ---
 
 ## Phase 7: Frontend Foundation
 
-**Goal:** New routing, two-panel layout, top nav, frontend services, utilities. No feature spec — all tasks documented here.
+**Goal:** New routing, two-panel layout, top nav, frontend services, utilities, and foundation UI primitives.
+
+**Specs:** [foundation-ui-primitives](backlog/foundation-ui-primitives/foundation-ui-primitives-spec.md) · [nudge-card](backlog/nudge-card/nudge-card-spec.md) · [definition-tooltip](backlog/definition-tooltip/definition-tooltip-spec.md)
 
 **Tasks:**
+
+**7.0a** Extract `HouseholdSwitcher` from `apps/frontend/src/components/layout/Layout.tsx` into its own file at `apps/frontend/src/components/layout/HouseholdSwitcher.tsx`. Change navigation target from `/dashboard` to `/overview`.
+
+**7.0b** Install dependencies needed across frontend phases: `bun add date-fns recharts`
 
 **7.1** Delete all frontend files and directories listed in "What to Delete" above. Run `bun run build`; fix import errors.
 
@@ -179,7 +199,7 @@ interface TwoPanelLayoutProps {
   rightPlaceholder?: string; // default: "Select any item to see its detail"
 }
 // <div className="flex h-full overflow-hidden">
-//   <aside className="w-72 min-w-72 border-r overflow-y-auto shrink-0 p-4">{left}</aside>
+//   <aside className="w-[360px] min-w-[360px] border-r overflow-y-auto shrink-0 p-4">{left}</aside>
 //   <main className="flex-1 overflow-y-auto p-6">{right ?? <PlaceholderMessage />}</main>
 // </div>
 // PlaceholderMessage: centred, text-muted-foreground, italic
@@ -194,7 +214,10 @@ const navItems = [
   { label: "Planner", path: "/planner" },
   { label: "Settings", path: "/settings" },
 ];
-// Top bar: "finplan" wordmark + HouseholdSwitcher | nav items (active state via useLocation) | user name + Sign out
+// Top bar layout:
+//   Left: "finplan" wordmark + <HouseholdSwitcher>
+//   Centre: nav items with active state via useLocation
+//   Right: user display name + "Sign out" button
 // Include <Toaster position="bottom-right" richColors /> (sonner)
 ```
 
@@ -221,13 +244,25 @@ export const formatPct = (n: number): string => `${n.toFixed(2)}%`;
 
 Use `formatCurrency` everywhere a £ value is displayed.
 
-**7.7** In `apps/frontend/src/main.tsx`, configure QueryClient with a global 401 handler that calls `useAuthStore.getState().clearAuth()` and redirects to `/login`. Add `<Toaster />` in Layout.tsx. Install: `bun add sonner`
+**7.7** In `apps/frontend/src/main.tsx`, configure QueryClient with a global 401 handler that calls `useAuthStore.getState().clearAuth()` and redirects to `/login` (not `/dashboard`). Verify `clearAuth()` triggers navigation correctly. Add `<Toaster />` in Layout.tsx. Install: `bun add sonner`
 
 **7.8** Confirm form stack: `react-hook-form` + `@hookform/resolvers/zod` + shadcn `<Form>`. Install if needed: `bun add react-hook-form @hookform/resolvers`. This is the standard pattern for every form in the app.
 
 **7.9** Create `DefinitionTooltip` component → see [definition-tooltip](backlog/definition-tooltip/definition-tooltip-spec.md) for the full DEFINITIONS dictionary and all prescribed placements.
 
-**7.10** Verify: navigate to `/overview`, `/wealth`, `/planner`, `/settings` — all render without errors.
+**7.10** Create `apps/frontend/src/utils/motion.ts` — export `usePrefersReducedMotion()` hook (reads `prefers-reduced-motion: reduce` media query). All animated components must check this.
+
+**7.11** Build foundation UI primitives → see [foundation-ui-primitives](backlog/foundation-ui-primitives/foundation-ui-primitives-spec.md):
+
+- `SkeletonLoader.tsx` — left panel + right panel variants, shimmer animation, `prefers-reduced-motion` support
+- `StaleDataBanner.tsx` — amber sync-failure banner, auto-retry, auto-dismiss
+- `ButtonPair.tsx` — rightmost button always affirmative, all five button states
+- `EntityAvatar.tsx` — curated logo → uploaded image → initials fallback
+- `PanelTransition.tsx` — directional slide animations (deeper/shallower/empty), `prefers-reduced-motion` support
+
+**7.12** Build `NudgeCard` component shell → see [nudge-card](backlog/nudge-card/nudge-card-spec.md). Build the presentational component only; contextual nudge logic is wired in Phases 8 and 9.
+
+**7.13** Verify: navigate to `/overview`, `/wealth`, `/planner`, `/settings` — all render without errors.
 
 **Commit:** `feat: frontend foundation — routing, two-panel layout, new nav, service stubs`
 
@@ -237,9 +272,13 @@ Use `formatCurrency` everywhere a £ value is displayed.
 
 **Specs:** [overview-waterfall](backlog/overview-waterfall/overview-waterfall-spec.md) · [overview-item-detail](backlog/overview-item-detail/overview-item-detail-spec.md) · [yearly-bills-calendar](backlog/yearly-bills-calendar/yearly-bills-calendar-spec.md) · [overview-snapshot-timeline](backlog/overview-snapshot-timeline/overview-snapshot-timeline-spec.md)
 
-Build: TanStack Query hooks (`useWaterfall.ts`), `WaterfallLeftPanel`, `ItemDetailPanel`, `HistoryChart`, `CashflowCalendar`, `SnapshotTimeline`, `CreateSnapshotModal`. Stub the `[Review ▸]` button (`console.log('open review')`) and the waterfall setup wizard CTA (`console.log('open wizard')`).
+Build: TanStack Query hooks (`useWaterfall.ts`), `WaterfallLeftPanel`, `ItemDetailPanel`, `HistoryChart`, `CashflowCalendar`. Stub the `[Review ▸]` button (`console.log('open review')`) and the waterfall setup wizard CTA (`console.log('open wizard')`). Stub the snapshot timeline area with a placeholder (full snapshot UI is built in Phase 13).
 
-**Commit:** `feat: overview page — waterfall, item detail, history charts, cashflow, snapshots`
+Build "End income source" flow in `ItemDetailPanel`: inline prompt "When did this income end?" with date input (default today), calls `POST /api/waterfall/income/:id/end`. Source removed from live waterfall; history preserved. Reactivation available from Settings → Income sources (ended list).
+
+HistoryChart: set `isAnimationActive={!prefersReducedMotion}` on all Recharts components via the `usePrefersReducedMotion()` hook.
+
+**Commit:** `feat: overview page — waterfall, item detail, history charts, cashflow`
 
 ---
 
@@ -267,7 +306,27 @@ Build: TanStack Query hooks (`usePlanner.ts`), `PlannerLeftPanel`, `PurchaseList
 
 **Specs:** [settings](backlog/settings/settings-spec.md) · [household-management](backlog/household-management/household-management-spec.md)
 
-Build `SettingsPage.tsx` with all sections. Settings panels table in the settings spec lists every section, its fields, and the endpoint it calls.
+**Tasks:**
+
+**11.1** Create `SettingsPage.tsx` with left nav listing all sections. Wire routing so each section scrolls-to or tab-selects.
+
+**11.2** Profile section — name edit form, calls `PATCH /api/auth/me { name }`.
+
+**11.3** Staleness thresholds section — per-type threshold inputs (income_source, committed_bill, yearly_bill, discretionary_category, savings_allocation, wealth_account). Calls `PATCH /api/settings`.
+
+**11.4** Surplus benchmark section — percentage input. Calls `PATCH /api/settings`.
+
+**11.5** ISA tax year section — month + day inputs, label "UK default: 6 April. Only change if you are in a different jurisdiction." Calls `PATCH /api/settings`.
+
+**11.6** Household management section — member list with roles, invite flow (create invite link + QR), remove member (owner only), rename household. Uses existing household API endpoints.
+
+**11.7** Snapshot manager section — list snapshots, rename (inline edit, 409 on duplicate), delete with confirmation. Uses snapshot API endpoints.
+
+**11.8** Income sources (ended) section — list ended income sources with reactivation option. Calls `POST /api/waterfall/income/:id/reactivate`.
+
+**11.9** Waterfall rebuild section — "Rebuild from scratch" button with destructive confirmation. Calls `DELETE /api/waterfall/all` then opens WaterfallSetupWizard.
+
+**11.10** Verify: all sections render and save correctly.
 
 **Commit:** `feat: settings page — all sections, household management, snapshot manager`
 
@@ -277,7 +336,7 @@ Build `SettingsPage.tsx` with all sections. Settings panels table in the setting
 
 **Spec:** [staleness-indicators](backlog/staleness-indicators/staleness-indicators-spec.md)
 
-Build `apps/frontend/src/utils/staleness.ts` and `StalenessIndicator.tsx`. Wire into `WaterfallLeftPanel`, `ItemDetailPanel`, `AccountListPanel`, `AccountDetailPanel`. Install if needed: `bun add date-fns`
+Build `apps/frontend/src/utils/staleness.ts` and `StalenessIndicator.tsx`. Wire into `WaterfallLeftPanel`, `ItemDetailPanel`, `AccountListPanel`, `AccountDetailPanel`. (`date-fns` already installed in Phase 7.)
 
 **Commit:** `feat: staleness indicators — overview and wealth pages`
 
@@ -287,9 +346,17 @@ Build `apps/frontend/src/utils/staleness.ts` and `StalenessIndicator.tsx`. Wire 
 
 **Specs:** [snapshot-system](backlog/snapshot-system/snapshot-system-spec.md) · [overview-snapshot-timeline](backlog/overview-snapshot-timeline/overview-snapshot-timeline-spec.md)
 
-Complete `SnapshotTimeline.tsx` (proportional dot positioning). Wire snapshot mode into `OverviewPage`: `viewingSnapshot` state; pass `snapshot.data` to left panel; pass `snapshotDate` to all `HistoryChart` instances; disable all edit actions. Wire all three creation triggers (Jan 1 auto is server-side; review wizard completion is Phase 14; income source change prompt is here).
+Build `SnapshotTimeline.tsx` (proportional dot positioning, `[+ Save snapshot]` button, ◂/▸ gap navigation arrows, hover names/dates on dots). Build `CreateSnapshotModal.tsx` (name input pre-populated "Month Year", editable; 409 duplicate name → inline error).
 
-**Commit:** `feat: snapshot system — timeline nav, read-only view, creation triggers`
+Wire snapshot mode into `OverviewPage`: `viewingSnapshot` state; pass `snapshot.data` to left panel; pass `snapshotDate` to all `HistoryChart` instances (renders amber dashed ReferenceLine); disable all edit actions; show "Return to current ▸" exit.
+
+Wire all three creation triggers:
+
+1. **Auto Jan 1** — server-side, already in Phase 6 waterfall summary endpoint
+2. **Review wizard completion** — wired in Phase 14
+3. **Income source amount change** — detect amount change in income edit form → prompt "Save a snapshot before updating?" → Yes opens `CreateSnapshotModal` → on save, proceed with update; No proceeds directly
+
+**Commit:** `feat: snapshot system — timeline, read-only view, creation triggers, modal`
 
 ---
 
