@@ -30,7 +30,7 @@ A contextual prompt component that appears in the right panel when a mechanical 
 - [ ] Renders in the right panel only — never in the left panel or inline in a list
 - [ ] One NudgeCard at a time per panel view — never stacked
 - [ ] Absent when no opportunity exists
-- [ ] Background: subtle surface variant — not a coloured alert box, not a warning banner
+- [ ] Background: `attention-bg` token (subtle amber tint); border: `attention-border` token — not a coloured alert box, not a warning banner
 - [ ] Anatomy: single sentence (information + arithmetic) + optional action link
 - [ ] Language: arithmetic and options only, never recommendations
 - [ ] Positioned below the `ButtonPair` when both are present; absent otherwise
