@@ -13,16 +13,16 @@
        ===================================================================== */
 
     /* Background & Depth */
-    --background: 225 45% 5%; /* #080a14 — deep navy, almost black with blue undertone */
+    --background: 221 49% 5%; /* #080a14 — deep navy, almost black with blue undertone */
     --foreground: 230 100% 97% / 0.92; /* rgba(238,242,255,0.92) — blue-white tint */
 
     /* Surfaces — three elevation levels with wide steps */
-    --card: 225 37% 9%; /* #0d1120 — cards, panels, sidebars */
+    --card: 226 45% 9%; /* #0d1120 — cards, panels, sidebars */
     --card-foreground: 230 100% 97% / 0.92;
-    --surface-elevated: 224 36% 13%; /* #141b2e — modals, popovers, selected rows */
-    --surface-elevated-border: 224 33% 20%; /* #222c45 */
-    --surface-overlay: 224 33% 18%; /* #1c2540 — dropdowns, tooltips, top-layer */
-    --surface-overlay-border: 224 32% 24%; /* #2a3558 */
+    --surface-elevated: 223 40% 13%; /* #141b2e — modals, popovers, selected rows */
+    --surface-elevated-border: 221 35% 20%; /* #222c45 */
+    --surface-overlay: 224 40% 18%; /* #1c2540 — dropdowns, tooltips, top-layer */
+    --surface-overlay-border: 223 38% 25%; /* #2a3558 */
 
     /* Popovers & Overlays — use surface-elevated */
     --popover: 224 36% 13%;
@@ -81,7 +81,7 @@
     --callout-secondary-to: 175 72% 57%; /* #4adcd0 (teal) */
 
     /* Borders & Inputs */
-    --border: 225 32% 16%; /* #1a1f35 */
+    --border: 224 38% 15%; /* #1a1f35 */
     --input: 225 32% 16%;
     --ring: 263 84% 52%; /* action violet — focus ring */
 
