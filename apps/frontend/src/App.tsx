@@ -1,9 +1,9 @@
 import { useEffect, lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { QueryClientProvider } from '@tanstack/react-query';
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
-import { Toaster } from 'react-hot-toast';
-import { queryClient } from './lib/queryClient';
+import { QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { Toaster } from "react-hot-toast";
+import { queryClient } from "./lib/queryClient";
 import { useAuthStore } from "./stores/authStore";
 import Layout from "./components/layout/Layout";
 
@@ -13,16 +13,10 @@ const RegisterPage = lazy(() => import("./pages/auth/RegisterPage"));
 const AcceptInvitePage = lazy(() => import("./pages/auth/AcceptInvitePage"));
 
 // App pages
-const DashboardPage = lazy(() => import("./pages/DashboardPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const AccountsPage = lazy(() => import("./pages/AccountsPage"));
-const TransactionsPage = lazy(() => import("./pages/TransactionsPage"));
-const AssetsPage = lazy(() => import("./pages/AssetsPage"));
-const LiabilitiesPage = lazy(() => import("./pages/LiabilitiesPage"));
-const GoalsPage = lazy(() => import("./pages/GoalsPage"));
-const BudgetsPage = lazy(() => import("./pages/BudgetsPage"));
-const BudgetDetailPage = lazy(() => import("./pages/BudgetDetailPage"));
-const DesignPage = lazy(() => import("./pages/DesignPage"));
+const OverviewPage = lazy(() => import("./pages/OverviewPage"));
+const WealthPage = lazy(() => import("./pages/WealthPage"));
+const PlannerPage = lazy(() => import("./pages/PlannerPage"));
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const DesignRenewPage = lazy(() => import("./pages/DesignRenewPage"));
 
 const PageLoader = () => (
@@ -36,18 +30,12 @@ export function ProtectedAppRoutes() {
     <Layout>
       <Suspense fallback={<PageLoader />}>
         <Routes>
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="/accounts" element={<AccountsPage />} />
-          <Route path="/transactions" element={<TransactionsPage />} />
-          <Route path="/assets" element={<AssetsPage />} />
-          <Route path="/liabilities" element={<LiabilitiesPage />} />
-          <Route path="/budget" element={<BudgetsPage />} />
-          <Route path="/budget/:id" element={<BudgetDetailPage />} />
-          <Route path="/goals" element={<GoalsPage />} />
-          <Route path="/settings/household" element={<Navigate to="/profile" replace />} />
-          <Route path="/profile" element={<ProfilePage />} />
-          <Route path="/" element={<Navigate to="/dashboard" />} />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<Navigate to="/overview" replace />} />
+          <Route path="/overview" element={<OverviewPage />} />
+          <Route path="/wealth" element={<WealthPage />} />
+          <Route path="/planner" element={<PlannerPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
+          <Route path="*" element={<Navigate to="/overview" replace />} />
         </Routes>
       </Suspense>
     </Layout>
@@ -58,27 +46,22 @@ function App() {
   const authStatus = useAuthStore((state) => state.authStatus);
   const initializeAuth = useAuthStore((state) => state.initializeAuth);
   const pathname = window.location.pathname;
-  const isDesignPage = import.meta.env.DEV && pathname === '/design';
-  const isDesignRenewPage = import.meta.env.DEV && pathname === '/design-renew';
-  const isAuthenticated = authStatus === 'authenticated';
+  const isDesignRenewPage = import.meta.env.DEV && pathname === "/design-renew";
+  const isAuthenticated = authStatus === "authenticated";
 
   useEffect(() => {
-    if (isDesignPage || isDesignRenewPage) return;
+    if (isDesignRenewPage) return;
     void initializeAuth();
-  }, [initializeAuth, isDesignPage, isDesignRenewPage]);
+  }, [initializeAuth, isDesignRenewPage]);
 
   return (
     <QueryClientProvider client={queryClient}>
       <Toaster position="top-right" />
-      {isDesignPage ? (
-        <Suspense fallback={<PageLoader />}>
-          <DesignPage />
-        </Suspense>
-      ) : isDesignRenewPage ? (
+      {isDesignRenewPage ? (
         <Suspense fallback={<PageLoader />}>
           <DesignRenewPage />
         </Suspense>
-      ) : authStatus === 'initializing' ? (
+      ) : authStatus === "initializing" ? (
         <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
           Restoring secure session...
         </div>
@@ -89,22 +72,16 @@ function App() {
               <Routes>
                 <Route
                   path="/login"
-                  element={isAuthenticated ? <Navigate to="/dashboard" /> : <LoginPage />}
+                  element={isAuthenticated ? <Navigate to="/overview" /> : <LoginPage />}
                 />
                 <Route
                   path="/register"
-                  element={isAuthenticated ? <Navigate to="/dashboard" /> : <RegisterPage />}
+                  element={isAuthenticated ? <Navigate to="/overview" /> : <RegisterPage />}
                 />
                 <Route path="/accept-invite/:token" element={<AcceptInvitePage />} />
                 <Route
                   path="/*"
-                  element={
-                    isAuthenticated ? (
-                      <ProtectedAppRoutes />
-                    ) : (
-                      <Navigate to="/login" />
-                    )
-                  }
+                  element={isAuthenticated ? <ProtectedAppRoutes /> : <Navigate to="/login" />}
                 />
               </Routes>
             </Suspense>

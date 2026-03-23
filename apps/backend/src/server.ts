@@ -1,28 +1,26 @@
-import Fastify from 'fastify';
-import cors from '@fastify/cors';
-import cookie from '@fastify/cookie';
-import csrf from '@fastify/csrf-protection';
-import helmet from '@fastify/helmet';
-import rateLimit from '@fastify/rate-limit';
-import websocket from '@fastify/websocket';
-import { config } from './config/env';
-import { authRoutes } from './routes/auth.routes';
-import { householdRoutes } from './routes/households';
-import { inviteRoutes } from './routes/invite';
-import { accountRoutes } from './routes/account.routes';
-import { categoryRoutes } from './routes/category.routes';
-import { transactionRoutes } from './routes/transaction.routes';
-import { recurringRoutes } from './routes/recurring.routes';
-import { dashboardRoutes } from './routes/dashboard.routes';
-import { assetRoutes } from './routes/asset.routes';
-import { liabilityRoutes } from './routes/liability.routes';
-import { goalRoutes } from './routes/goal.routes';
-import { budgetRoutes } from './routes/budget.routes';
-import { errorHandler } from './middleware/errorHandler';
+import Fastify from "fastify";
+import cors from "@fastify/cors";
+import cookie from "@fastify/cookie";
+import csrf from "@fastify/csrf-protection";
+import helmet from "@fastify/helmet";
+import rateLimit from "@fastify/rate-limit";
+import websocket from "@fastify/websocket";
+import { config } from "./config/env";
+import { authRoutes } from "./routes/auth.routes";
+import { householdRoutes } from "./routes/households";
+import { inviteRoutes } from "./routes/invite";
+import { waterfallRoutes } from "./routes/waterfall.routes";
+import { wealthRoutes } from "./routes/wealth.routes";
+import { plannerRoutes } from "./routes/planner.routes";
+import { settingsRoutes } from "./routes/settings.routes";
+import { snapshotRoutes } from "./routes/snapshots.routes";
+import { reviewRoutes } from "./routes/review-session.routes";
+import { setupRoutes } from "./routes/setup-session.routes";
+import { errorHandler } from "./middleware/errorHandler";
 
 const server = Fastify({
   logger: {
-    level: config.NODE_ENV === 'production' ? 'info' : 'debug',
+    level: config.NODE_ENV === "production" ? "info" : "debug",
   },
 });
 
@@ -33,7 +31,7 @@ async function start() {
   try {
     // Register plugins
     await server.register(cors, {
-      origin: config.CORS_ORIGIN.split(','),
+      origin: config.CORS_ORIGIN.split(","),
       credentials: true,
     });
 
@@ -41,24 +39,24 @@ async function start() {
       secret: config.COOKIE_SECRET,
       parseOptions: {
         httpOnly: true,
-        secure: config.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/',
+        secure: config.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/",
       },
     });
 
     await server.register(csrf, {
       cookieOpts: {
         httpOnly: false, // Must be false so frontend can read it
-        secure: config.NODE_ENV === 'production',
-        sameSite: 'strict',
-        path: '/', // Scope cookie to all paths (cookieOpts fully replaces defaults)
+        secure: config.NODE_ENV === "production",
+        sameSite: "strict",
+        path: "/", // Scope cookie to all paths (cookieOpts fully replaces defaults)
       },
-      sessionPlugin: '@fastify/cookie',
+      sessionPlugin: "@fastify/cookie",
     });
 
     await server.register(helmet, {
-      contentSecurityPolicy: config.NODE_ENV === 'production',
+      contentSecurityPolicy: config.NODE_ENV === "production",
     });
 
     await server.register(rateLimit, {
@@ -70,39 +68,37 @@ async function start() {
     await server.register(websocket);
 
     // Health check endpoint
-    server.get('/health', async () => {
+    server.get("/health", async () => {
       return {
-        status: 'ok',
+        status: "ok",
         timestamp: new Date().toISOString(),
         uptime: process.uptime(),
       };
     });
 
     // API routes
-    server.register(authRoutes, { prefix: '/api/auth' });
-    server.register(householdRoutes, { prefix: '/api' });
-    server.register(inviteRoutes, { prefix: '/api/auth' });
-    server.register(accountRoutes, { prefix: '/api' });
-    server.register(categoryRoutes, { prefix: '/api' });
-    server.register(transactionRoutes, { prefix: '/api' });
-    server.register(recurringRoutes, { prefix: '/api' });
-    server.register(dashboardRoutes, { prefix: '/api' });
-    server.register(assetRoutes, { prefix: '/api' });
-    server.register(liabilityRoutes, { prefix: '/api' });
-    server.register(goalRoutes, { prefix: '/api' });
-    server.register(budgetRoutes, { prefix: '/api' });
+    server.register(authRoutes, { prefix: "/api/auth" });
+    server.register(householdRoutes, { prefix: "/api" });
+    server.register(inviteRoutes, { prefix: "/api/auth" });
+    server.register(waterfallRoutes, { prefix: "/api/waterfall" });
+    server.register(wealthRoutes, { prefix: "/api/wealth" });
+    server.register(plannerRoutes, { prefix: "/api/planner" });
+    server.register(settingsRoutes, { prefix: "/api/settings" });
+    server.register(snapshotRoutes, { prefix: "/api/snapshots" });
+    server.register(reviewRoutes, { prefix: "/api/review-session" });
+    server.register(setupRoutes, { prefix: "/api/setup-session" });
 
     // WebSocket route for sync (placeholder for Phase 1)
     server.register(async (fastify) => {
-      fastify.get('/ws/sync', { websocket: true }, (socket, _req) => {
-        socket.on('message', (message: Buffer) => {
+      fastify.get("/ws/sync", { websocket: true }, (socket, _req) => {
+        socket.on("message", (message: Buffer) => {
           // Sync logic will be implemented here
           server.log.info(`Received WebSocket message: ${message.toString()}`);
-          socket.send(JSON.stringify({ type: 'ack', message: 'Sync server ready' }));
+          socket.send(JSON.stringify({ type: "ack", message: "Sync server ready" }));
         });
 
-        socket.on('close', () => {
-          server.log.info('WebSocket connection closed');
+        socket.on("close", () => {
+          server.log.info("WebSocket connection closed");
         });
       });
     });
@@ -110,7 +106,7 @@ async function start() {
     // Start server
     await server.listen({
       port: config.PORT,
-      host: '0.0.0.0',
+      host: "0.0.0.0",
     });
 
     server.log.info(`Server listening on http://localhost:${config.PORT}`);
@@ -123,7 +119,7 @@ async function start() {
 }
 
 // Graceful shutdown
-const signals = ['SIGINT', 'SIGTERM'];
+const signals = ["SIGINT", "SIGTERM"];
 signals.forEach((signal) => {
   process.on(signal, async () => {
     server.log.info(`Received ${signal}, closing server...`);
