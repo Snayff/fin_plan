@@ -344,12 +344,13 @@ export function FoundationRenewPatterns() {
           {calloutGradients.map((gradient) => (
             <div key={gradient.name} className="flex flex-col gap-2">
               <span
-                className="text-2xl font-heading font-bold"
+                className="text-2xl font-heading font-extrabold"
                 style={{
                   background: `linear-gradient(to right, ${gradient.from}, ${gradient.to})`,
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
                   backgroundClip: "text",
+                  color: "transparent",
                 }}
               >
                 {gradient.name}

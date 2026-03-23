@@ -44,13 +44,21 @@ function DemoWaterfallTierRow({
           {name}
         </span>
         {staleBadge && (
-          <span className="text-xs bg-attention/20 text-attention px-1.5 py-0.5 rounded-full">
-            {staleBadge}
+          <span className="flex items-center gap-1 text-attention">
+            <span
+              className="rounded-full bg-attention shrink-0"
+              style={{ width: "5px", height: "5px" }}
+            />
+            <span className="text-xs">{staleBadge}</span>
           </span>
         )}
         {shortfall && (
-          <span className="text-xs bg-attention/20 text-attention px-1.5 py-0.5 rounded-full">
-            shortfall
+          <span className="flex items-center gap-1 text-attention">
+            <span
+              className="rounded-full bg-attention shrink-0"
+              style={{ width: "5px", height: "5px" }}
+            />
+            <span className="text-xs">shortfall</span>
           </span>
         )}
       </div>
@@ -127,7 +135,7 @@ function DemoNudgeCard({ title, text, link }: { title?: string; text: string; li
       </div>
       <p className="text-text-secondary font-body">{text}</p>
       {link && (
-        <a href="#" className="text-xs text-primary hover:underline">
+        <a href="#" className="text-xs text-page-accent hover:underline">
           {link} →
         </a>
       )}

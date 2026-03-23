@@ -196,7 +196,7 @@ export function DataDisplayRenewPatterns() {
             <div className="space-y-2 text-sm">
               <p className="text-xs text-text-tertiary">← Income</p>
               <p className="text-text-tertiary text-sm">No income sources yet.</p>
-              <button className="text-primary hover:underline text-sm text-left">
+              <button className="text-page-accent hover:underline text-sm text-left">
                 + Add first income source
               </button>
             </div>

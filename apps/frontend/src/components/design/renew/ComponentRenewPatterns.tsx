@@ -204,7 +204,9 @@ export function ComponentRenewPatterns() {
             <span className="text-text-secondary">
               Viewing: <span className="text-foreground font-medium">January 2026 Review</span>
             </span>
-            <button className="text-primary hover:underline text-xs">Return to current ▸</button>
+            <button className="text-page-accent hover:underline text-xs">
+              Return to current ▸
+            </button>
           </div>
         </PatternExample>
       </PatternSection>
@@ -265,7 +267,7 @@ export function ComponentRenewPatterns() {
               Data may be outdated — last synced{" "}
               <span className="text-attention font-medium">3 minutes ago</span>
             </span>
-            <button className="text-primary hover:underline text-xs">Retry</button>
+            <button className="text-page-accent hover:underline text-xs">Retry</button>
           </div>
         </PatternExample>
       </PatternSection>

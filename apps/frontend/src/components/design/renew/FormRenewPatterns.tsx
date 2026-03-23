@@ -118,7 +118,7 @@ export function FormRenewPatterns() {
             <div className="space-y-3">
               <DemoInput label="Name *" value="British Gas" state="default" />
               <DemoInput label="Amount *" value="£122" state="default" />
-              <button className="text-sm text-primary hover:underline text-left">
+              <button className="text-sm text-page-accent hover:underline text-left">
                 + More options
               </button>
             </div>
@@ -127,7 +127,7 @@ export function FormRenewPatterns() {
             <div className="space-y-3">
               <DemoInput label="Name *" value="British Gas" state="default" />
               <DemoInput label="Amount *" value="£122" state="default" />
-              <button className="text-sm text-primary hover:underline text-left">
+              <button className="text-sm text-page-accent hover:underline text-left">
                 + More options
               </button>
               <div className="border-l-2 border-border pl-3 space-y-3">
@@ -173,7 +173,7 @@ export function FormRenewPatterns() {
               <p className="text-xs text-text-tertiary">← Committed / British Gas</p>
               <DemoInput label="Name" value="British Gas" state="focused" />
               <DemoInput label="Amount (£/mo)" value="122" state="default" />
-              <button className="text-xs text-primary hover:underline">+ More options</button>
+              <button className="text-xs text-page-accent hover:underline">+ More options</button>
               <div className="flex gap-2 pt-1">
                 <button className="px-3 py-1.5 text-xs rounded border border-border text-foreground">
                   Cancel
