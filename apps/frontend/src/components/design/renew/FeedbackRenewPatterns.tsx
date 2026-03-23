@@ -1,27 +1,27 @@
 // Renew feedback patterns — toasts, button loading, action feedback
-import { PatternSection } from '../PatternSection';
-import { PatternExample } from '../PatternExample';
+import { PatternSection } from "../PatternSection";
+import { PatternExample } from "../PatternExample";
 
 function DemoToast({
   variant,
   message,
 }: {
-  variant: 'success' | 'error' | 'info';
+  variant: "success" | "error" | "info";
   message: string;
 }) {
   const variantClass = {
-    success: 'border-income/40 bg-income/10',
-    error: 'border-destructive/40 bg-destructive/10',
-    info: 'border-border bg-card',
+    success: "border-success/40 bg-success/10",
+    error: "border-destructive/40 bg-destructive/10",
+    info: "border-border bg-card",
   }[variant];
 
   const iconColor = {
-    success: 'text-income',
-    error: 'text-destructive',
-    info: 'text-text-secondary',
+    success: "text-success",
+    error: "text-destructive",
+    info: "text-text-secondary",
   }[variant];
 
-  const icon = { success: '✓', error: '✕', info: 'ℹ' }[variant];
+  const icon = { success: "✓", error: "✕", info: "ℹ" }[variant];
 
   return (
     <div
@@ -38,7 +38,7 @@ export function FeedbackRenewPatterns() {
   return (
     <div className="space-y-12">
       <div>
-        <h2 className="text-2xl font-semibold text-foreground mb-2">Feedback</h2>
+        <h2 className="text-2xl font-heading font-bold text-foreground mb-2">Feedback</h2>
         <p className="text-sm text-text-secondary">
           How the app communicates the outcome of user actions.
         </p>
@@ -47,15 +47,15 @@ export function FeedbackRenewPatterns() {
       <PatternSection
         id="toast-notifications"
         title="Toast notifications"
-        description="Non-blocking, bottom-right anchored, auto-dismiss after 4s, dismissable manually. Success uses income (teal), error uses destructive (red), info is neutral."
+        description="Non-blocking, bottom-right anchored, auto-dismiss after 4s, dismissable manually. Success uses success (green), error uses destructive (red), info is neutral."
         useWhen={[
-          'success: async operation completed (save, sync, resync)',
-          'error: operation failed (save failed, sync failed)',
-          'info: neutral status update',
+          "success: async operation completed (save, sync, resync)",
+          "error: operation failed (save failed, sync failed)",
+          "info: neutral status update",
         ]}
         avoidWhen={[
-          'Using toasts for synchronous feedback — use micro-interactions instead',
-          'Stacking more than 2 toasts simultaneously',
+          "Using toasts for synchronous feedback — use micro-interactions instead",
+          "Stacking more than 2 toasts simultaneously",
         ]}
       >
         <div className="space-y-3">
@@ -80,27 +80,32 @@ export function FeedbackRenewPatterns() {
         description="Every user action that changes state produces visible feedback. Instant actions use micro-interactions on the element itself. Async operations use button loading states."
         useWhen={[
           'copy: icon transforms to "Copied!" chip for 2s',
-          '"Still correct ✓": brief teal flash on the button',
-          'Async save: loading spinner in button → success/error toast',
-          'Destructive action: modal confirmation before proceeding',
+          '"Still correct ✓": brief state change on the button (visual confirmation)',
+          "Async save: loading spinner in button → success/error toast",
+          "Destructive action: modal confirmation before proceeding",
         ]}
         avoidWhen={[
-          'Silent state changes — always show feedback',
-          'Using a modal for non-destructive feedback',
+          "Silent state changes — always show feedback",
+          "Using a modal for non-destructive feedback",
         ]}
       >
         <div className="grid grid-cols-2 gap-4">
-          <PatternExample label='"Still correct ✓" — brief teal flash'>
+          <PatternExample label='"Still correct ✓" — brief visual confirmation'>
             <div className="flex gap-2">
-              <button className="px-3 py-1.5 text-xs rounded border border-border text-foreground">Edit</button>
+              <button className="px-3 py-1.5 text-xs rounded border border-border text-foreground">
+                Edit
+              </button>
               <button
                 className="px-3 py-1.5 text-xs rounded text-white font-medium"
-                style={{ backgroundColor: 'hsl(var(--income))' }}
+                style={{ backgroundColor: "hsl(var(--success))" }}
               >
                 ✓ Confirmed
               </button>
             </div>
-            <p className="text-xs text-text-tertiary mt-2">Button turns income-teal briefly, then returns to primary orange</p>
+            <p className="text-xs text-text-tertiary mt-2">
+              Brief state change on the button provides immediate visual confirmation, then returns
+              to action violet
+            </p>
           </PatternExample>
           <PatternExample label="Button loading state — spinner replaces label">
             <button className="px-4 py-2 text-sm rounded-md bg-primary text-white flex items-center gap-2 opacity-80">
@@ -114,7 +119,7 @@ export function FeedbackRenewPatterns() {
                 <span className="font-mono text-xs bg-background border border-border px-2 py-0.5 rounded">
                   https://app/invite/abc123
                 </span>
-                <button className="px-2 py-0.5 rounded bg-income/10 text-income text-xs border border-income/30">
+                <button className="px-2 py-0.5 rounded bg-success/10 text-success text-xs border border-success/30">
                   Copied!
                 </button>
               </div>
@@ -127,8 +132,12 @@ export function FeedbackRenewPatterns() {
                 This will revoke their access immediately.
               </p>
               <div className="flex gap-2">
-                <button className="px-3 py-1.5 text-xs rounded border border-border text-foreground">Cancel</button>
-                <button className="px-3 py-1.5 text-xs rounded bg-destructive text-white">Remove</button>
+                <button className="px-3 py-1.5 text-xs rounded border border-border text-foreground">
+                  Cancel
+                </button>
+                <button className="px-3 py-1.5 text-xs rounded bg-destructive text-white">
+                  Remove
+                </button>
               </div>
             </div>
           </PatternExample>
