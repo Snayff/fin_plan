@@ -8,6 +8,7 @@ import { ItemDetailPanel } from "@/components/overview/ItemDetailPanel";
 import { CashflowCalendar } from "@/components/overview/CashflowCalendar";
 import { SnapshotTimeline } from "@/components/overview/SnapshotTimeline";
 import { CreateSnapshotModal } from "@/components/overview/CreateSnapshotModal";
+import { ReviewWizard } from "@/components/overview/ReviewWizard";
 import { useSnapshot } from "@/hooks/useSettings";
 
 interface SelectedItem {
@@ -28,6 +29,7 @@ export default function OverviewPage() {
   const [year] = useState(() => new Date().getFullYear());
   const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showReviewWizard, setShowReviewWizard] = useState(false);
 
   const { data: liveSummary, isLoading } = useWaterfallSummary();
   const { data: snapshotData } = useSnapshot(selectedSnapshotId);
@@ -100,6 +102,7 @@ export default function OverviewPage() {
             setView({ type: "none" });
           }}
           onOpenCreate={() => setShowCreateModal(true)}
+          onOpenReview={() => setShowReviewWizard(true)}
         />
       )}
 
@@ -108,6 +111,7 @@ export default function OverviewPage() {
       </div>
 
       {showCreateModal && <CreateSnapshotModal onClose={() => setShowCreateModal(false)} />}
+      {showReviewWizard && <ReviewWizard onClose={() => setShowReviewWizard(false)} />}
     </div>
   );
 }

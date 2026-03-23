@@ -7,6 +7,7 @@ interface SnapshotTimelineProps {
   onSelect: (id: string) => void;
   onSelectNow: () => void;
   onOpenCreate: () => void;
+  onOpenReview?: () => void;
 }
 
 export function SnapshotTimeline({
@@ -14,6 +15,7 @@ export function SnapshotTimeline({
   onSelect,
   onSelectNow,
   onOpenCreate,
+  onOpenReview,
 }: SnapshotTimelineProps) {
   const { data: snapshots = [] } = useSnapshots();
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -102,6 +104,17 @@ export function SnapshotTimeline({
           onClick={() => scrollBy(120)}
         >
           ▸
+        </button>
+      )}
+
+      {/* Review button */}
+      {onOpenReview && (
+        <button
+          type="button"
+          onClick={onOpenReview}
+          className="shrink-0 text-primary hover:underline whitespace-nowrap"
+        >
+          Review ▸
         </button>
       )}
 
