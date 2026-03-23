@@ -41,29 +41,29 @@ Five foundational UI components that must exist before any page-level feature wo
 
 - [ ] Full-width bar below top navigation (same position as SnapshotBanner — never simultaneous)
 - [ ] Text: "Data may be outdated — last synced [N minutes ago] - [ Retry ]"
-- [ ] Background: `staleness` amber tint, muted (not full saturation)
-- [ ] Text: `font-ui`, `sm` size
+- [ ] Background: `attention-bg` token — subtle amber tint
+- [ ] Text: `font-body`, 12px
 - [ ] "Retry" link triggers immediate resync attempt
 - [ ] Auto-dismisses when a successful sync completes
 - [ ] Does not block or replace any UI — user can navigate and interact with cached data
-- [ ] Never uses `destructive` (red) palette — this is informational
+- [ ] Never uses `error` (red) — this is informational, not an error state
 
 ### ButtonPair
 
 - [ ] Layout: two buttons side by side
 - [ ] Rule: rightmost button is always the affirmative action — no exceptions
 - [ ] Standard variants:
-  - `[ Edit ]   [ Still correct ]`
-  - `[ Update ]   [ Still correct ]`
+  - `[ Edit ]   [ Still correct ✓ ]`
+  - `[ Update ]   [ Still correct ✓ ]`
   - `[ Cancel ]   [ Save ]`
   - `[ Back ]   [ Confirm ]`
-- [ ] "Still correct" behaviour: resets `lastReviewedAt` to now, provides immediate visual confirmation (brief teal colour flash), removes staleness indicator
+- [ ] "Still correct ✓" behaviour: resets `lastReviewedAt` to now, provides immediate visual confirmation (brief `success` colour flash), removes staleness indicator
 - [ ] Both buttons implement all five states: Default, Hovered, Pressed, Disabled, Loading
 
 ### EntityAvatar
 
 - [ ] Sources in priority order: curated logo library > user-uploaded image > initials fallback
-- [ ] Initials fallback: deterministic background colour from entity name, 1-2 initials in white `font-ui`
+- [ ] Initials fallback: deterministic background colour from entity name, 1–2 initials in white, `font-heading`
 - [ ] Sizes: `sm` (24px), `md` (32px), `lg` (48px)
 - [ ] Shape: circular
 - [ ] Used in right panel detail views only — never in the left panel or item list rows
