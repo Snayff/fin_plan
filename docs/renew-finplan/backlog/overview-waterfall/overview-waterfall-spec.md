@@ -180,7 +180,7 @@ DELETE /api/waterfall/all                    → delete all waterfall items (use
 ### Components
 
 - `WaterfallLeftPanel.tsx` — tier headings with totals; each item row includes `<StalenessIndicator>`; first 5 discretionary items shown then "··· N more" toggle; surplus row shows "Increase savings ▸" link
-- `TwoPanelLayout.tsx` — shared layout: fixed-width left `<aside className="w-72">` + flexible `<main>`
+- `TwoPanelLayout.tsx` — shared layout: fixed-width left `<aside className="w-[360px]">` + flexible `<main>`
 
 ### Notes
 
