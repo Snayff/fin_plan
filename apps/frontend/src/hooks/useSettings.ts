@@ -1,0 +1,130 @@
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { settingsService } from "@/services/settings.service";
+import { snapshotService } from "@/services/snapshot.service";
+import { householdService } from "@/services/household.service";
+import { waterfallService } from "@/services/waterfall.service";
+import type { UpdateSettingsInput } from "@finplan/shared";
+
+export const SETTINGS_KEYS = {
+  settings: ["settings"] as const,
+  snapshots: ["snapshots"] as const,
+  household: (id: string) => ["household", id] as const,
+  members: (id: string) => ["household", id, "members"] as const,
+  endedIncome: ["waterfall", "income", "ended"] as const,
+};
+
+export function useSettings() {
+  return useQuery({
+    queryKey: SETTINGS_KEYS.settings,
+    queryFn: settingsService.getSettings,
+  });
+}
+
+export function useUpdateSettings() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UpdateSettingsInput) => settingsService.updateSettings(data),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.settings });
+    },
+  });
+}
+
+export function useSnapshots() {
+  return useQuery({
+    queryKey: SETTINGS_KEYS.snapshots,
+    queryFn: snapshotService.listSnapshots,
+  });
+}
+
+export function useRenameSnapshot() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) =>
+      snapshotService.renameSnapshot(id, { name }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.snapshots });
+    },
+  });
+}
+
+export function useDeleteSnapshot() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => snapshotService.deleteSnapshot(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.snapshots });
+    },
+  });
+}
+
+export function useHouseholdDetails(householdId: string) {
+  return useQuery({
+    queryKey: SETTINGS_KEYS.household(householdId),
+    queryFn: () => householdService.getHouseholdDetails(householdId),
+    enabled: !!householdId,
+  });
+}
+
+export function useRenameHousehold() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, name }: { id: string; name: string }) =>
+      householdService.renameHousehold(id, name),
+    onSuccess: (_data, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(id) });
+      void queryClient.invalidateQueries({ queryKey: ["households"] });
+    },
+  });
+}
+
+export function useInviteMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ householdId, email }: { householdId: string; email: string }) =>
+      householdService.inviteMember(householdId, email),
+    onSuccess: (_data, { householdId }) => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+  });
+}
+
+export function useCancelInvite() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ householdId, inviteId }: { householdId: string; inviteId: string }) =>
+      householdService.cancelInvite(householdId, inviteId),
+    onSuccess: (_data, { householdId }) => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+  });
+}
+
+export function useRemoveMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ householdId, userId }: { householdId: string; userId: string }) =>
+      householdService.removeMember(householdId, userId),
+    onSuccess: (_data, { householdId }) => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+  });
+}
+
+export function useEndedIncome() {
+  return useQuery({
+    queryKey: SETTINGS_KEYS.endedIncome,
+    queryFn: waterfallService.listEndedIncome,
+  });
+}
+
+export function useReactivateIncome() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => waterfallService.reactivateIncome(id),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.endedIncome });
+      void queryClient.invalidateQueries({ queryKey: ["waterfall", "summary"] });
+    },
+  });
+}
