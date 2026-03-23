@@ -4,6 +4,8 @@ import { formatCurrency } from "@/utils/format";
 import { ButtonPair } from "@/components/common/ButtonPair";
 import { HistoryChart } from "./HistoryChart";
 import { useItemHistory, useConfirmItem, useUpdateItem, useEndIncome } from "@/hooks/useWaterfall";
+import { isStale, stalenessLabel } from "@/utils/staleness";
+import { useSettings } from "@/hooks/useSettings";
 
 interface SelectedItem {
   id: string;
@@ -38,8 +40,17 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
   const confirmItem = useConfirmItem();
   const updateItem = useUpdateItem();
   const endIncome = useEndIncome();
+  const { data: settings } = useSettings();
 
   const isReadOnly = snapshotDate != null;
+
+  const thresholdMonths = (() => {
+    const t = settings?.stalenessThresholds;
+    if (!t) return 12;
+    const map: Record<string, number | undefined> = t as Record<string, number | undefined>;
+    return map[item.type] ?? 12;
+  })();
+  const itemIsStale = isStale(item.lastReviewedAt, thresholdMonths);
 
   const breadcrumbLabel = (() => {
     switch (item.type) {
@@ -117,6 +128,9 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
             {formatCurrency(item.amount / 12)}/mo avg
           </p>
         )}
+        <p className="text-sm mt-0.5" style={itemIsStale ? { color: "#f59e0b" } : undefined}>
+          {stalenessLabel(item.lastReviewedAt)}
+        </p>
       </div>
 
       <HistoryChart data={history} snapshotDate={snapshotDate} />

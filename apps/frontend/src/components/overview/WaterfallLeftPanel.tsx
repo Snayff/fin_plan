@@ -1,6 +1,9 @@
 import type { WaterfallSummary } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/lib/utils";
+import { isStale } from "@/utils/staleness";
+import { StalenessIndicator } from "@/components/common/StalenessIndicator";
+import { useSettings } from "@/hooks/useSettings";
 
 interface SelectedItem {
   id: string;
@@ -20,20 +23,38 @@ interface WaterfallLeftPanelProps {
 const ROW_CLASS =
   "flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-accent/50 transition-colors text-sm";
 
+function StaleCountBadge({ count }: { count: number }) {
+  if (count === 0) return null;
+  return (
+    <span className="inline-flex items-center gap-1 text-xs" style={{ color: "#f59e0b" }}>
+      <span
+        className="inline-block h-[5px] w-[5px] rounded-full shrink-0"
+        style={{ background: "#f59e0b" }}
+      />
+      {count} stale
+    </span>
+  );
+}
+
 function SectionHeader({
   label,
   total,
   colorClass,
+  staleCount,
 }: {
   label: string;
   total: string;
   colorClass: string;
+  staleCount: number;
 }) {
   return (
     <div className="flex items-center justify-between py-1.5 px-2">
-      <span className={cn("text-xs font-semibold tracking-widest uppercase", colorClass)}>
-        {label}
-      </span>
+      <div className="flex items-center gap-2">
+        <span className={cn("text-xs font-semibold tracking-widest uppercase", colorClass)}>
+          {label}
+        </span>
+        <StaleCountBadge count={staleCount} />
+      </div>
       <span className="text-sm font-medium">{total}</span>
     </div>
   );
@@ -45,7 +66,36 @@ export function WaterfallLeftPanel({
   onOpenCashflowCalendar,
   selectedItemId,
 }: WaterfallLeftPanelProps) {
+  const { data: settings } = useSettings();
+  const thresholds = settings?.stalenessThresholds ?? {
+    income_source: 12,
+    committed_bill: 6,
+    yearly_bill: 12,
+    discretionary_category: 12,
+    savings_allocation: 12,
+    wealth_account: 3,
+  };
+
   const { income, committed, discretionary, surplus } = summary;
+
+  const allIncomeSources = [...income.monthly, ...income.annual, ...income.oneOff];
+  const incomeStaleCount = allIncomeSources.filter((s) =>
+    isStale(s.lastReviewedAt, thresholds.income_source ?? 12)
+  ).length;
+
+  const committedStaleCount = committed.bills.filter((b) =>
+    isStale(b.lastReviewedAt, thresholds.committed_bill ?? 6)
+  ).length;
+
+  const discCatStaleCount = discretionary.categories.filter((c) =>
+    isStale(c.lastReviewedAt, thresholds.discretionary_category ?? 12)
+  ).length;
+  const savingsStaleCount = discretionary.savings.allocations.filter((s) =>
+    isStale(s.lastReviewedAt, thresholds.savings_allocation ?? 12)
+  ).length;
+  const discretionaryStaleCount = discCatStaleCount + savingsStaleCount;
+
+  const surplusBenchmark = settings?.surplusBenchmarkPct ?? 10;
 
   return (
     <div className="space-y-4 text-sm">
@@ -55,6 +105,7 @@ export function WaterfallLeftPanel({
           label="Income"
           total={formatCurrency(income.total)}
           colorClass="text-tier-income"
+          staleCount={incomeStaleCount}
         />
         <div className="space-y-0.5">
           {income.monthly.map((src) => (
@@ -72,7 +123,13 @@ export function WaterfallLeftPanel({
               }
             >
               <span>{src.name}</span>
-              <span>{formatCurrency(src.amount)}</span>
+              <div className="flex items-center gap-2">
+                <StalenessIndicator
+                  lastReviewedAt={src.lastReviewedAt}
+                  thresholdMonths={thresholds.income_source ?? 12}
+                />
+                <span>{formatCurrency(src.amount)}</span>
+              </div>
             </div>
           ))}
           {income.annual.map((src) => (
@@ -90,10 +147,16 @@ export function WaterfallLeftPanel({
               }
             >
               <span>{src.name}</span>
-              <span className="flex items-center gap-1">
-                <span className="text-xs text-muted-foreground">÷12</span>
-                {formatCurrency(src.monthlyAmount / 12)}
-              </span>
+              <div className="flex items-center gap-2">
+                <StalenessIndicator
+                  lastReviewedAt={src.lastReviewedAt}
+                  thresholdMonths={thresholds.income_source ?? 12}
+                />
+                <span className="flex items-center gap-1">
+                  <span className="text-xs text-muted-foreground">÷12</span>
+                  {formatCurrency(src.monthlyAmount / 12)}
+                </span>
+              </div>
             </div>
           ))}
           {income.oneOff.map((src) => (
@@ -111,7 +174,13 @@ export function WaterfallLeftPanel({
               }
             >
               <span>{src.name}</span>
-              <span>{formatCurrency(src.amount)}</span>
+              <div className="flex items-center gap-2">
+                <StalenessIndicator
+                  lastReviewedAt={src.lastReviewedAt}
+                  thresholdMonths={thresholds.income_source ?? 12}
+                />
+                <span>{formatCurrency(src.amount)}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -123,6 +192,7 @@ export function WaterfallLeftPanel({
           label="Committed"
           total={formatCurrency(committed.monthlyTotal + committed.monthlyAvg12)}
           colorClass="text-tier-committed"
+          staleCount={committedStaleCount}
         />
         <div className="space-y-0.5">
           {committed.bills.map((bill) => (
@@ -140,7 +210,13 @@ export function WaterfallLeftPanel({
               }
             >
               <span>{bill.name}</span>
-              <span>{formatCurrency(bill.amount)}</span>
+              <div className="flex items-center gap-2">
+                <StalenessIndicator
+                  lastReviewedAt={bill.lastReviewedAt}
+                  thresholdMonths={thresholds.committed_bill ?? 6}
+                />
+                <span>{formatCurrency(bill.amount)}</span>
+              </div>
             </div>
           ))}
           <div className={cn(ROW_CLASS, "group")}>
@@ -168,6 +244,7 @@ export function WaterfallLeftPanel({
           label="Discretionary"
           total={formatCurrency(discretionary.total + discretionary.savings.total)}
           colorClass="text-tier-discretionary"
+          staleCount={discretionaryStaleCount}
         />
         <div className="space-y-0.5">
           {discretionary.categories.map((cat) => (
@@ -185,7 +262,13 @@ export function WaterfallLeftPanel({
               }
             >
               <span>{cat.name}</span>
-              <span>{formatCurrency(cat.monthlyBudget)}</span>
+              <div className="flex items-center gap-2">
+                <StalenessIndicator
+                  lastReviewedAt={cat.lastReviewedAt}
+                  thresholdMonths={thresholds.discretionary_category ?? 12}
+                />
+                <span>{formatCurrency(cat.monthlyBudget)}</span>
+              </div>
             </div>
           ))}
           <div className="py-1.5 px-2">
@@ -208,7 +291,13 @@ export function WaterfallLeftPanel({
               }
             >
               <span>{sav.name}</span>
-              <span>{formatCurrency(sav.monthlyAmount)}</span>
+              <div className="flex items-center gap-2">
+                <StalenessIndicator
+                  lastReviewedAt={sav.lastReviewedAt}
+                  thresholdMonths={thresholds.savings_allocation ?? 12}
+                />
+                <span>{formatCurrency(sav.monthlyAmount)}</span>
+              </div>
             </div>
           ))}
         </div>
@@ -220,7 +309,7 @@ export function WaterfallLeftPanel({
           <span className="text-xs font-semibold tracking-widest uppercase">Surplus</span>
           <span className="text-sm font-medium">{formatCurrency(surplus.amount)}</span>
         </div>
-        {surplus.percentOfIncome < 10 && (
+        {surplus.percentOfIncome < surplusBenchmark && (
           <div className="flex items-center gap-1.5 px-2 text-xs" style={{ color: "#f59e0b" }}>
             <span
               className="h-[5px] w-[5px] rounded-full shrink-0"

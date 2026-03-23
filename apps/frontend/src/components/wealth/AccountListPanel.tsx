@@ -3,6 +3,8 @@ import { formatCurrency } from "@/utils/format";
 import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { StalenessIndicator } from "@/components/common/StalenessIndicator";
+import { useSettings } from "@/hooks/useSettings";
 
 const CLASS_LABELS: Record<string, string> = {
   savings: "Savings",
@@ -28,6 +30,9 @@ export function AccountListPanel({
   onSelectAccount,
   selectedAccountId,
 }: AccountListPanelProps) {
+  const { data: settings } = useSettings();
+  const wealthThreshold = settings?.stalenessThresholds?.wealth_account ?? 3;
+
   const sorted = [...accounts].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
@@ -106,6 +111,12 @@ export function AccountListPanel({
                 )}
                 {isSavings && account.interestRate != null && (
                   <p className="text-xs text-muted-foreground">{account.interestRate}% p.a.</p>
+                )}
+                {account.lastReviewedAt && (
+                  <StalenessIndicator
+                    lastReviewedAt={account.lastReviewedAt as string}
+                    thresholdMonths={wealthThreshold}
+                  />
                 )}
               </div>
               <span className="font-bold ml-4 shrink-0">

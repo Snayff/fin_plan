@@ -11,6 +11,8 @@ import {
   useUpdateAccount,
 } from "@/hooks/useWealth";
 import { Button } from "@/components/ui/button";
+import { isStale, stalenessLabel } from "@/utils/staleness";
+import { useSettings } from "@/hooks/useSettings";
 
 const CLASS_LABELS: Record<string, string> = {
   savings: "Savings",
@@ -56,6 +58,11 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
   const updateValuation = useUpdateValuation();
   const confirmAccount = useConfirmAccount();
   const updateAccount = useUpdateAccount();
+  const { data: settings } = useSettings();
+
+  const wealthThreshold = settings?.stalenessThresholds?.wealth_account ?? 3;
+  const lastReviewedAt: string | undefined = account.lastReviewedAt;
+  const accountIsStale = lastReviewedAt ? isStale(lastReviewedAt, wealthThreshold) : false;
 
   const isSavings = account.assetClass === "savings";
 
@@ -146,6 +153,11 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
         )}
         {isSavings && account.interestRate != null && (
           <p className="text-sm text-muted-foreground">{account.interestRate}% p.a.</p>
+        )}
+        {lastReviewedAt && (
+          <p className="text-sm mt-0.5" style={accountIsStale ? { color: "#f59e0b" } : undefined}>
+            {stalenessLabel(lastReviewedAt)}
+          </p>
         )}
       </div>
 
