@@ -1,0 +1,85 @@
+import { describe, it, expect, beforeEach } from "bun:test";
+import { mock } from "bun:test";
+import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
+
+mock.module("../config/database.js", () => ({ prisma: prismaMock }));
+
+const { wealthService } = await import("./wealth.service.js");
+
+beforeEach(() => {
+  resetPrismaMocks();
+});
+
+describe("wealthService.confirmAccount", () => {
+  it("updates lastReviewedAt to current timestamp", async () => {
+    const id = "acc-1";
+    const householdId = "hh-1";
+
+    prismaMock.wealthAccount.findUnique.mockResolvedValue({ id, householdId } as any);
+    prismaMock.wealthAccount.update.mockResolvedValue({ id, lastReviewedAt: new Date() } as any);
+
+    await wealthService.confirmAccount(householdId, id);
+
+    expect(prismaMock.wealthAccount.update).toHaveBeenCalledWith({
+      where: { id },
+      data: { lastReviewedAt: expect.any(Date) },
+    });
+  });
+});
+
+describe("wealthService.confirmBatch", () => {
+  it("updates lastReviewedAt on all specified accounts", async () => {
+    const householdId = "hh-1";
+    const ids = ["acc-1", "acc-2"];
+
+    prismaMock.wealthAccount.updateMany.mockResolvedValue({ count: 2 } as any);
+
+    await wealthService.confirmBatch(householdId, { ids });
+
+    expect(prismaMock.wealthAccount.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ids }, householdId },
+      data: { lastReviewedAt: expect.any(Date) },
+    });
+  });
+});
+
+describe("wealthService.updateValuation", () => {
+  it("updates balance, valuationDate, lastReviewedAt, and records history", async () => {
+    const id = "acc-1";
+    const householdId = "hh-1";
+    const balance = 10000;
+
+    prismaMock.wealthAccount.findUnique.mockResolvedValue({ id, householdId } as any);
+    prismaMock.wealthAccount.update.mockResolvedValue({ id, balance } as any);
+    prismaMock.wealthAccountHistory.create.mockResolvedValue({} as any);
+
+    await wealthService.updateValuation(householdId, id, { balance });
+
+    expect(prismaMock.wealthAccount.update).toHaveBeenCalledWith({
+      where: { id },
+      data: {
+        balance,
+        valuationDate: expect.any(Date),
+        lastReviewedAt: expect.any(Date),
+      },
+    });
+
+    expect(prismaMock.wealthAccountHistory.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ wealthAccountId: id, balance }),
+    });
+  });
+});
+
+describe("wealthService.deleteAccount", () => {
+  it("returns 409 when linked savings allocations exist", async () => {
+    const id = "acc-1";
+    const householdId = "hh-1";
+
+    prismaMock.wealthAccount.findUnique.mockResolvedValue({ id, householdId } as any);
+    prismaMock.savingsAllocation.count.mockResolvedValue(1 as any);
+
+    await expect(wealthService.deleteAccount(householdId, id)).rejects.toThrow(
+      "linked savings allocations"
+    );
+  });
+});

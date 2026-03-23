@@ -52,3 +52,19 @@ export {
   type SavingsAllocationRow,
   type CashflowMonth,
 } from "./waterfall.schemas";
+
+// Wealth schemas and types
+export {
+  AssetClassEnum,
+  createWealthAccountSchema,
+  updateWealthAccountSchema,
+  updateValuationSchema,
+  confirmBatchWealthSchema,
+  type AssetClass,
+  type CreateWealthAccountInput,
+  type UpdateWealthAccountInput,
+  type UpdateValuationInput,
+  type ConfirmBatchWealthInput,
+  type WealthSummary,
+  type IsaAllowance,
+} from "./wealth.schemas";
