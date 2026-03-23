@@ -69,6 +69,28 @@ export {
   type IsaAllowance,
 } from "./wealth.schemas";
 
+// Settings schemas and types
+export {
+  stalenessThresholdsSchema,
+  updateSettingsSchema,
+  type StalenessThresholds,
+  type UpdateSettingsInput,
+} from "./settings.schemas";
+
+// Snapshot schemas and types
+export {
+  createSnapshotSchema,
+  renameSnapshotSchema,
+  type CreateSnapshotInput,
+  type RenameSnapshotInput,
+} from "./snapshot.schemas";
+
+// Review session schemas and types
+export { updateReviewSessionSchema, type UpdateReviewSessionInput } from "./review-session.schemas";
+
+// Setup session schemas and types
+export { updateSetupSessionSchema, type UpdateSetupSessionInput } from "./setup-session.schemas";
+
 // Planner schemas and types
 export {
   PurchasePriorityEnum,

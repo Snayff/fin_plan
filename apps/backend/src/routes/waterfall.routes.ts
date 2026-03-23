@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { waterfallService } from "../services/waterfall.service.js";
+import { snapshotService } from "../services/snapshot.service.js";
 import {
   createIncomeSourceSchema,
   updateIncomeSourceSchema,
@@ -22,7 +23,10 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   // ─── Summary + cashflow ───────────────────────────────────────────────────
 
   fastify.get("/", pre, async (req, reply) => {
-    const summary = await waterfallService.getWaterfallSummary(req.householdId!);
+    const householdId = req.householdId!;
+    // Auto Jan 1 snapshot — fires once on first load of the new year
+    snapshotService.ensureJan1Snapshot(householdId).catch(() => {});
+    const summary = await waterfallService.getWaterfallSummary(householdId);
     return reply.send(summary);
   });
 

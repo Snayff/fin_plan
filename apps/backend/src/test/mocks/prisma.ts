@@ -7,6 +7,7 @@ function buildModelMock() {
     findMany: mock(() => {}),
     create: mock(() => {}),
     update: mock(() => {}),
+    upsert: mock(() => {}),
     updateMany: mock(() => {}),
     delete: mock(() => {}),
     deleteMany: mock(() => {}),

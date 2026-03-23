@@ -1,0 +1,105 @@
+import { describe, it, expect, beforeEach } from "bun:test";
+import { mock } from "bun:test";
+import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
+
+mock.module("../config/database.js", () => ({ prisma: prismaMock }));
+
+// Mock waterfallService so snapshot creation doesn't need DB for summary
+mock.module("./waterfall.service.js", () => ({
+  waterfallService: {
+    getWaterfallSummary: async () => ({ incomeTotalMonthly: 0 }),
+  },
+}));
+
+const { snapshotService } = await import("./snapshot.service.js");
+
+beforeEach(() => {
+  resetPrismaMocks();
+});
+
+describe("snapshotService.listSnapshots", () => {
+  it("returns snapshots without full data field", async () => {
+    prismaMock.snapshot.findMany.mockResolvedValue([
+      { id: "s-1", name: "Test", isAuto: false, createdAt: new Date() },
+    ] as any);
+
+    const result = await snapshotService.listSnapshots("hh-1");
+
+    expect(prismaMock.snapshot.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: { id: true, name: true, isAuto: true, createdAt: true },
+      })
+    );
+    expect(result).toHaveLength(1);
+  });
+});
+
+describe("snapshotService.getSnapshot", () => {
+  it("throws NotFoundError when not found", async () => {
+    prismaMock.snapshot.findUnique.mockResolvedValue(null);
+
+    await expect(snapshotService.getSnapshot("hh-1", "s-1")).rejects.toThrow("Snapshot not found");
+  });
+
+  it("throws NotFoundError when owned by different household", async () => {
+    prismaMock.snapshot.findUnique.mockResolvedValue({
+      id: "s-1",
+      householdId: "hh-other",
+    } as any);
+
+    await expect(snapshotService.getSnapshot("hh-1", "s-1")).rejects.toThrow("Snapshot not found");
+  });
+});
+
+describe("snapshotService.createSnapshot", () => {
+  it("populates data from waterfallService and creates snapshot", async () => {
+    prismaMock.snapshot.create.mockResolvedValue({ id: "s-1", name: "My Snapshot" } as any);
+
+    await snapshotService.createSnapshot("hh-1", { name: "My Snapshot" });
+
+    expect(prismaMock.snapshot.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        householdId: "hh-1",
+        name: "My Snapshot",
+        isAuto: false,
+        data: expect.objectContaining({ incomeTotalMonthly: 0 }),
+      }),
+    });
+  });
+
+  it("throws ConflictError on duplicate name (P2002)", async () => {
+    prismaMock.snapshot.create.mockRejectedValue({ code: "P2002" });
+
+    await expect(snapshotService.createSnapshot("hh-1", { name: "Duplicate" })).rejects.toThrow(
+      "A snapshot with that name already exists"
+    );
+  });
+});
+
+describe("snapshotService.renameSnapshot", () => {
+  it("throws ConflictError on duplicate name (P2002)", async () => {
+    prismaMock.snapshot.findUnique.mockResolvedValue({
+      id: "s-1",
+      householdId: "hh-1",
+    } as any);
+    prismaMock.snapshot.update.mockRejectedValue({ code: "P2002" });
+
+    await expect(
+      snapshotService.renameSnapshot("hh-1", "s-1", { name: "Duplicate" })
+    ).rejects.toThrow("A snapshot with that name already exists");
+  });
+});
+
+describe("snapshotService.deleteSnapshot", () => {
+  it("deletes when ownership verified", async () => {
+    prismaMock.snapshot.findUnique.mockResolvedValue({
+      id: "s-1",
+      householdId: "hh-1",
+    } as any);
+    prismaMock.snapshot.delete.mockResolvedValue({} as any);
+
+    await snapshotService.deleteSnapshot("hh-1", "s-1");
+
+    expect(prismaMock.snapshot.delete).toHaveBeenCalledWith({ where: { id: "s-1" } });
+  });
+});
