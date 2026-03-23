@@ -9,6 +9,7 @@ import { CashflowCalendar } from "@/components/overview/CashflowCalendar";
 import { SnapshotTimeline } from "@/components/overview/SnapshotTimeline";
 import { CreateSnapshotModal } from "@/components/overview/CreateSnapshotModal";
 import { ReviewWizard } from "@/components/overview/ReviewWizard";
+import { WaterfallSetupWizard } from "@/components/overview/WaterfallSetupWizard";
 import { useSnapshot } from "@/hooks/useSettings";
 
 interface SelectedItem {
@@ -30,6 +31,7 @@ export default function OverviewPage() {
   const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showReviewWizard, setShowReviewWizard] = useState(false);
+  const [showSetupWizard, setShowSetupWizard] = useState(false);
 
   const { data: liveSummary, isLoading } = useWaterfallSummary();
   const { data: snapshotData } = useSnapshot(selectedSnapshotId);
@@ -49,7 +51,16 @@ export default function OverviewPage() {
       selectedItemId={view.type === "item" ? view.item.id : null}
     />
   ) : (
-    <div className="p-4 text-muted-foreground text-sm">No waterfall data yet.</div>
+    <div className="p-4 space-y-3">
+      <p className="text-sm text-muted-foreground">No waterfall set up yet.</p>
+      <button
+        type="button"
+        className="text-sm text-primary hover:underline"
+        onClick={() => setShowSetupWizard(true)}
+      >
+        Set up your waterfall from scratch ▸
+      </button>
+    </div>
   );
 
   let right: React.ReactNode | null = null;
@@ -112,6 +123,7 @@ export default function OverviewPage() {
 
       {showCreateModal && <CreateSnapshotModal onClose={() => setShowCreateModal(false)} />}
       {showReviewWizard && <ReviewWizard onClose={() => setShowReviewWizard(false)} />}
+      {showSetupWizard && <WaterfallSetupWizard onClose={() => setShowSetupWizard(false)} />}
     </div>
   );
 }
