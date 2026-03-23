@@ -21,13 +21,13 @@ The right panel displays the selected item's value prominently, a 24-month histo
 
 - As a user, I want to see the full detail of a waterfall item when I click it so that I have context before acting.
 - As a user, I want to view 24 months of an item's history so that I can understand how it has changed over time.
-- As a user, I want to confirm an item is still correct without editing it so that staleness warnings are cleared quickly.
+- As a user, I want to confirm an item is still correct without editing it so that staleness indicators are cleared quickly.
 - As a user, I want to edit a waterfall item from its detail view so that updates are one click away.
 - As a user, I want to see per-account savings allocations so that I know where my savings contributions go.
 
 ## Acceptance Criteria
 
-- [ ] Selected item value is displayed at 3xl size
+- [ ] Selected item value is displayed at 30px, `font-numeric`, weight 800, `text-primary`
 - [ ] 24-month history sparkline/graph is displayed below the value
 - [ ] ButtonPair shows `[ Edit ]` on the left and `[ Still correct ✓ ]` on the right
 - [ ] Still correct button is always the rightmost (affirmative) action
@@ -71,7 +71,7 @@ POST /api/waterfall/:type/:id/confirm   → update lastReviewedAt only (shared c
 
 ### Components
 
-- `ItemDetailPanel.tsx` — header: item name; value at 3xl; staleness label below value; 24-month HistoryChart; `[ Edit ]` / `[ Still correct ✓ ]` ButtonPair; income sources only: "End this income source" secondary text link
+- `ItemDetailPanel.tsx` — header: item name; value at 30px (`font-numeric`, weight 800); staleness label below value (amber `attention` token if stale); 24-month HistoryChart; `[ Edit ]` / `[ Still correct ✓ ]` ButtonPair; income sources only: "End this income source" secondary text link
 - `HistoryChart.tsx` — Recharts `LineChart`; x=date, y=£ value; `snapshotDate` prop adds amber dashed `ReferenceLine`; `isAnimationActive={false}` when `prefers-reduced-motion`; empty state "No history yet" if `data.length < 2`
 
 ### Notes

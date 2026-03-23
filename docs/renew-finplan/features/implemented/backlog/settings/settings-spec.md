@@ -19,7 +19,7 @@ A settings page covering: income source management, staleness thresholds, surplu
 
 ## User Stories
 
-- As a user, I want to configure staleness thresholds so that warnings appear at the right frequency for my lifestyle.
+- As a user, I want to configure staleness thresholds so that indicators appear at the right frequency for my lifestyle.
 - As a user, I want to manage my income sources so that I can add, edit, or archive them as my situation changes.
 - As a user, I want to manage household members and invites so that the right people have access to our shared plan.
 - As a user, I want to rename and delete snapshots so that my history is clearly labelled and tidy.
@@ -29,7 +29,7 @@ A settings page covering: income source management, staleness thresholds, surplu
 
 - [ ] Income sources: add, edit, archive
 - [ ] Staleness thresholds: configurable (per-tier or global — see open questions)
-- [ ] Surplus benchmark: configurable threshold that triggers the surplus warning indicator
+- [ ] Surplus benchmark: configurable threshold that triggers the surplus benchmark indicator (amber `attention` token)
 - [ ] ISA tax year: configurable April start date
 - [ ] Household management: member list, roles, invite generation, member removal
 - [ ] Snapshot management: view all snapshots, rename, delete
@@ -39,7 +39,7 @@ A settings page covering: income source management, staleness thresholds, surplu
 ## Open Questions
 
 - [x] Are staleness thresholds set per-tier (income vs bills vs discretionary) or as a single global value? **Per item type** — separate thresholds for: income_source, committed_bill, yearly_bill, discretionary_category, savings_allocation, wealth_account. Stored as a JSON object in HouseholdSettings.
-- [x] Is the surplus benchmark the same as the 10% warning threshold on the overview, or a separate configurable value? **The same value** — `HouseholdSettings.surplusBenchmarkPct` (default 10%) controls the surplus warning indicator on the Overview page.
+- [x] Is the surplus benchmark the same as the 10% threshold on the overview, or a separate configurable value? **The same value** — `HouseholdSettings.surplusBenchmarkPct` (default 10%) controls the surplus benchmark indicator on the Overview page.
 - [x] Can income sources be deleted, or only archived? **Archived (ended)** via `POST /api/waterfall/income/:id/end`. Permanent delete is only offered for sources with no history. Ended sources appear in Settings → Income sources (ended list) and can be reactivated.
 
 ---
