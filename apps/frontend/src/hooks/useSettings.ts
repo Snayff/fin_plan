@@ -8,6 +8,7 @@ import type { UpdateSettingsInput } from "@finplan/shared";
 export const SETTINGS_KEYS = {
   settings: ["settings"] as const,
   snapshots: ["snapshots"] as const,
+  snapshot: (id: string) => ["snapshots", id] as const,
   household: (id: string) => ["household", id] as const,
   members: (id: string) => ["household", id, "members"] as const,
   endedIncome: ["waterfall", "income", "ended"] as const,
@@ -34,6 +35,24 @@ export function useSnapshots() {
   return useQuery({
     queryKey: SETTINGS_KEYS.snapshots,
     queryFn: snapshotService.listSnapshots,
+  });
+}
+
+export function useSnapshot(id: string | null) {
+  return useQuery({
+    queryKey: SETTINGS_KEYS.snapshot(id ?? ""),
+    queryFn: () => snapshotService.getSnapshot(id!),
+    enabled: !!id,
+  });
+}
+
+export function useCreateSnapshot() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => snapshotService.createSnapshot({ name }),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.snapshots });
+    },
   });
 }
 

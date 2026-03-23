@@ -6,6 +6,7 @@ import { HistoryChart } from "./HistoryChart";
 import { useItemHistory, useConfirmItem, useUpdateItem, useEndIncome } from "@/hooks/useWaterfall";
 import { isStale, stalenessLabel } from "@/utils/staleness";
 import { useSettings } from "@/hooks/useSettings";
+import { CreateSnapshotModal } from "./CreateSnapshotModal";
 
 interface SelectedItem {
   id: string;
@@ -27,6 +28,8 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
   const [inlineMode, setInlineMode] = useState<InlineMode>("none");
   const [editAmount, setEditAmount] = useState(String(item.amount));
   const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [showSnapshotPrompt, setShowSnapshotPrompt] = useState(false);
+  const [showSnapshotModal, setShowSnapshotModal] = useState(false);
 
   const { data: historyRaw } = useItemHistory(item.type, item.id);
 
@@ -81,6 +84,17 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
   }
 
   function handleSaveEdit() {
+    const parsed = parseFloat(editAmount);
+    if (isNaN(parsed)) return;
+    // Prompt snapshot before changing income source amount
+    if (item.type === "income_source" && parsed !== item.amount) {
+      setShowSnapshotPrompt(true);
+      return;
+    }
+    doSaveEdit();
+  }
+
+  function doSaveEdit() {
     const parsed = parseFloat(editAmount);
     if (isNaN(parsed)) return;
 
@@ -224,6 +238,48 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
             </div>
           )}
         </>
+      )}
+
+      {/* Snapshot prompt for income amount change */}
+      {showSnapshotPrompt && (
+        <div className="rounded-lg border p-3 space-y-2 bg-accent/30">
+          <p className="text-sm font-medium">Save a snapshot before updating?</p>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+              onClick={() => {
+                setShowSnapshotPrompt(false);
+                setShowSnapshotModal(true);
+              }}
+            >
+              Yes, save snapshot first
+            </button>
+            <button
+              type="button"
+              className="rounded border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+              onClick={() => {
+                setShowSnapshotPrompt(false);
+                doSaveEdit();
+              }}
+            >
+              No, update directly
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showSnapshotModal && (
+        <CreateSnapshotModal
+          onClose={() => {
+            setShowSnapshotModal(false);
+            doSaveEdit();
+          }}
+          onCreated={() => {
+            setShowSnapshotModal(false);
+            doSaveEdit();
+          }}
+        />
       )}
     </div>
   );

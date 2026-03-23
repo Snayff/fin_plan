@@ -6,6 +6,9 @@ import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { WaterfallLeftPanel } from "@/components/overview/WaterfallLeftPanel";
 import { ItemDetailPanel } from "@/components/overview/ItemDetailPanel";
 import { CashflowCalendar } from "@/components/overview/CashflowCalendar";
+import { SnapshotTimeline } from "@/components/overview/SnapshotTimeline";
+import { CreateSnapshotModal } from "@/components/overview/CreateSnapshotModal";
+import { useSnapshot } from "@/hooks/useSettings";
 
 interface SelectedItem {
   id: string;
@@ -23,13 +26,22 @@ type RightPanelView =
 export default function OverviewPage() {
   const [view, setView] = useState<RightPanelView>({ type: "none" });
   const [year] = useState(() => new Date().getFullYear());
-  const { data: summary, isLoading } = useWaterfallSummary();
+  const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+
+  const { data: liveSummary, isLoading } = useWaterfallSummary();
+  const { data: snapshotData } = useSnapshot(selectedSnapshotId);
+
+  const isViewingSnapshot = selectedSnapshotId !== null;
+  const summary = isViewingSnapshot && snapshotData?.data ? snapshotData.data : liveSummary;
+  const snapshotDate =
+    isViewingSnapshot && snapshotData?.createdAt ? new Date(snapshotData.createdAt) : null;
 
   const left = isLoading ? (
     <SkeletonLoader variant="left-panel" />
   ) : summary ? (
     <WaterfallLeftPanel
-      summary={summary}
+      summary={summary as any}
       onSelectItem={(item) => setView({ type: "item", item })}
       onOpenCashflowCalendar={() => setView({ type: "cashflow" })}
       selectedItemId={view.type === "item" ? view.item.id : null}
@@ -40,30 +52,62 @@ export default function OverviewPage() {
 
   let right: React.ReactNode | null = null;
   if (view.type === "item") {
-    right = <ItemDetailPanel item={view.item} onBack={() => setView({ type: "none" })} />;
+    right = (
+      <ItemDetailPanel
+        item={view.item}
+        onBack={() => setView({ type: "none" })}
+        snapshotDate={snapshotDate}
+      />
+    );
   } else if (view.type === "cashflow") {
     right = <CashflowCalendar year={year} onBack={() => setView({ type: "none" })} />;
   }
 
-  const snapshotPlaceholder = (
-    <div className="h-8 border-b flex items-center px-4 gap-2 text-xs text-muted-foreground">
-      <span>Snapshot timeline — coming in Phase 13</span>
-      <button
-        className="ml-auto text-xs text-primary hover:underline"
-        onClick={() => console.log("open review")}
-        type="button"
-      >
-        Review ▸
-      </button>
-    </div>
-  );
-
   return (
     <div className="flex flex-col h-full">
-      {snapshotPlaceholder}
+      {isViewingSnapshot ? (
+        /* Snapshot mode banner */
+        <div className="h-8 border-b flex items-center px-4 gap-2 text-xs bg-amber-50 dark:bg-amber-950/20">
+          <span
+            className="inline-block h-[5px] w-[5px] rounded-full shrink-0"
+            style={{ background: "#f59e0b" }}
+          />
+          <span className="font-medium" style={{ color: "#f59e0b" }}>
+            Viewing: {snapshotData?.name}
+          </span>
+          <button
+            type="button"
+            className="ml-auto text-xs hover:underline"
+            style={{ color: "#f59e0b" }}
+            onClick={() => {
+              setSelectedSnapshotId(null);
+              setView({ type: "none" });
+            }}
+          >
+            Return to current ▸
+          </button>
+        </div>
+      ) : (
+        /* Live timeline */
+        <SnapshotTimeline
+          selectedId={selectedSnapshotId}
+          onSelect={(id) => {
+            setSelectedSnapshotId(id);
+            setView({ type: "none" });
+          }}
+          onSelectNow={() => {
+            setSelectedSnapshotId(null);
+            setView({ type: "none" });
+          }}
+          onOpenCreate={() => setShowCreateModal(true)}
+        />
+      )}
+
       <div className="flex-1 min-h-0">
         <TwoPanelLayout left={left} right={right} />
       </div>
+
+      {showCreateModal && <CreateSnapshotModal onClose={() => setShowCreateModal(false)} />}
     </div>
   );
 }
