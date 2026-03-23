@@ -119,7 +119,7 @@ PUT    /api/planner/gifts/events/:id/year/:year  → upsert GiftYearRecord { bud
 
 ### Components
 
-- `PlannerLeftPanel.tsx` — GIFTS section with budget + estimated total + over-budget warning
+- `PlannerLeftPanel.tsx` — GIFTS section with budget + estimated total + over-budget indicator (amber `attention` token)
 - Gifts right panel — `[Upcoming ▾]` / `[By person ▾]` dropdown toggle
 - `GiftPersonDetailPanel.tsx` — breadcrumb `← Gifts / {Name}`; events list; expanding inline edit for each event; `[ + Add event ]` + `[ Edit person ]`
 

@@ -29,7 +29,7 @@ Accessed from Committed → Yearly row, the cashflow calendar shows a 12-month p
 - [ ] Shows 12-month progression of pot balance
 - [ ] Each bill deduction is shown at the correct month with the bill name and amount
 - [ ] Pot balance updates month-by-month as contributions accumulate and bills deduct
-- [ ] Shortfall months are visually highlighted (amber/red per design system)
+- [ ] Shortfall months are visually highlighted with amber `attention` token (never red — red is for app errors only)
 - [ ] NudgeCard appears when a shortfall is detected, offering: increase monthly contribution or draw from savings
 - [ ] NudgeCard is arithmetic-only — no recommendation about which option to choose
 
@@ -68,7 +68,7 @@ GET /api/waterfall/cashflow?year={n}   → CashflowMonth[] for the year (default
 
 ### Components
 
-- `CashflowCalendar.tsx` — breadcrumb `← Committed / Yearly Bills`; header "Yearly Bills — {year} Cashflow · Monthly pot: £{avg}"; 12-month list; shortfall rows highlighted amber/red; NudgeCard when shortfall detected
+- `CashflowCalendar.tsx` — breadcrumb `← Committed / Yearly Bills`; header "Yearly Bills — {year} Cashflow · Monthly pot: £{avg}"; 12-month list; shortfall rows highlighted with amber `attention` token; NudgeCard when shortfall detected
 
 ### Notes
 
@@ -98,7 +98,7 @@ interface CashflowMonth {
 
 **Shortfall NudgeCard text pattern:**
 
-> "⚠ {month} looks tight — {n} bills land ({total} total). Your pot will have £{pot} by then.
+> "{month} looks tight — {n} bills land ({total} total). Your pot will have £{pot} by then.
 > Options:
 > · Increase your monthly contribution by £{x} to cover this
 > · Draw £{abs(pot)} from existing savings when the bills fall due"

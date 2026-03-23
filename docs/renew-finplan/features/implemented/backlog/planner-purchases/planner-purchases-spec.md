@@ -15,13 +15,13 @@ Users want to plan and track intended purchases — things they intend to buy �
 
 ## Description
 
-A purchase list organised by status (planned / done), with a budget that can be manually set or derived from the sum of scheduled items. Each purchase records cost, priority, funding source, and optional notes. A left panel shows the budget total and a warning when planned purchases exceed it.
+A purchase list organised by status (planned / done), with a budget that can be manually set or derived from the sum of scheduled items. Each purchase records cost, priority, funding source, and optional notes. A left panel shows the budget total and an amber attention indicator when planned purchases exceed it.
 
 ## User Stories
 
 - As a user, I want to record planned purchases with costs and priorities so that I can decide what to buy and when.
 - As a user, I want to link a purchase to a funding source so that I know which account or surplus will cover it.
-- As a user, I want to see a warning when my planned purchases exceed my budget so that I'm aware of over-commitment.
+- As a user, I want to see an indicator when my planned purchases exceed my budget so that I'm aware of over-commitment.
 - As a user, I want to mark a purchase as done so that I can track what I have already bought.
 
 ## Acceptance Criteria
@@ -29,7 +29,7 @@ A purchase list organised by status (planned / done), with a budget that can be 
 - [ ] Purchases are shown by status: ● planned, ✓ done
 - [ ] Each purchase has: name, cost, priority, scheduled flag, funding sources (multi-select), optional account link, status, reason, comment, added date
 - [ ] Language uses "budgeted / planned / allocated / expected" — never "spent / paid / charged"
-- [ ] Left panel shows: budget total, scheduled total, over-budget warning (red) when scheduled > budget
+- [ ] Left panel shows: budget total, scheduled total, over-budget indicator (amber `attention` token) when scheduled > budget
 - [ ] Budget can be set manually or derived from the sum of all scheduled items
 - [ ] Right panel (item selected) shows full item detail
 
@@ -103,14 +103,14 @@ PUT    /api/planner/budget/:year        → upsert { purchaseBudget?, giftBudget
 
 ### Components
 
-- `PlannerLeftPanel.tsx` — PURCHASES section with budget + scheduled total + over-budget warning; GIFTS section with budget + estimated total
+- `PlannerLeftPanel.tsx` — PURCHASES section with budget + scheduled total + over-budget indicator (amber `attention` token); GIFTS section with budget + estimated total
 - `PurchaseListPanel.tsx` — list of purchases grouped by status (active then done); `[ + Add purchase ]` button; clicking item → `PurchaseDetailPanel` with breadcrumb `← Purchases / {name}`
 
 ### Notes
 
 - Budget shown in left panel is the manually-set `PlannerYearBudget.purchaseBudget`
 - "Scheduled" total = sum of `estimatedCost` where `scheduledThisYear = true`
-- Over-budget warning (amber/red) when scheduled total > budget
+- Over-budget indicator (amber `attention` token) when scheduled total > budget
 - Prior years: read-only (all mutations disabled when `year < currentYear`)
 - Year selector `‹ 2025  2026 ›` in page header; defaults to current year
 - Language: "budgeted / planned / allocated / expected" — never "spent / paid / charged"
