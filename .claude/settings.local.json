@@ -64,7 +64,10 @@
       "Bash(cat:*)",
       "Bash(curl -s http://localhost:52956)",
       "Bash(bash \"c:/Users/Gabriel/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/skills/brainstorming/scripts/start-server.sh\" --project-dir \"c:/Users/Gabriel/Documents/Dev/fin_plan\")",
-      "Bash(sort -t- -k2 -n)"
+      "Bash(sort -t- -k2 -n)",
+      "Bash(grep -n \"lastReviewedAt\" packages/shared/src/schemas/*.ts)",
+      "Bash(git tag:*)",
+      "Bash(grep -n \"ConfirmBatchWealthInput\\\\|accountIds\\\\|confirmBatch\" packages/shared/src/schemas/*.ts)"
     ]
   },
   "hooks": {
