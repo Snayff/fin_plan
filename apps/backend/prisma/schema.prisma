@@ -340,17 +340,18 @@ enum GiftRecurrence {
 }
 
 model GiftPerson {
-  id          String   @id @default(cuid())
+  id          String      @id @default(cuid())
   householdId String
   name        String
   notes       String?
-  sortOrder   Int      @default(0)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  sortOrder   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  events      GiftEvent[]
 }
 
 model GiftEvent {
-  id           String         @id @default(cuid())
+  id           String          @id @default(cuid())
   giftPersonId String
   householdId  String
   eventType    GiftEventType
@@ -358,19 +359,22 @@ model GiftEvent {
   dateMonth    Int?
   dateDay      Int?
   specificDate DateTime?
-  recurrence   GiftRecurrence @default(annual)
-  createdAt    DateTime       @default(now())
-  updatedAt    DateTime       @updatedAt
+  recurrence   GiftRecurrence  @default(annual)
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  giftPerson   GiftPerson      @relation(fields: [giftPersonId], references: [id])
+  yearRecords  GiftYearRecord[]
 }
 
 model GiftYearRecord {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   giftEventId String
   year        Int
-  budget      Float    @default(0)
+  budget      Float     @default(0)
   notes       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  giftEvent   GiftEvent @relation(fields: [giftEventId], references: [id])
 
   @@unique([giftEventId, year])
 }
