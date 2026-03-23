@@ -54,7 +54,7 @@ Thumbs.db
 docker-compose.override.yml
 
 # superpowers
-.superpowers
+.superpowers/
 
 
 # Misc
