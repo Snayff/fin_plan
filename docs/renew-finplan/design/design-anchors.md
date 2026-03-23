@@ -22,7 +22,7 @@
 
 5. **UK locale only.** Currency is GBP. The tax year runs April to April. All context, terminology, and defaults are UK-specific. No multi-currency support; no i18n.
 
-6. **Desktop-first.** Desktop is the primary environment for setup, review, and analysis. The mobile experience is deferred — see `backlog.md`.
+6. **Desktop-first.** Desktop is the primary environment for setup, review, and analysis. The mobile experience is deferred — see the backlog specs.
 
 7. **Dark theme only.** No light mode. No theme switching. If this changes in future, only the token layer needs updating — not component code.
 
@@ -34,20 +34,22 @@
 
 9. **Non-advisory.** FinPlan surfaces mechanics and arithmetic only — never recommendations. "£11,600 ISA allowance remaining before April" is acceptable. "You should use your ISA allowance" is not.
 
-10. **Calm by default.** The app is a trusted companion, not an alarm system. Silence means everything is fine. Signals are informational; strong visual emphasis is reserved for genuine shortfalls.
+10. **Non-judgemental.** FinPlan does not colour-code financial positions as good or bad. Whether you have money or no money, the app shows the same neutral treatment. Financial values are never red (negative) or green (positive). The app helps — it does not grade.
 
-11. **Staleness is always informational, never blocking.** A stale value is flagged but never prevents the user from proceeding. The user is always in control.
+11. **Calm by default.** The app is a trusted companion, not an alarm system. Silence means everything is fine. Amber is the only attention signal — a gentle "noteworthy" marker, never an alarm. Red is reserved for app errors only.
 
-12. **Nudges are one at a time, arithmetic-only, never stacked.** A nudge surfaces a mechanical opportunity. It never recommends. There is never more than one nudge visible in a panel simultaneously.
+12. **Staleness is always informational, never blocking.** A stale value is flagged but never prevents the user from proceeding. The user is always in control.
+
+13. **Nudges are one at a time, arithmetic-only, never stacked.** A nudge surfaces a mechanical opportunity. It never recommends. There is never more than one nudge visible in a panel simultaneously.
 
 ---
 
 ## Structural Invariants
 
-13. **Surplus is the cascaded remainder of the waterfall.** Surplus = Income − Committed Spend − Discretionary Spend. There is no other definition.
+14. **Surplus is the cascaded remainder of the waterfall.** Surplus = Income − Committed Spend − Discretionary Spend. There is no other definition.
 
-14. **Yearly bills use a ÷12 virtual pot model.** Each month, one-twelfth of the annual bill amount accumulates in a virtual pot. Bills deduct from that pot when they fall due. Cashflow shortfalls are detected by comparing the pot balance to upcoming bills.
+15. **Yearly bills use a ÷12 virtual pot model.** Each month, one-twelfth of the annual bill amount accumulates in a virtual pot. Bills deduct from that pot when they fall due. Cashflow shortfalls are detected by comparing the pot balance to upcoming bills.
 
-15. **Snapshots are read-only.** When viewing a historical snapshot, all editing is disabled. The current plan is always editable; historical states never are.
+16. **Snapshots are read-only.** When viewing a historical snapshot, all editing is disabled. The current plan is always editable; historical states never are.
 
-16. **Wizards are the only full-screen mode.** The Review Wizard and Waterfall Creation Wizard are exempt from the two-panel layout rule. Every other page uses the two-panel layout.
+17. **Wizards are the only full-screen mode.** The Review Wizard and Waterfall Creation Wizard are exempt from the two-panel layout rule. Every other page uses the two-panel layout.

@@ -128,7 +128,7 @@
 
 ## Staleness
 
-**Appears in**: Staleness indicator (⚠ icon tooltip), Review Wizard card header, right panel detail view ("Last reviewed" label)
+**Appears in**: Staleness indicator (amber dot tooltip), Review Wizard card header, right panel detail view ("Last reviewed" label)
 
 **Tooltip**: A signal that a value hasn't been reviewed or confirmed within the expected timeframe and may no longer be accurate. Staleness is informational only — it never blocks you from using the app.
 
@@ -158,7 +158,7 @@
 
 ## Staleness Indicator (amber dot ●)
 
-**Appears in**: Item rows in the right panel, right panel detail view
+**Appears in**: Item rows in the right panel (5px amber dot before the label + amber detail text), right panel detail view
 
 **Tooltip**: This value hasn't been reviewed recently — it may no longer be accurate. Click to open the item and confirm it.
 
@@ -178,7 +178,7 @@
 
 **Tooltip**: [snapshot name] — [date]. Click to view your waterfall as it was on this date (read-only).
 
-*Note: the tooltip is dynamic — it shows the actual snapshot name and date on hover.*
+_Note: the tooltip is dynamic — it shows the actual snapshot name and date on hover._
 
 ---
 
