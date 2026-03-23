@@ -1,0 +1,109 @@
+import { format } from "date-fns";
+import { useCashflow } from "@/hooks/useWaterfall";
+import { formatCurrency } from "@/utils/format";
+import { NudgeCard } from "@/components/common/NudgeCard";
+
+interface CashflowCalendarProps {
+  year: number;
+  onBack: () => void;
+}
+
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+
+export function CashflowCalendar({ year, onBack }: CashflowCalendarProps) {
+  const { data: months, isLoading } = useCashflow(year);
+
+  const hasShortfall = months?.some((m) => m.shortfall) ?? false;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col gap-1">
+        <button
+          onClick={onBack}
+          type="button"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors w-fit"
+        >
+          ← Committed / Yearly Bills
+        </button>
+        <h2 className="text-base font-semibold">Yearly Bills — {year} Cashflow</h2>
+      </div>
+
+      {isLoading ? (
+        <div className="space-y-2">
+          {Array.from({ length: 12 }).map((_, i) => (
+            <div key={i} className="h-12 rounded bg-muted animate-pulse" />
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-1">
+          {(months ?? []).map((month) => {
+            const monthName =
+              MONTH_NAMES[month.month - 1] ??
+              format(new Date(month.year, month.month - 1, 1), "MMMM");
+
+            return (
+              <div
+                key={`${month.year}-${month.month}`}
+                className="rounded px-3 py-2 text-sm border"
+                style={month.shortfall ? { borderColor: "rgba(245,158,11,0.3)" } : undefined}
+              >
+                <div className="flex items-center justify-between">
+                  <span
+                    className="font-medium"
+                    style={month.shortfall ? { color: "#f59e0b" } : undefined}
+                  >
+                    {monthName}
+                  </span>
+                  <span
+                    className="text-xs"
+                    style={month.shortfall ? { color: "#f59e0b" } : undefined}
+                  >
+                    Pot after: {formatCurrency(month.potAfter)}
+                  </span>
+                </div>
+                {month.bills.length > 0 && (
+                  <ul className="mt-1 space-y-0.5">
+                    {month.bills.map((bill) => (
+                      <li
+                        key={bill.id}
+                        className="flex items-center justify-between text-xs text-muted-foreground"
+                      >
+                        <span>{bill.name}</span>
+                        <span>{formatCurrency(bill.amount)}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {hasShortfall && (
+        <NudgeCard
+          message="Some months have a shortfall. Options:"
+          options={[
+            "Increase monthly contribution",
+            "Draw from existing savings when bills fall due",
+          ]}
+          actionLabel="See full calendar"
+          onAction={() => undefined}
+        />
+      )}
+    </div>
+  );
+}
