@@ -336,7 +336,7 @@ Build: TanStack Query hooks (`usePlanner.ts`), `PlannerLeftPanel`, `PurchaseList
 
 **Spec:** [staleness-indicators](backlog/staleness-indicators/staleness-indicators-spec.md)
 
-Build `apps/frontend/src/utils/staleness.ts` and `StalenessIndicator.tsx`. Wire into `WaterfallLeftPanel`, `ItemDetailPanel`, `AccountListPanel`, `AccountDetailPanel`. (`date-fns` already installed in Phase 7.)
+Build `apps/frontend/src/utils/staleness.ts` and `StalenessIndicator.tsx`. Wire tier-level attention badges (amber dot + stale count) into `WaterfallLeftPanel` tier rows. Wire per-item `StalenessIndicator` (5px amber dot + detail text) into right panel item lists, `ItemDetailPanel`, `AccountListPanel`, and `AccountDetailPanel`. (`date-fns` already installed in Phase 7.)
 
 **Commit:** `feat: staleness indicators — overview and wealth pages`
 
@@ -388,8 +388,8 @@ After all phases, run these end-to-end journeys:
 2. **Review Wizard** — open → items sorted stale-first → update one → confirm all remaining → summary → save snapshot → timeline dot appears → click dot → read-only view
 3. **Cashflow calendar** — add yearly bills including two in same month → Committed → Yearly → cashflow calendar → shortfall nudge visible
 4. **Wealth page** — add savings account → update valuation → history chart shows point; add ISA account → ISA bar appears → enter `isaYearContribution`
-5. **Planner** — add purchase → schedule it → budget ⚠ warning; add gift person → add birthday → appears in Upcoming view
-6. **Staleness** — set threshold to 0 in Settings → all items show ⚠
+5. **Planner** — add purchase → schedule it → budget amber indicator; add gift person → add birthday → appears in Upcoming view
+6. **Staleness** — set threshold to 0 in Settings → all items show amber dot (●)
 7. **Snapshot uniqueness** — save two snapshots with same name → inline error
 8. **Multi-household** — create second household → switch → waterfall is independent
 9. **Trust savings** — create WealthAccount with `isTrust: true` → appears in "Held on behalf of" → excluded from net worth
