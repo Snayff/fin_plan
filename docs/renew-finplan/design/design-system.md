@@ -163,6 +163,8 @@ The surplus value is the most prominent number on the page. It is the answer —
 - Single `border` token separates the panels — no gap, no shadow, no divider chrome
 - Top navigation bar: full width, above both panels
 
+**Minimum viewport width: 1024px.** Below this width, the two-panel layout is not supported. The app is desktop-first; narrower viewports are out of scope until the mobile experience is designed (see backlog specs).
+
 **Rule: left panel never scrolls horizontally.** Long labels truncate with an ellipsis.
 
 **Rule: both panels are vertically scrollable.** The left panel is _designed_ to never require scrolling — its content is intentionally minimal. The right panel routinely scrolls for long detail views.
@@ -193,6 +195,47 @@ Interactive states use the contextual tier colour at varying opacities. On non-t
 | **Active nav** | Solid tier/accent colour text + 2px bottom underline bar                       |
 | **Focus**      | `action` colour focus ring (2px)                                               |
 | **Disabled**   | Reduced opacity (0.4) — not colour change alone                                |
+
+---
+
+### 1.6 Scrollbars
+
+Custom-styled to match the dark theme. Browser-default scrollbars are not acceptable.
+
+- Track: transparent (no visible track)
+- Thumb: `rgba(238, 242, 255, 0.10)`, border-radius `full`
+- Thumb on hover: `rgba(238, 242, 255, 0.18)`
+- Width: 6px
+
+Applied globally via `::-webkit-scrollbar` with a CSS fallback using `scrollbar-color` and `scrollbar-width: thin` for Firefox.
+
+---
+
+### 1.7 Border Radius
+
+| Token    | Value  | Used for                                                     |
+| -------- | ------ | ------------------------------------------------------------ |
+| `radius` | 8px    | Cards, modals, toasts, dropdown panels, form inputs, buttons |
+| `full`   | 9999px | `EntityAvatar`, badges, indicator dots                       |
+
+No other radii are used. Everything rectangular gets `radius`; everything circular gets `full`.
+
+---
+
+### 1.8 Z-Index Scale
+
+Layering order for overlapping elements. Each level is a fixed value — do not use arbitrary z-index values. 10-point increments leave room for future layers without renumbering.
+
+| Layer         | z-index | Elements                              |
+| ------------- | ------- | ------------------------------------- |
+| Base          | 0       | Page content, panels                  |
+| Sticky        | 10      | Top navigation bar                    |
+| Banner        | 20      | `SnapshotBanner`, `StaleDataBanner`   |
+| Dropdown      | 30      | `Select` dropdown panels              |
+| Modal overlay | 40      | `ConfirmationModal` backdrop          |
+| Modal         | 50      | `ConfirmationModal` container         |
+| Toast         | 60      | `Toast` notifications (always on top) |
+| Tooltip       | 70      | Tooltips (highest — never occluded)   |
 
 ---
 
@@ -337,6 +380,93 @@ All form inputs provide six states:
 
 ---
 
+### `Select`
+
+A dropdown selector for choosing one option from a list. Used for frequency selectors, category pickers, household switcher, and settings dropdowns.
+
+**Anatomy (closed):**
+
+```
+[ Selected value                          ▾ ]
+```
+
+- Trigger: same visual treatment as `FormInput` — `surface` background, `surface` border, border-radius 8px
+- Label: `font-body`, weight 500, `text-secondary`
+- Chevron: `ChevronDown` (Lucide), `text-tertiary`, right-aligned
+- Inherits all six `FormInput` states (unselected, focused, error, warning, disabled, valid)
+
+**Anatomy (open):**
+
+```
+[ Selected value                          ▲ ]
+┌──────────────────────────────────────────┐
+│  Option A                                │
+│  Option B  ✓                             │
+│  Option C                                │
+└──────────────────────────────────────────┘
+```
+
+- Dropdown panel: `surface-overlay` background, `surface-overlay` border token, border-radius 8px
+- Options: `font-body`, weight 400, `text-secondary`, padding 8px 12px
+- Selected option: `text-primary`, with a checkmark right-aligned
+- Hover: ~12% `action` colour opacity background
+
+**Behaviour:**
+
+- Click trigger or press `Enter`/`Space` to open
+- Click option or press `Enter` to select and close
+- `Escape` closes without changing selection
+- Arrow keys navigate options while open
+- Dropdown opens below the trigger; if insufficient space, opens above
+
+**Rules:**
+
+- Never use a dropdown for fewer than 3 options — use a radio group or toggle instead
+- The trigger always shows the current selection — never a placeholder like "Select..."
+
+---
+
+### `ConfirmationModal`
+
+Used for destructive actions that require explicit user confirmation before proceeding (e.g. deleting a waterfall item, removing a household member, rebuilding the waterfall).
+
+**Anatomy:**
+
+```
+┌──────────────────────────────────┐
+│  Title                           │
+│                                  │
+│  Body text — describes what      │
+│  will happen and any permanent   │
+│  consequences.                   │
+│                                  │
+│         [ Cancel ]   [ Delete ]  │
+└──────────────────────────────────┘
+```
+
+- Overlay: full-viewport, `rgba(0, 0, 0, 0.35)` — dims the background without losing it entirely
+- Container: `surface-elevated` background, `surface-elevated` border token, border-radius 8px, padding 24px (`p-6`)
+- Title: `font-heading`, weight 700, `text-primary`
+- Body: `font-body`, `text-secondary`
+- Button pair: follows `ButtonPair` rightmost-is-affirmative rule. For destructive modals, the affirmative button uses the `error` token background
+- Max width: 480px, centred horizontally and vertically
+
+**Behaviour:**
+
+- Opens with a fade-in (150ms, ease-out); closes with fade-out (150ms, ease-in)
+- Focus is trapped inside the modal while open — Tab cycles through focusable elements within the modal only
+- `Escape` key dismisses the modal (equivalent to Cancel)
+- Clicking the overlay dismisses the modal (equivalent to Cancel)
+- The underlying page is inert — no scrolling, no interaction — while the modal is open
+
+**Rules:**
+
+- Only used for irreversible or high-consequence actions — never for routine confirmations
+- Body text must state the consequence plainly: "This will permanently delete [item name]" — not "Are you sure?"
+- All animations must be trivially disableable via `prefers-reduced-motion`
+
+---
+
 ### `NudgeCard`
 
 A contextual prompt in the right panel. Surfaces a mechanical action or observation when one is available. Uses the attention system for visual treatment.
@@ -403,6 +533,44 @@ Used in the right panel item list (State 2 — tier selected). Each row represen
 - Clickable — clicking transitions the right panel to State 3 (item detail)
 - Hover state: ~5% tier colour background
 - Selected state: ~14% tier colour background (persists when item is loaded in State 3)
+
+---
+
+### `Breadcrumb`
+
+Navigation trail displayed at the top of the right panel. Communicates the user's current depth and provides a back action.
+
+**Anatomy (State 2 — tier selected):**
+
+```
+  COMMITTED SPEND
+```
+
+- Tier name only, in tier colour (or `page-accent` on non-tier pages)
+- `font-body`, weight 600, 9px, uppercase, letter-spacing 0.08em
+
+**Anatomy (State 3 — item selected):**
+
+```
+  ← Committed Spend / British Gas
+```
+
+- `←` back arrow: `ChevronLeft` (Lucide), `text-tertiary` — clickable, navigates to State 2
+- Tier name: tier colour, clickable (same as `←`)
+- `/` separator: `text-muted`
+- Item name: `text-secondary`
+- Same font treatment: `font-body`, weight 600, 9px, uppercase, letter-spacing 0.08em
+
+**Behaviour:**
+
+- Clicking `←` or the tier name segment navigates back to State 2 (tier item list) with a slide-right transition
+- The item name segment is not clickable — it is the current location
+- During inline edit (§ 4.11), the breadcrumb remains unchanged — editing is not navigation
+
+**Rules:**
+
+- **Maximum two segments (tier / item). The breadcrumb never goes deeper.** Features that require content beyond item detail must use inline expansion, a modal, or a separate page — not a third breadcrumb segment. This is a structural constraint, not a limitation to work around.
+- On non-tier pages (Wealth, Planner, Settings), the tier colour is replaced by `page-accent`
 
 ---
 
@@ -508,6 +676,51 @@ Displayed when the app has failed to sync with the backend but is showing cached
 
 ---
 
+### `Toast`
+
+Non-blocking notification that confirms the result of an async action. Described behaviourally in § 4.7; this entry defines the component anatomy.
+
+**Anatomy:**
+
+```
+┌───┬──────────────────────────────────────┐
+│ ▌ │  Message text                      ✕ │
+└───┴──────────────────────────────────────┘
+  ↑ 3px left-edge colour bar (variant colour)
+```
+
+- Position: bottom-right of the viewport, 24px from edge
+- Background: `surface-elevated`, border: `surface-elevated` border token, border-radius 8px
+- Padding: 12px 16px
+- Left-edge bar: 3px wide, full height of the toast, variant-specific colour (see below)
+- Message: `font-body`, weight 500, `text-secondary`
+- Dismiss button: `X` icon, `text-tertiary`, right-aligned
+
+**Variants:**
+
+| Variant | Bar colour            | Used for                                        |
+| ------- | --------------------- | ----------------------------------------------- |
+| Success | `success` (`#22c55e`) | Save confirmed, sync complete, action succeeded |
+| Error   | `error` (`#ef4444`)   | Save failed, sync failed, action errored        |
+| Info    | `text-tertiary`       | Neutral notifications (e.g. "Data refreshed")   |
+
+**Behaviour:**
+
+- Entrance: fade-up, 150ms, ease-out
+- Exit: fade-out, 150ms, ease-in
+- Auto-dismiss after 4s — this timing is constant regardless of how many toasts are queued
+- Manually dismissable via the `✕` button at any time
+- If multiple toasts fire in quick succession, they stack vertically (newest at bottom) with 8px gap
+- All animations must be trivially disableable via `prefers-reduced-motion`
+
+**Rules:**
+
+- Toasts are for confirming completed actions — never for prompting the user to act
+- Never use a toast where inline feedback (button state change, field validation) is sufficient
+- Prefer micro-reactions (e.g. button state flash) over toasts wherever possible — toasts are the fallback for actions without an obvious inline feedback target
+
+---
+
 ## 3. Page Patterns
 
 ### 3.1 Two-Panel Shell
@@ -606,7 +819,19 @@ The Overview left panel layout from top to bottom:
 
 ---
 
-### 3.4 Empty States
+### 3.4 Wealth & Planner — Page Layout Notes
+
+Wealth and Planner follow the same two-panel shell (§ 3.1) and right panel state machine (§ 3.2) as Overview. The differences are:
+
+- **No waterfall tiers.** The left panel lists asset classes (Wealth) or planning categories (Planner) instead of tier rows. Selected state uses `page-accent` (`#8b5cf6`), not a tier colour.
+- **No connectors.** The left panel is a plain list — no `WaterfallConnector` elements.
+- **Headline figure.** Each page has a single dominant summary value at the top of the left panel (e.g. net worth for Wealth). `font-numeric`, weight 800, `text-primary`.
+
+Page-specific layout, data models, and interaction details are defined in the individual backlog specs (e.g. `wealth-accounts-spec.md`, `planner-purchases-spec.md`). This design system covers the shared patterns; the specs cover the page-specific content.
+
+---
+
+### 3.5 Empty States
 
 Every empty state includes a clear call to action. A blank view is never acceptable.
 
@@ -620,7 +845,7 @@ Every empty state includes a clear call to action. A blank view is never accepta
 
 ---
 
-### 3.5 Full-Screen Modes (Wizards)
+### 3.6 Full-Screen Modes (Wizards)
 
 The Review Wizard and Waterfall Creation Wizard are exempt from the two-panel layout rule. They are focused, full-screen flows with dedicated step navigation.
 
@@ -632,7 +857,7 @@ The Review Wizard and Waterfall Creation Wizard are exempt from the two-panel la
 
 ---
 
-### 3.6 Card Component
+### 3.7 Card Component
 
 Used in the Review Wizard, Waterfall Creation Wizard summary step, and anywhere a discrete item needs visual separation.
 
@@ -653,7 +878,7 @@ Used in the Review Wizard, Waterfall Creation Wizard summary step, and anywhere 
 
 ---
 
-### 3.7 Liquidity Classification
+### 3.8 Liquidity Classification
 
 Assets are classified into three liquidity tiers for analytical purposes. These are **not** used as primary navigation — users navigate by asset class (Savings, Pensions, Property, etc.). Liquidity is surfaced as a secondary breakdown in the Wealth page summary.
 
@@ -665,7 +890,7 @@ Assets are classified into three liquidity tiers for analytical purposes. These 
 
 ---
 
-### 3.8 Trust Savings (Held on Behalf Of)
+### 3.9 Trust Savings (Held on Behalf Of)
 
 Some savings are managed by the household but legally owned by a third party (e.g. a child's Junior ISA). These accounts are:
 
@@ -676,7 +901,7 @@ Some savings are managed by the household but legally owned by a third party (e.
 
 ---
 
-### 3.9 Asset Valuation
+### 3.10 Asset Valuation
 
 Assets are recorded at **equity value** — what the user owns outright, not the total asset value. This avoids separately tracking associated debt (e.g. a property worth £300,000 with a £200,000 mortgage = equity value £100,000).
 
@@ -684,7 +909,7 @@ Every valuation update requires a **valuation date**, which defaults to today bu
 
 ---
 
-### 3.10 Savings ↔ Waterfall Linkage
+### 3.11 Savings ↔ Waterfall Linkage
 
 Monthly savings allocations are defined in the waterfall (Discretionary → Savings). Each allocation can optionally be linked to a specific account on the Wealth page. When linked:
 
@@ -737,6 +962,8 @@ The app tracks what users _intend_, not what they _did_. Language must consisten
 ---
 
 ### 4.4 Colour Signal Rules
+
+> Quick-reference summary of the rules defined per token in § 1.2. When in doubt, § 1.2 is authoritative.
 
 1. **Tier colours are semantically protected** — Income blue, Committed indigo, Discretionary purple, and Surplus teal are exclusively reserved for their waterfall tier. Never repurpose for status, attention, or other UI signals.
 2. **Callout gradients are for engagement only** — the gradient text treatment is special and inviting. Never use it for warnings, attention items, or informational alerts.
@@ -825,7 +1052,7 @@ Chart library: Recharts.
 
 ---
 
-### 4.11 Progressive Disclosure
+### 4.10 Progressive Disclosure
 
 Forms capture only mandatory fields by default.
 
@@ -839,7 +1066,7 @@ The reveal action label: "+ More options" or "+ Optional details". It is always 
 
 ---
 
-### 4.12 Inline Edit Form (Transform in Place)
+### 4.11 Inline Edit Form (Transform in Place)
 
 When the user clicks `[ Edit ]` in a right panel detail view (State 3), the form opens **in place** — the existing detail view converts to an edit form. No navigation occurs. The breadcrumb does not change.
 
@@ -873,7 +1100,7 @@ When the user clicks `[ Edit ]` in a right panel detail view (State 3), the form
 
 ---
 
-### 4.13 Loading Strategy
+### 4.12 Loading Strategy
 
 The app uses **skeleton screens** for all data-loading states — never a full-page spinner.
 
@@ -895,7 +1122,7 @@ The app uses **skeleton screens** for all data-loading states — never a full-p
 
 ---
 
-### 4.14 Error Handling
+### 4.13 Error Handling
 
 When a data sync fails, the app retains the last known data and surfaces the failure non-destructively.
 
