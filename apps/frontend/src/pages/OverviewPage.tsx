@@ -4,6 +4,7 @@ import { useSearchParams } from "react-router-dom";
 import { useWaterfallSummary } from "@/hooks/useWaterfall";
 import type { WaterfallSummary, IncomeType } from "@finplan/shared";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
+import { PanelError } from "@/components/common/PanelError";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { WaterfallLeftPanel } from "@/components/overview/WaterfallLeftPanel";
 import { ItemDetailPanel } from "@/components/overview/ItemDetailPanel";
@@ -88,7 +89,7 @@ export default function OverviewPage() {
     }
   }
 
-  const { data: liveSummary, isLoading } = useWaterfallSummary();
+  const { data: liveSummary, isLoading, isError, refetch } = useWaterfallSummary();
   const { data: snapshotData } = useSnapshot(selectedSnapshotId);
 
   const isViewingSnapshot = selectedSnapshotId !== null;
@@ -146,6 +147,8 @@ export default function OverviewPage() {
   // Build left panel
   const left = isLoading ? (
     <SkeletonLoader variant="left-panel" />
+  ) : isError && !liveSummary ? (
+    <PanelError variant="left" onRetry={refetch} message="Could not load your waterfall" />
   ) : inBuild && summary ? (
     <WaterfallLeftPanel
       summary={summary}
