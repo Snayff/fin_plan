@@ -3,6 +3,7 @@ import type React from "react";
 import type { AssetClass } from "@finplan/shared";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
+import { PanelError } from "@/components/common/PanelError";
 import { WealthLeftPanel } from "@/components/wealth/WealthLeftPanel";
 import { AccountListPanel } from "@/components/wealth/AccountListPanel";
 import { AccountDetailPanel } from "@/components/wealth/AccountDetailPanel";
@@ -15,12 +16,19 @@ type RightView =
 
 export default function WealthPage() {
   const [view, setView] = useState<RightView>({ type: "none" });
-  const { data: summary, isLoading: summaryLoading } = useWealthSummary();
+  const {
+    data: summary,
+    isLoading: summaryLoading,
+    isError: summaryError,
+    refetch: summaryRefetch,
+  } = useWealthSummary();
   const { data: accounts = [], isLoading: _accountsLoading } = useWealthAccounts();
   const { data: isaTotals } = useIsaAllowance();
 
   const left = summaryLoading ? (
     <SkeletonLoader variant="left-panel" />
+  ) : summaryError && !summary ? (
+    <PanelError variant="left" onRetry={summaryRefetch} message="Could not load wealth summary" />
   ) : summary ? (
     <WealthLeftPanel
       summary={summary}
