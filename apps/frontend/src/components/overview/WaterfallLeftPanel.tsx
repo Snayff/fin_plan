@@ -1,3 +1,4 @@
+import { useState } from "react";
 import type { WaterfallSummary } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/lib/utils";
@@ -97,6 +98,8 @@ export function WaterfallLeftPanel({
     wealth_account: 3,
   };
 
+  const [showAllCategories, setShowAllCategories] = useState(false);
+
   const { income, committed, discretionary, surplus } = summary;
 
   const allIncomeSources = [...income.monthly, ...income.annual, ...income.oneOff];
@@ -147,100 +150,27 @@ export function WaterfallLeftPanel({
         />
         {incomeState !== "future" && (
           <div className="space-y-0.5">
-            {income.monthly.map((src) => (
+            {income.byType.map((group) => (
               <div
-                key={src.id}
+                key={group.type}
                 className={cn(
                   ROW_CLASS,
-                  selectedItemId === src.id && "bg-accent",
+                  selectedItemId === `type:${group.type}` && "bg-accent",
                   inBuild && "cursor-default hover:bg-transparent"
                 )}
                 onClick={() =>
                   !inBuild &&
                   onSelectItem({
-                    id: src.id,
-                    type: "income_source",
-                    name: src.name,
-                    amount: src.amount,
-                    lastReviewedAt: new Date(src.lastReviewedAt),
+                    id: `type:${group.type}`,
+                    type: "income_type",
+                    name: group.label,
+                    amount: group.monthlyTotal,
+                    lastReviewedAt: new Date(),
                   })
                 }
               >
-                <span>{src.name}</span>
-                <div className="flex items-center gap-2">
-                  {!inBuild && (
-                    <StalenessIndicator
-                      lastReviewedAt={src.lastReviewedAt}
-                      thresholdMonths={thresholds.income_source ?? 12}
-                    />
-                  )}
-                  <span className={AMOUNT_CLASS}>{formatCurrency(src.amount)}</span>
-                </div>
-              </div>
-            ))}
-            {income.annual.map((src) => (
-              <div
-                key={src.id}
-                className={cn(
-                  ROW_CLASS,
-                  selectedItemId === src.id && "bg-accent",
-                  inBuild && "cursor-default hover:bg-transparent"
-                )}
-                onClick={() =>
-                  !inBuild &&
-                  onSelectItem({
-                    id: src.id,
-                    type: "income_source",
-                    name: src.name,
-                    amount: src.amount,
-                    lastReviewedAt: new Date(src.lastReviewedAt),
-                  })
-                }
-              >
-                <span>{src.name}</span>
-                <div className="flex items-center gap-2">
-                  {!inBuild && (
-                    <StalenessIndicator
-                      lastReviewedAt={src.lastReviewedAt}
-                      thresholdMonths={thresholds.income_source ?? 12}
-                    />
-                  )}
-                  <span className={cn("flex items-center gap-1", AMOUNT_CLASS)}>
-                    <span className="text-xs text-muted-foreground">÷12</span>
-                    {formatCurrency(src.monthlyAmount / 12)}
-                  </span>
-                </div>
-              </div>
-            ))}
-            {income.oneOff.map((src) => (
-              <div
-                key={src.id}
-                className={cn(
-                  ROW_CLASS,
-                  selectedItemId === src.id && "bg-accent",
-                  inBuild && "cursor-default hover:bg-transparent"
-                )}
-                onClick={() =>
-                  !inBuild &&
-                  onSelectItem({
-                    id: src.id,
-                    type: "income_source",
-                    name: src.name,
-                    amount: src.amount,
-                    lastReviewedAt: new Date(src.lastReviewedAt),
-                  })
-                }
-              >
-                <span>{src.name}</span>
-                <div className="flex items-center gap-2">
-                  {!inBuild && (
-                    <StalenessIndicator
-                      lastReviewedAt={src.lastReviewedAt}
-                      thresholdMonths={thresholds.income_source ?? 12}
-                    />
-                  )}
-                  <span className={AMOUNT_CLASS}>{formatCurrency(src.amount)}</span>
-                </div>
+                <span>{group.label}</span>
+                <span className={AMOUNT_CLASS}>{formatCurrency(group.monthlyTotal)}</span>
               </div>
             ))}
             {incomeState === "active" && <TierAddForm phase="income" prefillName={prefillName} />}
@@ -261,68 +191,33 @@ export function WaterfallLeftPanel({
         />
         {committedState !== "future" && (
           <div className="space-y-0.5">
-            {committed.bills.map((bill) => (
-              <div
-                key={bill.id}
-                className={cn(
-                  ROW_CLASS,
-                  selectedItemId === bill.id && "bg-accent",
-                  inBuild && "cursor-default hover:bg-transparent"
-                )}
-                onClick={() =>
-                  !inBuild &&
-                  onSelectItem({
-                    id: bill.id,
-                    type: "committed_bill",
-                    name: bill.name,
-                    amount: bill.amount,
-                    lastReviewedAt: new Date(bill.lastReviewedAt),
-                  })
-                }
-              >
-                <span>{bill.name}</span>
-                <div className="flex items-center gap-2">
-                  {!inBuild && (
-                    <StalenessIndicator
-                      lastReviewedAt={bill.lastReviewedAt}
-                      thresholdMonths={thresholds.committed_bill ?? 6}
-                    />
-                  )}
-                  <span className={AMOUNT_CLASS}>{formatCurrency(bill.amount)}</span>
-                </div>
-              </div>
-            ))}
-            {/* Show yearly bills inline during build mode too */}
-            {committed.yearlyBills.map((bill) => (
-              <div
-                key={bill.id}
-                className={cn(ROW_CLASS, inBuild && "cursor-default hover:bg-transparent")}
-              >
-                <span>{bill.name}</span>
-                <div className="flex items-center gap-1">
-                  <span className="text-xs text-muted-foreground">÷12</span>
-                  <span className={AMOUNT_CLASS}>{formatCurrency(bill.amount / 12)}</span>
-                </div>
-              </div>
-            ))}
-            {!inBuild && (
-              <div className={cn(ROW_CLASS, "group")}>
-                <div className="flex items-center gap-1">
-                  <span>Yearly bills (÷12)</span>
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onOpenCashflowCalendar();
-                    }}
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    See cashflow →
-                  </button>
-                </div>
-                <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyAvg12)}</span>
-              </div>
-            )}
+            <div
+              className={cn(
+                ROW_CLASS,
+                selectedItemId === "aggregate:committed_bills" && "bg-accent",
+                inBuild && "cursor-default hover:bg-transparent"
+              )}
+              onClick={() =>
+                !inBuild &&
+                onSelectItem({
+                  id: "aggregate:committed_bills",
+                  type: "committed_bills",
+                  name: "Monthly bills",
+                  amount: committed.monthlyTotal,
+                  lastReviewedAt: new Date(),
+                })
+              }
+            >
+              <span>Monthly bills</span>
+              <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyTotal)}</span>
+            </div>
+            <div
+              className={cn(ROW_CLASS, inBuild && "cursor-default hover:bg-transparent")}
+              onClick={() => !inBuild && onOpenCashflowCalendar()}
+            >
+              <span>Yearly ÷12</span>
+              <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyAvg12)}</span>
+            </div>
             {committedState === "active" && (
               <TierAddForm phase="committed" prefillName={prefillName} />
             )}
@@ -343,7 +238,10 @@ export function WaterfallLeftPanel({
         />
         {discretionaryState !== "future" && (
           <div className="space-y-0.5">
-            {discretionary.categories.map((cat) => (
+            {(showAllCategories || discretionary.categories.length <= 5
+              ? discretionary.categories
+              : discretionary.categories.slice(0, 5)
+            ).map((cat) => (
               <div
                 key={cat.id}
                 className={cn(
@@ -374,6 +272,15 @@ export function WaterfallLeftPanel({
                 </div>
               </div>
             ))}
+            {!showAllCategories && discretionary.categories.length > 5 && (
+              <button
+                type="button"
+                onClick={() => setShowAllCategories(true)}
+                className={cn(ROW_CLASS, "text-muted-foreground hover:text-foreground")}
+              >
+                ··· {discretionary.categories.length - 5} more
+              </button>
+            )}
             {/* Inline add form for categories (non-savings) */}
             {discretionaryState === "active" && !isSavingsActive && (
               <TierAddForm phase="discretionary" prefillName={prefillName} />
