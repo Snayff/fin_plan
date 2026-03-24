@@ -1,6 +1,6 @@
 # FinPlan Renew — Implementation Plan
 
-> This is the 15-phase build plan for the FinPlan rebuild. Work through it phase by phase. Each phase references the relevant feature specs in `docs/renew-finplan/backlog/` — consult those for schema, API, component, and UX details.
+> This is the 15-phase build plan for the FinPlan rebuild. Work through it phase by phase. Each phase references the relevant feature specs in `docs/4. planning/` — consult those for schema, API, component, and UX details.
 >
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
@@ -62,12 +62,12 @@ apps/frontend/src/services/    account, transaction, category, asset,
 
 Each feature spec's `## Implementation → Schema` section contains the relevant Prisma models. The complete schema assembles all of them. Specs to consult:
 
-- Waterfall models → [overview-waterfall](backlog/overview-waterfall/overview-waterfall-spec.md)
-- Wealth models → [wealth-accounts](backlog/wealth-accounts/wealth-accounts-spec.md)
-- Planner models → [planner-purchases](backlog/planner-purchases/planner-purchases-spec.md), [planner-gifts](backlog/planner-gifts/planner-gifts-spec.md)
-- Settings model → [settings](backlog/settings/settings-spec.md)
-- Snapshot model → [snapshot-system](backlog/snapshot-system/snapshot-system-spec.md)
-- Session models → [review-wizard](backlog/review-wizard/review-wizard-spec.md), [waterfall-creation-wizard](backlog/waterfall-creation-wizard/waterfall-creation-wizard-spec.md)
+- Waterfall models → [overview-waterfall](overview-waterfall/overview-waterfall-spec.md)
+- Wealth models → [wealth-accounts](wealth-accounts/wealth-accounts-spec.md)
+- Planner models → [planner-purchases](planner-purchases/planner-purchases-spec.md), [planner-gifts](planner-gifts/planner-gifts-spec.md)
+- Settings model → [settings](settings/settings-spec.md)
+- Snapshot model → [snapshot-system](snapshot-system/snapshot-system-spec.md)
+- Session models → [review-wizard](review-wizard/review-wizard-spec.md), [waterfall-creation-wizard](waterfall-creation-wizard/waterfall-creation-wizard-spec.md)
 
 **Tasks:**
 
@@ -110,7 +110,7 @@ Each feature spec's `## Implementation → Schema` section contains the relevant
 
 ## Phase 3: Backend — Waterfall APIs
 
-**Specs:** [overview-waterfall](backlog/overview-waterfall/overview-waterfall-spec.md) · [overview-item-detail](backlog/overview-item-detail/overview-item-detail-spec.md) · [yearly-bills-calendar](backlog/yearly-bills-calendar/yearly-bills-calendar-spec.md)
+**Specs:** [overview-waterfall](overview-waterfall/overview-waterfall-spec.md) · [overview-item-detail](overview-item-detail/overview-item-detail-spec.md) · [yearly-bills-calendar](yearly-bills-calendar/yearly-bills-calendar-spec.md)
 
 Create `apps/backend/src/services/waterfall.service.ts` and `apps/backend/src/routes/waterfall.routes.ts`. All routes, types, and business logic (WaterfallSummary shape, CashflowMonth algorithm, history recording, confirm) are specified in the spec Implementation sections above.
 
@@ -126,7 +126,7 @@ Also update `packages/shared/src/schemas/` — add Zod schemas for waterfall typ
 
 ## Phase 4: Backend — Wealth APIs
 
-**Specs:** [wealth-accounts](backlog/wealth-accounts/wealth-accounts-spec.md) · [wealth-isa-tracking](backlog/wealth-isa-tracking/wealth-isa-tracking-spec.md) · [wealth-trust-savings](backlog/wealth-trust-savings/wealth-trust-savings-spec.md)
+**Specs:** [wealth-accounts](wealth-accounts/wealth-accounts-spec.md) · [wealth-isa-tracking](wealth-isa-tracking/wealth-isa-tracking-spec.md) · [wealth-trust-savings](wealth-trust-savings/wealth-trust-savings-spec.md)
 
 Create `apps/backend/src/services/wealth.service.ts` and `apps/backend/src/routes/wealth.routes.ts`. WealthSummary shape, projection formula, ISA allowance calculation, and ytdChange logic are all in the spec Implementation sections.
 
@@ -142,7 +142,7 @@ Also implement `POST /api/wealth/accounts/confirm-batch` — accepts `{ ids: str
 
 ## Phase 5: Backend — Planner APIs
 
-**Specs:** [planner-purchases](backlog/planner-purchases/planner-purchases-spec.md) · [planner-gifts](backlog/planner-gifts/planner-gifts-spec.md)
+**Specs:** [planner-purchases](planner-purchases/planner-purchases-spec.md) · [planner-gifts](planner-gifts/planner-gifts-spec.md)
 
 Create `apps/backend/src/utils/gift-dates.ts` (ukMothersDay, ukFathersDay, nextEventDate), `apps/backend/src/services/planner.service.ts`, and `apps/backend/src/routes/planner.routes.ts`. Gift date algorithm signatures and all API routes are in the spec Implementation sections.
 
@@ -154,7 +154,7 @@ Also update `packages/shared/src/schemas/` — add Zod schemas for planner types
 
 ## Phase 6: Backend — Settings, Snapshots, Sessions
 
-**Specs:** [settings](backlog/settings/settings-spec.md) · [snapshot-system](backlog/snapshot-system/snapshot-system-spec.md) · [review-wizard](backlog/review-wizard/review-wizard-spec.md) · [waterfall-creation-wizard](backlog/waterfall-creation-wizard/waterfall-creation-wizard-spec.md)
+**Specs:** [settings](settings/settings-spec.md) · [snapshot-system](snapshot-system/snapshot-system-spec.md) · [review-wizard](review-wizard/review-wizard-spec.md) · [waterfall-creation-wizard](waterfall-creation-wizard/waterfall-creation-wizard-spec.md)
 
 Create four route files: `settings.routes.ts`, `snapshots.routes.ts`, `review-session.routes.ts`, `setup-session.routes.ts`. Note: snapshot creation auto-populates `data` by calling `waterfallService.getWaterfallSummary()`. Auto Jan 1 snapshot logic lives in the waterfall summary endpoint.
 
@@ -168,7 +168,7 @@ Also update `packages/shared/src/schemas/` — add Zod schemas for settings, sna
 
 **Goal:** New routing, two-panel layout, top nav, frontend services, utilities, and foundation UI primitives.
 
-**Specs:** [foundation-ui-primitives](backlog/foundation-ui-primitives/foundation-ui-primitives-spec.md) · [nudge-card](backlog/nudge-card/nudge-card-spec.md) · [definition-tooltip](backlog/definition-tooltip/definition-tooltip-spec.md)
+**Specs:** [foundation-ui-primitives](foundation-ui-primitives/foundation-ui-primitives-spec.md) · [nudge-card](nudge-card/nudge-card-spec.md) · [definition-tooltip](definition-tooltip/definition-tooltip-spec.md)
 
 **Tasks:**
 
@@ -248,11 +248,11 @@ Use `formatCurrency` everywhere a £ value is displayed.
 
 **7.8** Confirm form stack: `react-hook-form` + `@hookform/resolvers/zod` + shadcn `<Form>`. Install if needed: `bun add react-hook-form @hookform/resolvers`. This is the standard pattern for every form in the app.
 
-**7.9** Create `DefinitionTooltip` component → see [definition-tooltip](backlog/definition-tooltip/definition-tooltip-spec.md) for the full DEFINITIONS dictionary and all prescribed placements.
+**7.9** Create `DefinitionTooltip` component → see [definition-tooltip](definition-tooltip/definition-tooltip-spec.md) for the full DEFINITIONS dictionary and all prescribed placements.
 
 **7.10** Create `apps/frontend/src/utils/motion.ts` — export `usePrefersReducedMotion()` hook (reads `prefers-reduced-motion: reduce` media query). All animated components must check this.
 
-**7.11** Build foundation UI primitives → see [foundation-ui-primitives](backlog/foundation-ui-primitives/foundation-ui-primitives-spec.md):
+**7.11** Build foundation UI primitives → see [foundation-ui-primitives](foundation-ui-primitives/foundation-ui-primitives-spec.md):
 
 - `SkeletonLoader.tsx` — left panel + right panel variants, shimmer animation, `prefers-reduced-motion` support
 - `StaleDataBanner.tsx` — amber sync-failure banner, auto-retry, auto-dismiss
@@ -260,7 +260,7 @@ Use `formatCurrency` everywhere a £ value is displayed.
 - `EntityAvatar.tsx` — curated logo → uploaded image → initials fallback
 - `PanelTransition.tsx` — directional slide animations (deeper/shallower/empty), `prefers-reduced-motion` support
 
-**7.12** Build `NudgeCard` component shell → see [nudge-card](backlog/nudge-card/nudge-card-spec.md). Build the presentational component only; contextual nudge logic is wired in Phases 8 and 9.
+**7.12** Build `NudgeCard` component shell → see [nudge-card](nudge-card/nudge-card-spec.md). Build the presentational component only; contextual nudge logic is wired in Phases 8 and 9.
 
 **7.13** Verify: navigate to `/overview`, `/wealth`, `/planner`, `/settings` — all render without errors.
 
@@ -270,7 +270,7 @@ Use `formatCurrency` everywhere a £ value is displayed.
 
 ## Phase 8: Frontend — Overview Page
 
-**Specs:** [overview-waterfall](backlog/overview-waterfall/overview-waterfall-spec.md) · [overview-item-detail](backlog/overview-item-detail/overview-item-detail-spec.md) · [yearly-bills-calendar](backlog/yearly-bills-calendar/yearly-bills-calendar-spec.md) · [overview-snapshot-timeline](backlog/overview-snapshot-timeline/overview-snapshot-timeline-spec.md)
+**Specs:** [overview-waterfall](overview-waterfall/overview-waterfall-spec.md) · [overview-item-detail](overview-item-detail/overview-item-detail-spec.md) · [yearly-bills-calendar](yearly-bills-calendar/yearly-bills-calendar-spec.md) · [overview-snapshot-timeline](overview-snapshot-timeline/overview-snapshot-timeline-spec.md)
 
 Build: TanStack Query hooks (`useWaterfall.ts`), `WaterfallLeftPanel`, `ItemDetailPanel`, `HistoryChart`, `CashflowCalendar`. Stub the `[Review ▸]` button (`console.log('open review')`) and the waterfall setup wizard CTA (`console.log('open wizard')`). Stub the snapshot timeline area with a placeholder (full snapshot UI is built in Phase 13).
 
@@ -284,7 +284,7 @@ HistoryChart: set `isAnimationActive={!prefersReducedMotion}` on all Recharts co
 
 ## Phase 9: Frontend — Wealth Page
 
-**Specs:** [wealth-accounts](backlog/wealth-accounts/wealth-accounts-spec.md) · [wealth-isa-tracking](backlog/wealth-isa-tracking/wealth-isa-tracking-spec.md) · [wealth-trust-savings](backlog/wealth-trust-savings/wealth-trust-savings-spec.md)
+**Specs:** [wealth-accounts](wealth-accounts/wealth-accounts-spec.md) · [wealth-isa-tracking](wealth-isa-tracking/wealth-isa-tracking-spec.md) · [wealth-trust-savings](wealth-trust-savings/wealth-trust-savings-spec.md)
 
 Build: TanStack Query hooks (`useWealth.ts`), `WealthLeftPanel`, `AccountListPanel`, ISA allowance bar, `AccountDetailPanel`.
 
@@ -294,7 +294,7 @@ Build: TanStack Query hooks (`useWealth.ts`), `WealthLeftPanel`, `AccountListPan
 
 ## Phase 10: Frontend — Planner Page
 
-**Specs:** [planner-purchases](backlog/planner-purchases/planner-purchases-spec.md) · [planner-gifts](backlog/planner-gifts/planner-gifts-spec.md)
+**Specs:** [planner-purchases](planner-purchases/planner-purchases-spec.md) · [planner-gifts](planner-gifts/planner-gifts-spec.md)
 
 Build: TanStack Query hooks (`usePlanner.ts`), `PlannerLeftPanel`, `PurchaseListPanel`, gift panels (upcoming view, by-person view, `GiftPersonDetailPanel`). Year selector in page header.
 
@@ -304,7 +304,7 @@ Build: TanStack Query hooks (`usePlanner.ts`), `PlannerLeftPanel`, `PurchaseList
 
 ## Phase 11: Frontend — Settings Page
 
-**Specs:** [settings](backlog/settings/settings-spec.md) · [household-management](backlog/household-management/household-management-spec.md)
+**Specs:** [settings](settings/settings-spec.md) · [household-management](household-management/household-management-spec.md)
 
 **Tasks:**
 
@@ -334,7 +334,7 @@ Build: TanStack Query hooks (`usePlanner.ts`), `PlannerLeftPanel`, `PurchaseList
 
 ## Phase 12: Staleness System
 
-**Spec:** [staleness-indicators](backlog/staleness-indicators/staleness-indicators-spec.md)
+**Spec:** [staleness-indicators](staleness-indicators/staleness-indicators-spec.md)
 
 Build `apps/frontend/src/utils/staleness.ts` and `StalenessIndicator.tsx`. Wire tier-level attention badges (amber dot + stale count) into `WaterfallLeftPanel` tier rows. Wire per-item `StalenessIndicator` (5px amber dot + detail text) into right panel item lists, `ItemDetailPanel`, `AccountListPanel`, and `AccountDetailPanel`. (`date-fns` already installed in Phase 7.)
 
@@ -344,7 +344,7 @@ Build `apps/frontend/src/utils/staleness.ts` and `StalenessIndicator.tsx`. Wire 
 
 ## Phase 13: Snapshot System
 
-**Specs:** [snapshot-system](backlog/snapshot-system/snapshot-system-spec.md) · [overview-snapshot-timeline](backlog/overview-snapshot-timeline/overview-snapshot-timeline-spec.md)
+**Specs:** [snapshot-system](snapshot-system/snapshot-system-spec.md) · [overview-snapshot-timeline](overview-snapshot-timeline/overview-snapshot-timeline-spec.md)
 
 Build `SnapshotTimeline.tsx` (proportional dot positioning, `[+ Save snapshot]` button, ◂/▸ gap navigation arrows, hover names/dates on dots). Build `CreateSnapshotModal.tsx` (name input pre-populated "Month Year", editable; 409 duplicate name → inline error).
 
@@ -362,7 +362,7 @@ Wire all three creation triggers:
 
 ## Phase 14: Review Wizard
 
-**Spec:** [review-wizard](backlog/review-wizard/review-wizard-spec.md)
+**Spec:** [review-wizard](review-wizard/review-wizard-spec.md)
 
 Build `ReviewWizard.tsx` as a full-screen overlay. Session lifecycle, step data sources, item card interactions, and "Save & finish" flow are all in the spec.
 
@@ -372,7 +372,7 @@ Build `ReviewWizard.tsx` as a full-screen overlay. Session lifecycle, step data 
 
 ## Phase 15: Waterfall Creation Wizard
 
-**Spec:** [waterfall-creation-wizard](backlog/waterfall-creation-wizard/waterfall-creation-wizard-spec.md)
+**Spec:** [waterfall-creation-wizard](waterfall-creation-wizard/waterfall-creation-wizard-spec.md)
 
 Build `WaterfallSetupWizard.tsx`. Wire entry points: Overview empty state CTA (was stubbed in Phase 8) and Settings → Waterfall → Rebuild. Step content, session lifecycle, and finish flow are all in the spec.
 

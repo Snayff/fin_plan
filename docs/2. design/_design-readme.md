@@ -21,12 +21,12 @@ FinPlan is a personal financial planning tool for households. It is not a ledger
 | [design-system.md](design-system.md)         | The _what_: all UI specs, colour tokens, typography, components, interaction rules, and UX patterns | Before building any UI                |
 | [definitions.md](definitions.md)             | Canonical tooltip text for every financial term and functional icon in the app                      | When writing or reviewing UI copy     |
 
-### Project docs (parent directory)
+### Project docs
 
-| Document                                     | Purpose                                                                         | Read when                                       |
-| -------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------- |
-| [backlog/](../features/implemented/backlog/) | Atomic feature spec files — one folder per feature, each with a `*-spec.md`     | When working on or reviewing a specific feature |
-| [implemented/](../features/implemented/)     | Feature folders moved here once shipped, with `implemented_date` in frontmatter | To audit what has been built and when           |
+| Document                       | Purpose                                                                     | Read when                                       |
+| ------------------------------ | --------------------------------------------------------------------------- | ----------------------------------------------- |
+| [planning/](../4.%20planning/) | Atomic feature spec files — one folder per feature, each with a `*-spec.md` | When working on or reviewing a specific feature |
+| [built/](../5.%20built/)       | Completed features, with `implemented_date` in frontmatter                  | To audit what has been built and when           |
 
 ---
 
@@ -40,12 +40,11 @@ FinPlan is a personal financial planning tool for households. It is not a ledger
 
 **For active development:**
 
-- `../features/implemented/backlog/[feature]/[feature]-spec.md` is the reference for a specific feature's intent, user stories, and acceptance criteria
+- `../4. planning/[feature]/[feature]-spec.md` is the reference for a specific feature's intent, user stories, and acceptance criteria
 - Consult `design-system.md` for component and interaction rules
 
-**Backlog workflow:**
+**Planning workflow:**
 
-- Features to be built live in `../features/implemented/backlog/` — each in its own folder with a `*-spec.md`
+- Features to be built live in `../4. planning/` — each in its own folder with a `*-spec.md`
 - Add a `*-plan.md` to the folder when a feature enters active development (`status: in-progress`)
-- Move the folder to `../features/implemented/` and fill `implemented_date` when the feature ships (`status: implemented`)
-- To add a new feature: copy `_spec_template.md` into a new folder under `../features/implemented/backlog/`
+- Move the folder to `../5. built/` and fill `implemented_date` when the feature ships (`status: implemented`)
