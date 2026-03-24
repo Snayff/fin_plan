@@ -6,6 +6,7 @@ import { StalenessIndicator } from "@/components/common/StalenessIndicator";
 import { useSettings } from "@/hooks/useSettings";
 import { TierAddForm } from "@/components/overview/build/TierAddForm";
 import type { BuildPhase } from "@/components/overview/build/quick-picks";
+import { WaterfallConnector } from "@/components/overview/WaterfallConnector";
 
 interface SelectedItem {
   id: string;
@@ -31,16 +32,15 @@ interface WaterfallLeftPanelProps {
 }
 
 const ROW_CLASS =
-  "flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-accent/50 transition-colors text-sm";
+  "flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-accent/50 transition-colors text-[13px] font-body text-text-secondary";
+
+const AMOUNT_CLASS = "font-numeric text-[#cbd5e1]";
 
 function StaleCountBadge({ count }: { count: number }) {
   if (count === 0) return null;
   return (
-    <span className="inline-flex items-center gap-1 text-xs" style={{ color: "#f59e0b" }}>
-      <span
-        className="inline-block h-[5px] w-[5px] rounded-full shrink-0"
-        style={{ background: "#f59e0b" }}
-      />
+    <span className="inline-flex items-center gap-1 text-xs text-attention">
+      <span className="inline-block h-[5px] w-[5px] rounded-full shrink-0 bg-attention" />
       {count} stale
     </span>
   );
@@ -62,12 +62,17 @@ function SectionHeader({
   return (
     <div className={cn("flex items-center justify-between py-1.5 px-2", dimmed && "opacity-40")}>
       <div className="flex items-center gap-2">
-        <span className={cn("text-xs font-semibold tracking-widest uppercase", colorClass)}>
+        <span
+          className={cn(
+            "text-[13px] font-heading font-semibold tracking-tier uppercase",
+            colorClass
+          )}
+        >
           {label}
         </span>
         {!dimmed && <StaleCountBadge count={staleCount} />}
       </div>
-      <span className="text-sm font-medium">{total}</span>
+      <span className={cn("text-[15px] font-numeric font-semibold", colorClass)}>{total}</span>
     </div>
   );
 }
@@ -169,7 +174,7 @@ export function WaterfallLeftPanel({
                       thresholdMonths={thresholds.income_source ?? 12}
                     />
                   )}
-                  <span>{formatCurrency(src.amount)}</span>
+                  <span className={AMOUNT_CLASS}>{formatCurrency(src.amount)}</span>
                 </div>
               </div>
             ))}
@@ -200,7 +205,7 @@ export function WaterfallLeftPanel({
                       thresholdMonths={thresholds.income_source ?? 12}
                     />
                   )}
-                  <span className="flex items-center gap-1">
+                  <span className={cn("flex items-center gap-1", AMOUNT_CLASS)}>
                     <span className="text-xs text-muted-foreground">÷12</span>
                     {formatCurrency(src.monthlyAmount / 12)}
                   </span>
@@ -234,7 +239,7 @@ export function WaterfallLeftPanel({
                       thresholdMonths={thresholds.income_source ?? 12}
                     />
                   )}
-                  <span>{formatCurrency(src.amount)}</span>
+                  <span className={AMOUNT_CLASS}>{formatCurrency(src.amount)}</span>
                 </div>
               </div>
             ))}
@@ -242,6 +247,8 @@ export function WaterfallLeftPanel({
           </div>
         )}
       </div>
+
+      <WaterfallConnector text="minus committed" />
 
       {/* COMMITTED */}
       <div className={cn(committedState === "future" && "opacity-40")}>
@@ -281,7 +288,7 @@ export function WaterfallLeftPanel({
                       thresholdMonths={thresholds.committed_bill ?? 6}
                     />
                   )}
-                  <span>{formatCurrency(bill.amount)}</span>
+                  <span className={AMOUNT_CLASS}>{formatCurrency(bill.amount)}</span>
                 </div>
               </div>
             ))}
@@ -294,7 +301,7 @@ export function WaterfallLeftPanel({
                 <span>{bill.name}</span>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-muted-foreground">÷12</span>
-                  <span>{formatCurrency(bill.amount / 12)}</span>
+                  <span className={AMOUNT_CLASS}>{formatCurrency(bill.amount / 12)}</span>
                 </div>
               </div>
             ))}
@@ -313,7 +320,7 @@ export function WaterfallLeftPanel({
                     See cashflow →
                   </button>
                 </div>
-                <span>{formatCurrency(committed.monthlyAvg12)}</span>
+                <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyAvg12)}</span>
               </div>
             )}
             {committedState === "active" && (
@@ -322,6 +329,8 @@ export function WaterfallLeftPanel({
           </div>
         )}
       </div>
+
+      <WaterfallConnector text="minus discretionary" />
 
       {/* DISCRETIONARY */}
       <div className={cn(discretionaryState === "future" && "opacity-40")}>
@@ -361,7 +370,7 @@ export function WaterfallLeftPanel({
                       thresholdMonths={thresholds.discretionary_category ?? 12}
                     />
                   )}
-                  <span>{formatCurrency(cat.monthlyBudget)}</span>
+                  <span className={AMOUNT_CLASS}>{formatCurrency(cat.monthlyBudget)}</span>
                 </div>
               </div>
             ))}
@@ -411,7 +420,7 @@ export function WaterfallLeftPanel({
                       thresholdMonths={thresholds.savings_allocation ?? 12}
                     />
                   )}
-                  <span>{formatCurrency(sav.monthlyAmount)}</span>
+                  <span className={AMOUNT_CLASS}>{formatCurrency(sav.monthlyAmount)}</span>
                 </div>
               </div>
             ))}
@@ -423,19 +432,19 @@ export function WaterfallLeftPanel({
         )}
       </div>
 
+      <WaterfallConnector text="equals" />
+
       {/* SURPLUS */}
-      <div className={cn("border-t pt-3", inBuild && buildPhase !== "summary" && "opacity-60")}>
-        <div className="flex items-center justify-between py-1.5 px-2">
-          <span className="text-xs font-semibold tracking-widest uppercase">Surplus</span>
-          <span className="text-sm font-medium">{formatCurrency(surplus.amount)}</span>
-        </div>
+      <div className={cn(inBuild && buildPhase !== "summary" && "opacity-60")}>
+        <SectionHeader
+          label="Surplus"
+          total={formatCurrency(surplus.amount)}
+          colorClass="text-tier-surplus"
+          staleCount={0}
+        />
         {!inBuild && surplus.percentOfIncome < surplusBenchmark && (
-          <div className="flex items-center gap-1.5 px-2 text-xs" style={{ color: "#f59e0b" }}>
-            <span
-              className="h-[5px] w-[5px] rounded-full shrink-0"
-              style={{ background: "#f59e0b" }}
-              aria-hidden
-            />
+          <div className="flex items-center gap-1.5 px-2 text-xs text-attention">
+            <span className="h-[5px] w-[5px] rounded-full shrink-0 bg-attention" aria-hidden />
             <span>Below benchmark</span>
           </div>
         )}
