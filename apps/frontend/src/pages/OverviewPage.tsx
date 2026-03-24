@@ -2,12 +2,14 @@ import { useState, useCallback } from "react";
 import type React from "react";
 import { useSearchParams } from "react-router-dom";
 import { useWaterfallSummary } from "@/hooks/useWaterfall";
-import type { WaterfallSummary } from "@finplan/shared";
+import type { WaterfallSummary, IncomeType } from "@finplan/shared";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { WaterfallLeftPanel } from "@/components/overview/WaterfallLeftPanel";
 import { ItemDetailPanel } from "@/components/overview/ItemDetailPanel";
 import { CashflowCalendar } from "@/components/overview/CashflowCalendar";
+import { IncomeTypePanel } from "@/components/overview/IncomeTypePanel";
+import { CommittedBillsPanel } from "@/components/overview/CommittedBillsPanel";
 import { SnapshotTimeline } from "@/components/overview/SnapshotTimeline";
 import { CreateSnapshotModal } from "@/components/overview/CreateSnapshotModal";
 import { ReviewWizard } from "@/components/overview/ReviewWizard";
@@ -33,7 +35,9 @@ interface SelectedItem {
 type RightPanelView =
   | { type: "none" }
   | { type: "item"; item: SelectedItem }
-  | { type: "cashflow" };
+  | { type: "cashflow" }
+  | { type: "income_type"; incomeType: IncomeType; label: string }
+  | { type: "committed_bills" };
 
 /** Map setup session step numbers to build phases */
 const STEP_TO_PHASE: Record<number, BuildPhase> = {
@@ -156,9 +160,29 @@ export default function OverviewPage() {
   ) : summary && !isWaterfallEmpty ? (
     <WaterfallLeftPanel
       summary={summary}
-      onSelectItem={(item) => setView({ type: "item", item })}
+      onSelectItem={(item) => {
+        if (item.type === "income_type") {
+          setView({
+            type: "income_type",
+            incomeType: item.id.replace("type:", "") as IncomeType,
+            label: item.name,
+          });
+        } else if (item.type === "committed_bills") {
+          setView({ type: "committed_bills" });
+        } else {
+          setView({ type: "item", item });
+        }
+      }}
       onOpenCashflowCalendar={() => setView({ type: "cashflow" })}
-      selectedItemId={view.type === "item" ? view.item.id : null}
+      selectedItemId={
+        view.type === "item"
+          ? view.item.id
+          : view.type === "income_type"
+            ? `type:${view.incomeType}`
+            : view.type === "committed_bills"
+              ? "aggregate:committed_bills"
+              : null
+      }
     />
   ) : (
     <div className="p-4 space-y-0">
@@ -245,6 +269,26 @@ export default function OverviewPage() {
     );
   } else if (view.type === "cashflow") {
     right = <CashflowCalendar year={year} onBack={() => setView({ type: "none" })} />;
+  } else if (view.type === "income_type" && summary) {
+    const group = summary.income.byType.find((g) => g.type === view.incomeType);
+    right = (
+      <IncomeTypePanel
+        label={view.label}
+        sources={group?.sources ?? []}
+        onSelectSource={(item) => setView({ type: "item", item })}
+        onBack={() => setView({ type: "none" })}
+        selectedItemId={null}
+      />
+    );
+  } else if (view.type === "committed_bills" && summary) {
+    right = (
+      <CommittedBillsPanel
+        bills={summary.committed.bills}
+        onSelectBill={(item) => setView({ type: "item", item })}
+        onBack={() => setView({ type: "none" })}
+        selectedItemId={null}
+      />
+    );
   }
 
   return (
