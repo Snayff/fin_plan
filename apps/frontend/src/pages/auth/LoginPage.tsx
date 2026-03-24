@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
 import type { ApiError } from "../../lib/api";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
@@ -74,12 +75,10 @@ export default function LoginPage() {
           </div>
 
           <label htmlFor="rememberMe" className="flex items-center gap-2 text-sm text-foreground">
-            <input
+            <Checkbox
               id="rememberMe"
-              type="checkbox"
               checked={rememberMe}
-              onChange={(e) => setRememberMe(e.target.checked)}
-              className="h-4 w-4 rounded border-border"
+              onCheckedChange={(checked) => setRememberMe(checked === true)}
             />
             Remember me on this device
           </label>

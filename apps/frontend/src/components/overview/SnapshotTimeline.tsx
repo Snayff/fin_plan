@@ -71,7 +71,10 @@ export function SnapshotTimeline({
                   : "bg-muted-foreground/40 group-hover:bg-muted-foreground"
               }`}
             />
-            <span className="max-w-[60px] truncate text-muted-foreground group-hover:text-foreground leading-none">
+            <span
+              className="max-w-[8rem] truncate text-muted-foreground group-hover:text-foreground leading-none"
+              title={snap.name as string}
+            >
               {snap.name as string}
             </span>
           </button>

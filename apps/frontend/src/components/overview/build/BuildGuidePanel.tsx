@@ -2,6 +2,7 @@ import { useState } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useWaterfallSummary } from "@/hooks/useWaterfall";
 import { useCreateSnapshot } from "@/hooks/useSettings";
@@ -234,12 +235,11 @@ function SummaryPhase({
       </div>
 
       {/* Snapshot option */}
-      <label className="flex items-center gap-2 text-sm mt-4">
-        <input
-          type="checkbox"
+      <label htmlFor="save-snapshot" className="flex items-center gap-2 text-sm mt-4">
+        <Checkbox
+          id="save-snapshot"
           checked={saveSnapshot}
-          onChange={(e) => setSaveSnapshot(e.target.checked)}
-          className="rounded"
+          onCheckedChange={(checked) => setSaveSnapshot(checked === true)}
         />
         Save an opening snapshot
       </label>

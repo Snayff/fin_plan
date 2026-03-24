@@ -84,7 +84,9 @@ export default function Layout({ children }: { children: ReactNode }) {
               </nav>
             </SheetContent>
           </Sheet>
-          <span className="font-bold text-base tracking-tight text-foreground">finplan</span>
+          <span className="font-heading font-bold text-lg tracking-tight text-foreground">
+            finplan
+          </span>
           <HouseholdSwitcher />
         </div>
 

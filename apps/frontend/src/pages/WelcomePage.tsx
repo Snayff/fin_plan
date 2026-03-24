@@ -140,7 +140,7 @@ function ConfettiBurst({ onDone }: { onDone: () => void }) {
 
   return (
     <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden" aria-hidden>
-      {Array.from({ length: 40 }).map((_, i) => {
+      {Array.from({ length: 20 }).map((_, i) => {
         const left = Math.random() * 100;
         const delay = Math.random() * 0.5;
         const duration = 1.5 + Math.random() * 1.5;

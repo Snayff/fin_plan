@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/format";
+import { Button } from "@/components/ui/button";
 import { ButtonPair } from "@/components/common/ButtonPair";
 import { HistoryChart } from "./HistoryChart";
 import { useItemHistory, useConfirmItem, useUpdateItem, useEndIncome } from "@/hooks/useWaterfall";
@@ -142,7 +144,7 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
             {formatCurrency(item.amount / 12)}/mo avg
           </p>
         )}
-        <p className="text-sm mt-0.5" style={itemIsStale ? { color: "#f59e0b" } : undefined}>
+        <p className={cn("text-sm mt-0.5", itemIsStale && "text-attention")}>
           {stalenessLabel(item.lastReviewedAt)}
         </p>
       </div>
@@ -177,21 +179,12 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
                 className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleSaveEdit}
-                  disabled={updateItem.isPending}
-                  className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                >
+                <Button size="sm" onClick={handleSaveEdit} disabled={updateItem.isPending}>
                   {updateItem.isPending ? "Saving…" : "Save"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInlineMode("none")}
-                  className="rounded border px-3 py-1.5 text-xs font-medium hover:bg-accent"
-                >
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setInlineMode("none")}>
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -219,21 +212,12 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
                 className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
               />
               <div className="flex gap-2">
-                <button
-                  type="button"
-                  onClick={handleEndIncome}
-                  disabled={endIncome.isPending}
-                  className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
-                >
+                <Button size="sm" onClick={handleEndIncome} disabled={endIncome.isPending}>
                   {endIncome.isPending ? "Saving…" : "Confirm"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setInlineMode("none")}
-                  className="rounded border px-3 py-1.5 text-xs font-medium hover:bg-accent"
-                >
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => setInlineMode("none")}>
                   Cancel
-                </button>
+                </Button>
               </div>
             </div>
           )}
@@ -245,26 +229,25 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
         <div className="rounded-lg border p-3 space-y-2 bg-accent/30">
           <p className="text-sm font-medium">Save a snapshot before updating?</p>
           <div className="flex gap-2">
-            <button
-              type="button"
-              className="rounded bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+            <Button
+              size="sm"
               onClick={() => {
                 setShowSnapshotPrompt(false);
                 setShowSnapshotModal(true);
               }}
             >
               Yes, save snapshot first
-            </button>
-            <button
-              type="button"
-              className="rounded border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
               onClick={() => {
                 setShowSnapshotPrompt(false);
                 doSaveEdit();
               }}
             >
               No, update directly
-            </button>
+            </Button>
           </div>
         </div>
       )}
