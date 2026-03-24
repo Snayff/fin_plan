@@ -25,6 +25,19 @@ The colour system has three layers: **primitives** (raw values) → **semantic r
 
 The background is never a plain solid. Ambient radial glows give the canvas depth and warmth without competing with content.
 
+#### Page Ambient Glows
+
+Each page has dual radial gradient glows at very low opacity, creating a subtle sense of place. The primary glow carries the page's dominant colour; the secondary adds atmospheric depth.
+
+| Page     | Primary                          | Secondary                         |
+| -------- | -------------------------------- | --------------------------------- |
+| Overview | Indigo, top-right, 6% opacity    | Violet, bottom-left, 3.5% opacity |
+| Wealth   | Blue, top-left, 5% opacity       | Teal, bottom-right, 3% opacity    |
+| Planner  | Purple, center-right, 5% opacity | Indigo, bottom-left, 3% opacity   |
+| Settings | Neutral, bottom-right, 2.5%      | None                              |
+
+**Implementation:** CSS `[data-page]` attribute on the page wrapper + `::before` / `::after` pseudo-elements with `position: fixed`, `pointer-events: none`, `z-index: 0`. Glows use `radial-gradient(ellipse, ... 0%, transparent 65%)`. No animation — static only.
+
 #### Surfaces
 
 Three elevation levels with wide steps (~8–10 lightness points) for clear visual hierarchy.
@@ -135,18 +148,30 @@ Gradient text is reserved for **callout words** — special engagement phrases, 
 
 #### Waterfall Type Hierarchy
 
-Six levels, each a clear visual step:
+Six levels in the left panel, each a clear visual step:
 
-| Level                | Size | Weight | Font                         | Context                                                       |
-| -------------------- | ---- | ------ | ---------------------------- | ------------------------------------------------------------- |
-| Right panel headline | 30px | 800    | `font-numeric`               | Selected item's value in detail view                          |
-| Surplus value        | 24px | 700    | `font-numeric`               | The answer at the bottom of the waterfall                     |
-| Tier total value     | 18px | 600    | `font-numeric`               | Sum at the bottom of each tier                                |
-| Tier heading         | —    | 800    | `font-heading`               | `INCOME`, `COMMITTED SPEND`, etc. (uppercase, 0.09em spacing) |
-| Row item             | 16px | 500    | `font-body` + `font-numeric` | Label and value for each line item                            |
-| Metadata             | 12px | 500    | `font-body`                  | Staleness age, dates, helper text                             |
+| Level                | Size | Weight | Font           | Colour                     | Context                                                 |
+| -------------------- | ---- | ------ | -------------- | -------------------------- | ------------------------------------------------------- |
+| Right panel headline | 30px | 800    | `font-numeric` | `text-primary`             | Selected item's value in detail view                    |
+| Tier total           | 15px | 600    | `font-numeric` | `text-tier-*`              | Sum next to each tier heading, in tier colour           |
+| Tier heading         | 13px | 600    | `font-heading` | `text-tier-*`              | `INCOME`, `COMMITTED`, etc. (uppercase, 0.09em spacing) |
+| Item name            | 13px | 400    | `font-body`    | `text-secondary` (#94a3b8) | Label for each line item — dimmed to recede             |
+| Item amount          | 13px | 400    | `font-numeric` | `#cbd5e1`                  | Value for each line item — subtle but readable          |
+| Metadata             | 12px | 500    | `font-body`    | varies                     | Staleness age, dates, helper text                       |
 
-The surplus value is the most prominent number on the page. It is the answer — the number the user came to see.
+Tier headings and totals use the same colour as their tier (`text-tier-income`, `text-tier-committed`, `text-tier-discretionary`, `text-tier-surplus`). Surplus is treated identically to other tiers — same size, same weight, just teal.
+
+#### Cascade Connectors
+
+Between each tier in the waterfall, a connector reinforces the arithmetic flow:
+
+| Connector             | Position                            |
+| --------------------- | ----------------------------------- |
+| "minus committed"     | Between Income and Committed        |
+| "minus discretionary" | Between Committed and Discretionary |
+| "equals"              | Between Discretionary and Surplus   |
+
+Connectors render as: horizontal rule — text — horizontal rule. Text uses `font-numeric`, 10.5px, `font-medium`, `text-muted`, `tracking-wide`. Rules use `bg-border/50` at 1px height.
 
 **Heading typography token:** heading elements use tighter treatment than body text — letter spacing: −0.025em; line height: 1.15. These are defined as dedicated heading tokens in `design-tokens.ts`. They do not apply to body text, labels, or numerical values.
 
@@ -833,13 +858,43 @@ Page-specific layout, data models, and interaction details are defined in the in
 
 ### 3.5 Empty States
 
-Every empty state includes a clear call to action. A blank view is never acceptable.
+Every empty state teaches the interface structure and guides the user forward. Three patterns:
 
-| Context                        | Empty state treatment                                                       |
-| ------------------------------ | --------------------------------------------------------------------------- |
-| Overview — no waterfall data   | CTA to launch the Waterfall Creation Wizard (replaces the full right panel) |
-| Right panel — nothing selected | Muted placeholder: "Select any item to see its detail"                      |
-| Any tier with no items         | Inline "Add first item" action in the right panel (State 2)                 |
+#### Ghosted Cascade (No Waterfall)
+
+When the overview has no waterfall data, show a ghosted version of the full cascade:
+
+- Four tier headers at ~25% opacity with tier colours and "£—" placeholder amounts
+- Cascade connectors at ~20% opacity ("minus committed", "minus discretionary", "equals")
+- Callout gradient CTA card below with "Build your waterfall" heading and "Get started" button
+
+This teaches the waterfall mental model before the user builds it.
+
+#### Contextual Hint (Right Panel — Nothing Selected)
+
+When no item is selected, the right panel shows:
+
+- Small SVG icon (20×20, `#475569` stroke, two-panel layout representation)
+- Page-aware guidance text (e.g. "Select an item from the waterfall to view its history and details")
+- Keyboard hint badges (deferred until keyboard navigation is implemented)
+
+#### Fading Skeleton + CTA Card (List Empties)
+
+When a list has no items (accounts, purchases, gifts, etc.):
+
+- 2-4 ghosted skeleton rows (name placeholder + amount placeholder) with progressively fading opacity: 100% → 80% → 50% → 25%
+- Callout gradient CTA card with contextual text and "+ Add" button
+- CTA text adapts per context (e.g. "Add your savings accounts to track balances and contributions")
+- For informational lists (e.g. ended income sources), show skeleton rows only — no CTA
+
+**Callout gradient CTA card spec:**
+
+```
+background: linear-gradient(135deg, rgba(99, 102, 241, 0.07) 0%, rgba(168, 85, 247, 0.05) 100%)
+border: 1px solid rgba(99, 102, 241, 0.1)
+border-radius: 8px
+padding: 14px 16px
+```
 
 **Rule:** silence = approval _only when data exists_. When data is absent, the app guides the user forward.
 
@@ -1254,7 +1309,7 @@ The top navigation bar spans the full width above both panels, present on all pa
   finplan    Overview  Wealth  Planner  Settings    [Household ▾]  [User ▾]
 ```
 
-- **Wordmark**: left-aligned, `font-heading` weight 800, links to Overview. May use `callout-primary` gradient treatment.
+- **Wordmark**: left-aligned, `font-heading`, `font-bold`, `text-lg`, `tracking-tight`. The canonical product name is **finplan** — lowercase, one word. Never "FinPlan", "Fin Plan", "FINPLAN", or any other variation. This applies to the header, documentation, and all user-facing text.
 - **Navigation links**: `Overview`, `Wealth`, `Planner`, `Settings` — `font-heading`, weight 500
 - **Household switcher**: right-aligned, dropdown listing all households the user belongs to; active household name is always visible
 - **User menu**: rightmost, user's name or avatar; contains account settings and sign out
