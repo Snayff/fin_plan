@@ -9,7 +9,7 @@ import type {
 } from "@finplan/shared";
 
 export const wealthService = {
-  getSummary: () => apiClient.get<WealthSummary>("/api/wealth/summary"),
+  getSummary: () => apiClient.get<WealthSummary>("/api/wealth"),
   getIsaAllowance: () => apiClient.get<IsaAllowance[]>("/api/wealth/isa-allowance"),
   listAccounts: () => apiClient.get<any[]>("/api/wealth/accounts"),
   getAccount: (id: string) => apiClient.get<any>(`/api/wealth/accounts/${id}`),
@@ -19,7 +19,7 @@ export const wealthService = {
     apiClient.patch<any>(`/api/wealth/accounts/${id}`, data),
   deleteAccount: (id: string) => apiClient.delete<void>(`/api/wealth/accounts/${id}`),
   updateValuation: (id: string, data: UpdateValuationInput) =>
-    apiClient.patch<any>(`/api/wealth/accounts/${id}/valuation`, data),
+    apiClient.post<any>(`/api/wealth/accounts/${id}/valuation`, data),
   confirmAccount: (id: string) => apiClient.post<any>(`/api/wealth/accounts/${id}/confirm`),
   confirmBatch: (data: ConfirmBatchWealthInput) =>
     apiClient.post<void>("/api/wealth/accounts/confirm-batch", data),

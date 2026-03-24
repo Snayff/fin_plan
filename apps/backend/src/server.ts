@@ -62,6 +62,7 @@ async function start() {
     await server.register(rateLimit, {
       max: config.RATE_LIMIT_MAX,
       timeWindow: config.RATE_LIMIT_TIME_WINDOW,
+      allowList: (req: { url: string }) => req.url === "/health",
     });
 
     // Register WebSocket support
