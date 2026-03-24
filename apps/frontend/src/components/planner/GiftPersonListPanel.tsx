@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/button";
+import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import { cn } from "@/lib/utils";
 import { useCreateGiftPerson } from "@/hooks/usePlanner";
 
@@ -83,7 +84,10 @@ export function GiftPersonListPanel({
       {showAddForm && <AddPersonForm onCancel={() => setShowAddForm(false)} />}
 
       {persons.length === 0 && !showAddForm && (
-        <p className="text-sm text-muted-foreground italic text-center py-8">No gift people yet</p>
+        <GhostedListEmpty
+          ctaText="Plan gifts by person and event — birthdays, Christmas, and more"
+          onCtaClick={() => setShowAddForm(true)}
+        />
       )}
 
       <div className="space-y-0.5">

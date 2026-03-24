@@ -3,6 +3,7 @@ import { formatCurrency } from "@/utils/format";
 import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import { StalenessIndicator } from "@/components/common/StalenessIndicator";
 import { useSettings } from "@/hooks/useSettings";
 
@@ -91,7 +92,10 @@ export function AccountListPanel({
       {/* Account List */}
       <div className="space-y-0.5">
         {sorted.length === 0 && (
-          <p className="text-sm text-muted-foreground italic py-4 text-center">No accounts yet</p>
+          <GhostedListEmpty
+            ctaText="Add your savings accounts to track balances and contributions"
+            onCtaClick={() => console.log("add account")}
+          />
         )}
         {sorted.map((account) => {
           const isSelected = account.id === selectedAccountId;

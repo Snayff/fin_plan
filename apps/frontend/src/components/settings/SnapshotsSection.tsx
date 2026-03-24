@@ -3,11 +3,18 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useSnapshots, useRenameSnapshot, useDeleteSnapshot } from "@/hooks/useSettings";
+import {
+  useSnapshots,
+  useCreateSnapshot,
+  useRenameSnapshot,
+  useDeleteSnapshot,
+} from "@/hooks/useSettings";
+import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import { Section } from "./Section";
 
 export function SnapshotsSection() {
   const { data: snapshots = [] } = useSnapshots();
+  const createSnapshot = useCreateSnapshot();
   const renameSnapshot = useRenameSnapshot();
   const deleteSnapshot = useDeleteSnapshot();
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -49,7 +56,15 @@ export function SnapshotsSection() {
   return (
     <Section id="snapshots" title="Snapshots">
       {snapshots.length === 0 && (
-        <p className="text-sm text-muted-foreground italic">No snapshots yet</p>
+        <GhostedListEmpty
+          ctaText="Save snapshots to track your waterfall over time"
+          onCtaClick={() =>
+            createSnapshot.mutate(`Snapshot ${format(new Date(), "dd MMM yyyy")}`, {
+              onSuccess: () => toast.success("Snapshot saved"),
+            })
+          }
+          ctaButtonLabel="Save snapshot"
+        />
       )}
       <div className="space-y-0.5">
         {(snapshots as any[]).map((snap) => (

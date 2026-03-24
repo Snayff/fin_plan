@@ -1,6 +1,7 @@
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { useEndedIncome, useReactivateIncome } from "@/hooks/useSettings";
+import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import { Section } from "./Section";
 
 export function EndedIncomeSection() {
@@ -10,7 +11,11 @@ export function EndedIncomeSection() {
   return (
     <Section id="income-ended" title="Ended income sources">
       {ended.length === 0 && (
-        <p className="text-sm text-muted-foreground italic">No ended income sources</p>
+        <GhostedListEmpty
+          ctaText="Ended income sources will appear here"
+          showCta={false}
+          rowCount={2}
+        />
       )}
       <div className="space-y-0.5">
         {(ended as any[]).map((source) => (

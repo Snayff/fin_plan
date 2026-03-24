@@ -2,6 +2,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/button";
+import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import { useCreatePurchase, useUpdatePurchase, useDeletePurchase } from "@/hooks/usePlanner";
 
 interface PurchaseListPanelProps {
@@ -368,7 +369,10 @@ export function PurchaseListPanel({ year, purchases, isReadOnly }: PurchaseListP
       {showAddForm && <AddPurchaseForm year={year} onCancel={() => setShowAddForm(false)} />}
 
       {purchases.length === 0 && !showAddForm && (
-        <p className="text-sm text-muted-foreground italic text-center py-8">No purchases yet</p>
+        <GhostedListEmpty
+          ctaText="Plan purchases with cost, priority, and funding source"
+          onCtaClick={() => setShowAddForm(true)}
+        />
       )}
 
       <PurchaseGroup label="Scheduled" purchases={scheduled} isReadOnly={isReadOnly} />

@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/button";
+import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import { useUpsertGiftYearRecord } from "@/hooks/usePlanner";
 
 const EVENT_TYPE_LABELS: Record<string, string> = {
@@ -121,7 +122,7 @@ export function GiftUpcomingPanel({ year, gifts, isReadOnly }: GiftUpcomingPanel
       <h2 className="text-lg font-semibold">Upcoming gifts — {year}</h2>
 
       {upcoming.length === 0 && done.length === 0 && (
-        <p className="text-sm text-muted-foreground italic text-center py-8">No upcoming gifts</p>
+        <GhostedListEmpty ctaText="Add gift recipients to see upcoming events" showCta={false} />
       )}
 
       {upcoming.length > 0 && (
