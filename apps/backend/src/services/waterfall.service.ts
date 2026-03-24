@@ -15,6 +15,9 @@ import type {
   ConfirmBatchInput,
   WaterfallSummary,
   CashflowMonth,
+  IncomeType,
+  IncomeByType,
+  IncomeSourceRow,
 } from "@finplan/shared";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -63,6 +66,37 @@ export const waterfallService = {
       monthlyIncome.reduce((s, i) => s + i.amount, 0) +
       annualIncome.reduce((s, i) => s + i.amount / 12, 0);
 
+    // Group active non-oneOff sources by incomeType for left panel navigation
+    const INCOME_TYPE_LABELS: Record<IncomeType, string> = {
+      salary: "Salary",
+      dividends: "Dividends",
+      freelance: "Freelance",
+      rental: "Rental",
+      benefits: "Benefits",
+      other: "Other",
+    };
+
+    const annualWithMonthly = annualIncome.map((s) => ({ ...s, monthlyAmount: s.amount / 12 }));
+    const activeNonOneOff: IncomeSourceRow[] = [...monthlyIncome, ...annualWithMonthly];
+    const typeMap = new Map<IncomeType, IncomeSourceRow[]>();
+    for (const src of activeNonOneOff) {
+      const group = typeMap.get(src.incomeType) ?? [];
+      group.push(src);
+      typeMap.set(src.incomeType, group);
+    }
+
+    const byType: IncomeByType[] = Array.from(typeMap.entries()).map(([type, sources]) => ({
+      type,
+      label: INCOME_TYPE_LABELS[type],
+      monthlyTotal: sources.reduce((sum, src) => {
+        if (src.frequency === "annual") {
+          return sum + src.amount / 12;
+        }
+        return sum + src.amount;
+      }, 0),
+      sources,
+    }));
+
     const committedMonthlyTotal = committedBills.reduce((s, b) => s + b.amount, 0);
     const yearlyMonthlyAvg = yearlyBills.reduce((s, b) => s + b.amount, 0) / 12;
 
@@ -76,8 +110,9 @@ export const waterfallService = {
     return {
       income: {
         total: incomeTotal,
+        byType,
         monthly: monthlyIncome,
-        annual: annualIncome.map((s) => ({ ...s, monthlyAmount: s.amount / 12 })),
+        annual: annualWithMonthly,
         oneOff: oneOffIncome,
       },
       committed: {

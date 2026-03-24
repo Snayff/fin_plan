@@ -91,6 +91,68 @@ describe("waterfallService.updateIncome", () => {
   });
 });
 
+describe("waterfallService.getWaterfallSummary — income.byType", () => {
+  const makeSource = (overrides: object) => ({
+    id: "s1",
+    householdId: "hh-1",
+    name: "Source",
+    amount: 1000,
+    frequency: "monthly" as const,
+    incomeType: "other" as const,
+    expectedMonth: null,
+    ownerId: null,
+    sortOrder: 0,
+    endedAt: null,
+    lastReviewedAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    prismaMock.committedBill.findMany.mockResolvedValue([]);
+    prismaMock.yearlyBill.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue([]);
+    prismaMock.savingsAllocation.findMany.mockResolvedValue([]);
+  });
+
+  it("groups monthly and annual sources by incomeType", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      makeSource({ id: "s1", frequency: "monthly", incomeType: "salary", amount: 5000 }),
+      makeSource({ id: "s2", frequency: "annual", incomeType: "dividends", amount: 12000 }),
+    ] as any);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    const salaryGroup = summary.income.byType.find((g) => g.type === "salary");
+    expect(salaryGroup).toBeDefined();
+    expect(salaryGroup!.monthlyTotal).toBe(5000);
+    expect(salaryGroup!.sources).toHaveLength(1);
+
+    const divGroup = summary.income.byType.find((g) => g.type === "dividends");
+    expect(divGroup).toBeDefined();
+    expect(divGroup!.monthlyTotal).toBe(1000); // 12000 / 12
+  });
+
+  it("excludes one_off sources from byType", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      makeSource({ id: "s1", frequency: "one_off", incomeType: "other", amount: 2000 }),
+    ] as any);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+    expect(summary.income.byType).toHaveLength(0);
+  });
+
+  it("uses canonical label for each type", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      makeSource({ id: "s1", frequency: "monthly", incomeType: "freelance", amount: 1000 }),
+    ] as any);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+    expect(summary.income.byType[0]!.label).toBe("Freelance");
+  });
+});
+
 describe("waterfallService.getCashflow", () => {
   it("correctly calculates pot and marks shortfalls", async () => {
     prismaMock.yearlyBill.findMany.mockResolvedValue([
