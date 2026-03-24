@@ -32,41 +32,47 @@ export function MiniWaterfallChart({
 
   return (
     <div className="space-y-3">
-      {/* Cascading bar */}
-      <div className="space-y-1.5">
+      {/* Cascading bars */}
+      <div className="space-y-1.5 overflow-visible">
         {/* Income — full width */}
         <TierBar
           label="Income"
           amount={income}
-          pct={100}
+          leftPct={0}
+          widthPct={100}
           color={TIER_COLORS.income}
           active={income > 0}
         />
-        {/* Committed — proportion of income */}
+        {/* Committed — starts at 0 */}
         <TierBar
           label="Committed"
           amount={committed}
-          pct={committedPct}
+          leftPct={0}
+          widthPct={committedPct}
           color={TIER_COLORS.committed}
           active={committed > 0}
         />
-        {/* Discretionary — proportion of income */}
+        {/* Discretionary — starts where committed ends */}
         <TierBar
           label="Discretionary"
           amount={discretionary}
-          pct={discretionaryPct}
+          leftPct={committedPct}
+          widthPct={discretionaryPct}
           color={TIER_COLORS.discretionary}
           active={discretionary > 0}
         />
-        {/* Surplus — remainder */}
-        <TierBar
-          label="Surplus"
-          amount={surplus}
-          pct={surplusPct}
-          color={TIER_COLORS.surplus}
-          active={surplus !== 0}
-          isSurplus
-        />
+        {/* Surplus — breakout card wrapper */}
+        <div className="relative z-20 mt-3 -mb-7 py-3 before:content-[''] before:absolute before:inset-y-0 before:-left-2 before:-right-8 before:bg-surface-elevated before:border before:border-surface-elevated-border before:rounded-lg before:-z-10">
+          <TierBar
+            label="Surplus"
+            amount={surplus}
+            leftPct={committedPct + discretionaryPct}
+            widthPct={surplusPct}
+            color={TIER_COLORS.surplus}
+            active={surplus !== 0}
+            isSurplus
+          />
+        </div>
       </div>
     </div>
   );
@@ -75,14 +81,16 @@ export function MiniWaterfallChart({
 function TierBar({
   label,
   amount,
-  pct,
+  leftPct,
+  widthPct,
   color,
   active,
   isSurplus,
 }: {
   label: string;
   amount: number;
-  pct: number;
+  leftPct: number;
+  widthPct: number;
   color: string;
   active: boolean;
   isSurplus?: boolean;
@@ -90,18 +98,25 @@ function TierBar({
   return (
     <div className="space-y-0.5">
       <div className="flex items-center justify-between text-xs">
-        <span className="font-medium" style={{ color: active ? color : undefined }}>
+        <span
+          className="w-[100px] shrink-0 font-medium"
+          style={{
+            color: active ? color : undefined,
+            paddingLeft: isSurplus ? "8px" : undefined,
+          }}
+        >
           {label}
         </span>
         <span className={active ? "font-mono font-medium" : "text-muted-foreground"}>
           {active ? formatCurrency(amount) : "—"}
         </span>
       </div>
-      <div className="h-2 rounded-full bg-muted/50 overflow-hidden">
+      <div className="relative h-2 rounded-full bg-muted/50 overflow-hidden">
         <div
-          className="h-full rounded-full transition-all duration-500 ease-out"
+          className="absolute top-0 h-full rounded-full transition-all duration-500 ease-out"
           style={{
-            width: active ? `${Math.max(pct, 2)}%` : "0%",
+            left: active ? `${leftPct}%` : "0%",
+            width: active ? `${Math.max(widthPct, 2)}%` : "0%",
             backgroundColor: color,
             opacity: active ? (isSurplus && amount < 0 ? 0.5 : 0.8) : 0.2,
           }}

@@ -38,7 +38,7 @@ export function SnapshotTimeline({
   );
 
   return (
-    <div className="h-8 border-b flex items-center gap-2 px-3 text-xs">
+    <div className="h-8 border-b flex items-center gap-2 px-3 text-xs overflow-visible">
       {/* Left arrow */}
       {canScrollLeft && (
         <button
@@ -76,25 +76,38 @@ export function SnapshotTimeline({
             </span>
           </button>
         ))}
-
-        {/* Now */}
-        <button
-          type="button"
-          onClick={onSelectNow}
-          className="shrink-0 flex flex-col items-center gap-0.5 group"
-        >
-          <span
-            className={`inline-block h-2 w-2 rounded-full transition-colors ${
-              selectedId === null
-                ? "bg-primary"
-                : "bg-muted-foreground/40 group-hover:bg-muted-foreground"
-            }`}
-          />
-          <span className="text-muted-foreground group-hover:text-foreground leading-none">
-            Now
-          </span>
-        </button>
       </div>
+
+      {/* Now — outside scroll area so floating card isn't clipped */}
+      <button
+        type="button"
+        onClick={onSelectNow}
+        className="shrink-0 relative flex flex-col items-center gap-0.5 group"
+      >
+        {selectedId === null && (
+          <div className="absolute bottom-[calc(100%+6px)] left-1/2 -translate-x-1/2 z-10 bg-surface-elevated border border-surface-elevated-border rounded-md px-2.5 py-1.5 whitespace-nowrap text-[11px] after:content-[''] after:absolute after:top-full after:left-1/2 after:-translate-x-1/2 after:border-4 after:border-transparent after:border-t-surface-elevated-border">
+            <span className="text-text-secondary">Current view</span>
+            {" · "}
+            <span className="font-mono font-medium">{format(new Date(), "MMM d")}</span>
+          </div>
+        )}
+        <span
+          className={`inline-block h-2 w-2 rounded-full transition-colors ${
+            selectedId === null
+              ? "bg-primary shadow-[0_0_8px_rgba(124,58,237,0.25)]"
+              : "bg-muted-foreground/40 group-hover:bg-muted-foreground"
+          }`}
+        />
+        <span
+          className={`leading-none ${
+            selectedId === null
+              ? "text-primary font-semibold"
+              : "text-muted-foreground group-hover:text-foreground"
+          }`}
+        >
+          Now
+        </span>
+      </button>
 
       {/* Right arrow */}
       {canScrollRight && (
