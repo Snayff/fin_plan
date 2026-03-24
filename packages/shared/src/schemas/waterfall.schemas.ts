@@ -3,6 +3,16 @@ import { z } from "zod";
 export const IncomeFrequencyEnum = z.enum(["monthly", "annual", "one_off"]);
 export type IncomeFrequency = z.infer<typeof IncomeFrequencyEnum>;
 
+export const IncomeTypeEnum = z.enum([
+  "salary",
+  "dividends",
+  "freelance",
+  "rental",
+  "benefits",
+  "other",
+]);
+export type IncomeType = z.infer<typeof IncomeTypeEnum>;
+
 export const WaterfallItemTypeEnum = z.enum([
   "income_source",
   "committed_bill",
@@ -18,6 +28,7 @@ export const createIncomeSourceSchema = z.object({
   name: z.string().min(1),
   amount: z.number().positive(),
   frequency: IncomeFrequencyEnum,
+  incomeType: IncomeTypeEnum.default("other"),
   expectedMonth: z.number().int().min(1).max(12).optional(),
   ownerId: z.string().optional(),
   sortOrder: z.number().int().optional(),
@@ -27,6 +38,7 @@ export const updateIncomeSourceSchema = z.object({
   name: z.string().min(1).optional(),
   amount: z.number().positive().optional(),
   frequency: IncomeFrequencyEnum.optional(),
+  incomeType: IncomeTypeEnum.optional(),
   expectedMonth: z.number().int().min(1).max(12).nullable().optional(),
   ownerId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
@@ -36,7 +48,7 @@ export const endIncomeSourceSchema = z.object({
   endedAt: z.coerce.date().optional(),
 });
 
-export type CreateIncomeSourceInput = z.infer<typeof createIncomeSourceSchema>;
+export type CreateIncomeSourceInput = z.input<typeof createIncomeSourceSchema>;
 export type UpdateIncomeSourceInput = z.infer<typeof updateIncomeSourceSchema>;
 export type EndIncomeSourceInput = z.infer<typeof endIncomeSourceSchema>;
 
@@ -129,9 +141,17 @@ export type ConfirmBatchInput = z.infer<typeof confirmBatchSchema>;
 
 // ─── Response types ───────────────────────────────────────────────────────────
 
+export interface IncomeByType {
+  type: IncomeType;
+  label: string;
+  monthlyTotal: number;
+  sources: IncomeSourceRow[];
+}
+
 export interface WaterfallSummary {
   income: {
     total: number;
+    byType: IncomeByType[];
     monthly: IncomeSourceRow[];
     annual: (IncomeSourceRow & { monthlyAmount: number })[];
     oneOff: IncomeSourceRow[];
@@ -159,6 +179,7 @@ export interface IncomeSourceRow {
   name: string;
   amount: number;
   frequency: IncomeFrequency;
+  incomeType: IncomeType;
   expectedMonth: number | null;
   ownerId: string | null;
   sortOrder: number;

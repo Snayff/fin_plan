@@ -157,12 +157,22 @@ enum IncomeFrequency {
   one_off
 }
 
+enum IncomeType {
+  salary
+  dividends
+  freelance
+  rental
+  benefits
+  other
+}
+
 model IncomeSource {
   id             String          @id @default(cuid())
   householdId    String
   name           String
   amount         Float
   frequency      IncomeFrequency
+  incomeType     IncomeType      @default(other)
   expectedMonth  Int?
   ownerId        String?
   sortOrder      Int             @default(0)

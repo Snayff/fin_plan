@@ -17,6 +17,7 @@ export {
 // Waterfall schemas and types
 export {
   IncomeFrequencyEnum,
+  IncomeTypeEnum,
   WaterfallItemTypeEnum,
   createIncomeSourceSchema,
   updateIncomeSourceSchema,
@@ -31,6 +32,7 @@ export {
   updateSavingsAllocationSchema,
   confirmBatchSchema,
   type IncomeFrequency,
+  type IncomeType,
   type WaterfallItemType,
   type CreateIncomeSourceInput,
   type UpdateIncomeSourceInput,
@@ -45,6 +47,7 @@ export {
   type UpdateSavingsAllocationInput,
   type ConfirmBatchInput,
   type WaterfallSummary,
+  type IncomeByType,
   type IncomeSourceRow,
   type CommittedBillRow,
   type YearlyBillRow,
