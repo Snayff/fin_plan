@@ -143,4 +143,4 @@ Household financial planners — typically one person managing finances for a co
 2. **Silence is approval** — If a value is healthy, show nothing. No green checkmarks, no "looking good!" badges. Attention (amber) appears only when something is genuinely noteworthy. Calm is the default state.
 3. **Precision without density** — Show exact numbers in tabular monospace, but give them room to breathe. The interface should feel spacious and scannable, not spreadsheet-like. Typography hierarchy does the heavy lifting.
 4. **Empower, don't advise** — Surface the arithmetic clearly so users draw their own conclusions. No recommendations, no scoring, no "you should..." language. Use "budgeted", "planned", "allocated" — never "spent" or "paid".
-5. **Earn every pixel** — No decorative elements. Every colour, icon, and animation serves a functional purpose. If removing something changes nothing, remove it.
+5. **Earn every pixel** —  Every colour, icon, and animation serves a specific, targeted purpose. If removing something changes nothing, remove it.
