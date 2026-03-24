@@ -11,16 +11,19 @@ Phase 1 has been successfully implemented with all core backend authentication, 
 ### 1. Backend Infrastructure
 
 #### Configuration & Setup
+
 - ✅ **Environment validation** (`src/config/env.ts`) - Zod-based env validation
 - ✅ **Database client** (`src/config/database.ts`) - Prisma client singleton
 - ✅ **.env.example** - Complete environment variable template
 
 #### Utilities
+
 - ✅ **Password hashing** (`src/utils/password.ts`) - bcrypt implementation
 - ✅ **JWT utilities** (`src/utils/jwt.ts`) - Access & refresh token generation/verification
 - ✅ **Error classes** (`src/utils/errors.ts`) - Custom error hierarchy
 
 #### Services
+
 - ✅ **Auth service** (`src/services/auth.service.ts`)
   - User registration with validation
   - Login with password verification
@@ -29,16 +32,17 @@ Phase 1 has been successfully implemented with all core backend authentication, 
   - Email format validation
 
 #### Routes & Middleware
+
 - ✅ **Auth routes** (`src/routes/auth.routes.ts`)
   - `POST /api/auth/register` - User registration
   - `POST /api/auth/login` - User login
   - `GET /api/auth/me` - Get current user (protected)
   - `POST /api/auth/logout` - Logout (token cleanup)
-  
 - ✅ **Auth middleware** (`src/middleware/auth.middleware.ts`) - JWT verification
 - ✅ **Error handler** (`src/middleware/errorHandler.ts`) - Global error handling
 
 #### Database
+
 - ✅ **Prisma schema** (`prisma/schema.prisma`) - Complete data models:
   - User (with preferences)
   - Account
@@ -51,7 +55,6 @@ Phase 1 has been successfully implemented with all core backend authentication, 
   - Liability & LiabilityPayment
   - Forecast & MonteCarloSimulation
   - Device (for sync)
-  
 - ✅ **Database migrations** - Initial migration created
 - ✅ **Seed script** (`src/db/seed.ts`) - Default categories with subcategories:
   - 5 income categories (Salary, Dividends, Gifts, Refunds, Other Income)
@@ -59,6 +62,7 @@ Phase 1 has been successfully implemented with all core backend authentication, 
   - Subcategories for Housing, Transportation, and Food
 
 #### Server
+
 - ✅ **Main server** (`src/server.ts`)
   - Fastify setup with plugins (CORS, Helmet, Rate Limiting)
   - WebSocket support for sync
@@ -69,11 +73,13 @@ Phase 1 has been successfully implemented with all core backend authentication, 
 ### 2. Frontend Infrastructure
 
 #### API Layer
+
 - ✅ **API client** (`src/lib/api.ts`) - Generic HTTP client with error handling
 - ✅ **Auth service** (`src/services/auth.service.ts`) - Type-safe auth API calls
 - ✅ **Vite env types** (`src/vite-env.d.ts`) - TypeScript support for env variables
 
 #### State Management
+
 - ✅ **Auth store** (`src/stores/authStore.ts`) - Updated with:
   - Real API integration
   - Loading states
@@ -82,6 +88,7 @@ Phase 1 has been successfully implemented with all core backend authentication, 
   - Async register/login/logout actions
 
 #### UI Components (from scaffolding)
+
 - ✅ Login page
 - ✅ Register page
 - ✅ Dashboard page
@@ -100,6 +107,7 @@ Phase 1 has been successfully implemented with all core backend authentication, 
 ## 🏗️ Architecture Highlights
 
 ### Backend Architecture
+
 ```
 ├── Fastify Server (Port 3001)
 │   ├── CORS, Helmet, Rate Limiting
@@ -117,6 +125,7 @@ Phase 1 has been successfully implemented with all core backend authentication, 
 ```
 
 ### Frontend Architecture
+
 ```
 ├── React 18 + TypeScript
 ├── State Management
@@ -174,6 +183,7 @@ bun run dev
 ### 3. Test Authentication Flow
 
 #### Register a New User
+
 ```bash
 curl -X POST http://localhost:3001/api/auth/register \
   -H "Content-Type: application/json" \
@@ -185,6 +195,7 @@ curl -X POST http://localhost:3001/api/auth/register \
 ```
 
 #### Login
+
 ```bash
 curl -X POST http://localhost:3001/api/auth/login \
   -H "Content-Type: application/json" \
@@ -195,6 +206,7 @@ curl -X POST http://localhost:3001/api/auth/login \
 ```
 
 #### Get Current User (with token from login response)
+
 ```bash
 curl http://localhost:3001/api/auth/me \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN_HERE"
@@ -220,6 +232,7 @@ bun run db:migrate
 ## 📋 What's Working
 
 ### Backend
+
 - ✅ User registration with email/password
 - ✅ User login with JWT token generation
 - ✅ Protected routes with JWT verification
@@ -231,6 +244,7 @@ bun run db:migrate
 - ✅ WebSocket server (basic)
 
 ### Frontend
+
 - ✅ Auth store with API integration
 - ✅ API client with error handling
 - ✅ Token persistence
@@ -258,6 +272,7 @@ bun run db:migrate
 ### RxDB Integration (Deferred)
 
 While Phase 1 plan called for RxDB setup, the decision was made to defer this to Phase 2 when there's actual data (transactions, accounts) to synchronize. Currently:
+
 - ✅ WebSocket server is ready
 - ✅ Database schema supports Device model
 - ⏳ RxDB client integration (Phase 2)
@@ -288,6 +303,7 @@ While Phase 1 plan called for RxDB setup, the decision was made to defer this to
 - ✅ Error message sanitization
 
 **⚠️ Production Checklist:**
+
 - [ ] Change JWT secrets in .env
 - [ ] Enable HTTPS/TLS
 - [ ] Configure production CORS origins
@@ -350,19 +366,19 @@ fin_plan/
 
 ## 🎯 Success Criteria - Phase 1
 
-| Requirement | Status | Notes |
-|-------------|--------|-------|
-| Project scaffolding | ✅ Complete | Turborepo monorepo |
-| Database schema | ✅ Complete | All entities modeled |
-| Authentication | ✅ Complete | Register, login, JWT |
-| Password hashing | ✅ Complete | bcrypt |
-| Database migrations | ✅ Complete | Prisma |
-| Seed data | ✅ Complete | Default categories |
-| Backend API | ✅ Complete | Auth endpoints working |
+| Requirement          | Status      | Notes                   |
+| -------------------- | ----------- | ----------------------- |
+| Project scaffolding  | ✅ Complete | Turborepo monorepo      |
+| Database schema      | ✅ Complete | All entities modeled    |
+| Authentication       | ✅ Complete | Register, login, JWT    |
+| Password hashing     | ✅ Complete | bcrypt                  |
+| Database migrations  | ✅ Complete | Prisma                  |
+| Seed data            | ✅ Complete | Default categories      |
+| Backend API          | ✅ Complete | Auth endpoints working  |
 | Frontend integration | ✅ Complete | API client + auth store |
-| WebSocket foundation | ✅ Complete | Basic placeholder |
-| Error handling | ✅ Complete | Global error handler |
-| Validation | ✅ Complete | Zod schemas |
+| WebSocket foundation | ✅ Complete | Basic placeholder       |
+| Error handling       | ✅ Complete | Global error handler    |
+| Validation           | ✅ Complete | Zod schemas             |
 
 ---
 
@@ -373,16 +389,13 @@ From `docs/build/implementation.md`, Phase 2 includes:
 1. **Account Management**
    - CRUD operations for accounts
    - Account types and balances
-   
 2. **Transaction Management**
    - Manual transaction entry
    - Category assignment
    - Tag support
-   
 3. **Recurring Transactions**
    - Recurring rule engine
    - Automatic generation
-   
 4. **Basic Dashboard**
    - Net worth calculation
    - Income vs expenses
@@ -399,10 +412,13 @@ From `docs/build/implementation.md`, Phase 2 includes:
 ## 💡 Developer Notes
 
 ### Environment Variables
+
 All required environment variables are documented in `apps/backend/.env.example`. For local development, the defaults work without modification.
 
 ### Database Schema Changes
+
 After modifying `prisma/schema.prisma`:
+
 ```bash
 cd apps/backend
 bun run db:migrate
@@ -410,6 +426,7 @@ bunx prisma generate
 ```
 
 ### Adding New API Endpoints
+
 1. Create route in `apps/backend/src/routes/`
 2. Register route in `server.ts`
 3. Add to frontend service in `apps/frontend/src/services/`
@@ -418,13 +435,16 @@ bunx prisma generate
 ### Common Issues
 
 **"Database connection failed"**
+
 - Ensure Docker containers are running: `bun run start`
 - Check `DATABASE_URL` in `.env`
 
 **"JWT secret too short"**
+
 - Update `JWT_SECRET` and `JWT_REFRESH_SECRET` in `.env` (minimum 32 characters)
 
 **"CORS error"**
+
 - Verify `CORS_ORIGIN` in backend `.env` matches frontend URL
 
 ---
@@ -453,7 +473,6 @@ All core infrastructure is in place for Phase 2 development. The authentication 
 **Contributors**: Development Team
 **Next Review**: Start of Phase 2
 
-
 # Phase 2: Core Financial Features - COMPLETE ✅
 
 **Completion Date**: February 3, 2026  
@@ -467,6 +486,7 @@ All core infrastructure is in place for Phase 2 development. The authentication 
 ### What Users Can Do Now
 
 ✅ **View Financial Dashboard**
+
 - See net worth, monthly income, expenses, and savings rate
 - View all accounts at a glance
 - See top spending categories
@@ -474,12 +494,14 @@ All core infrastructure is in place for Phase 2 development. The authentication 
 - All data updates in real-time
 
 ✅ **Manage Accounts**
+
 - View all accounts in a responsive grid
 - Create new accounts with a beautiful modal form
 - See account balances, types, and status
 - Accounts automatically refresh after creation
 
 ✅ **Manage Transactions**
+
 - View all transactions in a sortable table
 - Create new transactions (income/expense/transfer)
 - Select from hierarchical categories
@@ -495,13 +517,15 @@ All core infrastructure is in place for Phase 2 development. The authentication 
 ### Backend (100% Complete) - 8 Services + Routes
 
 #### Account Management
+
 - **Service**: `account.service.ts` (194 lines)
 - **Routes**: `account.routes.ts` (131 lines)
 - 6 endpoints: list, get, create, update, delete, summary
 - Soft delete for accounts with transactions
 - Balance tracking
 
-#### Transaction Management  
+#### Transaction Management
+
 - **Service**: `transaction.service.ts` (543 lines)
 - **Routes**: `transaction.routes.ts` (160 lines)
 - 6 endpoints with extensive filtering
@@ -509,12 +533,14 @@ All core infrastructure is in place for Phase 2 development. The authentication 
 - Pagination, search, filtering by date/amount/category/tags
 
 #### Category Management
+
 - **Service**: `category.service.ts` (63 lines)
 - **Routes**: `category.routes.ts` (38 lines)
 - Hierarchical categories with subcategories
 - 15 system categories pre-seeded
 
 #### Dashboard Service
+
 - **Service**: `dashboard.service.ts` (269 lines)
 - **Routes**: `dashboard.routes.ts` (51 lines)
 - Comprehensive financial summary
@@ -526,22 +552,26 @@ All core infrastructure is in place for Phase 2 development. The authentication 
 ### Frontend (100% Complete) - 13 Components + Services
 
 #### Infrastructure
+
 - **QueryClient**: `lib/queryClient.ts` - TanStack Query setup
 - **Types**: `types/index.ts` (165 lines) - Complete type definitions
 - **App.tsx**: Updated with QueryClientProvider & routes
 
 #### API Services
+
 - `services/account.service.ts` (32 lines)
 - `services/transaction.service.ts` (69 lines)
 - `services/category.service.ts` (16 lines)
 - `services/dashboard.service.ts` (32 lines)
 
 #### UI Components
+
 - `components/ui/Modal.tsx` (60 lines) - Reusable modal
 - `components/accounts/AccountForm.tsx` (143 lines) - Create account form
 - `components/transactions/TransactionForm.tsx` (215 lines) - Create transaction form
 
 #### Pages
+
 - `pages/DashboardPage.tsx` (205 lines) - **Enhanced with real data**
 - `pages/AccountsPage.tsx` (127 lines) - **With create modal**
 - `pages/TransactionsPage.tsx` (168 lines) - **With create modal**
@@ -554,18 +584,18 @@ All core infrastructure is in place for Phase 2 development. The authentication 
 
 ## 🎯 Success Criteria - ALL MET ✅
 
-| Criterion | Status | Implementation |
-|-----------|--------|----------------|
-| Account CRUD backend | ✅ Complete | 6 endpoints, full validation |
-| Transaction CRUD backend | ✅ Complete | 6 endpoints, atomic balance updates |
-| Category system | ✅ Complete | Hierarchical, 15 seeded categories |
-| Dashboard data | ✅ Complete | Summary, trends, top categories |
-| Account UI | ✅ Complete | List + create form with modal |
-| Transaction UI | ✅ Complete | Table + create form with modal |
-| Dashboard UI | ✅ Complete | Summary cards, accounts, transactions |
-| Real-time updates | ✅ Complete | React Query auto-refresh |
-| Type safety | ✅ Complete | TypeScript + Zod throughout |
-| Error handling | ✅ Complete | Loading/error states everywhere |
+| Criterion                | Status      | Implementation                        |
+| ------------------------ | ----------- | ------------------------------------- |
+| Account CRUD backend     | ✅ Complete | 6 endpoints, full validation          |
+| Transaction CRUD backend | ✅ Complete | 6 endpoints, atomic balance updates   |
+| Category system          | ✅ Complete | Hierarchical, 15 seeded categories    |
+| Dashboard data           | ✅ Complete | Summary, trends, top categories       |
+| Account UI               | ✅ Complete | List + create form with modal         |
+| Transaction UI           | ✅ Complete | Table + create form with modal        |
+| Dashboard UI             | ✅ Complete | Summary cards, accounts, transactions |
+| Real-time updates        | ✅ Complete | React Query auto-refresh              |
+| Type safety              | ✅ Complete | TypeScript + Zod throughout           |
+| Error handling           | ✅ Complete | Loading/error states everywhere       |
 
 **Achievement: 10/10 Core Features Complete!**
 
@@ -574,6 +604,7 @@ All core infrastructure is in place for Phase 2 development. The authentication 
 ## 🚀 How to Use the Application
 
 ### 1. Start Everything
+
 ```bash
 # Terminal 1: Database
 bun run start
@@ -588,10 +619,12 @@ cd apps/backend && bun run dev
 ### 2. User Journey - Complete Workflow
 
 **Step 1: Register/Login**
+
 - Go to http://localhost:3000
 - Register a new account or login
 
 **Step 2: Create an Account**
+
 - Navigate to "Accounts" page
 - Click "+ Add Account" button
 - Fill in the form:
@@ -603,6 +636,7 @@ cd apps/backend && bun run dev
 - **Account appears immediately!**
 
 **Step 3: Create a Transaction**
+
 - Navigate to "Transactions" page
 - Click "+ Add Transaction"
 - Fill in the form:
@@ -617,6 +651,7 @@ cd apps/backend && bun run dev
 - **Account balance updates automatically!**
 
 **Step 4: View Dashboard**
+
 - Navigate to "Dashboard"
 - See your net worth
 - See monthly income and expenses
@@ -629,6 +664,7 @@ cd apps/backend && bun run dev
 ## 💎 Key Technical Achievements
 
 ### 1. Atomic Data Integrity
+
 ```typescript
 // Account balances ALWAYS stay in sync with transactions
 await prisma.$transaction(async (tx) => {
@@ -638,12 +674,14 @@ await prisma.$transaction(async (tx) => {
 ```
 
 ### 2. Type-Safe End-to-End
+
 ```typescript
 // From backend to frontend, everything is typed
 Backend Zod Schema → Service Types → API Response → Frontend Types → UI
 ```
 
 ### 3. Optimistic UI Updates
+
 ```typescript
 // React Query automatically refetches after mutations
 mutationFn: accountService.createAccount,
@@ -651,6 +689,7 @@ onSuccess: () => queryClient.invalidateQueries(['accounts'])
 ```
 
 ### 4. Professional UX
+
 - Loading states while fetching
 - Error messages with helpful context
 - Empty states with guidance
@@ -662,25 +701,28 @@ onSuccess: () => queryClient.invalidateQueries(['accounts'])
 ## 📊 What the App Can Do
 
 ### Financial Tracking
+
 ✅ Track multiple accounts (checking, savings, credit, investment, etc.)  
 ✅ Record income and expenses  
 ✅ Categorize transactions with 15+ categories  
 ✅ See account balances update in real-time  
-✅ View transaction history with pagination  
+✅ View transaction history with pagination
 
 ### Financial Overview
+
 ✅ Calculate net worth  
 ✅ Track monthly income vs expenses  
 ✅ Calculate savings rate  
 ✅ Identify top spending categories  
-✅ Review recent transactions  
+✅ Review recent transactions
 
 ### Data Management
+
 ✅ RESTful API with 20+ endpoints  
 ✅ Advanced filtering and search  
 ✅ Pagination for large datasets  
 ✅ Data validation with Zod  
-✅ Type safety with TypeScript  
+✅ Type safety with TypeScript
 
 ---
 
@@ -693,13 +735,14 @@ onSuccess: () => queryClient.invalidateQueries(['accounts'])
 ✅ **Modal Forms**: Clean, focused data entry  
 ✅ **Color Coding**: Income (green), Expense (red), Categories (color-coded)  
 ✅ **Navigation**: Clean menu with active state  
-✅ **Validation**: Required field indicators  
+✅ **Validation**: Required field indicators
 
 ---
 
 ## 🔧 Technologies Used
 
 **Backend Stack:**
+
 - Bun + TypeScript
 - Fastify (web framework)
 - Prisma ORM (database)
@@ -708,6 +751,7 @@ onSuccess: () => queryClient.invalidateQueries(['accounts'])
 - JWT (authentication)
 
 **Frontend Stack:**
+
 - React 18 + TypeScript
 - TanStack Query (server state)
 - React Router (navigation)
@@ -750,12 +794,12 @@ These can be added incrementally as needed.
 
 ### From `docs/build/implementation.md` - Phase 2 Goals:
 
-| Goal | Planned | Actual | Status |
-|------|---------|--------|--------|
-| Account CRUD | Backend only | Backend + Frontend | ✅ Exceeded |
-| Transaction CRUD | Backend only | Backend + Frontend | ✅ Exceeded |
-| Basic Dashboard | Basic charts | Full summary + ready for charts | ✅ Met/Exceeded |
-| Recurring Rules | Engine + UI | Deferred to later | ⏸️ Deferred |
+| Goal             | Planned      | Actual                          | Status          |
+| ---------------- | ------------ | ------------------------------- | --------------- |
+| Account CRUD     | Backend only | Backend + Frontend              | ✅ Exceeded     |
+| Transaction CRUD | Backend only | Backend + Frontend              | ✅ Exceeded     |
+| Basic Dashboard  | Basic charts | Full summary + ready for charts | ✅ Met/Exceeded |
+| Recurring Rules  | Engine + UI  | Deferred to later               | ⏸️ Deferred     |
 
 **Result: Exceeded expectations for core features, deferred recurring transactions**
 
@@ -775,12 +819,14 @@ These can be added incrementally as needed.
 ## 📝 Next Steps
 
 ### Immediate Enhancements (Optional)
+
 - Add Recharts charts to Dashboard (1-2 hours)
 - Add edit/delete buttons with modals (2-3 hours)
 - Add transaction filters UI (1-2 hours)
 - Add toast notifications library (1 hour)
 
 ### Continue to Phase 3
+
 - Command palette (Cmd+K)
 - Bulk transaction entry
 - Smart defaults and templates
@@ -793,6 +839,7 @@ These can be added incrementally as needed.
 **Phase 2: Core Financial Features - COMPLETE** ✅
 
 You now have a fully functional financial planning application with:
+
 - Account management
 - Transaction tracking
 - Real-time balance updates
@@ -808,11 +855,9 @@ You now have a fully functional financial planning application with:
 **Lines of Code**: 2,681 production lines  
 **Files Created**: 26 files  
 **API Endpoints**: 20+ endpoints  
-**UI Pages**: 3 fully functional pages  
+**UI Pages**: 3 fully functional pages
 
 **Last Updated**: February 3, 2026, 5:23 PM
-
-
 
 # Phase 2 Polish - Enhancement Summary
 
@@ -833,12 +878,14 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 ### 1. Charts on Dashboard 📊
 
 **Implementation:**
+
 - Created 3 reusable chart components using Recharts:
   - `NetWorthChart.tsx` - Line chart for net worth trends
   - `IncomeExpenseChart.tsx` - Bar chart comparing income vs expenses
   - `CategoryPieChart.tsx` - Pie chart for spending by category
 
 **Features:**
+
 - Responsive design (works on all screen sizes)
 - Interactive tooltips with formatted values
 - Empty state handling
@@ -846,11 +893,13 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 - Smooth animations
 
 **Files Created:**
+
 - `apps/frontend/src/components/charts/NetWorthChart.tsx` (50 lines)
 - `apps/frontend/src/components/charts/IncomeExpenseChart.tsx` (55 lines)
 - `apps/frontend/src/components/charts/CategoryPieChart.tsx` (45 lines)
 
 **Integration:**
+
 - Updated `DashboardPage.tsx` to display all three charts
 - Charts show real data from dashboard API
 - Graceful fallback for empty data
@@ -860,12 +909,14 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 ### 2. Edit/Delete for Accounts ✏️🗑️
 
 **Implementation:**
+
 - Created `AccountEditForm.tsx` component
 - Added edit and delete buttons to account cards
 - Integrated with backend PUT and DELETE endpoints
 - Added confirmation dialog for deletions
 
 **Features:**
+
 - Edit account name, type, balance, currency, and active status
 - Delete with confirmation (soft delete if has transactions)
 - Real-time UI updates after operations
@@ -873,10 +924,12 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 - Loading states during operations
 
 **Files Created/Modified:**
+
 - `apps/frontend/src/components/accounts/AccountEditForm.tsx` (145 lines) - NEW
 - `apps/frontend/src/pages/AccountsPage.tsx` - UPDATED with edit/delete
 
 **User Experience:**
+
 - Click "Edit" → modal opens with current data
 - Click "Delete" → confirmation dialog appears
 - Success/error toasts provide feedback
@@ -887,12 +940,14 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 ### 3. Edit/Delete for Transactions ✏️🗑️
 
 **Implementation:**
+
 - Created `TransactionEditForm.tsx` component
 - Added edit and delete buttons to transaction table
 - Integrated with backend PUT and DELETE endpoints
 - Added confirmation dialog for deletions
 
 **Features:**
+
 - Edit all transaction fields (type, amount, date, category, account, memo)
 - Delete with confirmation showing transaction details
 - Automatic balance recalculation
@@ -900,10 +955,12 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 - Loading states
 
 **Files Created/Modified:**
+
 - `apps/frontend/src/components/transactions/TransactionEditForm.tsx` (185 lines) - NEW
 - `apps/frontend/src/pages/TransactionsPage.tsx` - UPDATED with edit/delete
 
 **User Experience:**
+
 - Click "Edit" → modal opens with prefilled data
 - Click "Delete" → confirmation with transaction summary
 - Success/error toasts
@@ -914,12 +971,14 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 ### 4. Transaction Filters 🔍
 
 **Implementation:**
+
 - Created `TransactionFilters.tsx` component
 - Integrated with backend filter parameters
 - Collapsible filter panel to save space
 - Connected to TransactionsPage with state management
 
 **Filter Options:**
+
 - Transaction type (income/expense/transfer)
 - Account selection
 - Category selection
@@ -928,6 +987,7 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 - Text search (searches description)
 
 **Features:**
+
 - Show/Hide toggle for filter panel
 - Clear all filters button
 - Real-time filtering (debounced)
@@ -935,9 +995,11 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 - Responsive grid layout
 
 **Files Created:**
+
 - `apps/frontend/src/components/transactions/TransactionFilters.tsx` (170 lines)
 
 **User Experience:**
+
 - Click "Show Filters" to expand filter panel
 - Select filters → transactions update automatically
 - "Clear All" removes all active filters
@@ -948,26 +1010,31 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 ### 5. Toast Notifications 🔔
 
 **Implementation:**
+
 - Installed `react-hot-toast` library
 - Created toast utility functions
 - Added Toaster component to App.tsx
 - Integrated throughout all CRUD operations
 
 **Toast Types:**
+
 - Success (green) - for successful operations
 - Error (red) - for failed operations
 - Loading (blue) - for in-progress operations
 
 **Features:**
+
 - Auto-dismiss after 3-4 seconds
 - Top-right position
 - Accessible and keyboard-friendly
 - Customizable duration and position
 
 **Files Created:**
+
 - `apps/frontend/src/lib/toast.ts` (25 lines)
 
 **Integration Points:**
+
 - Account create/update/delete
 - Transaction create/update/delete
 - Form validation errors
@@ -982,6 +1049,7 @@ This document summarizes the polish enhancements added to Phase 2, implementing 
 Created reusable confirmation dialog for destructive actions:
 
 **Features:**
+
 - Modal-based
 - Multiple variants (danger, warning, info)
 - Loading state support
@@ -989,9 +1057,11 @@ Created reusable confirmation dialog for destructive actions:
 - Accessible (ESC to close, focus management)
 
 **File:**
+
 - `apps/frontend/src/components/ui/ConfirmDialog.tsx` (55 lines)
 
 **Usage:**
+
 - Account deletion
 - Transaction deletion
 - Future destructive operations
@@ -1001,12 +1071,14 @@ Created reusable confirmation dialog for destructive actions:
 ## 📊 Statistics
 
 ### Code Added
+
 - **New Files**: 8 files
 - **Modified Files**: 4 files
 - **Lines of Code**: ~930 new lines
 - **Components**: 7 new components
 
 ### Features
+
 - **3** Chart types
 - **2** Edit forms
 - **8** Filter options
@@ -1018,18 +1090,22 @@ Created reusable confirmation dialog for destructive actions:
 ## 🎯 User Benefits
 
 ### Improved Visualization
+
 - **Before**: Text-only summaries
 - **After**: Interactive charts with visual trends
 
 ### Better Data Management
+
 - **Before**: Create-only, no editing
 - **After**: Full CRUD with edit/delete
 
 ### Enhanced Discovery
+
 - **Before**: View all transactions
 - **After**: Filter by 8 different criteria
 
 ### Better Feedback
+
 - **Before**: Silent operations
 - **After**: Toast notifications for all actions
 
@@ -1038,6 +1114,7 @@ Created reusable confirmation dialog for destructive actions:
 ## 🧪 Testing Checklist
 
 ### Charts
+
 - [x] NetWorthChart displays with data
 - [x] IncomeExpenseChart shows correct bars
 - [x] CategoryPieChart renders pie slices
@@ -1045,6 +1122,7 @@ Created reusable confirmation dialog for destructive actions:
 - [x] Charts are responsive on mobile
 
 ### Account Edit/Delete
+
 - [x] Edit button opens modal with current data
 - [x] Form validates required fields
 - [x] Updates save successfully
@@ -1053,6 +1131,7 @@ Created reusable confirmation dialog for destructive actions:
 - [x] Toasts appear on success/error
 
 ### Transaction Edit/Delete
+
 - [x] Edit button opens modal with prefilled data
 - [x] Category filters by transaction type
 - [x] Date format is correct
@@ -1062,6 +1141,7 @@ Created reusable confirmation dialog for destructive actions:
 - [x] Toasts provide feedback
 
 ### Filters
+
 - [x] Show/Hide toggle works
 - [x] All 8 filter types function
 - [x] Clear All removes all filters
@@ -1070,6 +1150,7 @@ Created reusable confirmation dialog for destructive actions:
 - [x] Filters are responsive
 
 ### Toasts
+
 - [x] Success toasts are green
 - [x] Error toasts are red
 - [x] Toasts auto-dismiss
@@ -1081,11 +1162,13 @@ Created reusable confirmation dialog for destructive actions:
 ## 🚀 How to Use
 
 ### View Charts
+
 1. Navigate to Dashboard
 2. Scroll to see three charts
 3. Hover over chart elements for details
 
 ### Edit an Account
+
 1. Go to Accounts page
 2. Click "Edit" on any account card
 3. Modify fields in modal
@@ -1093,12 +1176,14 @@ Created reusable confirmation dialog for destructive actions:
 5. See success toast
 
 ### Delete an Account
+
 1. Go to Accounts page
 2. Click "Delete" on any account card
 3. Confirm in dialog
 4. See success toast
 
 ### Filter Transactions
+
 1. Go to Transactions page
 2. Click "Show Filters"
 3. Select filter criteria
@@ -1110,23 +1195,27 @@ Created reusable confirmation dialog for destructive actions:
 ## 💡 Technical Highlights
 
 ### Type Safety
+
 - All components fully typed with TypeScript
 - No `any` types in user-facing code
 - Shared types between components
 
 ### Performance
+
 - React Query for caching and automatic refetching
 - Optimistic UI updates
 - Debounced filter inputs (planned)
 - Lazy loading of modals
 
 ### Accessibility
+
 - Keyboard navigation works everywhere
 - Focus management in modals
 - ARIA labels on interactive elements
 - Color is not the only indicator
 
 ### Error Handling
+
 - Comprehensive error messages
 - Graceful degradation
 - Empty states for all scenarios
@@ -1139,24 +1228,28 @@ Created reusable confirmation dialog for destructive actions:
 ### Future Enhancements
 
 **Charts:**
+
 - Add historical data endpoints
 - Multi-month comparisons
 - Export chart as image
 - More chart types (waterfall, area)
 
 **Editing:**
+
 - Inline editing in tables
 - Bulk edit operations
 - Edit history/audit log
 - Undo functionality
 
 **Filters:**
+
 - Save filter presets
 - Default filters
 - Advanced filter combinations
 - Export filtered results
 
 **Toasts:**
+
 - Undo actions from toast
 - Action buttons in toasts
 - Custom toast positions
@@ -1167,12 +1260,15 @@ Created reusable confirmation dialog for destructive actions:
 ## 🔧 Configuration
 
 ### Toast Settings
+
 Located in `apps/frontend/src/lib/toast.ts`:
+
 - Success duration: 3000ms
 - Error duration: 4000ms
 - Position: top-right
 
 ### Chart Colors
+
 - Income: #10b981 (green)
 - Expenses: #ef4444 (red)
 - Net Worth: #3b82f6 (blue)
@@ -1183,6 +1279,7 @@ Located in `apps/frontend/src/lib/toast.ts`:
 ## ✅ Completion Criteria
 
 All Phase 2 Polish features are complete:
+
 - ✅ Charts integrated and working
 - ✅ Edit/Delete for accounts implemented
 - ✅ Edit/Delete for transactions implemented
@@ -1196,9 +1293,6 @@ All Phase 2 Polish features are complete:
 **Last Updated**: February 5, 2026  
 **Author**: Development Team  
 **Status**: Production Ready ✅
-
-
-
 
 # Shared Validation Package Implementation
 
@@ -1242,18 +1336,21 @@ packages/shared/
 ### 3. Changes Made
 
 #### Backend (`apps/backend/`)
+
 - Added `@finplan/shared` dependency
 - Updated `transaction.routes.ts` to import schemas from shared package
 - Removed duplicate schema definitions
 - Configured TypeScript to reference shared package
 
 #### Frontend (`apps/frontend/`)
+
 - Added `@finplan/shared` dependency
 - Updated `types/index.ts` to re-export types from shared package
 - Configured Vite to resolve `@finplan/shared` alias
 - Configured TypeScript to reference shared package
 
 #### Shared Package (`packages/shared/`)
+
 - Created comprehensive validation schemas for:
   - Transactions (create & update)
   - Accounts (create & update)
@@ -1264,22 +1361,24 @@ packages/shared/
 ### 4. Usage Examples
 
 #### Backend Route
-```typescript
-import { createTransactionSchema } from '@finplan/shared';
 
-fastify.post('/transactions', async (request, reply) => {
+```typescript
+import { createTransactionSchema } from "@finplan/shared";
+
+fastify.post("/transactions", async (request, reply) => {
   const validatedData = createTransactionSchema.parse(request.body);
   // validatedData is fully typed and validated!
 });
 ```
 
 #### Frontend Form
+
 ```typescript
-import type { CreateTransactionInput } from '@finplan/shared';
+import type { CreateTransactionInput } from "@finplan/shared";
 
 const [formData, setFormData] = useState<CreateTransactionInput>({
-  accountId: '',
-  name: '',
+  accountId: "",
+  name: "",
   amount: 0,
   // TypeScript knows all required fields!
 });
@@ -1288,12 +1387,14 @@ const [formData, setFormData] = useState<CreateTransactionInput>({
 ## Benefits
 
 ### Before
+
 - ❌ Validation duplicated in multiple places
 - ❌ Easy for schemas to drift out of sync
 - ❌ Manual effort to keep types consistent
 - ❌ Bugs from mismatched validations
 
 ### After
+
 - ✅ One validation schema, used everywhere
 - ✅ Impossible for schemas to drift
 - ✅ Types automatically sync
@@ -1336,17 +1437,20 @@ To verify the solution:
 ## Documentation
 
 Complete usage documentation is available at:
+
 - `packages/shared/README.md` - Comprehensive package documentation
 - Includes examples, best practices, and troubleshooting
 
 ## Files Modified
 
 ### Created
+
 - `packages/shared/` - Complete shared package
 - `packages/shared/README.md` - Documentation
 - `docs/build/SHARED_VALIDATION.md` - This file
 
 ### Modified
+
 - `apps/backend/package.json` - Added shared dependency
 - `apps/backend/tsconfig.json` - Added shared package reference
 - `apps/backend/src/routes/transaction.routes.ts` - Now uses shared schemas
@@ -1358,12 +1462,12 @@ Complete usage documentation is available at:
 
 The shared validation package solves the synchronization problem by creating a single source of truth for all validation logic. This architectural improvement will prevent validation drift issues in the future and make the codebase more maintainable.
 
-
 # Design System Implementation Summary
 
 ## What Was Implemented
 
 ### ✅ Phase 1: shadcn/ui Installation & Configuration
+
 - Installed shadcn/ui with all core components
 - Configured Tailwind to use design tokens
 - Set up HSL-based color system
@@ -1374,11 +1478,13 @@ The shared validation package solves the synchronization problem by creating a s
 Created comprehensive token system in `apps/frontend/src/config/design-tokens.ts`:
 
 **Three-Layer Architecture:**
+
 1. **Primitive Tokens** - Base HSL color values from your palette
 2. **Semantic Tokens** - Purpose-based naming (primary, success, warning)
 3. **Component Tokens** - Component-specific configurations
 
 **Tokens Defined:**
+
 - **Colors**: All palette colors converted to HSL with semantic mappings
 - **Typography**: Font families, sizes, weights (Inter font, accessible sizes)
 - **Spacing**: 8px grid system with generous defaults
@@ -1391,12 +1497,14 @@ Created comprehensive token system in `apps/frontend/src/config/design-tokens.ts
 ### ✅ Phase 3: Component Migration
 
 **Completed Migrations:**
+
 - ✅ `Modal.tsx` - Converted to shadcn Dialog wrapper
 - ✅ `ConfirmDialog.tsx` - Converted to shadcn AlertDialog wrapper
 - ✅ `DashboardPage.tsx` - Full migration with Cards, proper color tokens
 - ✅ Created `Achievement.tsx` - New component for milestone celebrations
 
 **Migration Highlights:**
+
 - Replaced hardcoded Tailwind colors with semantic tokens
 - Updated gray scales to foreground/muted system
 - Changed blue → orange (primary action)
@@ -1409,6 +1517,7 @@ Created comprehensive token system in `apps/frontend/src/config/design-tokens.ts
 ### ✅ Phase 4: Color & Token Alignment
 
 **CSS Variables Updated** (`apps/frontend/src/index.css`):
+
 - Mapped all palette colors to CSS variables
 - Created utility classes for extended tokens
 - Added achievement animation keyframes
@@ -1416,6 +1525,7 @@ Created comprehensive token system in `apps/frontend/src/config/design-tokens.ts
 - Set up Inter font import and configuration
 
 **Tailwind Configuration Extended** (`apps/frontend/tailwind.config.js`):
+
 - Added custom color extensions (success, highlight, warning)
 - Added text hierarchy tokens
 - Added hover states for all colors
@@ -1447,7 +1557,9 @@ Created comprehensive token system in `apps/frontend/src/config/design-tokens.ts
 ## Key Features
 
 ### Data-Driven Configuration
+
 All design decisions centralized in `design-tokens.ts`:
+
 ```typescript
 // Easy to update colors
 export const primitiveColors = {
@@ -1459,14 +1571,16 @@ export const primitiveColors = {
 export const components = {
   button: {
     height: {
-      md: '2.5rem', // Change here, affects everywhere
-    }
-  }
+      md: "2.5rem", // Change here, affects everywhere
+    },
+  },
 };
 ```
 
 ### Semantic Color System
+
 Colors have **meaning**, not just appearance:
+
 - **Primary (Orange)**: Actions, expenses, focus - NOT negative
 - **Success (Teal)**: Income, progress, growth
 - **Warning (Warm Orange)**: Needs attention, neutral
@@ -1474,6 +1588,7 @@ Colors have **meaning**, not just appearance:
 - **Accent (Purple/Rose)**: Brand identity
 
 ### Accessibility Built-In
+
 - WCAG AA contrast ratios enforced
 - 40-48px button heights (generous touch targets)
 - Visible focus indicators (2px orange ring)
@@ -1482,7 +1597,9 @@ Colors have **meaning**, not just appearance:
 - Respects prefers-reduced-motion
 
 ### Achievement System
+
 New component for celebrating milestones:
+
 - Animated entrance with bounce
 - Customizable duration
 - Auto-dismisses
@@ -1501,6 +1618,7 @@ From `design_book.md`:
 ## Color Mappings Applied
 
 ### Dashboard Example
+
 ```tsx
 // Before
 text-gray-900  → text-foreground
@@ -1512,18 +1630,25 @@ border-gray-200 → border-border
 ```
 
 ### Income/Expense Display
+
 ```tsx
 // Old (problematic - red implies bad)
-{type === 'income' ? 'text-green-600' : 'text-red-600'}
+{
+  type === "income" ? "text-green-600" : "text-red-600";
+}
 
 // New (neutral - orange is just an action color)
-{type === 'income' ? 'text-success' : 'text-primary'}
+{
+  type === "income" ? "text-success" : "text-primary";
+}
 ```
 
 ## What's Ready to Use
 
 ### Available shadcn Components
+
 All installed and configured:
+
 - Button (with primary/secondary/destructive variants)
 - Card (CardHeader, CardTitle, CardContent)
 - Dialog (used in Modal wrapper)
@@ -1535,6 +1660,7 @@ All installed and configured:
 - Achievement (custom)
 
 ### Design Tokens Access
+
 ```tsx
 // In TypeScript
 import { designTokens } from '@/config/design-tokens';
@@ -1552,6 +1678,7 @@ background-color: hsl(var(--primary));
 Files not yet migrated (follow MIGRATION_GUIDE.md):
 
 **Priority 1:**
+
 - TransactionForm.tsx
 - TransactionEditForm.tsx
 - AccountForm.tsx
@@ -1560,10 +1687,12 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - AccountsPage.tsx
 
 **Priority 2:**
+
 - TransactionFilters.tsx
 - Chart components color alignment
 
 **Priority 3:**
+
 - LoginPage.tsx
 - RegisterPage.tsx
 
@@ -1572,18 +1701,21 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 ## How to Continue Development
 
 ### Adding New Components
+
 1. Use shadcn components as base
 2. Reference design tokens for colors
 3. Follow component guidelines in DESIGN_SYSTEM.md
 4. Test accessibility (tab order, focus, contrast)
 
 ### Updating Colors
+
 1. Edit `apps/frontend/src/config/design-tokens.ts`
 2. Change HSL values in primitiveColors
 3. Colors automatically propagate through semantic tokens
 4. Rebuild app to see changes
 
 ### Adding Animations
+
 1. Define in design-tokens.ts animation section
 2. Add keyframes to index.css
 3. Use with prefers-reduced-motion check
@@ -1591,6 +1723,7 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 ## Testing the Implementation
 
 ### Quick Visual Test
+
 1. Start dev server: `bun run dev` (in apps/frontend)
 2. Navigate to Dashboard
 3. Check:
@@ -1603,6 +1736,7 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
    - ✅ Inter font loaded
 
 ### Accessibility Test
+
 1. Tab through dashboard
 2. Verify orange focus rings visible
 3. Check color contrast (browser dev tools)
@@ -1615,7 +1749,7 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 ✅ **Accessibility**: WCAG AA compliant  
 ✅ **Developer Experience**: Clear documentation, type-safe tokens  
 ✅ **User Experience**: Supportive colors, generous spacing, clear hierarchy  
-✅ **Scalability**: Easy to extend with new components/tokens  
+✅ **Scalability**: Easy to extend with new components/tokens
 
 ## Resources
 
@@ -1631,3 +1765,11 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 **Implementation Date**: February 2026  
 **Status**: Core system complete, ready for continued migration  
 **Next Steps**: Follow MIGRATION_GUIDE.md to update remaining components
+
+---
+
+## Breakout Cards
+
+- **Implemented:** 2026-03-24
+- **Spec:** `docs/5. built/breakout-cards/breakout-cards-spec.md`
+- **Summary:** Adds three container-boundary-breaking card treatments — surplus breakout in MiniWaterfallChart, Net Worth hero breakout in WealthLeftPanel, and floating "Now" card in SnapshotTimeline — to create visual tension and hierarchy at key semantic locations.
