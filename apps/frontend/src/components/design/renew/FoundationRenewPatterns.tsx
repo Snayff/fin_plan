@@ -344,7 +344,7 @@ export function FoundationRenewPatterns() {
           {calloutGradients.map((gradient) => (
             <div key={gradient.name} className="flex flex-col gap-2">
               <span
-                className="text-2xl font-heading font-extrabold"
+                className="text-2xl font-heading font-extrabold w-fit"
                 style={{
                   background: `linear-gradient(to right, ${gradient.from}, ${gradient.to})`,
                   WebkitBackgroundClip: "text",

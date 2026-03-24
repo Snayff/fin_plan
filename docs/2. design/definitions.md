@@ -1,6 +1,6 @@
-# FinPlan — Definitions
+# finplan — Definitions
 
-> This is the canonical reference for all tooltip text in FinPlan. When a term in the UI has a specific financial meaning — or a specific meaning within FinPlan — a tooltip is surfaced on hover. The text here is the authoritative source for those tooltips; it should be copied verbatim into implementation. Consult this document when writing or reviewing any UI copy involving financial terms or icon-only elements.
+> This is the canonical reference for all tooltip text in finplan. When a term in the UI has a specific financial meaning — or a specific meaning within finplan — a tooltip is surfaced on hover. The text here is the authoritative source for those tooltips; it should be copied verbatim into implementation. Consult this document when writing or reviewing any UI copy involving financial terms or icon-only elements.
 >
 > Format per entry: the term as it appears in the UI, the contexts where the tooltip applies, and the tooltip text itself (1–2 sentences, plain English).
 
@@ -10,7 +10,7 @@
 
 **Appears in**: Overview page header, Waterfall Creation Wizard introduction, empty state
 
-**Tooltip**: The way FinPlan structures your finances — income at the top, committed spend deducted first, then discretionary spend, leaving your surplus at the bottom. Think of money flowing downwards through each layer.
+**Tooltip**: The way finplan structures your finances — income at the top, committed spend deducted first, then discretionary spend, leaving your surplus at the bottom. Think of money flowing downwards through each layer.
 
 ---
 
@@ -42,7 +42,7 @@
 
 **Appears in**: Income source form (amount field label/hint), Waterfall Creation Wizard step 2
 
-**Tooltip**: Your take-home pay after tax, National Insurance, and any other deductions — what actually arrives in your account. FinPlan works with net figures only.
+**Tooltip**: Your take-home pay after tax, National Insurance, and any other deductions — what actually arrives in your account. finplan works with net figures only.
 
 ---
 
@@ -66,7 +66,7 @@
 
 **Appears in**: Yearly Bills row in the waterfall (÷12 label), Annual Income entries, cashflow calendar header
 
-**Tooltip**: An annual amount spread evenly across 12 months. FinPlan uses this so your monthly waterfall reflects a fair share of bills or income that don't land every month.
+**Tooltip**: An annual amount spread evenly across 12 months. finplan uses this so your monthly waterfall reflects a fair share of bills or income that don't land every month.
 
 ---
 
@@ -114,7 +114,7 @@
 
 **Appears in**: Wealth page headline figure label
 
-**Tooltip**: The total value of everything you own (your assets) minus everything you owe (your liabilities). FinPlan calculates this from the assets recorded on the Wealth page.
+**Tooltip**: The total value of everything you own (your assets) minus everything you owe (your liabilities). finplan calculates this from the assets recorded on the Wealth page.
 
 ---
 

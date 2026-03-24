@@ -1,6 +1,6 @@
 /**
  * DesignRenewPage — dev only, accessible at /design-renew during development.
- * Visual reference for the renew FinPlan design system.
+ * Visual reference for the renew finplan design system.
  * Design rules: docs/renew-finplan/design/design-system.md
  * Token source: src/config/design-tokens.ts
  */

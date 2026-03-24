@@ -12,7 +12,7 @@ const principles = [
     number: 2,
     title: "Plan, Not Ledger",
     description:
-      "FinPlan tracks what you intend, not every transaction. Users reconcile actual spending through their bank.",
+      "finplan tracks what you intend, not every transaction. Users reconcile actual spending through their bank.",
   },
   {
     number: 3,
@@ -81,7 +81,7 @@ export function DesignPrinciplesSection() {
       <div>
         <h2 className="text-2xl font-heading font-bold text-foreground mb-2">Design Principles</h2>
         <p className="text-sm text-text-secondary max-w-2xl">
-          The philosophy, anchors, and language rules that govern every design decision in FinPlan.
+          The philosophy, anchors, and language rules that govern every design decision in finplan.
         </p>
       </div>
 
@@ -89,11 +89,11 @@ export function DesignPrinciplesSection() {
       <PatternSection
         id="design-vision"
         title="Vision"
-        description="The foundational purpose of FinPlan."
+        description="The foundational purpose of finplan."
       >
         <div className="max-w-2xl space-y-4 text-sm text-text-secondary leading-relaxed">
           <p>
-            FinPlan is a personal financial planning and awareness tool for households. It is not a
+            finplan is a personal financial planning and awareness tool for households. It is not a
             ledger, a bank replacement, or a financial advisor. Its job is to give users a clear,
             honest picture of where their money comes from, where it goes, and where it is heading
             &mdash; and to surface that picture in a way that is always up to date, historically
@@ -102,7 +102,7 @@ export function DesignPrinciplesSection() {
           <p>
             The closest analogue is a spreadsheet that a financially organised household might
             maintain: income at the top, committed spend below it, discretionary choices below that,
-            and whatever is left at the bottom. FinPlan makes that structure digital, intelligent,
+            and whatever is left at the bottom. finplan makes that structure digital, intelligent,
             and alive.
           </p>
         </div>

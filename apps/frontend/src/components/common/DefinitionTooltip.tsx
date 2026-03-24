@@ -2,7 +2,7 @@ import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/comp
 
 const DEFINITIONS = {
   Waterfall:
-    "The way FinPlan structures your finances — income at the top, committed spend deducted first, then discretionary spend, leaving your surplus at the bottom.",
+    "The way finplan structures your finances — income at the top, committed spend deducted first, then discretionary spend, leaving your surplus at the bottom.",
   "Committed Spend":
     "Money you've contracted or obligated yourself to pay — outgoings you can't immediately choose to stop.",
   "Discretionary Spend":

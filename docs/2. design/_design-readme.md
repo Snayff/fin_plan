@@ -1,12 +1,12 @@
-# FinPlan Renew — Design Documentation Index
+# finplan Renew — Design Documentation Index
 
-> This is the entry point for the FinPlan design documentation. Start here to understand the design philosophy, constraints, and concrete rules that govern the UI.
+> This is the entry point for the finplan design documentation. Start here to understand the design philosophy, constraints, and concrete rules that govern the UI.
 
 ---
 
-## What FinPlan Is
+## What finplan Is
 
-FinPlan is a personal financial planning tool for households. It is not a ledger, a bank replacement, or a financial advisor. Its core structure is the **waterfall**: income at the top, committed spend deducted first, discretionary spend below that, and whatever remains as surplus. Every design decision reinforces this model. The app tracks what you _intend_ to spend, not every transaction — users reconcile actual transactions through their bank.
+finplan is a personal financial planning tool for households. It is not a ledger, a bank replacement, or a financial advisor. Its core structure is the **waterfall**: income at the top, committed spend deducted first, discretionary spend below that, and whatever remains as surplus. Every design decision reinforces this model. The app tracks what you _intend_ to spend, not every transaction — users reconcile actual transactions through their bank.
 
 ---
 

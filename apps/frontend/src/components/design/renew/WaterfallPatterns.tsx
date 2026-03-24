@@ -1,5 +1,5 @@
 // Waterfall-specific component patterns for the renew design system.
-// These components are unique to FinPlan and have no equivalent in the legacy app.
+// These components are unique to finplan and have no equivalent in the legacy app.
 import { PatternSection } from "../PatternSection";
 import { PatternExample } from "../PatternExample";
 
@@ -179,7 +179,7 @@ export function WaterfallPatterns() {
       <div>
         <h2 className="text-2xl font-heading font-bold text-foreground mb-2">Waterfall</h2>
         <p className="text-sm text-text-secondary">
-          Components unique to the FinPlan waterfall mental model. The waterfall is the identity of
+          Components unique to the finplan waterfall mental model. The waterfall is the identity of
           the app — these components are the primary visual language.
         </p>
       </div>
