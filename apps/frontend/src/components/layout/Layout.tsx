@@ -2,9 +2,12 @@ import { type ReactNode, useState, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { Toaster } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { HouseholdSwitcher } from "./HouseholdSwitcher";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useStaleDataBanner } from "@/hooks/useStaleDataBanner";
+import { StaleDataBanner } from "@/components/common/StaleDataBanner";
 
 const NAV_ITEMS = [
   { label: "Overview", path: "/overview" },
@@ -23,6 +26,19 @@ export default function Layout({ children }: { children: ReactNode }) {
     await logout();
     navigate("/login");
   }, [logout, navigate]);
+
+  const { showBanner, lastSyncedAt } = useStaleDataBanner();
+  const qc = useQueryClient();
+
+  function handleBannerRetry() {
+    qc.getQueryCache()
+      .getAll()
+      .forEach((query) => {
+        if (query.state.status === "error") {
+          void qc.refetchQueries({ queryKey: query.queryKey });
+        }
+      });
+  }
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">
@@ -122,6 +138,8 @@ export default function Layout({ children }: { children: ReactNode }) {
           </button>
         </div>
       </header>
+
+      {showBanner && <StaleDataBanner lastSyncedAt={lastSyncedAt} onRetry={handleBannerRetry} />}
 
       {/* Page content */}
       <main id="main-content" className="flex-1 min-h-0 overflow-hidden">
