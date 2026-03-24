@@ -41,8 +41,7 @@ export function BuildGuidePanel({
   const phaseIndex = BUILD_PHASES.indexOf(phase);
 
   const income = summary?.income.total ?? 0;
-  const committed =
-    (summary?.committed.monthlyTotal ?? 0) + (summary?.committed.monthlyAvg12 ?? 0);
+  const committed = (summary?.committed.monthlyTotal ?? 0) + (summary?.committed.monthlyAvg12 ?? 0);
   const discretionary =
     (summary?.discretionary.total ?? 0) + (summary?.discretionary.savings.total ?? 0);
   const surplus = summary?.surplus.amount ?? 0;
@@ -60,7 +59,8 @@ export function BuildGuidePanel({
     );
   }
 
-  const nextPhaseLabel = phaseIndex < BUILD_PHASES.length - 1 ? PHASE_LABELS[BUILD_PHASES[phaseIndex + 1]!] : null;
+  const nextPhaseLabel =
+    phaseIndex < BUILD_PHASES.length - 1 ? PHASE_LABELS[BUILD_PHASES[phaseIndex + 1]!] : null;
   const picks = isSavingsActive ? SAVINGS_QUICK_PICKS : QUICK_PICKS[phase];
 
   return (
@@ -79,9 +79,7 @@ export function BuildGuidePanel({
               }`}
             />
             {i < BUILD_PHASES.length - 1 && (
-              <div
-                className={`h-px w-6 ${i < phaseIndex ? "bg-primary/40" : "bg-muted"}`}
-              />
+              <div className={`h-px w-6 ${i < phaseIndex ? "bg-primary/40" : "bg-muted"}`} />
             )}
           </div>
         ))}
@@ -128,12 +126,7 @@ export function BuildGuidePanel({
 
       {/* Navigation */}
       <div className="flex items-center justify-between pt-4 border-t">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onPrevPhase}
-          disabled={phaseIndex === 0}
-        >
+        <Button variant="ghost" size="sm" onClick={onPrevPhase} disabled={phaseIndex === 0}>
           ← Back
         </Button>
         <Button size="sm" onClick={onNextPhase}>
@@ -201,10 +194,18 @@ function SummaryPhase({
         ))}
       </div>
 
-      <h2 className="text-lg font-semibold mb-1">Your waterfall is ready</h2>
-      <p className="text-sm text-muted-foreground mb-5">
-        Here's how your money flows each month.
-      </p>
+      <div
+        data-testid="build-summary-card"
+        className="rounded-xl p-4 mb-5"
+        style={{
+          background:
+            "linear-gradient(135deg, rgba(168,85,247,0.06) 0%, rgba(74,220,208,0.04) 100%)",
+          border: "1px solid rgba(168,85,247,0.08)",
+        }}
+      >
+        <h2 className="text-lg font-semibold mb-1">Your waterfall is ready</h2>
+        <p className="text-sm text-muted-foreground">Here's how your money flows each month.</p>
+      </div>
 
       {/* Full cascade viz */}
       <MiniWaterfallChart

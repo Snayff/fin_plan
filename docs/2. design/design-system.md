@@ -1,6 +1,6 @@
-# FinPlan Design System
+# finplan Design System
 
-> This document defines the concrete rules and constraints for the FinPlan UI: colour tokens, typography, layout, components, interaction patterns, and UX patterns. It is the _what_ of the design — the specifications that follow from the principles in `design-philosophy.md`.
+> This document defines the concrete rules and constraints for the finplan UI: colour tokens, typography, layout, components, interaction patterns, and UX patterns. It is the _what_ of the design — the specifications that follow from the principles in `design-philosophy.md`.
 
 ---
 
@@ -91,6 +91,17 @@ Gradient text for engagement and special highlights. Applied via `background-cli
 | `callout-secondary` | `#a855f7` → `#4adcd0` (purple → teal) | Secondary emphasis, variety                          |
 
 **Rule:** Callout gradients are for engagement only — hero headlines, wordmark, key summary phrases, standout CTAs. Never use them for warnings, attention items, informational alerts, or tier headings.
+
+#### Callout Gradient Cards
+
+Low-opacity gradient backgrounds used for hero cards and completion moments. Different from gradient text — these are card backgrounds, not typographic effects.
+
+| Gradient        | CSS                                                                             | Border                            | Canonical locations            |
+| --------------- | ------------------------------------------------------------------------------- | --------------------------------- | ------------------------------ |
+| Indigo → Purple | `linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.05) 100%)` | `1px solid rgba(99,102,241,0.1)`  | Empty state CTAs, Welcome hero |
+| Purple → Teal   | `linear-gradient(135deg, rgba(168,85,247,0.06) 0%, rgba(74,220,208,0.04) 100%)` | `1px solid rgba(168,85,247,0.08)` | Build completion card          |
+
+**Rule:** All callout gradient cards use `rounded-xl`, `p-6` padding, and a 1px border at ~10% opacity of the gradient start colour. Three canonical locations: empty state CTAs (overview), welcome hero card, build completion card.
 
 #### Attention
 
@@ -982,6 +993,8 @@ Linking is optional. Both pages function independently without it.
 
 ### 4.1 Language
 
+**Product naming:** always write the product name as **finplan** — lowercase, one word, no variations. This applies to UI copy, metadata, documentation, and the header wordmark.
+
 **Always use:** "budgeted", "planned", "allocated", "expected", "set aside"
 
 **Never use:** "spent", "paid", "charged"
@@ -1427,4 +1440,4 @@ Quick-reference table of every colour token in the system.
 
 ---
 
-_Last updated: March 2026 — design system for the FinPlan rebuild._
+_Last updated: March 2026 — design system for the finplan rebuild._

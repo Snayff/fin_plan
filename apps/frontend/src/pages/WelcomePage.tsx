@@ -56,11 +56,19 @@ export default function WelcomePage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="max-w-md w-full text-center space-y-8">
         {phase === "welcome" && (
-          <>
+          <div
+            data-testid="welcome-hero-card"
+            className="rounded-xl p-6 space-y-6"
+            style={{
+              background:
+                "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.05) 100%)",
+              border: "1px solid rgba(99,102,241,0.1)",
+            }}
+          >
             <div className="space-y-3">
-              <h1 className="text-3xl font-bold tracking-tight">Welcome to FinPlan</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Welcome to finplan</h1>
               <p className="text-muted-foreground leading-relaxed">
-                FinPlan helps you see exactly where your money goes each month using a simple
+                finplan helps you see exactly where your money goes each month using a simple
                 waterfall: income flows down through committed bills, discretionary spending, and
                 savings — revealing your true surplus.
               </p>
@@ -68,7 +76,7 @@ export default function WelcomePage() {
             <Button size="lg" onClick={() => setPhase("name")}>
               Get started
             </Button>
-          </>
+          </div>
         )}
 
         {phase === "name" && (
