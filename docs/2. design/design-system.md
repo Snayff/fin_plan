@@ -1214,6 +1214,58 @@ When a data sync fails, the app retains the last known data and surfaces the fai
 
 ---
 
+## 4a. Data States
+
+Every query-driven panel must handle all four data states. No panel should ever render blank space.
+
+### Decision Table
+
+| Condition                         | What to render                          | Component          |
+| --------------------------------- | --------------------------------------- | ------------------ |
+| `isLoading && !data`              | Ghost skeleton (no shimmer, no content) | `SkeletonLoader`   |
+| `isError && !data`                | Ghost skeleton + blur overlay + retry   | `PanelError`       |
+| `isError && data`                 | Stale data (visible) + amber banner     | `StaleDataBanner`  |
+| `!isLoading && !isError && empty` | Ghosted placeholder + guidance text     | `GhostedListEmpty` |
+| Success                           | Content                                 | —                  |
+
+### Components
+
+**`SkeletonLoader`** (`variant: "left-panel" | "right-panel"`)
+
+- Static ghost skeleton — no shimmer, no animation
+- Used for initial load only (`isLoading && !data`)
+
+**`PanelError`** (`variant: "left" | "right" | "detail"`, `onRetry`, `message?`)
+
+- Static ghost skeleton at opacity 0.30, colour `#2a3f60`
+- Overlay: `rgba(8,10,20,0.70)` + `backdrop-filter: blur(2px)`
+- "Failed to load" in `--destructive` red
+- Optional contextual message in `--muted-foreground`
+- Retry button in destructive-subtle style
+- Red is for app errors only — never financial values
+
+**`StaleDataBanner`**
+
+- Amber — the only attention signal in the app
+- Shown globally in `Layout.tsx` via `useStaleDataBanner` hook
+- Appears only when `isError && data` (background refetch failure)
+- Retry refetches all errored queries
+
+**`GhostedListEmpty`** (`ctaText`, `ctaButtonLabel?`, `showCta?`)
+
+- Used when a query succeeds but returns an empty array
+- Provides contextual guidance and optional CTA
+
+### Rules
+
+1. Never render blank space — one of the four states must always render
+2. Retry is always explicit user action — no auto-retry polling
+3. Stale data stays visible on background failure — no jarring replacement
+4. `PanelError` red is scoped to app errors only — never on financial values
+5. `StaleDataBanner` amber is the only attention signal — it is informational, never blocking
+
+---
+
 ## 5. Icons
 
 ### 5.1 Library Priority
