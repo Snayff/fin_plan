@@ -9,6 +9,8 @@ import { useItemHistory, useConfirmItem, useUpdateItem, useEndIncome } from "@/h
 import { isStale, stalenessLabel } from "@/utils/staleness";
 import { useSettings } from "@/hooks/useSettings";
 import { CreateSnapshotModal } from "./CreateSnapshotModal";
+import { SkeletonLoader } from "@/components/common/SkeletonLoader";
+import { PanelError } from "@/components/common/PanelError";
 
 interface SelectedItem {
   id: string;
@@ -33,7 +35,22 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
   const [showSnapshotPrompt, setShowSnapshotPrompt] = useState(false);
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
 
-  const { data: historyRaw } = useItemHistory(item.type, item.id);
+  const {
+    data: historyRaw,
+    isLoading: historyLoading,
+    isError: historyError,
+    refetch: historyRefetch,
+  } = useItemHistory(item.type, item.id);
+  const confirmItem = useConfirmItem();
+  const updateItem = useUpdateItem();
+  const endIncome = useEndIncome();
+  const { data: settings } = useSettings();
+
+  if (historyLoading && !historyRaw) return <SkeletonLoader variant="right-panel" />;
+  if (historyError && !historyRaw)
+    return (
+      <PanelError variant="detail" onRetry={historyRefetch} message="Could not load item history" />
+    );
 
   const history: { recordedAt: string; value: number }[] = (historyRaw ?? []).map(
     (h: { recordedAt: string; value: number; id: string }) => ({
@@ -41,11 +58,6 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
       value: h.value,
     })
   );
-
-  const confirmItem = useConfirmItem();
-  const updateItem = useUpdateItem();
-  const endIncome = useEndIncome();
-  const { data: settings } = useSettings();
 
   const isReadOnly = snapshotDate != null;
 

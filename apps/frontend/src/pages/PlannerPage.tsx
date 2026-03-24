@@ -144,6 +144,7 @@ export default function PlannerPage() {
       {/* Year selector */}
       <div className="h-10 shrink-0 border-b flex items-center px-4 gap-2 text-sm">
         <button
+          type="button"
           onClick={() => setYear((y) => y - 1)}
           className="text-muted-foreground hover:text-foreground"
         >
@@ -151,6 +152,7 @@ export default function PlannerPage() {
         </button>
         <span className="font-medium w-10 text-center">{year}</span>
         <button
+          type="button"
           onClick={() => setYear((y) => y + 1)}
           className="text-muted-foreground hover:text-foreground"
         >

@@ -14,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { isStale, stalenessLabel } from "@/utils/staleness";
 import { useSettings } from "@/hooks/useSettings";
 import { CLASS_LABELS } from "./assetClassLabels";
+import { SkeletonLoader } from "@/components/common/SkeletonLoader";
+import { PanelError } from "@/components/common/PanelError";
 
 type InlineMode = "none" | "edit" | "valuation";
 
@@ -46,11 +48,28 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
   );
   const [valuationDate, setValuationDate] = useState<string>(new Date().toISOString().slice(0, 10));
 
-  const { data: history = [] } = useAccountHistory(account.id);
+  const {
+    data: historyRaw,
+    isLoading: historyLoading,
+    isError: historyError,
+    refetch: historyRefetch,
+  } = useAccountHistory(account.id);
   const updateValuation = useUpdateValuation();
   const confirmAccount = useConfirmAccount();
   const updateAccount = useUpdateAccount();
   const { data: settings } = useSettings();
+
+  if (historyLoading && !historyRaw) return <SkeletonLoader variant="right-panel" />;
+  if (historyError && !historyRaw)
+    return (
+      <PanelError
+        variant="detail"
+        onRetry={historyRefetch}
+        message="Could not load account history"
+      />
+    );
+
+  const history = historyRaw ?? [];
 
   const wealthThreshold = settings?.stalenessThresholds?.wealth_account ?? 3;
   const lastReviewedAt: string | undefined = account.lastReviewedAt;
@@ -245,6 +264,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
             </Button>
           </div>
           <button
+            type="button"
             className="text-xs text-muted-foreground hover:text-foreground transition-colors mt-1"
             onClick={handleConfirm}
             disabled={confirmAccount.isPending}
@@ -257,6 +277,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
       {/* Confirm link (outside valuation form) */}
       {inlineMode === "none" && (
         <button
+          type="button"
           className="text-xs text-muted-foreground hover:text-foreground transition-colors"
           onClick={handleConfirm}
           disabled={confirmAccount.isPending}

@@ -67,12 +67,7 @@ export default function WealthPage() {
     right = (
       <AccountDetailPanel
         account={view.account}
-        onBack={() =>
-          setView({
-            type: "list",
-            assetClass: view.type === "detail" ? view.account.assetClass : "savings",
-          })
-        }
+        onBack={() => setView({ type: "list", assetClass: view.account.assetClass })}
       />
     );
   }

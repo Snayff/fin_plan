@@ -1,8 +1,10 @@
 import { useState } from "react";
+import type React from "react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/button";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
+import { PanelError } from "@/components/common/PanelError";
 import {
   useGiftPerson,
   useCreateGiftEvent,
@@ -324,10 +326,14 @@ export function GiftPersonDetailPanel({
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [showEditPerson, setShowEditPerson] = useState(false);
 
-  const { data: person, isLoading } = useGiftPerson(personId, year);
+  const { data: person, isLoading, isError, refetch } = useGiftPerson(personId, year);
 
   if (isLoading) {
     return <SkeletonLoader variant="right-panel" />;
+  }
+
+  if (isError && !person) {
+    return <PanelError variant="detail" onRetry={refetch} message="Could not load gift person" />;
   }
 
   if (!person) {

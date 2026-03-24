@@ -7,6 +7,9 @@ import { HouseholdSection } from "@/components/settings/HouseholdSection";
 import { SnapshotsSection } from "@/components/settings/SnapshotsSection";
 import { EndedIncomeSection } from "@/components/settings/EndedIncomeSection";
 import { RebuildSection } from "@/components/settings/RebuildSection";
+import { SkeletonLoader } from "@/components/common/SkeletonLoader";
+import { PanelError } from "@/components/common/PanelError";
+import { useSettings } from "@/hooks/useSettings";
 
 const SECTIONS = [
   { id: "profile", label: "Profile" },
@@ -21,6 +24,7 @@ const SECTIONS = [
 
 export default function SettingsPage() {
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const { isLoading, isError, refetch } = useSettings();
 
   function scrollTo(id: string) {
     sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -53,32 +57,38 @@ export default function SettingsPage() {
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-8">
         <h1 className="sr-only">Settings</h1>
-        <div className="max-w-2xl space-y-12">
-          <div ref={setRef("profile")}>
-            <ProfileSection />
+        {isLoading ? (
+          <SkeletonLoader variant="right-panel" />
+        ) : isError ? (
+          <PanelError variant="right" onRetry={refetch} message="Could not load settings" />
+        ) : (
+          <div className="max-w-2xl space-y-12">
+            <div ref={setRef("profile")}>
+              <ProfileSection />
+            </div>
+            <div ref={setRef("staleness")}>
+              <StalenessSection />
+            </div>
+            <div ref={setRef("surplus")}>
+              <SurplusSection />
+            </div>
+            <div ref={setRef("isa")}>
+              <IsaSection />
+            </div>
+            <div ref={setRef("household")}>
+              <HouseholdSection />
+            </div>
+            <div ref={setRef("snapshots")}>
+              <SnapshotsSection />
+            </div>
+            <div ref={setRef("income-ended")}>
+              <EndedIncomeSection />
+            </div>
+            <div ref={setRef("rebuild")}>
+              <RebuildSection />
+            </div>
           </div>
-          <div ref={setRef("staleness")}>
-            <StalenessSection />
-          </div>
-          <div ref={setRef("surplus")}>
-            <SurplusSection />
-          </div>
-          <div ref={setRef("isa")}>
-            <IsaSection />
-          </div>
-          <div ref={setRef("household")}>
-            <HouseholdSection />
-          </div>
-          <div ref={setRef("snapshots")}>
-            <SnapshotsSection />
-          </div>
-          <div ref={setRef("income-ended")}>
-            <EndedIncomeSection />
-          </div>
-          <div ref={setRef("rebuild")}>
-            <RebuildSection />
-          </div>
-        </div>
+        )}
       </div>
     </div>
   );

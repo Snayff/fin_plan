@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useSnapshots } from "@/hooks/useSettings";
 
@@ -17,10 +17,14 @@ export function SnapshotTimeline({
   onOpenCreate,
   onOpenReview,
 }: SnapshotTimelineProps) {
-  const { data: snapshots = [] } = useSnapshots();
+  const { data: snapshots, isLoading, isError, refetch } = useSnapshots();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const sorted = [...((snapshots ?? []) as any[])].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+  );
 
   function checkScroll() {
     const el = scrollRef.current;
@@ -29,13 +33,13 @@ export function SnapshotTimeline({
     setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
   }
 
+  useEffect(() => {
+    checkScroll();
+  }, [sorted.length]);
+
   function scrollBy(delta: number) {
     scrollRef.current?.scrollBy({ left: delta, behavior: "smooth" });
   }
-
-  const sorted = [...(snapshots as any[])].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
 
   return (
     <div className="h-8 border-b flex items-center gap-2 px-3 text-xs overflow-visible">
@@ -56,29 +60,50 @@ export function SnapshotTimeline({
         className="flex-1 overflow-x-auto no-scrollbar flex items-center gap-3"
         onScroll={checkScroll}
       >
-        {sorted.map((snap) => (
-          <button
-            key={snap.id as string}
-            type="button"
-            title={`${snap.name as string} — ${format(new Date(snap.createdAt as string), "dd MMM yyyy")}`}
-            onClick={() => onSelect(snap.id as string)}
-            className="shrink-0 flex flex-col items-center gap-0.5 group"
-          >
-            <span
-              className={`inline-block h-2 w-2 rounded-full transition-colors ${
-                selectedId === snap.id
-                  ? "bg-primary"
-                  : "bg-muted-foreground/40 group-hover:bg-muted-foreground"
-              }`}
-            />
-            <span
-              className="max-w-[8rem] truncate text-muted-foreground group-hover:text-foreground leading-none"
-              title={snap.name as string}
+        {isLoading ? (
+          <>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="shrink-0 h-1.5 w-8 rounded animate-pulse bg-muted" />
+            ))}
+          </>
+        ) : isError ? (
+          <span className="text-destructive text-xs flex items-center gap-1.5">
+            Failed to load
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="underline hover:no-underline"
             >
-              {snap.name as string}
-            </span>
-          </button>
-        ))}
+              Retry
+            </button>
+          </span>
+        ) : sorted.length === 0 ? (
+          <span className="text-muted-foreground/60 text-xs italic">No snapshots yet</span>
+        ) : (
+          sorted.map((snap) => (
+            <button
+              key={snap.id as string}
+              type="button"
+              title={`${snap.name as string} — ${format(new Date(snap.createdAt as string), "dd MMM yyyy")}`}
+              onClick={() => onSelect(snap.id as string)}
+              className="shrink-0 flex flex-col items-center gap-0.5 group"
+            >
+              <span
+                className={`inline-block h-2 w-2 rounded-full transition-colors ${
+                  selectedId === snap.id
+                    ? "bg-primary"
+                    : "bg-muted-foreground/40 group-hover:bg-muted-foreground"
+                }`}
+              />
+              <span
+                className="max-w-[8rem] truncate text-muted-foreground group-hover:text-foreground leading-none"
+                title={snap.name as string}
+              >
+                {snap.name as string}
+              </span>
+            </button>
+          ))
+        )}
       </div>
 
       {/* Now — outside scroll area so floating card isn't clipped */}

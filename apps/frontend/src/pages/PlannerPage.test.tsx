@@ -1,5 +1,4 @@
 import { describe, it, expect, mock } from "bun:test";
-import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/helpers/render";
 import PlannerPage from "./PlannerPage";
 

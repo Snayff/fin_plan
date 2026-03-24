@@ -30,7 +30,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const { showBanner, lastSyncedAt } = useStaleDataBanner();
   const qc = useQueryClient();
 
-  function handleBannerRetry() {
+  const handleBannerRetry = useCallback(() => {
     qc.getQueryCache()
       .getAll()
       .forEach((query) => {
@@ -38,7 +38,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           void qc.refetchQueries({ queryKey: query.queryKey });
         }
       });
-  }
+  }, [qc]);
 
   return (
     <div className="flex flex-col h-screen bg-background text-foreground">

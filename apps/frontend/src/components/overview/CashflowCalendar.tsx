@@ -2,29 +2,22 @@ import { format } from "date-fns";
 import { useCashflow } from "@/hooks/useWaterfall";
 import { formatCurrency } from "@/utils/format";
 import { NudgeCard } from "@/components/common/NudgeCard";
+import { SkeletonLoader } from "@/components/common/SkeletonLoader";
+import { PanelError } from "@/components/common/PanelError";
 
 interface CashflowCalendarProps {
   year: number;
   onBack: () => void;
 }
 
-const MONTH_NAMES = [
-  "January",
-  "February",
-  "March",
-  "April",
-  "May",
-  "June",
-  "July",
-  "August",
-  "September",
-  "October",
-  "November",
-  "December",
-];
-
 export function CashflowCalendar({ year, onBack }: CashflowCalendarProps) {
-  const { data: months, isLoading } = useCashflow(year);
+  const { data: months, isLoading, isError, refetch } = useCashflow(year);
+
+  if (isLoading && !months) return <SkeletonLoader variant="right-panel" />;
+  if (isError && !months)
+    return (
+      <PanelError variant="right" onRetry={refetch} message="Could not load cashflow calendar" />
+    );
 
   const hasShortfall = months?.some((m) => m.shortfall) ?? false;
 
@@ -41,57 +34,47 @@ export function CashflowCalendar({ year, onBack }: CashflowCalendarProps) {
         <h2 className="text-base font-semibold">Yearly Bills — {year} Cashflow</h2>
       </div>
 
-      {isLoading ? (
-        <div className="space-y-2">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <div key={i} className="h-12 rounded bg-muted animate-pulse" />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-1">
-          {(months ?? []).map((month) => {
-            const monthName =
-              MONTH_NAMES[month.month - 1] ??
-              format(new Date(month.year, month.month - 1, 1), "MMMM");
+      <div className="space-y-1">
+        {(months ?? []).map((month) => {
+          const monthName = format(new Date(month.year, month.month - 1, 1), "MMMM");
 
-            return (
-              <div
-                key={`${month.year}-${month.month}`}
-                className="rounded px-3 py-2 text-sm border"
-                style={month.shortfall ? { borderColor: "rgba(245,158,11,0.3)" } : undefined}
-              >
-                <div className="flex items-center justify-between">
-                  <span
-                    className="font-medium"
-                    style={month.shortfall ? { color: "#f59e0b" } : undefined}
-                  >
-                    {monthName}
-                  </span>
-                  <span
-                    className="text-xs"
-                    style={month.shortfall ? { color: "#f59e0b" } : undefined}
-                  >
-                    Pot after: {formatCurrency(month.potAfter)}
-                  </span>
-                </div>
-                {month.bills.length > 0 && (
-                  <ul className="mt-1 space-y-0.5">
-                    {month.bills.map((bill) => (
-                      <li
-                        key={bill.id}
-                        className="flex items-center justify-between text-xs text-muted-foreground"
-                      >
-                        <span>{bill.name}</span>
-                        <span>{formatCurrency(bill.amount)}</span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
+          return (
+            <div
+              key={`${month.year}-${month.month}`}
+              className="rounded px-3 py-2 text-sm border"
+              style={month.shortfall ? { borderColor: "rgba(245,158,11,0.3)" } : undefined}
+            >
+              <div className="flex items-center justify-between">
+                <span
+                  className="font-medium"
+                  style={month.shortfall ? { color: "#f59e0b" } : undefined}
+                >
+                  {monthName}
+                </span>
+                <span
+                  className="text-xs"
+                  style={month.shortfall ? { color: "#f59e0b" } : undefined}
+                >
+                  Pot after: {formatCurrency(month.potAfter)}
+                </span>
               </div>
-            );
-          })}
-        </div>
-      )}
+              {month.bills.length > 0 && (
+                <ul className="mt-1 space-y-0.5">
+                  {month.bills.map((bill) => (
+                    <li
+                      key={bill.id}
+                      className="flex items-center justify-between text-xs text-muted-foreground"
+                    >
+                      <span>{bill.name}</span>
+                      <span>{formatCurrency(bill.amount)}</span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          );
+        })}
+      </div>
 
       {hasShortfall && (
         <NudgeCard
