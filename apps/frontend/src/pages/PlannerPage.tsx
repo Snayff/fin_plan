@@ -81,7 +81,7 @@ export default function PlannerPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div data-page="planner" className="relative flex flex-col h-full">
       {/* Year selector */}
       <div className="h-10 shrink-0 border-b flex items-center px-4 gap-2 text-sm">
         <button

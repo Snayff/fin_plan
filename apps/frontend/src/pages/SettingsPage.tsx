@@ -33,7 +33,7 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div data-page="settings" className="relative flex h-full overflow-hidden">
       {/* Left nav */}
       <aside className="w-48 shrink-0 border-r p-4 space-y-1 overflow-y-auto">
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">

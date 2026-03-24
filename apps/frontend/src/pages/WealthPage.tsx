@@ -61,5 +61,9 @@ export default function WealthPage() {
     );
   }
 
-  return <TwoPanelLayout left={left ?? <SkeletonLoader variant="left-panel" />} right={right} />;
+  return (
+    <div data-page="wealth" className="relative h-full">
+      <TwoPanelLayout left={left ?? <SkeletonLoader variant="left-panel" />} right={right} />
+    </div>
+  );
 }
