@@ -1779,3 +1779,9 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-24
 - **Spec:** `docs/5. built/design-polish/design-polish-spec.md`
 - **Summary:** Brings the design system to life with cascade connectors between waterfall tiers, D3 typography hierarchy, dual ambient page glows for sense of place, ghosted empty states with callout gradient CTAs, and six consistency fixes (amber tokens, button components, styled checkboxes, wordmark, confetti, snapshot truncation).
+
+## Layout Refinements
+
+- **Implemented:** 2026-03-24
+- **Spec:** `docs/5. built/layout-refinements/layout-refinements-spec.md`
+- **Summary:** Restructures the waterfall left panel from a flat item list into a navigation summary — income shows type groups (Salary, Dividends, etc.), committed collapses to two aggregate rows, discretionary adds a "··· N more" overflow; adds breadcrumb navigation to the wealth account list panel; and wraps the welcome hero and build summary in callout gradient cards.
