@@ -8,43 +8,48 @@ Quick reference for all AI-assisted workflows, commands, and skills available to
 
 ## Feature Workflow
 
-Every new feature follows this pipeline. Each step chains to the next.
+Every new feature follows this pipeline. Each step auto-chains to the next on completion — no need to manually invoke each command.
 
 ```
-/brainstorm  →  /write-spec  →  /write-plan  →  /execute-plan <name>
+/refine-requirement  →  /write-spec  →  /write-plan  →  /execute-plan <name>  →  /verify-implementation <name>
 ```
 
-| Step            | What happens                                                                                                  | Output                                                             |
-| --------------- | ------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `/brainstorm`   | Reads design anchors, design system, and implementation plan. Asks clarifying questions one at a time.        | Approved design doc in `docs/plans/`                               |
-| `/write-spec`   | Takes approved design, fills gaps with targeted questions. Runs UX review pass then security review pass.     | Spec in `docs/4. planning/<feature>/<feature>-spec.md`             |
-| `/write-plan`   | Creates TDD task plan (failing test → implement → pass → commit). Tasks ordered: schema → shared → BE → FE.   | Plan in `docs/4. planning/<feature>/<feature>-plan.md`             |
-| `/execute-plan` | Runs ~3 tasks per batch with review checkpoints. Post-execution: code review → tests → simplify → lint/types. | Spec moved to `docs/5. built/<feature>/`, `implemented.md` updated |
+All five skills are **standalone** — they do not delegate to superpowers skills at runtime.
+
+| Step                     | What happens                                                                                                                                                | Output                                                             |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| `/refine-requirement`    | Hard-gate (no code until approved). Offers visual companion once upfront, then decides per-question. One question at a time. 2-3 approaches with tradeoffs. | Approved design doc in `docs/plans/`                               |
+| `/write-spec`            | Takes approved design, fills gaps with targeted questions. Runs UX review pass then security review pass. Auto-chains to write-plan.                        | Spec in `docs/4. planning/<feature>/<feature>-spec.md`             |
+| `/write-plan`            | Creates TDD task plan (failing test → implement → pass → commit). Tasks ordered: schema → shared → BE → FE. Plan review loop. Auto-chains to execute-plan.  | Plan in `docs/4. planning/<feature>/<feature>-plan.md`             |
+| `/execute-plan`          | Runs ~3 tasks per batch with subagents. Post-execution quality sequence. Checks open questions in spec. Auto-chains to verify-implementation.               | Spec moved to `docs/5. built/<feature>/`, `implemented.md` updated |
+| `/verify-implementation` | Agent-browser functional check, security review, accessibility audit. Checks open questions. Can also be invoked standalone.                                | Verification report with issues by severity                        |
+
+**Visual companion** (during `/refine-requirement`): Offered once as a dedicated message before questions begin. After consent, Claude silently decides per-question whether to use the browser (mockups, layouts, diagrams) or terminal (text, tradeoffs, scope). All mockup HTML files stay in `.superpowers/brainstorm/` — never in `apps/`, `packages/`, or `docs/`.
 
 **Post-execution quality sequence** (run by `/execute-plan` in this order):
 
-1. Code review via `requesting-code-review`
+1. Code review — correctness, patterns, security, test coverage
 2. Tests — `cd apps/backend && bun scripts/run-tests.ts` + `cd apps/frontend && bun run test`
 3. Simplify via `/simplify`
 4. Tests — second pass (verify no regressions from simplification)
 5. Lint & type check — `bun run lint` + `bun run type-check`
 6. Atomic commits — explicit `git add <files>`, never `git add -A`
+7. Verify implementation via `/verify-implementation` — agent-browser + security + accessibility
+8. Open questions — surfaces any unresolved items from the spec's Open Questions section
 
 ---
 
 ## Design & Build
 
-| Name               | Type    | Description                                                                |
-| ------------------ | ------- | -------------------------------------------------------------------------- |
-| `/brainstorm`      | command | Collaborative design exploration — Socratic dialogue with fin_plan context |
-| `/write-spec`      | command | Formal feature spec from approved design, with UX + security review        |
-| `/write-plan`      | command | TDD implementation plan from approved spec                                 |
-| `/execute-plan`    | command | Execute plan with subagents, quality gates, and atomic commits             |
-| `/frontend-design` | command | Create distinctive, production-grade frontend interfaces                   |
-| `brainstorming`    | skill   | Socratic design refinement through iterative dialogue                      |
-| `writing-plans`    | skill   | Bite-sized, task-based implementation plans                                |
-| `executing-plans`  | skill   | Batch execution (~3 tasks) with checkpoint reviews                         |
-| `shadcn`           | skill   | Component discovery, installation, styling and composition for shadcn/ui   |
+| Name                     | Type    | Description                                                                  |
+| ------------------------ | ------- | ---------------------------------------------------------------------------- |
+| `/refine-requirement`    | command | Standalone — Socratic dialogue with visual companion, hard-gate before code  |
+| `/write-spec`            | command | Standalone — formal spec from approved design, with UX + security review     |
+| `/write-plan`            | command | Standalone — TDD implementation plan with plan review loop                   |
+| `/execute-plan`          | command | Standalone — subagent batch execution, quality gates, atomic commits         |
+| `/verify-implementation` | command | Standalone — agent-browser + security + accessibility audit + open questions |
+| `/frontend-design`       | command | Create distinctive, production-grade frontend interfaces                     |
+| `shadcn`                 | skill   | Component discovery, installation, styling and composition for shadcn/ui     |
 
 ---
 
@@ -95,6 +100,7 @@ Every new feature follows this pipeline. Each step chains to the next.
 
 | Name                             | Type    | Description                                                                                        |
 | -------------------------------- | ------- | -------------------------------------------------------------------------------------------------- |
+| `/verify-implementation`         | command | Post-implementation verification — agent-browser + security review + accessibility audit           |
 | `/dogfood`                       | command | Systematic QA / exploratory testing — structured report with screenshots, videos, and repro steps  |
 | `/agent-browser`                 | command | Browser automation — navigate, fill forms, click, screenshot, extract data                         |
 | `test-driven-development`        | skill   | RED → GREEN → REFACTOR cycle. Includes testing anti-patterns reference                             |
@@ -135,11 +141,11 @@ Every new feature follows this pipeline. Each step chains to the next.
 
 ## Sources
 
-| Source      | What it provides                                                | Docs                                                                                 |
-| ----------- | --------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
-| FinPlan     | Feature workflow (`brainstorm` → `execute-plan`), `/simplify`   | `~/.claude/skills/`                                                                  |
-| Impeccable  | 20 design commands (Refine, Harden & Ship, Review)              | [impeccable.style/cheatsheet](https://impeccable.style/cheatsheet)                   |
-| Superpowers | 14 context-activated skills (testing, collaboration, git, meta) | [github.com/obra/superpowers](https://github.com/obra/superpowers)                   |
-| Vercel Labs | `/agent-browser`, `/dogfood`                                    | [github.com/vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) |
-| shadcn/ui   | Component management (context-activated)                        | [ui.shadcn.com](https://ui.shadcn.com)                                               |
-| Claude Code | Built-in system commands                                        | [docs.anthropic.com](https://docs.anthropic.com)                                     |
+| Source      | What it provides                                                                                             | Docs                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| FinPlan     | Standalone feature workflow (`refine-requirement` → `verify-implementation`), `/simplify`                    | `~/.claude/skills/`                                                                  |
+| Impeccable  | 20 design commands (Refine, Harden & Ship, Review)                                                           | [impeccable.style/cheatsheet](https://impeccable.style/cheatsheet)                   |
+| Superpowers | Context-activated skills (testing, debugging, git, collaboration). Visual companion server for brainstorming | [github.com/obra/superpowers](https://github.com/obra/superpowers)                   |
+| Vercel Labs | `/agent-browser`, `/dogfood`                                                                                 | [github.com/vercel-labs/agent-browser](https://github.com/vercel-labs/agent-browser) |
+| shadcn/ui   | Component management (context-activated)                                                                     | [ui.shadcn.com](https://ui.shadcn.com)                                               |
+| Claude Code | Built-in system commands                                                                                     | [docs.anthropic.com](https://docs.anthropic.com)                                     |
