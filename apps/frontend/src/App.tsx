@@ -5,6 +5,7 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { queryClient } from "./lib/queryClient";
 import { useAuthStore } from "./stores/authStore";
 import Layout from "./components/layout/Layout";
+import { ErrorBoundary } from "./components/common/ErrorBoundary";
 
 // Auth pages
 const LoginPage = lazy(() => import("./pages/auth/LoginPage"));
@@ -49,16 +50,18 @@ export function ProtectedAppRoutes() {
         element={
           <NewUserRedirect>
             <Layout>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/" element={<Navigate to="/overview" replace />} />
-                  <Route path="/overview" element={<OverviewPage />} />
-                  <Route path="/wealth" element={<WealthPage />} />
-                  <Route path="/planner" element={<PlannerPage />} />
-                  <Route path="/settings" element={<SettingsPage />} />
-                  <Route path="*" element={<Navigate to="/overview" replace />} />
-                </Routes>
-              </Suspense>
+              <ErrorBoundary>
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<Navigate to="/overview" replace />} />
+                    <Route path="/overview" element={<OverviewPage />} />
+                    <Route path="/wealth" element={<WealthPage />} />
+                    <Route path="/planner" element={<PlannerPage />} />
+                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="*" element={<Navigate to="/overview" replace />} />
+                  </Routes>
+                </Suspense>
+              </ErrorBoundary>
             </Layout>
           </NewUserRedirect>
         }

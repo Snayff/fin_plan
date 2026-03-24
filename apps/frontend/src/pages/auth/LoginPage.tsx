@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
 import type { ApiError } from "../../lib/api";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
 export default function LoginPage() {
@@ -83,18 +84,14 @@ export default function LoginPage() {
             Remember me on this device
           </label>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
+          <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? "Signing in..." : "Sign In"}
-          </button>
+          </Button>
         </form>
 
         <div className="text-center text-sm">
           <span className="text-muted-foreground">Don't have an account? </span>
-          <Link to="/register" className="text-primary hover:underline">
+          <Link to="/register" className="text-page-accent hover:underline">
             Sign up
           </Link>
         </div>

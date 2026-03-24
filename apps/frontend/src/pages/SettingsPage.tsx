@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/authStore";
 import { authService } from "@/services/auth.service";
 import { waterfallService } from "@/services/waterfall.service";
@@ -81,12 +82,10 @@ function ProfileSection() {
     <Section id="profile" title="Profile">
       <div className="space-y-3 max-w-sm">
         <div className="space-y-1">
-          <label className="text-sm font-medium">Name</label>
-          <input
-            className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
+          <label htmlFor="profile-name" className="text-sm font-medium">
+            Name
+          </label>
+          <Input id="profile-name" value={name} onChange={(e) => setName(e.target.value)} />
         </div>
         <p className="text-sm text-muted-foreground">{user?.email}</p>
         <Button size="sm" onClick={handleSave} disabled={saving}>
@@ -138,11 +137,13 @@ function StalenessSection() {
       <div className="grid grid-cols-2 gap-3 max-w-sm">
         {Object.entries(STALENESS_LABELS).map(([key, label]) => (
           <div key={key} className="space-y-1">
-            <label className="text-xs text-muted-foreground">{label}</label>
-            <input
+            <label htmlFor={`staleness-${key}`} className="text-xs text-muted-foreground">
+              {label}
+            </label>
+            <Input
+              id={`staleness-${key}`}
               type="number"
               min={1}
-              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
               value={values[key as keyof StalenessThresholds] ?? 12}
               onChange={(e) =>
                 setValues((v) => ({
@@ -181,12 +182,16 @@ function SurplusSection() {
         Percentage of net income that should remain as surplus before a warning is shown.
       </p>
       <div className="flex items-center gap-2 max-w-sm">
-        <input
+        <label htmlFor="surplus-pct" className="sr-only">
+          Surplus benchmark percentage
+        </label>
+        <Input
+          id="surplus-pct"
           type="number"
           min={0}
           max={100}
           step={0.1}
-          className="w-24 rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+          className="w-24"
           value={pct}
           onChange={(e) => setPct(parseFloat(e.target.value) || 0)}
         />
@@ -222,33 +227,39 @@ function IsaSection() {
       </p>
       <div className="grid grid-cols-3 gap-3 max-w-sm">
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Annual limit (£)</label>
-          <input
+          <label htmlFor="isa-limit" className="text-xs text-muted-foreground">
+            Annual limit (£)
+          </label>
+          <Input
+            id="isa-limit"
             type="number"
             min={0}
-            className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
             value={limit}
             onChange={(e) => setLimit(parseFloat(e.target.value) || 0)}
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Month (1–12)</label>
-          <input
+          <label htmlFor="isa-month" className="text-xs text-muted-foreground">
+            Month (1–12)
+          </label>
+          <Input
+            id="isa-month"
             type="number"
             min={1}
             max={12}
-            className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
             value={month}
             onChange={(e) => setMonth(parseInt(e.target.value) || 1)}
           />
         </div>
         <div className="space-y-1">
-          <label className="text-xs text-muted-foreground">Day (1–31)</label>
-          <input
+          <label htmlFor="isa-day" className="text-xs text-muted-foreground">
+            Day (1–31)
+          </label>
+          <Input
+            id="isa-day"
             type="number"
             min={1}
             max={31}
-            className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
             value={day}
             onChange={(e) => setDay(parseInt(e.target.value) || 1)}
           />
@@ -326,11 +337,12 @@ function HouseholdSection() {
       <div className="space-y-2">
         {editingName ? (
           <div className="flex items-center gap-2 max-w-sm">
-            <input
-              className="flex-1 rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            <Input
+              className="flex-1"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
               autoFocus
+              aria-label="Household name"
             />
             <Button size="sm" onClick={handleRename} disabled={renameHousehold.isPending}>
               Save
@@ -390,13 +402,14 @@ function HouseholdSection() {
         <div className="space-y-3">
           <p className="text-sm font-medium">Invite member</p>
           <form onSubmit={handleInvite} className="flex items-center gap-2 max-w-sm">
-            <input
+            <Input
               type="email"
               placeholder="Email address"
-              className="flex-1 rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              className="flex-1"
               value={inviteEmail}
               onChange={(e) => setInviteEmail(e.target.value)}
               required
+              aria-label="Invite email address"
             />
             <Button type="submit" size="sm" disabled={inviteMember.isPending}>
               {inviteMember.isPending ? "Creating…" : "Create link"}
@@ -520,11 +533,12 @@ function SnapshotsSection() {
           <div key={snap.id} className="border-b last:border-b-0 py-2">
             {editingId === snap.id ? (
               <div className="flex items-center gap-2">
-                <input
-                  className="flex-1 rounded border px-2 py-1 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                <Input
+                  className="flex-1"
                   value={editName}
                   onChange={(e) => setEditName(e.target.value)}
                   autoFocus
+                  aria-label="Snapshot name"
                 />
                 <Button
                   size="sm"
@@ -707,7 +721,8 @@ export default function SettingsPage() {
       </aside>
 
       {/* Content */}
-      <main className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-8">
+        <h1 className="sr-only">Settings</h1>
         <div className="max-w-2xl space-y-12">
           <div ref={setRef("profile")}>
             <ProfileSection />
@@ -734,7 +749,7 @@ export default function SettingsPage() {
             <RebuildSection />
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

@@ -12,8 +12,8 @@ export function StalenessIndicator({ lastReviewedAt, thresholdMonths }: Stalenes
   const label = stalenessLabel(lastReviewedAt);
 
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-amber-500" title={label}>
-      <span className="inline-block h-[5px] w-[5px] rounded-full bg-amber-500 shrink-0" />
+    <span className="inline-flex items-center gap-1 text-xs text-attention" title={label}>
+      <span className="inline-block h-[5px] w-[5px] rounded-full bg-attention shrink-0" />
       {months}mo ago
     </span>
   );

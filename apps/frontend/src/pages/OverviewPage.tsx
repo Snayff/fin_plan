@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import type React from "react";
 import { useSearchParams } from "react-router-dom";
 import { useWaterfallSummary } from "@/hooks/useWaterfall";
+import type { WaterfallSummary } from "@finplan/shared";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { WaterfallLeftPanel } from "@/components/overview/WaterfallLeftPanel";
@@ -85,7 +86,8 @@ export default function OverviewPage() {
   const { data: snapshotData } = useSnapshot(selectedSnapshotId);
 
   const isViewingSnapshot = selectedSnapshotId !== null;
-  const summary = isViewingSnapshot && snapshotData?.data ? snapshotData.data : liveSummary;
+  const summary: WaterfallSummary | undefined =
+    isViewingSnapshot && snapshotData?.data ? (snapshotData.data as WaterfallSummary) : liveSummary;
   const snapshotDate =
     isViewingSnapshot && snapshotData?.createdAt ? new Date(snapshotData.createdAt) : null;
 
@@ -140,7 +142,7 @@ export default function OverviewPage() {
     <SkeletonLoader variant="left-panel" />
   ) : inBuild && summary ? (
     <WaterfallLeftPanel
-      summary={summary as any}
+      summary={summary}
       onSelectItem={() => {}}
       onOpenCashflowCalendar={() => {}}
       selectedItemId={null}
@@ -151,7 +153,7 @@ export default function OverviewPage() {
     />
   ) : summary && !isWaterfallEmpty ? (
     <WaterfallLeftPanel
-      summary={summary as any}
+      summary={summary}
       onSelectItem={(item) => setView({ type: "item", item })}
       onOpenCashflowCalendar={() => setView({ type: "cashflow" })}
       selectedItemId={view.type === "item" ? view.item.id : null}

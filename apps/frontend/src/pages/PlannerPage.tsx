@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
+import { useSearchParams } from "react-router-dom";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { PlannerLeftPanel } from "@/components/planner/PlannerLeftPanel";
 import { PurchaseListPanel } from "@/components/planner/PurchaseListPanel";
@@ -15,7 +16,18 @@ type RightView =
   | { type: "none" };
 
 export default function PlannerPage() {
-  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const year = Number(searchParams.get("year")) || new Date().getFullYear();
+  const setYear = useCallback(
+    (updater: (prev: number) => number) => {
+      setSearchParams((prev) => {
+        const current = Number(prev.get("year")) || new Date().getFullYear();
+        const next = updater(current);
+        return { year: String(next) };
+      });
+    },
+    [setSearchParams]
+  );
   const [view, setView] = useState<RightView>({ type: "purchases" });
   const isReadOnly = year < new Date().getFullYear();
 

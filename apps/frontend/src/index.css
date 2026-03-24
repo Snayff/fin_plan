@@ -104,31 +104,6 @@
     --z-modal: 50;
     --z-toast: 60;
     --z-tooltip: 70;
-
-    /* -------------------------------------------------------------------------
-       DEPRECATED — transition aliases for app components not yet migrated.
-       These map old token names to their closest new equivalents.
-       Remove once all app components use the new tokens directly.
-       ------------------------------------------------------------------------- */
-    --income: var(--tier-income);
-    --income-foreground: 230 100% 97% / 0.92;
-    --income-hover: 199 86% 42%;
-    --income-subtle: 199 40% 15%;
-    --staleness: var(--attention);
-    --staleness-foreground: 230 100% 97% / 0.92;
-    --staleness-subtle: 38 40% 15%;
-    --brand: 258 90% 66%;
-    --brand-foreground: 230 100% 97% / 0.92;
-    --brand-subtle: 258 40% 15%;
-    --warning: var(--attention);
-    --warning-foreground: 230 100% 97% / 0.92;
-    --warning-subtle: 38 40% 15%;
-    --highlight: var(--attention);
-    --highlight-foreground: 230 100% 97% / 0.92;
-    --highlight-subtle: 38 40% 15%;
-    --expense: 225 32% 16%;
-    --expense-foreground: 230 100% 97% / 0.92;
-    --expense-subtle: 225 32% 12%;
   }
 }
 
@@ -241,33 +216,6 @@
 
   .text-success {
     color: hsl(var(--success));
-  }
-
-  /* Warning utilities (deprecated — use attention) */
-  .bg-warning {
-    background-color: hsl(var(--attention));
-  }
-
-  .text-warning {
-    color: hsl(var(--attention));
-  }
-
-  /* Highlight utilities (deprecated) */
-  .bg-highlight {
-    background-color: hsl(var(--attention));
-  }
-
-  .text-highlight {
-    color: hsl(var(--attention));
-  }
-
-  /* Expense utilities (deprecated) */
-  .bg-expense {
-    background-color: hsl(var(--expense));
-  }
-
-  .text-expense {
-    color: hsl(var(--expense));
   }
 
   /* Achievement animation */

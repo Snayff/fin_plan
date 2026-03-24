@@ -1,11 +1,11 @@
 /**
  * ConfirmDialog Component (shadcn AlertDialog wrapper)
- * 
+ *
  * Migration wrapper to maintain backward compatibility.
  * Uses shadcn AlertDialog with our design tokens.
  * Follows design principle: supportive, not supervisory
  */
-import { ReactNode } from 'react';
+import { ReactNode } from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,8 +15,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from './alert-dialog';
-import { cn } from '../../lib/utils';
+} from "./alert-dialog";
+import { cn } from "../../lib/utils";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -27,7 +27,7 @@ interface ConfirmDialogProps {
   confirmText?: string;
   cancelText?: string;
   isLoading?: boolean;
-  variant?: 'danger' | 'warning' | 'info';
+  variant?: "danger" | "warning" | "info";
 }
 
 export default function ConfirmDialog({
@@ -36,16 +36,16 @@ export default function ConfirmDialog({
   onConfirm,
   title,
   message,
-  confirmText = 'Confirm',
-  cancelText = 'Cancel',
+  confirmText = "Confirm",
+  cancelText = "Cancel",
   isLoading = false,
-  variant = 'warning',
+  variant = "warning",
 }: ConfirmDialogProps) {
   // Map variants to our design token system
   const variantStyles = {
-    danger: 'bg-destructive hover:bg-destructive/90 text-destructive-foreground',
-    warning: 'bg-warning hover:bg-warning/90 text-warning-foreground',
-    info: 'bg-primary hover:bg-primary-hover text-primary-foreground',
+    danger: "bg-destructive hover:bg-destructive/90 text-destructive-foreground",
+    warning: "bg-attention hover:bg-attention/90 text-foreground",
+    info: "bg-primary hover:bg-primary-hover text-primary-foreground",
   };
 
   return (
@@ -53,9 +53,7 @@ export default function ConfirmDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
-          <AlertDialogDescription className="text-text-secondary">
-            {message}
-          </AlertDialogDescription>
+          <AlertDialogDescription className="text-text-secondary">{message}</AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel onClick={onClose} disabled={isLoading}>
@@ -66,7 +64,7 @@ export default function ConfirmDialog({
             disabled={isLoading}
             className={cn(variantStyles[variant])}
           >
-            {isLoading ? 'Processing...' : confirmText}
+            {isLoading ? "Processing..." : confirmText}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
