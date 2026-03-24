@@ -17,6 +17,7 @@ const WealthPage = lazy(() => import("./pages/WealthPage"));
 const PlannerPage = lazy(() => import("./pages/PlannerPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const DesignRenewPage = lazy(() => import("./pages/DesignRenewPage"));
+const WelcomePage = lazy(() => import("./pages/WelcomePage"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
@@ -24,20 +25,45 @@ const PageLoader = () => (
   </div>
 );
 
+function NewUserRedirect({ children }: { children: React.ReactNode }) {
+  const user = useAuthStore((s) => s.user);
+  if (user && !user.activeHouseholdId) {
+    return <Navigate to="/welcome" replace />;
+  }
+  return <>{children}</>;
+}
+
 export function ProtectedAppRoutes() {
   return (
-    <Layout>
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<Navigate to="/overview" replace />} />
-          <Route path="/overview" element={<OverviewPage />} />
-          <Route path="/wealth" element={<WealthPage />} />
-          <Route path="/planner" element={<PlannerPage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="*" element={<Navigate to="/overview" replace />} />
-        </Routes>
-      </Suspense>
-    </Layout>
+    <Routes>
+      <Route
+        path="/welcome"
+        element={
+          <Suspense fallback={<PageLoader />}>
+            <WelcomePage />
+          </Suspense>
+        }
+      />
+      <Route
+        path="/*"
+        element={
+          <NewUserRedirect>
+            <Layout>
+              <Suspense fallback={<PageLoader />}>
+                <Routes>
+                  <Route path="/" element={<Navigate to="/overview" replace />} />
+                  <Route path="/overview" element={<OverviewPage />} />
+                  <Route path="/wealth" element={<WealthPage />} />
+                  <Route path="/planner" element={<PlannerPage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="*" element={<Navigate to="/overview" replace />} />
+                </Routes>
+              </Suspense>
+            </Layout>
+          </NewUserRedirect>
+        }
+      />
+    </Routes>
   );
 }
 

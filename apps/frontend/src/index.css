@@ -319,4 +319,20 @@
   .animate-slide-in-bottom {
     animation: slide-in-bottom 250ms cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* Confetti fall animation (welcome page) */
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  .animate-confetti-fall {
+    animation: confetti-fall 2s ease-in forwards;
+  }
 }
