@@ -1773,3 +1773,9 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-24
 - **Spec:** `docs/5. built/breakout-cards/breakout-cards-spec.md`
 - **Summary:** Adds three container-boundary-breaking card treatments — surplus breakout in MiniWaterfallChart, Net Worth hero breakout in WealthLeftPanel, and floating "Now" card in SnapshotTimeline — to create visual tension and hierarchy at key semantic locations.
+
+## Design Polish
+
+- **Implemented:** 2026-03-24
+- **Spec:** `docs/5. built/design-polish/design-polish-spec.md`
+- **Summary:** Brings the design system to life with cascade connectors between waterfall tiers, D3 typography hierarchy, dual ambient page glows for sense of place, ghosted empty states with callout gradient CTAs, and six consistency fixes (amber tokens, button components, styled checkboxes, wordmark, confetti, snapshot truncation).
