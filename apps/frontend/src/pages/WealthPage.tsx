@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type React from "react";
 import type { AssetClass } from "@finplan/shared";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
@@ -26,7 +27,13 @@ export default function WealthPage() {
       accounts={accounts}
       onSelectClass={(cls: AssetClass) => setView({ type: "list", assetClass: cls })}
       onSelectTrust={(name: string) => setView({ type: "list", assetClass: `trust:${name}` })}
-      selectedClass={view.type === "list" ? (view.assetClass as AssetClass | "trust") : null}
+      selectedClass={
+        view.type === "list"
+          ? (view.assetClass as AssetClass | "trust")
+          : view.type === "detail"
+            ? (view.account.assetClass as AssetClass | "trust")
+            : null
+      }
       selectedTrustName={null}
     />
   ) : null;
@@ -44,6 +51,7 @@ export default function WealthPage() {
         accounts={filteredAccounts}
         isaTotals={isaTotals}
         onSelectAccount={(acc: any) => setView({ type: "detail", account: acc })}
+        onBack={() => setView({ type: "none" })}
         selectedAccountId={null}
       />
     );

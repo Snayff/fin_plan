@@ -13,15 +13,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { isStale, stalenessLabel } from "@/utils/staleness";
 import { useSettings } from "@/hooks/useSettings";
-
-const CLASS_LABELS: Record<string, string> = {
-  savings: "Savings",
-  pensions: "Pensions",
-  investments: "Investments",
-  property: "Property",
-  vehicles: "Vehicles",
-  other: "Other",
-};
+import { CLASS_LABELS } from "./assetClassLabels";
 
 type InlineMode = "none" | "edit" | "valuation";
 

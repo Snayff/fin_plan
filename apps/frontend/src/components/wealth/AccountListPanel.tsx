@@ -7,20 +7,14 @@ import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import { StalenessIndicator } from "@/components/common/StalenessIndicator";
 import { useSettings } from "@/hooks/useSettings";
 
-const CLASS_LABELS: Record<string, string> = {
-  savings: "Savings",
-  pensions: "Pensions",
-  investments: "Investments",
-  property: "Property",
-  vehicles: "Vehicles",
-  other: "Other",
-};
+import { CLASS_LABELS } from "./assetClassLabels";
 
 interface AccountListPanelProps {
   assetClass: AssetClass | string;
   accounts: any[];
   isaTotals?: IsaAllowance[];
   onSelectAccount: (acc: any) => void;
+  onBack: () => void;
   selectedAccountId: string | null;
 }
 
@@ -29,6 +23,7 @@ export function AccountListPanel({
   accounts,
   isaTotals,
   onSelectAccount,
+  onBack,
   selectedAccountId,
 }: AccountListPanelProps) {
   const { data: settings } = useSettings();
@@ -47,9 +42,21 @@ export function AccountListPanel({
 
   return (
     <div className="space-y-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold">{heading}</h2>
+      {/* Breadcrumb */}
+      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+        <button
+          type="button"
+          onClick={onBack}
+          className="hover:text-foreground transition-colors flex items-center gap-1"
+        >
+          ← All classes
+        </button>
+        <span>/</span>
+        <span className="text-foreground font-medium">{heading}</span>
+      </div>
+
+      {/* Add account button */}
+      <div className="flex justify-end">
         <Button
           variant="ghost"
           size="sm"
