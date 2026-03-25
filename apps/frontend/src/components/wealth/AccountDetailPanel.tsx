@@ -27,6 +27,14 @@ interface AccountDetailPanelProps {
   onBack: () => void;
 }
 
+function isNewTaxYearBannerNeeded(updatedAt: string | undefined): boolean {
+  if (!updatedAt) return false;
+  const now = new Date();
+  const mostRecentApril6 = new Date(now.getFullYear(), 3, 6);
+  if (now < mostRecentApril6) return false;
+  return new Date(updatedAt) < mostRecentApril6;
+}
+
 function monthsUntilEndOfYear(): number {
   const now = new Date();
   const endOfYear = new Date(now.getFullYear(), 11, 31);
@@ -158,6 +166,14 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
         <span className="text-foreground font-medium">{account.name}</span>
       </div>
 
+      {/* ISA new tax year banner */}
+      {isSavings && account.isISA && isNewTaxYearBannerNeeded(account.updatedAt) && (
+        <div className="rounded-md bg-amber-500/10 border border-amber-500/30 px-3 py-2 text-sm text-amber-600 dark:text-amber-400">
+          It's a new tax year — your ISA allowance has reset. Update your contributions for each ISA
+          account.
+        </div>
+      )}
+
       {/* Balance */}
       <div>
         {!isSavings && (
@@ -173,6 +189,12 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
         )}
         {isSavings && account.interestRate != null && (
           <p className="text-sm text-muted-foreground">{account.interestRate}% p.a.</p>
+        )}
+        {isSavings && linkedContrib > 0 && (
+          <p className="text-sm text-muted-foreground">
+            Monthly contribution:{" "}
+            <span className="font-medium text-foreground">{formatCurrency(linkedContrib)}/mo</span>
+          </p>
         )}
         {lastReviewedAt && (
           <p className="text-sm mt-0.5" style={accountIsStale ? { color: "#f59e0b" } : undefined}>

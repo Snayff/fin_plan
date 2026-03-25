@@ -72,6 +72,21 @@ export function CashflowCalendar({ year, onBack }: CashflowCalendarProps) {
                   ))}
                 </ul>
               )}
+              {month.oneOffIncome.length > 0 && (
+                <ul className="mt-1 space-y-0.5">
+                  {month.oneOffIncome.map((income) => (
+                    <li
+                      key={income.id}
+                      className="flex items-center justify-between text-xs text-muted-foreground"
+                    >
+                      <span>{income.name}</span>
+                      <span className="text-green-600 dark:text-green-400">
+                        +{formatCurrency(income.amount)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
             </div>
           );
         })}
