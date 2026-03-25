@@ -1803,3 +1803,9 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/nudge-card/nudge-card-spec.md`
 - **Summary:** Contextual prompt component that surfaces mechanical financial observations (cashflow shortfalls, higher-rate savings opportunities, ISA allowance) in right panels — one at a time, arithmetic-only, never prescriptive — using amber attention tokens and absence as the default state.
+
+## Planner — Gifts
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/planner-gifts/planner-gifts-spec.md`
+- **Summary:** Gift planner organised by person with predefined and custom event types, per-event budgets, and upcoming/by-person views with year selector and read-only prior year support.
