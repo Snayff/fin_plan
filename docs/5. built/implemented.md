@@ -1821,3 +1821,9 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/overview-waterfall/overview-waterfall-spec.md`
 - **Summary:** Two-panel waterfall display showing income cascade through committed spend, discretionary spend, and surplus, with tier colour tokens, stale badges, yearly ÷12 committed costs, and surplus benchmark indicator.
+
+## Definition Tooltip
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/definition-tooltip/definition-tooltip-spec.md`
+- **Summary:** A `<DefinitionTooltip>` component with a centralised 18-term dictionary that wraps financial terms with a hover tooltip at each prescribed location across the app.
