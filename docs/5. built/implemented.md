@@ -1834,9 +1834,14 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Spec:** `docs/5. built/staleness-indicators/staleness-indicators-spec.md`
 - **Summary:** Ambient amber dot indicators surface items that haven't been reviewed within their configured threshold, covering all waterfall tiers and wealth accounts.
 
-
 ## Yearly Bills — Cashflow Calendar
 
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/yearly-bills-calendar/yearly-bills-calendar-spec.md`
 - **Summary:** A 12-month cashflow calendar accessible from the Yearly Bills row, showing monthly pot progression, bill deductions at their due month, one-off income entries, shortfall highlighting in amber, and a NudgeCard with arithmetic-only options when a shortfall is detected.
+
+## Wealth Accounts
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/wealth-accounts/wealth-accounts-spec.md`
+- **Summary:** A two-panel Wealth page showing total net worth, YTD change, by-liquidity breakdown, and accounts grouped by asset class, with per-account detail including 24-month history chart, savings projection, waterfall contribution display, and ISA new tax year banner.
