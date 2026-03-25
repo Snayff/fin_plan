@@ -1,3 +1,15 @@
+/**
+ * Curated logo library — keyed by provider/institution slug.
+ * Populated incrementally; component falls back to initials when key is absent.
+ */
+const LOGO_LIBRARY: Record<string, string> = {
+  // e.g. monzo: "/logos/monzo.svg",
+};
+
+export function getLogoUrl(key: string): string | undefined {
+  return LOGO_LIBRARY[key];
+}
+
 export function getInitials(name: string): string {
   const parts = name.trim().split(/\s+/);
   if (parts.length === 1) return parts[0]!.charAt(0).toUpperCase();

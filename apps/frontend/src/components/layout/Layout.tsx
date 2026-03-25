@@ -1,7 +1,7 @@
 import { type ReactNode, useState, useCallback } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Menu } from "lucide-react";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/common/Toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { HouseholdSwitcher } from "./HouseholdSwitcher";
@@ -146,7 +146,7 @@ export default function Layout({ children }: { children: ReactNode }) {
         {children}
       </main>
 
-      <Toaster position="bottom-right" richColors />
+      <Toaster />
     </div>
   );
 }

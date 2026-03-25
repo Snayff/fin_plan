@@ -1,3 +1,4 @@
+import { useState, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,8 @@ interface ButtonPairProps {
   rightVariant?: ButtonVariant;
   isLoading?: boolean;
   disabled?: boolean;
+  /** When true, clicking the right button triggers a brief success colour flash */
+  rightClickFlash?: boolean;
   className?: string;
 }
 
@@ -24,8 +27,19 @@ export function ButtonPair({
   rightVariant = "default",
   isLoading = false,
   disabled = false,
+  rightClickFlash = false,
   className,
 }: ButtonPairProps) {
+  const [flashing, setFlashing] = useState(false);
+
+  const handleRightClick = useCallback(() => {
+    if (rightClickFlash) {
+      setFlashing(true);
+      setTimeout(() => setFlashing(false), 700);
+    }
+    onRightClick();
+  }, [rightClickFlash, onRightClick]);
+
   return (
     <div className={cn("flex items-center gap-2", className)}>
       <Button
@@ -37,11 +51,20 @@ export function ButtonPair({
         {leftLabel}
       </Button>
       <Button
-        variant={rightVariant}
+        variant={flashing ? "outline" : rightVariant}
         size="sm"
-        onClick={onRightClick}
+        onClick={handleRightClick}
         disabled={disabled}
         aria-busy={isLoading}
+        style={
+          flashing
+            ? {
+                borderColor: "rgba(16, 185, 129, 0.6)",
+                color: "#10b981",
+                transition: "border-color 150ms ease-out, color 150ms ease-out",
+              }
+            : undefined
+        }
       >
         {isLoading ? (
           <span className="inline-flex items-center gap-1.5">

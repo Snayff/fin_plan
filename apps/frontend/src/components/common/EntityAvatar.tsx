@@ -1,4 +1,4 @@
-import { getInitials, getAvatarColor } from "@/utils/avatar";
+import { getInitials, getAvatarColor, getLogoUrl } from "@/utils/avatar";
 import { cn } from "@/lib/utils";
 
 const SIZE_CLASSES = {
@@ -9,12 +9,21 @@ const SIZE_CLASSES = {
 
 interface EntityAvatarProps {
   name: string;
+  /** Direct image URL (user-uploaded) — takes priority over logoKey */
   imageUrl?: string;
+  /** Key into the curated logo library (e.g. "monzo") */
+  logoKey?: string;
   size?: keyof typeof SIZE_CLASSES;
   className?: string;
 }
 
-export function EntityAvatar({ name, imageUrl, size = "md", className }: EntityAvatarProps) {
+export function EntityAvatar({
+  name,
+  imageUrl,
+  logoKey,
+  size = "md",
+  className,
+}: EntityAvatarProps) {
   const sizeClass = SIZE_CLASSES[size];
   const base = cn(
     "rounded-full flex items-center justify-center shrink-0 overflow-hidden font-semibold",
@@ -22,8 +31,10 @@ export function EntityAvatar({ name, imageUrl, size = "md", className }: EntityA
     className
   );
 
-  if (imageUrl) {
-    return <img src={imageUrl} alt={name} className={cn(base, "object-cover")} />;
+  const resolvedUrl = imageUrl ?? (logoKey ? getLogoUrl(logoKey) : undefined);
+
+  if (resolvedUrl) {
+    return <img src={resolvedUrl} alt={name} className={cn(base, "object-cover")} />;
   }
 
   return (
