@@ -1815,3 +1815,9 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/household-management/household-management-spec.md`
 - **Summary:** Multi-member household support with owner/member roles, QR code and URL invite flow, member removal, household rename, and leave household with sole-owner guard and active-household handoff.
+
+## Overview — Waterfall Display
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/overview-waterfall/overview-waterfall-spec.md`
+- **Summary:** Two-panel waterfall display showing income cascade through committed spend, discretionary spend, and surplus, with tier colour tokens, stale badges, yearly ÷12 committed costs, and surplus benchmark indicator.
