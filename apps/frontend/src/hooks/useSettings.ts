@@ -139,10 +139,11 @@ export function useLeaveHousehold() {
 
   return useMutation({
     mutationFn: (householdId: string) => householdService.leaveHousehold(householdId),
-    onSuccess: async () => {
+    onSuccess: async (_data, householdId) => {
       const { user } = await authService.getCurrentUser(accessToken!);
       setUser(user, accessToken!);
-      void queryClient.invalidateQueries();
+      void queryClient.invalidateQueries({ queryKey: ["households"] });
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
     },
   });
 }

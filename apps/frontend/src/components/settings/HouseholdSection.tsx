@@ -154,9 +154,8 @@ export function HouseholdSection() {
         ))}
       </div>
 
-      {/* Leave household */}
       {!isSoleOwner && currentMember && (
-        <div>
+        <>
           <button
             className="text-xs text-muted-foreground hover:text-destructive transition-colors"
             onClick={() => setShowLeaveConfirm(true)}
@@ -172,7 +171,7 @@ export function HouseholdSection() {
             onConfirm={handleLeave}
             variant="danger"
           />
-        </div>
+        </>
       )}
 
       {/* Invite form */}
