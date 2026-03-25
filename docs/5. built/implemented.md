@@ -1863,3 +1863,10 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/settings/settings-spec.md`
 - **Summary:** A settings page covering profile, staleness thresholds, surplus benchmark, ISA configuration, household management, snapshots, trust account beneficiary names, ended income sources, and waterfall rebuild.
+
+
+## Review Wizard
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/review-wizard/review-wizard-spec.md`
+- **Summary:** A full-screen 6-step wizard that surfaces stale items by category, letting users update or confirm each item and closing with a named snapshot.

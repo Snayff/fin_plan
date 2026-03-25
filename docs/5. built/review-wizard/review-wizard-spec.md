@@ -1,10 +1,10 @@
 ---
 feature: review-wizard
-status: backlog
+status: implemented
 priority: high
 deferred: false
 phase: 11
-implemented_date:
+implemented_date: 2026-03-25
 ---
 
 # Review Wizard
