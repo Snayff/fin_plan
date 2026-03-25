@@ -1875,3 +1875,9 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/wealth-trust-savings/wealth-trust-savings-spec.md`
 - **Summary:** A dedicated "Held on behalf of" section in the Wealth left panel for accounts where the household is custodian but not the beneficial owner, excluded from net worth and labelled with the beneficiary's name, with beneficiary management in Settings.
+
+## Waterfall Creation Wizard
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/waterfall-creation-wizard/waterfall-creation-wizard-spec.md`
+- **Summary:** A 7-step full-screen wizard guiding new users through household setup, income, monthly bills, yearly bills, discretionary spending, savings allocations, and a summary with an optional opening snapshot.
