@@ -2,6 +2,9 @@
 
 > This is the entry point for the finplan design documentation. Start here to understand the design philosophy, constraints, and concrete rules that govern the UI.
 
+> Start here. This is the navigation guide for all design documentation.
+>>>>>>> Stashed changes:docs/2. design/_design-readme.md
+
 ---
 
 ## What finplan Is
@@ -10,8 +13,9 @@ finplan is a personal financial planning tool for households. It is not a ledger
 
 ---
 
-## Document Map
+## Where to Find What You Need
 
+<<<<<<< Updated upstream:docs/renew-finplan/design/_design-readme.md
 ### Design docs (this directory)
 
 | Document                                     | Purpose                                                                                             | Read when                             |

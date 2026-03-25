@@ -101,5 +101,19 @@ No API — all nudge logic runs client-side using data already fetched for the p
   - Phase 8 (Overview): Yearly Bills and Savings nudges
   - Phase 9 (Wealth): Wealth account nudges
   - Phase 8 (Cashflow Calendar): Cashflow shortfall nudges
-- Design system reference: `design-components.md` section "NudgeCard"
+- Design system reference: `design-system.md` section "NudgeCard"
 - Design anchor #12: "Nudges are one at a time, arithmetic-only, never stacked"
+
+
+## Remaining Work
+
+The NudgeCard shell component is complete. The following contextual hooks and page-level integrations are outstanding:
+
+- [ ] `useYearlyBillNudge` hook — generates nudge when cashflow shortfall detected
+- [ ] `useSavingsNudge` hook — generates nudge for savings allocation context
+- [ ] `useWealthAccountNudge` hook — generates nudge for wealth account detail context
+- [ ] `useCashflowNudge` hook — generates nudge in cashflow calendar context
+- [ ] Wire nudge hooks into Overview Item Detail panel (savings rows)
+- [ ] Wire nudge hooks into Cashflow Calendar (currently shows placeholder text, not spec-compliant arithmetic)
+- [ ] Wire nudge hooks into Wealth Account Detail panel
+- [ ] Enforce one-NudgeCard-at-a-time per panel view (no stacking mechanism exists)

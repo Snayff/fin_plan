@@ -61,7 +61,7 @@ Implemented backend follows:
 - cookie plugin
 - CSRF protection
 - Helmet
-- rate limiting
+- rate limiting (100 requests per 15 minutes, global, via `@fastify/rate-limit`)
 - global error handler
 
 ### Data Model Status
@@ -107,6 +107,19 @@ So: local-first remains a roadmap direction, not current runtime behavior.
 
 This removes duplicated token plumbing from feature services.
 
+### Cache Invalidation Convention
+
+Mutations always invalidate their relevant query keys on success — the app does **not** use optimistic updates. All UI refreshes come from server-confirmed data:
+
+```ts
+useMutation({
+  mutationFn: accountService.createAccount,
+  onSuccess: () => queryClient.invalidateQueries({ queryKey: ["accounts"] }),
+});
+```
+
+This keeps the cache simple and avoids the complexity of rollback logic.
+
 ### Frontend Validation Pattern
 
 Form submissions follow a two-stage validation approach:
@@ -119,13 +132,13 @@ const handleSubmit = () => {
   // Stage 1: schema/format validation
   const result = mySchema.safeParse({ field: value });
   if (!result.success) {
-    showError(result.error.errors[0]?.message ?? 'Invalid input');
+    showError(result.error.errors[0]?.message ?? "Invalid input");
     return;
   }
 
   // Stage 2: conflict check against already-loaded state
   if (loadedItems.some((item) => item.field === value.trim())) {
-    showError('This item already exists');
+    showError("This item already exists");
     return;
   }
 

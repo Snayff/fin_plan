@@ -90,4 +90,4 @@ All income entered in finplan is net — take-home pay after tax, National Insur
 
 ---
 
-For navigation structure, page patterns, component specifications, and all concrete UI rules, see `design-system.md`.
+For navigation structure, page patterns, component specifications, and all concrete UI rules, see `_design-readme.md` to find the right doc.

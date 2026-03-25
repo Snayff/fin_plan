@@ -118,6 +118,15 @@ No API.
 ### Notes
 
 - All components are built in Phase 7 before any page-level work begins
-- Design system reference: `design-components.md` sections "SkeletonLoader", "StaleDataBanner", "ButtonPair", "EntityAvatar"; `design-patterns.md` section "4.11 Inline Edit Form"
+- Design system reference: `design-system.md` sections "SkeletonLoader", "StaleDataBanner", "ButtonPair", "EntityAvatar", and "4.11 Motion & Transition"
 - Panel transitions apply to the right panel content area inside `TwoPanelLayout`, not to the layout shell itself
 - The curated logo library for EntityAvatar can start empty and be populated incrementally — the initials fallback ensures the component always renders
+
+
+## Remaining Work
+
+- [ ] StaleDataBanner: auto-dismiss when a successful sync completes (currently only shows/hides on error state)
+- [ ] ButtonPair: "Still correct ✓" right button should trigger a brief success colour flash and remove the staleness indicator — no confirmation semantic logic currently exists
+- [ ] EntityAvatar: add `logoKey?: string` prop and curated logo library lookup (current implementation only supports `imageUrl` and initials fallback)
+- [ ] Toast animations: fade-up entrance (150ms ease-out) and fade-out exit (150ms ease-in) — no Toast component exists in common components
+- [ ] PanelTransition: verify timing sits within 150–200ms spec range

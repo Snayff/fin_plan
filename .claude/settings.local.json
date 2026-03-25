@@ -67,7 +67,9 @@
       "Bash(sort -t- -k2 -n)",
       "Bash(grep -n \"lastReviewedAt\" packages/shared/src/schemas/*.ts)",
       "Bash(git tag:*)",
-      "Bash(grep -n \"ConfirmBatchWealthInput\\\\|accountIds\\\\|confirmBatch\" packages/shared/src/schemas/*.ts)"
+      "Bash(grep -n \"ConfirmBatchWealthInput\\\\|accountIds\\\\|confirmBatch\" packages/shared/src/schemas/*.ts)",
+      "Read(//c/Users/Gabriel/.claude/**)",
+      "Read(//c/Users/Gabriel/.claude/skills/**)"
     ]
   },
   "hooks": {
