@@ -153,6 +153,114 @@ describe("waterfallService.getWaterfallSummary — income.byType", () => {
   });
 });
 
+describe("waterfallService.getWaterfallSummary — totals and surplus", () => {
+  const makeSource = (overrides: object) => ({
+    id: "s1",
+    householdId: "hh-1",
+    name: "Source",
+    amount: 1000,
+    frequency: "monthly" as const,
+    incomeType: "other" as const,
+    expectedMonth: null,
+    ownerId: null,
+    sortOrder: 0,
+    endedAt: null,
+    lastReviewedAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  });
+
+  it("counts monthly income at face value and annual income at amount/12", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      makeSource({ id: "s1", frequency: "monthly", amount: 3000 }),
+      makeSource({ id: "s2", frequency: "annual", amount: 24000 }),
+    ] as any);
+    prismaMock.committedBill.findMany.mockResolvedValue([]);
+    prismaMock.yearlyBill.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue([]);
+    prismaMock.savingsAllocation.findMany.mockResolvedValue([]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    // 3000 (monthly) + 24000/12 (annual) = 5000
+    expect(summary.income.total).toBe(5000);
+  });
+
+  it("excludes one_off sources from income total", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      makeSource({ id: "s1", frequency: "monthly", amount: 2000 }),
+      makeSource({ id: "s2", frequency: "one_off", amount: 5000 }),
+    ] as any);
+    prismaMock.committedBill.findMany.mockResolvedValue([]);
+    prismaMock.yearlyBill.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue([]);
+    prismaMock.savingsAllocation.findMany.mockResolvedValue([]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    expect(summary.income.total).toBe(2000);
+    expect(summary.income.oneOff).toHaveLength(1);
+  });
+
+  it("calculates committed monthlyTotal and monthlyAvg12 correctly", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedBill.findMany.mockResolvedValue([
+      { id: "b1", householdId: "hh-1", name: "Rent", amount: 1200 },
+      { id: "b2", householdId: "hh-1", name: "Internet", amount: 50 },
+    ] as any);
+    prismaMock.yearlyBill.findMany.mockResolvedValue([
+      { id: "y1", householdId: "hh-1", name: "Insurance", amount: 600, dueMonth: 3 },
+    ] as any);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue([]);
+    prismaMock.savingsAllocation.findMany.mockResolvedValue([]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    expect(summary.committed.monthlyTotal).toBe(1250); // 1200 + 50
+    expect(summary.committed.monthlyAvg12).toBe(50); // 600 / 12
+  });
+
+  it("calculates surplus amount and percentOfIncome", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      makeSource({ id: "s1", frequency: "monthly", amount: 4000 }),
+    ] as any);
+    prismaMock.committedBill.findMany.mockResolvedValue([
+      { id: "b1", householdId: "hh-1", name: "Rent", amount: 1200 },
+    ] as any);
+    prismaMock.yearlyBill.findMany.mockResolvedValue([
+      { id: "y1", householdId: "hh-1", name: "Car tax", amount: 1200, dueMonth: 6 },
+    ] as any);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue([
+      { id: "d1", householdId: "hh-1", name: "Groceries", monthlyBudget: 500 },
+    ] as any);
+    prismaMock.savingsAllocation.findMany.mockResolvedValue([
+      { id: "sv1", householdId: "hh-1", name: "Emergency fund", monthlyAmount: 200 },
+    ] as any);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    // income: 4000
+    // committed: 1200 (bills) + 100 (1200/12 yearly) = 1300
+    // discretionary: 500 + 200 = 700
+    // surplus: 4000 - 1300 - 700 = 2000
+    expect(summary.surplus.amount).toBe(2000);
+    expect(summary.surplus.percentOfIncome).toBe(50); // 2000/4000 * 100
+  });
+
+  it("returns percentOfIncome of 0 when income total is 0", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedBill.findMany.mockResolvedValue([]);
+    prismaMock.yearlyBill.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue([]);
+    prismaMock.savingsAllocation.findMany.mockResolvedValue([]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    expect(summary.surplus.percentOfIncome).toBe(0);
+  });
+});
+
 describe("waterfallService.getCashflow", () => {
   it("correctly calculates pot and marks shortfalls", async () => {
     prismaMock.yearlyBill.findMany.mockResolvedValue([
