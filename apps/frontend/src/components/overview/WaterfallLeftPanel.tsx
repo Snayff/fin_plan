@@ -4,6 +4,7 @@ import { formatCurrency } from "@/utils/format";
 import { cn } from "@/lib/utils";
 import { isStale } from "@/utils/staleness";
 import { StalenessIndicator } from "@/components/common/StalenessIndicator";
+import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
 import { useSettings } from "@/hooks/useSettings";
 import { TierAddForm } from "@/components/overview/build/TierAddForm";
 import type { BuildPhase } from "@/components/overview/build/quick-picks";
@@ -60,7 +61,7 @@ function SectionHeader({
   staleCount,
   dimmed,
 }: {
-  label: string;
+  label: React.ReactNode;
   total: string;
   colorClass: string;
   staleCount: number;
@@ -195,7 +196,7 @@ export function WaterfallLeftPanel({
       {/* COMMITTED */}
       <div className={cn(committedState === "future" && "opacity-40")}>
         <SectionHeader
-          label="Committed"
+          label={<DefinitionTooltip term="Committed Spend">Committed</DefinitionTooltip>}
           total={formatCurrency(committed.monthlyTotal + committed.monthlyAvg12)}
           colorClass="text-tier-committed"
           staleCount={committedStaleCount}
@@ -260,7 +261,7 @@ export function WaterfallLeftPanel({
       {/* DISCRETIONARY */}
       <div className={cn(discretionaryState === "future" && "opacity-40")}>
         <SectionHeader
-          label="Discretionary"
+          label={<DefinitionTooltip term="Discretionary Spend">Discretionary</DefinitionTooltip>}
           total={formatCurrency(discretionary.total + discretionary.savings.total)}
           colorClass="text-tier-discretionary"
           staleCount={discretionaryStaleCount}
@@ -386,7 +387,7 @@ export function WaterfallLeftPanel({
       {/* SURPLUS */}
       <div className={cn(inBuild && buildPhase !== "summary" && "opacity-60")}>
         <SectionHeader
-          label="Surplus"
+          label={<DefinitionTooltip term="Surplus">Surplus</DefinitionTooltip>}
           total={formatCurrency(surplus.amount)}
           colorClass="text-tier-surplus"
           staleCount={0}

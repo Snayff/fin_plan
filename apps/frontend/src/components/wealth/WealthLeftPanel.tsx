@@ -81,7 +81,7 @@ export function WealthLeftPanel({
       <div className="pt-9 px-5 pb-5">
         {/* By Liquidity */}
         <p className="text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-2">
-          By Liquidity
+          By <DefinitionTooltip term="Liquidity">Liquidity</DefinitionTooltip>
         </p>
         <div className="space-y-1">
           <div className="flex justify-between text-sm">

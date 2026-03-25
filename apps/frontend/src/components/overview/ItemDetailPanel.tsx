@@ -13,6 +13,9 @@ import { NudgeCard } from "@/components/common/NudgeCard";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
 import { useYearlyBillNudge, useSavingsNudge } from "@/hooks/useNudge";
+import { Link } from "react-router-dom";
+import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
+import { useWealthAccount } from "@/hooks/useWealth";
 
 interface SelectedItem {
   id: string;
@@ -20,6 +23,7 @@ interface SelectedItem {
   name: string;
   amount: number;
   lastReviewedAt: Date;
+  wealthAccountId?: string | null;
 }
 
 interface ItemDetailPanelProps {
@@ -161,10 +165,18 @@ export function ItemDetailPanel({
 
       <div>
         <h2 className="text-lg font-semibold">{item.name}</h2>
-        <p className="text-3xl font-bold mt-1">{formatCurrency(item.amount)}</p>
+        {item.type === "income_source" && (
+          <p className="text-xs text-muted-foreground mt-0.5">
+            <DefinitionTooltip term="Net Income">Net Income</DefinitionTooltip>
+          </p>
+        )}
+        <p className="text-[30px] font-numeric font-extrabold text-primary mt-1">
+          {formatCurrency(item.amount)}
+        </p>
         {item.type === "yearly_bill" && (
           <p className="text-sm text-muted-foreground mt-0.5">
-            {formatCurrency(item.amount / 12)}/mo avg
+            <DefinitionTooltip term="Amortised (÷12)">Amortised (÷12)</DefinitionTooltip>{" "}
+            {formatCurrency(item.amount / 12)}/mo
           </p>
         )}
         <p className={cn("text-sm mt-0.5", itemIsStale && "text-attention")}>
