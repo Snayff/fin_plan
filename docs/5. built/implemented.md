@@ -1846,6 +1846,12 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Spec:** `docs/5. built/wealth-accounts/wealth-accounts-spec.md`
 - **Summary:** A two-panel Wealth page showing total net worth, YTD change, by-liquidity breakdown, and accounts grouped by asset class, with per-account detail including 24-month history chart, savings projection, waterfall contribution display, and ISA new tax year banner.
 
+## Wealth — ISA Tracking
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/wealth-isa-tracking/wealth-isa-tracking-spec.md`
+- **Summary:** An ISA allowance bar in the Wealth Savings panel showing per-person contribution versus the annual limit, remaining allowance, April 5th deadline, and nudges when approaching or at the limit.
+
 ## Planner — Purchases
 
 - **Implemented:** 2026-03-25
