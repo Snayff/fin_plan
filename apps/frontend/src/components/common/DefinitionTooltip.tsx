@@ -1,6 +1,8 @@
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 const DEFINITIONS = {
+  Income:
+    "All money flowing into your household — salary, freelance, investment income, and any other recurring or one-off receipts.",
   Waterfall:
     "The way finplan structures your finances — income at the top, committed spend deducted first, then discretionary spend, leaving your surplus at the bottom.",
   "Committed Spend":
