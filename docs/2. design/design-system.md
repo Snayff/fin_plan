@@ -1075,13 +1075,13 @@ When a historical snapshot is loaded:
 
 Every user action that changes state must produce visible feedback.
 
-| Action type                                | Feedback mechanism                                                               |
-| ------------------------------------------ | -------------------------------------------------------------------------------- |
-| Instant (copy, toggle, confirm)            | Micro-interaction on the element itself (e.g. copy icon → "Copied!" chip for 2s) |
-| Async (save, sync)                         | Loading state on triggering button → success/error toast on completion           |
-| Staleness confirmation ("Still correct ✓") | Brief `success` colour flash on the button, then normal                          |
-| Wizard step completion                     | Brief confirmation before advancing to next step                                 |
-| Destructive confirmation (delete)          | Modal confirmation before proceeding                                             |
+| Action type                                   | Feedback mechanism                                                                                             |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Instant (copy, toggle, confirm, button press) | Micro-interaction on the element itself (e.g. copy icon → "Copied!" chip for 2s; button press → `scale(0.97)`) |
+| Async (save, sync)                            | Loading state on triggering button → success/error toast on completion                                         |
+| Staleness confirmation ("Still correct ✓")    | Brief `success` colour flash on the button, then normal                                                        |
+| Wizard step completion                        | Brief confirmation before advancing to next step                                                               |
+| Destructive confirmation (delete)             | Modal confirmation before proceeding                                                                           |
 
 Toast notifications: non-blocking, anchor consistently (bottom-right), auto-dismiss after 4s, dismissable manually. Background: `surface-elevated`.
 
@@ -1089,20 +1089,83 @@ Toast notifications: non-blocking, anchor consistently (bottom-right), auto-dism
 
 Meaningful motion communicates spatial relationships. All animations follow this spec:
 
-| Transition                              | Direction            | Duration  | Easing   |
-| --------------------------------------- | -------------------- | --------- | -------- |
-| Right panel deeper (State 2 → State 3)  | Slide-left entrance  | 150–200ms | ease-out |
-| Right panel shallower (breadcrumb back) | Slide-right entrance | 150–200ms | ease-out |
-| Wizard step forward                     | Slide-left           | 150–200ms | ease-out |
-| Wizard step back                        | Slide-right          | 150–200ms | ease-out |
-| Toast entrance                          | Fade-up              | 150ms     | ease-out |
-| Toast exit                              | Fade-out             | 150ms     | ease-in  |
+| Transition                              | Direction            | Duration  | Easing         |
+| --------------------------------------- | -------------------- | --------- | -------------- |
+| Right panel deeper (State 2 → State 3)  | Slide-left entrance  | 150–200ms | ease-out-quart |
+| Right panel shallower (breadcrumb back) | Slide-right entrance | 150–200ms | ease-out-quart |
+| Wizard step forward                     | Slide-left           | 150–200ms | ease-out-quart |
+| Wizard step back                        | Slide-right          | 150–200ms | ease-out-quart |
+| Toast entrance                          | Fade-up              | 150ms     | ease-out-quart |
+| Toast exit                              | Fade-out             | 150ms     | ease-in        |
+
+**Easing Canon**
+
+Two canonical curves. Use these; never `ease`, `ease-in-out`, or bounce/elastic variants:
+
+| Name             | Curve                            | Use for                                            |
+| ---------------- | -------------------------------- | -------------------------------------------------- |
+| `ease-out-quart` | `cubic-bezier(0.25, 1, 0.5, 1)`  | Entrances, stagger, panel slides, most transitions |
+| `ease-out-quint` | `cubic-bezier(0.22, 1, 0.36, 1)` | Pop-in moments (achievement, modal appear)         |
 
 **Rules:**
 
-- Duration: 150–200ms. Motion must never feel like a delay.
-- Easing: ease-out for entrances, ease-in for exits
-- All animations must be trivially disableable via a single toggle on `prefers-reduced-motion`
+- Duration: 150–200ms for interactions. Motion must never feel like a delay.
+- Animate `transform` and `opacity` only — GPU-accelerated. Never animate `width`, `height`, `top`, `left`, `padding`, or `margin`.
+- No bounce or elastic easing — they feel dated and draw attention to the animation itself.
+- All animations must be trivially disableable via `prefers-reduced-motion`. In Framer Motion: pass `initial={false}` on the container when `usePrefersReducedMotion()` returns true.
+
+---
+
+#### Pattern 1 — Panel/Section Stagger Entrance
+
+**What:** A sequence of sibling content blocks fades and lifts into place top-to-bottom on mount.
+
+**When to use:**
+
+- A panel mounts with 3+ sibling blocks that have a natural reading order or conceptual flow (e.g. the waterfall tiers Income → Committed → Discretionary → Surplus)
+- The sequence reinforces a hierarchical or causal relationship between blocks — one leads to the next
+
+**When NOT to use:**
+
+- Individual items within a repeating list — too much motion for many items
+- Panels that update in response to user interaction mid-session — stagger only on initial mount, not on data refresh
+- Modals, drawers, or overlays — these use a single entrance, not stagger
+
+**Spec:** `staggerChildren: 0.06` (60ms between blocks), `250ms` per block, `y: 6→0 + opacity: 0→1`, `ease-out-quart`. Total duration scales with block count (7 blocks ≈ 610ms). Use Framer Motion `variants` propagation pattern: container sets `staggerChildren`, children carry `variants`.
+
+---
+
+#### Pattern 2 — Delight Glow
+
+**What:** A brief radial ambient glow pulses in and fades over ~2s on mount, drawing quiet attention to a meaningful outcome.
+
+**When to use:**
+
+- A "payoff" moment — the UI reveals something the user worked toward in their planning session
+- The outcome is non-judgmental: not a health score, not a target hit/miss — just the natural conclusion of the cascade
+- The element is visible on mount without user interaction required to reach it
+- Current instance: surplus section when `surplus.amount > 0`
+
+**When NOT to use:**
+
+- Any financial value judgement (positive or negative balance, over/under budget)
+- Routine interactions (saving a form, confirming a review)
+- Elements that update frequently mid-session — this is a mount-only animation
+- As a warning or attention signal — amber is the only attention mechanism; glow is delight only
+
+**Spec:** `opacity: 0→1→0` over 2s with 500ms delay. Overlay only (`position: absolute, pointer-events: none`). Colour: the section's tier colour at 9% opacity as a radial gradient (`radial-gradient(ellipse at 50% 50%, hsl(... / 0.09) 0%, transparent 70%)`). GPU-only — opacity animation on a positioned element.
+
+---
+
+#### Pattern 3 — Button Press Feedback
+
+**What:** All `<Button>` components scale to 0.97 on `:active`, returning to 1 on release.
+
+**When to use:** Always — baked into the `Button` CVA base class. No per-instance decision required.
+
+**Extension:** For non-Button interactive surfaces (custom clickable rows, icon-only triggers), consider adding `active:scale-[0.98]` manually when the element is large enough to benefit from tactile feedback.
+
+**Spec:** `active:scale-[0.97]`, `transition-property` includes `transform`, `duration-150 ease-out`.
 
 ---
 
