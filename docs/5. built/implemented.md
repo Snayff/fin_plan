@@ -1857,3 +1857,9 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/planner-purchases/planner-purchases-spec.md`
 - **Summary:** A purchase list organised by status (scheduled / unscheduled / done) with a dedicated right-panel detail view, budget tracking in the left panel with an amber over-budget indicator, and correct not_started/in_progress/done status enums.
+
+## Settings
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/settings/settings-spec.md`
+- **Summary:** A settings page covering profile, staleness thresholds, surplus benchmark, ISA configuration, household management, snapshots, trust account beneficiary names, ended income sources, and waterfall rebuild.

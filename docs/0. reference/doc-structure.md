@@ -13,8 +13,7 @@
 | `2. design/`       | Aesthetic design: philosophy, anchors, design system, definitions                                 |
 | `3. architecture/` | How the app is built: architecture, testing approach, auth lifecycle                              |
 | `4. planning/`     | Features to be built — one folder per feature (spec + plan), plus the overall implementation plan |
-| `5. built/`        | Completed features — tracking what has shipped                                                    |
-| `_archive/`        | Legacy docs preserved for reference, no longer active                                             |
+| `5. built/`        | Completed features — tracking what has shipped                                                    |                                           |
 
 ---
 
