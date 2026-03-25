@@ -10,10 +10,12 @@ import { PurchaseListPanel } from "@/components/planner/PurchaseListPanel";
 import { GiftUpcomingPanel } from "@/components/planner/GiftUpcomingPanel";
 import { GiftPersonListPanel } from "@/components/planner/GiftPersonListPanel";
 import { GiftPersonDetailPanel } from "@/components/planner/GiftPersonDetailPanel";
+import { PurchaseDetailPanel } from "@/components/planner/PurchaseDetailPanel";
 import { usePurchases, useGiftPersons, useYearBudget, useUpcomingGifts } from "@/hooks/usePlanner";
 
 type RightView =
   | { type: "purchases" }
+  | { type: "purchase-detail"; purchase: any }
   | { type: "gifts-upcoming" }
   | { type: "gifts-by-person" }
   | { type: "gift-person"; person: any }
@@ -58,7 +60,7 @@ export default function PlannerPage() {
   const activeView =
     view.type === "gift-person"
       ? "gifts-by-person"
-      : view.type === "none"
+      : view.type === "none" || view.type === "purchase-detail"
         ? "purchases"
         : (view.type as "purchases" | "gifts-upcoming" | "gifts-by-person");
 
@@ -90,8 +92,23 @@ export default function PlannerPage() {
         />
       );
     } else {
-      right = <PurchaseListPanel year={year} purchases={purchases ?? []} isReadOnly={isReadOnly} />;
+      right = (
+        <PurchaseListPanel
+          year={year}
+          purchases={purchases ?? []}
+          isReadOnly={isReadOnly}
+          onSelectPurchase={(p) => setView({ type: "purchase-detail", purchase: p })}
+        />
+      );
     }
+  } else if (view.type === "purchase-detail") {
+    right = (
+      <PurchaseDetailPanel
+        purchase={view.purchase}
+        isReadOnly={isReadOnly}
+        onBack={() => setView({ type: "purchases" })}
+      />
+    );
   } else if (view.type === "gifts-upcoming") {
     if (upcomingLoading && !upcoming) {
       right = <SkeletonLoader variant="right-panel" />;
