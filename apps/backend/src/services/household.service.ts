@@ -121,6 +121,42 @@ export const householdService = {
     });
   },
 
+  async leaveHousehold(householdId: string, userId: string) {
+    const member = await prisma.householdMember.findUnique({
+      where: { householdId_userId: { householdId, userId } },
+    });
+    if (!member) throw new NotFoundError("You are not a member of this household");
+
+    if (member.role === "owner") {
+      const ownerCount = await prisma.householdMember.count({
+        where: { householdId, role: "owner" },
+      });
+      if (ownerCount <= 1) {
+        throw new ValidationError("You are the sole owner of this household and cannot leave");
+      }
+    }
+
+    await prisma.householdMember.delete({
+      where: { householdId_userId: { householdId, userId } },
+    });
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { activeHouseholdId: true },
+    });
+
+    if (user?.activeHouseholdId === householdId) {
+      const otherMembership = await prisma.householdMember.findFirst({
+        where: { userId },
+        orderBy: { joinedAt: "asc" },
+      });
+      await prisma.user.update({
+        where: { id: userId },
+        data: { activeHouseholdId: otherMembership?.householdId ?? null },
+      });
+    }
+  },
+
   // ─── Invites ───────────────────────────────────────────────────────────────
 
   async inviteMember(householdId: string, ownerUserId: string, email: string) {
