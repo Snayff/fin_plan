@@ -178,9 +178,9 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [confirmedItems, setConfirmedItems] = useState<Record<string, string[]>>({});
-  const [updatedItems, setUpdatedItems] = useState<Record<string, { from: number; to: number }>>(
-    {}
-  );
+  const [updatedItems, setUpdatedItems] = useState<
+    Record<string, { name: string; from: number; to: number }>
+  >({});
   const [snapshotName, setSnapshotName] = useState(format(new Date(), "MMMM yyyy") + " Review");
   const [finishing, setFinishing] = useState(false);
   const [initialized, setInitialized] = useState(false);
@@ -301,7 +301,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
 
       const newUpdated = {
         ...updatedItems,
-        [item.id]: { from: fromAmount, to: newAmount },
+        [item.id]: { name: item.name as string, from: fromAmount, to: newAmount },
       };
       setUpdatedItems(newUpdated);
       updateSession.mutate({ updatedItems: newUpdated });
@@ -500,7 +500,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
                   <p className="text-sm font-medium">Changes made</p>
                   {Object.entries(updatedItems).map(([id, change]) => (
                     <div key={id} className="flex justify-between text-sm text-muted-foreground">
-                      <span>{id}</span>
+                      <span>{change.name}</span>
                       <span>
                         {formatCurrency(change.from)} → {formatCurrency(change.to)}
                       </span>
