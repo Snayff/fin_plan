@@ -6,6 +6,7 @@ import { IsaSection } from "@/components/settings/IsaSection";
 import { HouseholdSection } from "@/components/settings/HouseholdSection";
 import { SnapshotsSection } from "@/components/settings/SnapshotsSection";
 import { EndedIncomeSection } from "@/components/settings/EndedIncomeSection";
+import { TrustAccountsSection } from "@/components/settings/TrustAccountsSection";
 import { RebuildSection } from "@/components/settings/RebuildSection";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
@@ -18,6 +19,7 @@ const SECTIONS = [
   { id: "isa", label: "ISA settings" },
   { id: "household", label: "Household" },
   { id: "snapshots", label: "Snapshots" },
+  { id: "trust-accounts", label: "Trust accounts" },
   { id: "income-ended", label: "Ended income" },
   { id: "rebuild", label: "Waterfall rebuild" },
 ] as const;
@@ -81,6 +83,9 @@ export default function SettingsPage() {
             </div>
             <div ref={setRef("snapshots")}>
               <SnapshotsSection />
+            </div>
+            <div ref={setRef("trust-accounts")}>
+              <TrustAccountsSection />
             </div>
             <div ref={setRef("income-ended")}>
               <EndedIncomeSection />

@@ -92,9 +92,7 @@ Before implementing any feature, read the relevant specs in `docs/`:
 | `docs/2. design/design-system.md`          | Design tokens, components, typography, color, motion |
 | `docs/2. design/definitions.md`            | Canonical tooltip text for financial terms           |
 | `docs/3. architecture/`                    | Architecture, testing approach, auth lifecycle       |
-| `docs/4. planning/_implementation-plan.md` | Phase-by-phase rollout with task breakdown           |
 | `docs/4. planning/[feature]/`              | 22 feature spec folders (spec + plan per feature)    |
-| `docs/5. built/implemented.md`             | What's live — single source of truth                 |
 
 ---
 
