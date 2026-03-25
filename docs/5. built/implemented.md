@@ -1864,9 +1864,14 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Spec:** `docs/5. built/settings/settings-spec.md`
 - **Summary:** A settings page covering profile, staleness thresholds, surplus benchmark, ISA configuration, household management, snapshots, trust account beneficiary names, ended income sources, and waterfall rebuild.
 
-
 ## Review Wizard
 
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/review-wizard/review-wizard-spec.md`
 - **Summary:** A full-screen 6-step wizard that surfaces stale items by category, letting users update or confirm each item and closing with a named snapshot.
+
+## Wealth — Trust Savings (Held on Behalf Of)
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/wealth-trust-savings/wealth-trust-savings-spec.md`
+- **Summary:** A dedicated "Held on behalf of" section in the Wealth left panel for accounts where the household is custodian but not the beneficial owner, excluded from net worth and labelled with the beneficiary's name, with beneficiary management in Settings.
