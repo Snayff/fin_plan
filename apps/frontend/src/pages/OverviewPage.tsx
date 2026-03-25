@@ -279,6 +279,7 @@ export default function OverviewPage() {
         item={view.item}
         onBack={() => setView({ type: "none" })}
         snapshotDate={snapshotDate}
+        onViewCashflow={() => setView({ type: "cashflow" })}
       />
     );
   } else if (view.type === "cashflow") {

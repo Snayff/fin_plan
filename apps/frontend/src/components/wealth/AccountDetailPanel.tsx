@@ -14,8 +14,10 @@ import { Button } from "@/components/ui/button";
 import { isStale, stalenessLabel } from "@/utils/staleness";
 import { useSettings } from "@/hooks/useSettings";
 import { CLASS_LABELS } from "./assetClassLabels";
+import { NudgeCard } from "@/components/common/NudgeCard";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
+import { useWealthAccountNudge } from "@/hooks/useNudge";
 
 type InlineMode = "none" | "edit" | "valuation";
 
@@ -58,6 +60,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
   const confirmAccount = useConfirmAccount();
   const updateAccount = useUpdateAccount();
   const { data: settings } = useSettings();
+  const savingsNudge = useWealthAccountNudge(account);
 
   if (historyLoading && !historyRaw) return <SkeletonLoader variant="right-panel" />;
   if (historyError && !historyRaw)
@@ -190,6 +193,10 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
         onLeftClick={() => setInlineMode(inlineMode === "edit" ? "none" : "edit")}
         onRightClick={() => setInlineMode(inlineMode === "valuation" ? "none" : "valuation")}
       />
+
+      {isSavings && savingsNudge && inlineMode === "none" && (
+        <NudgeCard message={savingsNudge.message} options={savingsNudge.options} />
+      )}
 
       {/* Inline Edit Form */}
       {inlineMode === "edit" && (

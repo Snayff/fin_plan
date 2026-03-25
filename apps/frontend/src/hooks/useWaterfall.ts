@@ -14,10 +14,11 @@ export function useWaterfallSummary() {
   });
 }
 
-export function useCashflow(year: number) {
+export function useCashflow(year: number, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: WATERFALL_KEYS.cashflow(year),
     queryFn: () => waterfallService.getCashflow(year),
+    enabled: options?.enabled ?? true,
   });
 }
 

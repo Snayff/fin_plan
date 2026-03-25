@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { useCashflow } from "@/hooks/useWaterfall";
+import { buildShortfallNudge } from "@/hooks/useNudge";
 import { formatCurrency } from "@/utils/format";
 import { NudgeCard } from "@/components/common/NudgeCard";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
@@ -19,7 +20,7 @@ export function CashflowCalendar({ year, onBack }: CashflowCalendarProps) {
       <PanelError variant="right" onRetry={refetch} message="Could not load cashflow calendar" />
     );
 
-  const hasShortfall = months?.some((m) => m.shortfall) ?? false;
+  const cashflowNudge = buildShortfallNudge(months ?? []);
 
   return (
     <div className="space-y-4">
@@ -76,16 +77,8 @@ export function CashflowCalendar({ year, onBack }: CashflowCalendarProps) {
         })}
       </div>
 
-      {hasShortfall && (
-        <NudgeCard
-          message="Some months have a shortfall. Options:"
-          options={[
-            "Increase monthly contribution",
-            "Draw from existing savings when bills fall due",
-          ]}
-          actionLabel="See full calendar"
-          onAction={() => undefined}
-        />
+      {cashflowNudge && (
+        <NudgeCard message={cashflowNudge.message} options={cashflowNudge.options} />
       )}
     </div>
   );
