@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import type { WaterfallSummary } from "@finplan/shared";
+import { usePrefersReducedMotion } from "@/utils/motion";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/lib/utils";
 import { isStale } from "@/utils/staleness";
@@ -145,12 +147,27 @@ export function WaterfallLeftPanel({
   const committedState = tierState("committed");
   const discretionaryState = tierState("discretionary");
 
+  const reduced = usePrefersReducedMotion();
+
+  const containerVariants = {
+    animate: { transition: { staggerChildren: 0.06 } },
+  };
+  const itemVariants = {
+    initial: { opacity: 0, y: 6 },
+    animate: { opacity: 1, y: 0, transition: { duration: 0.25, ease: [0.25, 1, 0.5, 1] } },
+  };
+
   return (
-    <div className="space-y-4 text-sm">
+    <motion.div
+      className="space-y-4 text-sm"
+      variants={containerVariants}
+      initial={reduced ? false : "initial"}
+      animate="animate"
+    >
       {/* INCOME */}
-      <div className={cn(incomeState === "future" && "opacity-40")}>
+      <motion.div variants={itemVariants} className={cn(incomeState === "future" && "opacity-40")}>
         <SectionHeader
-          label="Income"
+          label={<DefinitionTooltip term="Income">Income</DefinitionTooltip>}
           total={formatCurrency(income.total)}
           colorClass="text-tier-income"
           staleCount={incomeStaleCount}
@@ -190,12 +207,17 @@ export function WaterfallLeftPanel({
             {incomeState === "active" && <TierAddForm phase="income" prefillName={prefillName} />}
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <WaterfallConnector text="minus committed" />
+      <motion.div variants={itemVariants}>
+        <WaterfallConnector text="minus committed" />
+      </motion.div>
 
       {/* COMMITTED */}
-      <div className={cn(committedState === "future" && "opacity-40")}>
+      <motion.div
+        variants={itemVariants}
+        className={cn(committedState === "future" && "opacity-40")}
+      >
         <SectionHeader
           label={<DefinitionTooltip term="Committed Spend">Committed</DefinitionTooltip>}
           total={formatCurrency(committed.monthlyTotal + committed.monthlyAvg12)}
@@ -255,12 +277,17 @@ export function WaterfallLeftPanel({
             )}
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <WaterfallConnector text="minus discretionary" />
+      <motion.div variants={itemVariants}>
+        <WaterfallConnector text="minus discretionary" />
+      </motion.div>
 
       {/* DISCRETIONARY */}
-      <div className={cn(discretionaryState === "future" && "opacity-40")}>
+      <motion.div
+        variants={itemVariants}
+        className={cn(discretionaryState === "future" && "opacity-40")}
+      >
         <SectionHeader
           label={<DefinitionTooltip term="Discretionary Spend">Discretionary</DefinitionTooltip>}
           total={formatCurrency(discretionary.total + discretionary.savings.total)}
@@ -382,12 +409,29 @@ export function WaterfallLeftPanel({
             )}
           </div>
         )}
-      </div>
+      </motion.div>
 
-      <WaterfallConnector text="equals" />
+      <motion.div variants={itemVariants}>
+        <WaterfallConnector text="equals" />
+      </motion.div>
 
       {/* SURPLUS */}
-      <div className={cn(inBuild && buildPhase !== "summary" && "opacity-60")}>
+      <motion.div
+        variants={itemVariants}
+        className={cn("relative", inBuild && buildPhase !== "summary" && "opacity-60")}
+      >
+        {surplus.amount > 0 && !reduced && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 0] }}
+            transition={{ duration: 2, delay: 0.5, ease: "easeOut", times: [0, 0.2, 1] }}
+            className="absolute inset-0 pointer-events-none rounded"
+            style={{
+              background:
+                "radial-gradient(ellipse at 50% 50%, hsl(175 72% 57% / 0.09) 0%, transparent 70%)",
+            }}
+          />
+        )}
         <SectionHeader
           label={<DefinitionTooltip term="Surplus">Surplus</DefinitionTooltip>}
           total={formatCurrency(surplus.amount)}
@@ -422,7 +466,7 @@ export function WaterfallLeftPanel({
             Increase savings ▸
           </button>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
