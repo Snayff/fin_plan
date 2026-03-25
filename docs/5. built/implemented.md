@@ -1809,3 +1809,9 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/planner-gifts/planner-gifts-spec.md`
 - **Summary:** Gift planner organised by person with predefined and custom event types, per-event budgets, and upcoming/by-person views with year selector and read-only prior year support.
+
+## Household Management
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/household-management/household-management-spec.md`
+- **Summary:** Multi-member household support with owner/member roles, QR code and URL invite flow, member removal, household rename, and leave household with sole-owner guard and active-household handoff.

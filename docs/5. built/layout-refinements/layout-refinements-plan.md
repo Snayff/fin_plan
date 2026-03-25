@@ -1226,5 +1226,4 @@ bun run lint
 ## Post-conditions
 
 - [ ] Spec status updated to `implemented` in `docs/4. planning/layout-refinements/layout-refinements-spec.md`
-- [ ] Entry added to `docs/5. built/implemented.md`
 - [ ] `docs/2. design/design-system.md` callout gradient section reflects all three canonical locations
