@@ -30,16 +30,24 @@ interface WaterfallLeftPanelProps {
   buildPhase?: BuildPhase | null;
   /** Pre-filled name from quick-pick chip */
   prefillName?: string | null;
-  /** Whether savings sub-form is active in discretionary phase */
-  isSavingsActive?: boolean;
-  /** Toggle between categories and savings in discretionary */
-  onToggleSavings?: () => void;
 }
 
 const ROW_CLASS =
   "flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-accent/50 transition-colors text-[13px] font-body text-text-secondary";
 
 const AMOUNT_CLASS = "font-numeric text-foreground/60";
+
+const PHASE_TIER_INDEX: Record<BuildPhase, number> = {
+  household: -1,
+  income: 0,
+  committed: 1,
+  yearly_bills: 1,
+  discretionary: 2,
+  savings: 2,
+  summary: 3,
+};
+
+const TIER_IDX = { income: 0, committed: 1, discretionary: 2 } as const;
 
 function StaleCountBadge({ count }: { count: number }) {
   if (count === 0) return null;
@@ -95,8 +103,6 @@ export function WaterfallLeftPanel({
   selectedItemId,
   buildPhase = null,
   prefillName = null,
-  isSavingsActive = false,
-  onToggleSavings,
 }: WaterfallLeftPanelProps) {
   const { data: settings } = useSettings();
   const thresholds = settings?.stalenessThresholds ?? {
@@ -132,16 +138,17 @@ export function WaterfallLeftPanel({
   const surplusBenchmark = settings?.surplusBenchmarkPct ?? 10;
 
   const inBuild = buildPhase !== null;
-  const phases: BuildPhase[] = ["income", "committed", "discretionary", "summary"];
-  const activeIdx = buildPhase ? phases.indexOf(buildPhase) : -1;
+  const activeIdx = buildPhase !== null ? PHASE_TIER_INDEX[buildPhase] : -1;
 
   function tierState(tier: "income" | "committed" | "discretionary") {
     if (!inBuild) return "normal" as const;
-    const tierIdx = phases.indexOf(tier);
+    const tierIdx = TIER_IDX[tier];
     if (tierIdx === activeIdx) return "active" as const;
     if (tierIdx < activeIdx) return "completed" as const;
     return "future" as const;
   }
+
+  const isSavingsActive = buildPhase === "savings";
 
   const incomeState = tierState("income");
   const committedState = tierState("committed");
@@ -273,7 +280,18 @@ export function WaterfallLeftPanel({
               <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyAvg12)}</span>
             </div>
             {committedState === "active" && (
-              <TierAddForm phase="committed" prefillName={prefillName} />
+              <TierAddForm
+                key={buildPhase === "yearly_bills" ? "yearly" : "monthly"}
+                phase="committed"
+                prefillName={prefillName}
+                lockedFrequency={
+                  buildPhase === "yearly_bills"
+                    ? "yearly"
+                    : buildPhase === "committed"
+                      ? "monthly"
+                      : undefined
+                }
+              />
             )}
           </div>
         )}
@@ -355,15 +373,6 @@ export function WaterfallLeftPanel({
               <span className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">
                 Savings
               </span>
-              {discretionaryState === "active" && onToggleSavings && (
-                <button
-                  type="button"
-                  onClick={onToggleSavings}
-                  className="text-xs text-primary hover:underline"
-                >
-                  {isSavingsActive ? "← Back to categories" : "Add savings →"}
-                </button>
-              )}
             </div>
             {discretionary.savings.allocations.map((sav) => {
               const handleSelect = () =>

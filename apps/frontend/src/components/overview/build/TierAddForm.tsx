@@ -6,26 +6,30 @@ import { Input } from "@/components/ui/input";
 import { waterfallService } from "@/services/waterfall.service";
 import { WATERFALL_KEYS } from "@/hooks/useWaterfall";
 import { formatCurrency } from "@/utils/format";
-import type { BuildPhase } from "./quick-picks";
 import { MONTH_OPTIONS } from "./quick-picks";
 
 interface TierAddFormProps {
-  phase: Exclude<BuildPhase, "summary">;
+  phase: "income" | "committed" | "discretionary";
   /** Pre-filled name from quick-pick chip click */
   prefillName: string | null;
   /** Whether we're in the savings sub-section of discretionary */
   isSavings?: boolean;
+  /** Lock the frequency toggle for committed phase to a specific value */
+  lockedFrequency?: "monthly" | "yearly";
 }
 
 export function TierAddForm({
   phase,
   prefillName,
   isSavings,
+  lockedFrequency,
 }: TierAddFormProps) {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
-  const [frequency, setFrequency] = useState<"monthly" | "yearly">("monthly");
+  const [frequency, setFrequency] = useState<"monthly" | "yearly">(
+    lockedFrequency ?? "monthly"
+  );
   const [incomeFrequency, setIncomeFrequency] = useState<"monthly" | "annual" | "one_off">(
     "monthly"
   );
@@ -117,8 +121,8 @@ export function TierAddForm({
         autoFocus
       />
 
-      {/* Frequency toggle for committed tier */}
-      {phase === "committed" && (
+      {/* Frequency toggle for committed tier (hidden when frequency is locked) */}
+      {phase === "committed" && !lockedFrequency && (
         <div className="flex gap-1">
           <button
             type="button"

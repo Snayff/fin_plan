@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { useWaterfallSummary } from "@/hooks/useWaterfall";
-import { useCreateSnapshot } from "@/hooks/useSettings";
+import { useCreateSnapshot, useHouseholdDetails, useRenameHousehold } from "@/hooks/useSettings";
 import { useDeleteSetupSession } from "@/hooks/useSetupSession";
+import { useAuthStore } from "@/stores/authStore";
+import { EntityAvatar } from "@/components/common/EntityAvatar";
 import { useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/utils/format";
 import { MiniWaterfallChart } from "./MiniWaterfallChart";
@@ -16,7 +18,6 @@ import {
   PHASE_LABELS,
   PHASE_DESCRIPTIONS,
   QUICK_PICKS,
-  SAVINGS_QUICK_PICKS,
 } from "./quick-picks";
 
 interface BuildGuidePanelProps {
@@ -25,8 +26,6 @@ interface BuildGuidePanelProps {
   onPrevPhase: () => void;
   onQuickPick: (name: string) => void;
   onFinish: () => void;
-  /** Whether the savings sub-form is active in discretionary phase */
-  isSavingsActive: boolean;
 }
 
 export function BuildGuidePanel({
@@ -35,7 +34,6 @@ export function BuildGuidePanel({
   onPrevPhase,
   onQuickPick,
   onFinish,
-  isSavingsActive,
 }: BuildGuidePanelProps) {
   const { data: summary } = useWaterfallSummary();
   const phaseIndex = BUILD_PHASES.indexOf(phase);
@@ -45,6 +43,15 @@ export function BuildGuidePanel({
   const discretionary =
     (summary?.discretionary.total ?? 0) + (summary?.discretionary.savings.total ?? 0);
   const surplus = summary?.surplus.amount ?? 0;
+
+  if (phase === "household") {
+    return (
+      <HouseholdPhase
+        phaseIndex={phaseIndex}
+        onNextPhase={onNextPhase}
+      />
+    );
+  }
 
   if (phase === "summary") {
     return (
@@ -61,52 +68,39 @@ export function BuildGuidePanel({
 
   const nextPhaseLabel =
     phaseIndex < BUILD_PHASES.length - 1 ? PHASE_LABELS[BUILD_PHASES[phaseIndex + 1]!] : null;
-  const picks = isSavingsActive ? SAVINGS_QUICK_PICKS : QUICK_PICKS[phase];
+  const picks = QUICK_PICKS[phase as keyof typeof QUICK_PICKS];
 
   return (
     <div className="flex flex-col h-full">
       {/* Progress dots */}
-      <div className="flex items-center gap-2 mb-6">
-        {BUILD_PHASES.map((p, i) => (
-          <div key={p} className="flex items-center gap-2">
-            <div
-              className={`h-2 w-2 rounded-full transition-colors ${
-                i === phaseIndex
-                  ? "bg-primary scale-125"
-                  : i < phaseIndex
-                    ? "bg-primary/40"
-                    : "bg-muted"
-              }`}
-            />
-            {i < BUILD_PHASES.length - 1 && (
-              <div className={`h-px w-6 ${i < phaseIndex ? "bg-primary/40" : "bg-muted"}`} />
-            )}
-          </div>
-        ))}
-      </div>
+      <ProgressDots phaseIndex={phaseIndex} />
 
       {/* Tier header */}
       <h2 className="text-lg font-semibold mb-1">{PHASE_LABELS[phase]}</h2>
-      <p className="text-sm text-muted-foreground mb-5">{PHASE_DESCRIPTIONS[phase]}</p>
+      <p className="text-sm text-muted-foreground mb-5">
+        {PHASE_DESCRIPTIONS[phase as keyof typeof PHASE_DESCRIPTIONS]}
+      </p>
 
       {/* Quick picks */}
-      <div className="mb-6">
-        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
-          {isSavingsActive ? "Common savings" : "Quick add"}
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {picks.map((pick) => (
-            <button
-              key={pick}
-              type="button"
-              onClick={() => onQuickPick(pick)}
-              className="text-xs px-2.5 py-1 rounded-full border hover:bg-accent/50 transition-colors"
-            >
-              {pick}
-            </button>
-          ))}
+      {picks.length > 0 && (
+        <div className="mb-6">
+          <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+            Quick add
+          </p>
+          <div className="flex flex-wrap gap-1.5">
+            {picks.map((pick) => (
+              <button
+                key={pick}
+                type="button"
+                onClick={() => onQuickPick(pick)}
+                className="text-xs px-2.5 py-1 rounded-full border hover:bg-accent/50 transition-colors"
+              >
+                {pick}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Live cascade */}
       <div className="mb-6">
@@ -131,6 +125,145 @@ export function BuildGuidePanel({
         </Button>
         <Button size="sm" onClick={onNextPhase}>
           {nextPhaseLabel ? `Next: ${nextPhaseLabel} →` : "Review →"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function ProgressDots({ phaseIndex }: { phaseIndex: number }) {
+  return (
+    <div className="flex items-center gap-2 mb-6">
+      {BUILD_PHASES.map((p, i) => (
+        <div key={p} className="flex items-center gap-2">
+          <div
+            className={`h-2 w-2 rounded-full transition-colors ${
+              i === phaseIndex
+                ? "bg-primary scale-125"
+                : i < phaseIndex
+                  ? "bg-primary/40"
+                  : "bg-muted"
+            }`}
+          />
+          {i < BUILD_PHASES.length - 1 && (
+            <div className={`h-px w-4 ${i < phaseIndex ? "bg-primary/40" : "bg-muted"}`} />
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function HouseholdPhase({
+  phaseIndex,
+  onNextPhase,
+}: {
+  phaseIndex: number;
+  onNextPhase: () => void;
+}) {
+  const user = useAuthStore((s) => s.user);
+  const householdId = user?.activeHouseholdId ?? "";
+  const { data } = useHouseholdDetails(householdId);
+  const household = data?.household;
+  const renameHousehold = useRenameHousehold();
+
+  const [editingName, setEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
+
+  function startRename() {
+    setEditName(household?.name ?? "");
+    setEditingName(true);
+  }
+
+  function handleRename() {
+    renameHousehold.mutate(
+      { id: householdId, name: editName },
+      {
+        onSuccess: () => {
+          setEditingName(false);
+          toast.success("Household renamed");
+        },
+      }
+    );
+  }
+
+  return (
+    <div className="flex flex-col h-full">
+      <ProgressDots phaseIndex={phaseIndex} />
+
+      <h2 className="text-lg font-semibold mb-1">Household</h2>
+      <p className="text-sm text-muted-foreground mb-5">
+        Confirm your household name and members before building your waterfall.
+      </p>
+
+      {/* Household name */}
+      <div className="mb-5">
+        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+          Household name
+        </p>
+        {editingName ? (
+          <div className="flex items-center gap-2">
+            <Input
+              className="h-8 text-sm flex-1"
+              value={editName}
+              onChange={(e) => setEditName(e.target.value)}
+              autoFocus
+              aria-label="Household name"
+            />
+            <Button
+              size="sm"
+              onClick={handleRename}
+              disabled={renameHousehold.isPending || !editName.trim()}
+            >
+              Save
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setEditingName(false)}>
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">{household?.name ?? "—"}</span>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+              onClick={startRename}
+            >
+              Rename
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Members list */}
+      <div className="mb-5">
+        <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wider">
+          Members
+        </p>
+        <div className="space-y-1">
+          {(household?.members ?? []).map((member) => (
+            <div key={member.userId} className="flex items-center gap-2 py-1">
+              <EntityAvatar name={member.user.name} size="sm" />
+              <span className="text-sm">{member.user.name}</span>
+            </div>
+          ))}
+        </div>
+        <p className="text-xs text-muted-foreground mt-2">
+          To invite members, visit{" "}
+          <a href="/settings#household" className="text-primary hover:underline">
+            Settings → Household
+          </a>
+          .
+        </p>
+      </div>
+
+      {/* Spacer */}
+      <div className="flex-1" />
+
+      {/* Navigation — Back disabled on first step */}
+      <div className="flex items-center justify-end pt-4 border-t">
+        <Button size="sm" onClick={onNextPhase}>
+          Next: Income →
         </Button>
       </div>
     </div>
@@ -178,21 +311,11 @@ function SummaryPhase({
     }
   }
 
+  const phaseIndex = BUILD_PHASES.indexOf("summary");
+
   return (
     <div className="flex flex-col h-full">
-      {/* Progress dots — all complete */}
-      <div className="flex items-center gap-2 mb-6">
-        {BUILD_PHASES.map((p, i) => (
-          <div key={p} className="flex items-center gap-2">
-            <div
-              className={`h-2 w-2 rounded-full ${
-                i === BUILD_PHASES.length - 1 ? "bg-primary scale-125" : "bg-primary/40"
-              }`}
-            />
-            {i < BUILD_PHASES.length - 1 && <div className="h-px w-6 bg-primary/40" />}
-          </div>
-        ))}
-      </div>
+      <ProgressDots phaseIndex={phaseIndex} />
 
       <div
         data-testid="build-summary-card"

@@ -41,18 +41,24 @@ type RightPanelView =
   | { type: "income_type"; incomeType: IncomeType; label: string }
   | { type: "committed_bills" };
 
-/** Map setup session step numbers to build phases */
+/** Map setup session step numbers to build phases (7-step wizard) */
 const STEP_TO_PHASE: Record<number, BuildPhase> = {
-  0: "income",
-  1: "committed",
-  2: "discretionary",
-  3: "summary",
+  0: "household",
+  1: "income",
+  2: "committed",
+  3: "yearly_bills",
+  4: "discretionary",
+  5: "savings",
+  6: "summary",
 };
 const PHASE_TO_STEP: Record<BuildPhase, number> = {
-  income: 0,
-  committed: 1,
-  discretionary: 2,
-  summary: 3,
+  household: 0,
+  income: 1,
+  committed: 2,
+  yearly_bills: 3,
+  discretionary: 4,
+  savings: 5,
+  summary: 6,
 };
 
 export default function OverviewPage() {
@@ -66,7 +72,6 @@ export default function OverviewPage() {
   // Build mode state
   const [buildPhase, setBuildPhase] = useState<BuildPhase | null>(null);
   const [prefillName, setPrefillName] = useState<string | null>(null);
-  const [isSavingsActive, setIsSavingsActive] = useState(false);
 
   // Session persistence
   const { data: session, isLoading: sessionLoading } = useSetupSession();
@@ -84,7 +89,7 @@ export default function OverviewPage() {
       }
     } else if (searchParams.get("build") === "1" && !buildPhase) {
       // Coming from welcome page — auto-enter build mode
-      setBuildPhase("income");
+      setBuildPhase("household");
       createSession.mutate(undefined);
       setSearchParams({}, { replace: true });
     }
@@ -122,7 +127,7 @@ export default function OverviewPage() {
 
   function enterBuildMode() {
     createSession.mutate(undefined);
-    setBuildPhase("income");
+    setBuildPhase("household");
   }
 
   const handleNextPhase = useCallback(() => {
@@ -131,7 +136,6 @@ export default function OverviewPage() {
     if (idx < BUILD_PHASES.length - 1) {
       const next = BUILD_PHASES[idx + 1]!;
       setBuildPhase(next);
-      setIsSavingsActive(false);
       setPrefillName(null);
       updateSession.mutate({ currentStep: PHASE_TO_STEP[next] });
     }
@@ -143,7 +147,6 @@ export default function OverviewPage() {
     if (idx > 0) {
       const prev = BUILD_PHASES[idx - 1]!;
       setBuildPhase(prev);
-      setIsSavingsActive(false);
       setPrefillName(null);
       updateSession.mutate({ currentStep: PHASE_TO_STEP[prev] });
     }
@@ -151,7 +154,6 @@ export default function OverviewPage() {
 
   function handleFinishBuild() {
     setBuildPhase(null);
-    setIsSavingsActive(false);
     setPrefillName(null);
   }
 
@@ -168,8 +170,6 @@ export default function OverviewPage() {
       selectedItemId={null}
       buildPhase={buildPhase}
       prefillName={prefillName}
-      isSavingsActive={isSavingsActive}
-      onToggleSavings={() => setIsSavingsActive((v) => !v)}
     />
   ) : summary && !isWaterfallEmpty ? (
     <WaterfallLeftPanel
@@ -270,7 +270,6 @@ export default function OverviewPage() {
           setTimeout(() => setPrefillName(name), 0);
         }}
         onFinish={handleFinishBuild}
-        isSavingsActive={isSavingsActive}
       />
     );
   } else if (view.type === "item") {
