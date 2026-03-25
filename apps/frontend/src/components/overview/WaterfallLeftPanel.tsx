@@ -16,6 +16,7 @@ interface SelectedItem {
   name: string;
   amount: number;
   lastReviewedAt: Date;
+  wealthAccountId?: string | null;
 }
 
 interface WaterfallLeftPanelProps {
@@ -346,6 +347,7 @@ export function WaterfallLeftPanel({
                   name: sav.name,
                   amount: sav.monthlyAmount,
                   lastReviewedAt: new Date(sav.lastReviewedAt),
+                  wealthAccountId: sav.wealthAccountId,
                 });
               return (
                 <div

@@ -62,6 +62,7 @@ export function ItemDetailPanel({
   const isReadOnly = !!isReadOnlyProp || snapshotDate != null;
   const { nudge: yearlyBillNudge } = useYearlyBillNudge(item.type, isReadOnly);
   const savingsNudge = useSavingsNudge(item.id, item.type, isReadOnly);
+  const { data: linkedAccount } = useWealthAccount(item.wealthAccountId ?? "");
 
   if (historyLoading && !historyRaw) return <SkeletonLoader variant="right-panel" />;
   if (historyError && !historyRaw)
@@ -185,6 +186,15 @@ export function ItemDetailPanel({
       </div>
 
       <HistoryChart data={history} snapshotDate={snapshotDate} />
+
+      {item.type === "savings_allocation" && linkedAccount && (
+        <div className="text-sm text-muted-foreground">
+          Allocated to:{" "}
+          <Link to="/wealth" className="text-primary hover:underline">
+            {linkedAccount.name}
+          </Link>
+        </div>
+      )}
 
       {!isReadOnly && (
         <>
