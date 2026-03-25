@@ -1827,3 +1827,16 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/definition-tooltip/definition-tooltip-spec.md`
 - **Summary:** A `<DefinitionTooltip>` component with a centralised 18-term dictionary that wraps financial terms with a hover tooltip at each prescribed location across the app.
+
+## Staleness Indicators
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/staleness-indicators/staleness-indicators-spec.md`
+- **Summary:** Ambient amber dot indicators surface items that haven't been reviewed within their configured threshold, covering all waterfall tiers and wealth accounts.
+
+
+## Yearly Bills — Cashflow Calendar
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/yearly-bills-calendar/yearly-bills-calendar-spec.md`
+- **Summary:** A 12-month cashflow calendar accessible from the Yearly Bills row, showing monthly pot progression, bill deductions at their due month, one-off income entries, shortfall highlighting in amber, and a NudgeCard with arithmetic-only options when a shortfall is detected.
