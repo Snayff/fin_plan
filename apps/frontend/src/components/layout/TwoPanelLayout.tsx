@@ -37,10 +37,19 @@ export function TwoPanelLayout({
 }: TwoPanelLayoutProps) {
   return (
     <div className="flex h-full overflow-hidden">
-      <aside className="w-[360px] min-w-[360px] border-r overflow-y-auto shrink-0 p-4">
+      <a
+        href="#two-panel-main"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:px-3 focus:py-1.5 focus:text-xs focus:bg-background focus:border focus:rounded focus:m-1"
+      >
+        Skip to detail panel
+      </a>
+      <aside
+        aria-label="Waterfall overview"
+        className="w-[360px] min-w-[360px] border-r overflow-y-auto shrink-0 p-4"
+      >
         {left}
       </aside>
-      <main className="flex-1 overflow-y-auto p-6">
+      <main id="two-panel-main" className="flex-1 overflow-y-auto p-6">
         {right ?? <PlaceholderMessage text={rightPlaceholder} />}
       </main>
     </div>

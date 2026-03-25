@@ -35,13 +35,19 @@ interface WaterfallLeftPanelProps {
 const ROW_CLASS =
   "flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-accent/50 transition-colors text-[13px] font-body text-text-secondary";
 
-const AMOUNT_CLASS = "font-numeric text-[#cbd5e1]";
+const AMOUNT_CLASS = "font-numeric text-foreground/60";
 
 function StaleCountBadge({ count }: { count: number }) {
   if (count === 0) return null;
   return (
-    <span className="inline-flex items-center gap-1 text-xs text-attention">
-      <span className="inline-block h-[5px] w-[5px] rounded-full shrink-0 bg-attention" />
+    <span
+      className="inline-flex items-center gap-1 text-xs text-attention"
+      aria-label={`${count} item${count === 1 ? "" : "s"} need review`}
+    >
+      <span
+        className="inline-block h-[5px] w-[5px] rounded-full shrink-0 bg-attention"
+        aria-hidden
+      />
       {count} stale
     </span>
   );
@@ -63,14 +69,14 @@ function SectionHeader({
   return (
     <div className={cn("flex items-center justify-between py-1.5 px-2", dimmed && "opacity-40")}>
       <div className="flex items-center gap-2">
-        <span
+        <h3
           className={cn(
             "text-[13px] font-heading font-semibold tracking-tier uppercase",
             colorClass
           )}
         >
           {label}
-        </span>
+        </h3>
         {!dimmed && <StaleCountBadge count={staleCount} />}
       </div>
       <span className={cn("text-[15px] font-numeric font-semibold", colorClass)}>{total}</span>
@@ -150,29 +156,35 @@ export function WaterfallLeftPanel({
         />
         {incomeState !== "future" && (
           <div className="space-y-0.5">
-            {income.byType.map((group) => (
-              <div
-                key={group.type}
-                className={cn(
-                  ROW_CLASS,
-                  selectedItemId === `type:${group.type}` && "bg-accent",
-                  inBuild && "cursor-default hover:bg-transparent"
-                )}
-                onClick={() =>
-                  !inBuild &&
-                  onSelectItem({
-                    id: `type:${group.type}`,
-                    type: "income_type",
-                    name: group.label,
-                    amount: group.monthlyTotal,
-                    lastReviewedAt: new Date(),
-                  })
-                }
-              >
-                <span>{group.label}</span>
-                <span className={AMOUNT_CLASS}>{formatCurrency(group.monthlyTotal)}</span>
-              </div>
-            ))}
+            {income.byType.map((group) => {
+              const handleSelect = () =>
+                !inBuild &&
+                onSelectItem({
+                  id: `type:${group.type}`,
+                  type: "income_type",
+                  name: group.label,
+                  amount: group.monthlyTotal,
+                  lastReviewedAt: new Date(),
+                });
+              return (
+                <div
+                  key={group.type}
+                  role="button"
+                  tabIndex={inBuild ? -1 : 0}
+                  aria-pressed={selectedItemId === `type:${group.type}`}
+                  className={cn(
+                    ROW_CLASS,
+                    selectedItemId === `type:${group.type}` && "bg-accent",
+                    inBuild && "cursor-default hover:bg-transparent"
+                  )}
+                  onClick={handleSelect}
+                  onKeyDown={(e) => e.key === "Enter" && handleSelect()}
+                >
+                  <span>{group.label}</span>
+                  <span className={AMOUNT_CLASS}>{formatCurrency(group.monthlyTotal)}</span>
+                </div>
+              );
+            })}
             {incomeState === "active" && <TierAddForm phase="income" prefillName={prefillName} />}
           </div>
         )}
@@ -192,6 +204,9 @@ export function WaterfallLeftPanel({
         {committedState !== "future" && (
           <div className="space-y-0.5">
             <div
+              role="button"
+              tabIndex={inBuild ? -1 : 0}
+              aria-pressed={selectedItemId === "aggregate:committed_bills"}
               className={cn(
                 ROW_CLASS,
                 selectedItemId === "aggregate:committed_bills" && "bg-accent",
@@ -207,13 +222,28 @@ export function WaterfallLeftPanel({
                   lastReviewedAt: new Date(),
                 })
               }
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                !inBuild &&
+                onSelectItem({
+                  id: "aggregate:committed_bills",
+                  type: "committed_bills",
+                  name: "Monthly bills",
+                  amount: committed.monthlyTotal,
+                  lastReviewedAt: new Date(),
+                })
+              }
             >
               <span>Monthly bills</span>
               <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyTotal)}</span>
             </div>
             <div
+              role="button"
+              tabIndex={inBuild ? -1 : 0}
+              aria-pressed={false}
               className={cn(ROW_CLASS, inBuild && "cursor-default hover:bg-transparent")}
               onClick={() => !inBuild && onOpenCashflowCalendar()}
+              onKeyDown={(e) => e.key === "Enter" && !inBuild && onOpenCashflowCalendar()}
             >
               <span>Yearly ÷12</span>
               <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyAvg12)}</span>
@@ -241,37 +271,43 @@ export function WaterfallLeftPanel({
             {(showAllCategories || discretionary.categories.length <= 5
               ? discretionary.categories
               : discretionary.categories.slice(0, 5)
-            ).map((cat) => (
-              <div
-                key={cat.id}
-                className={cn(
-                  ROW_CLASS,
-                  selectedItemId === cat.id && "bg-accent",
-                  inBuild && "cursor-default hover:bg-transparent"
-                )}
-                onClick={() =>
-                  !inBuild &&
-                  onSelectItem({
-                    id: cat.id,
-                    type: "discretionary_category",
-                    name: cat.name,
-                    amount: cat.monthlyBudget,
-                    lastReviewedAt: new Date(cat.lastReviewedAt),
-                  })
-                }
-              >
-                <span>{cat.name}</span>
-                <div className="flex items-center gap-2">
-                  {!inBuild && (
-                    <StalenessIndicator
-                      lastReviewedAt={cat.lastReviewedAt}
-                      thresholdMonths={thresholds.discretionary_category ?? 12}
-                    />
+            ).map((cat) => {
+              const handleSelect = () =>
+                !inBuild &&
+                onSelectItem({
+                  id: cat.id,
+                  type: "discretionary_category",
+                  name: cat.name,
+                  amount: cat.monthlyBudget,
+                  lastReviewedAt: new Date(cat.lastReviewedAt),
+                });
+              return (
+                <div
+                  key={cat.id}
+                  role="button"
+                  tabIndex={inBuild ? -1 : 0}
+                  aria-pressed={selectedItemId === cat.id}
+                  className={cn(
+                    ROW_CLASS,
+                    selectedItemId === cat.id && "bg-accent",
+                    inBuild && "cursor-default hover:bg-transparent"
                   )}
-                  <span className={AMOUNT_CLASS}>{formatCurrency(cat.monthlyBudget)}</span>
+                  onClick={handleSelect}
+                  onKeyDown={(e) => e.key === "Enter" && handleSelect()}
+                >
+                  <span>{cat.name}</span>
+                  <div className="flex items-center gap-2">
+                    {!inBuild && (
+                      <StalenessIndicator
+                        lastReviewedAt={cat.lastReviewedAt}
+                        thresholdMonths={thresholds.discretionary_category ?? 12}
+                      />
+                    )}
+                    <span className={AMOUNT_CLASS}>{formatCurrency(cat.monthlyBudget)}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {!showAllCategories && discretionary.categories.length > 5 && (
               <button
                 type="button"
@@ -300,37 +336,43 @@ export function WaterfallLeftPanel({
                 </button>
               )}
             </div>
-            {discretionary.savings.allocations.map((sav) => (
-              <div
-                key={sav.id}
-                className={cn(
-                  ROW_CLASS,
-                  selectedItemId === sav.id && "bg-accent",
-                  inBuild && "cursor-default hover:bg-transparent"
-                )}
-                onClick={() =>
-                  !inBuild &&
-                  onSelectItem({
-                    id: sav.id,
-                    type: "savings_allocation",
-                    name: sav.name,
-                    amount: sav.monthlyAmount,
-                    lastReviewedAt: new Date(sav.lastReviewedAt),
-                  })
-                }
-              >
-                <span>{sav.name}</span>
-                <div className="flex items-center gap-2">
-                  {!inBuild && (
-                    <StalenessIndicator
-                      lastReviewedAt={sav.lastReviewedAt}
-                      thresholdMonths={thresholds.savings_allocation ?? 12}
-                    />
+            {discretionary.savings.allocations.map((sav) => {
+              const handleSelect = () =>
+                !inBuild &&
+                onSelectItem({
+                  id: sav.id,
+                  type: "savings_allocation",
+                  name: sav.name,
+                  amount: sav.monthlyAmount,
+                  lastReviewedAt: new Date(sav.lastReviewedAt),
+                });
+              return (
+                <div
+                  key={sav.id}
+                  role="button"
+                  tabIndex={inBuild ? -1 : 0}
+                  aria-pressed={selectedItemId === sav.id}
+                  className={cn(
+                    ROW_CLASS,
+                    selectedItemId === sav.id && "bg-accent",
+                    inBuild && "cursor-default hover:bg-transparent"
                   )}
-                  <span className={AMOUNT_CLASS}>{formatCurrency(sav.monthlyAmount)}</span>
+                  onClick={handleSelect}
+                  onKeyDown={(e) => e.key === "Enter" && handleSelect()}
+                >
+                  <span>{sav.name}</span>
+                  <div className="flex items-center gap-2">
+                    {!inBuild && (
+                      <StalenessIndicator
+                        lastReviewedAt={sav.lastReviewedAt}
+                        thresholdMonths={thresholds.savings_allocation ?? 12}
+                      />
+                    )}
+                    <span className={AMOUNT_CLASS}>{formatCurrency(sav.monthlyAmount)}</span>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
             {/* Inline add form for savings */}
             {discretionaryState === "active" && isSavingsActive && (
               <TierAddForm phase="discretionary" prefillName={prefillName} isSavings />
@@ -349,12 +391,14 @@ export function WaterfallLeftPanel({
           colorClass="text-tier-surplus"
           staleCount={0}
         />
-        {!inBuild && surplus.percentOfIncome < surplusBenchmark && (
-          <div className="flex items-center gap-1.5 px-2 text-xs text-attention">
-            <span className="h-[5px] w-[5px] rounded-full shrink-0 bg-attention" aria-hidden />
-            <span>Below benchmark</span>
-          </div>
-        )}
+        <div aria-live="polite" aria-atomic="true">
+          {!inBuild && surplus.percentOfIncome < surplusBenchmark && (
+            <div className="flex items-center gap-1.5 px-2 text-xs text-attention">
+              <span className="h-[5px] w-[5px] rounded-full shrink-0 bg-attention" aria-hidden />
+              <span>Below benchmark</span>
+            </div>
+          )}
+        </div>
         {!inBuild && discretionary.savings.allocations.length > 0 && (
           <button
             type="button"
@@ -370,7 +414,7 @@ export function WaterfallLeftPanel({
                 });
               }
             }}
-            className="px-2 text-xs text-primary hover:underline"
+            className="px-2 py-2 text-xs text-primary hover:underline min-h-[44px] flex items-center"
           >
             Increase savings ▸
           </button>
