@@ -1845,3 +1845,9 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/wealth-accounts/wealth-accounts-spec.md`
 - **Summary:** A two-panel Wealth page showing total net worth, YTD change, by-liquidity breakdown, and accounts grouped by asset class, with per-account detail including 24-month history chart, savings projection, waterfall contribution display, and ISA new tax year banner.
+
+## Planner — Purchases
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/planner-purchases/planner-purchases-spec.md`
+- **Summary:** A purchase list organised by status (scheduled / unscheduled / done) with a dedicated right-panel detail view, budget tracking in the left panel with an amber over-budget indicator, and correct not_started/in_progress/done status enums.
