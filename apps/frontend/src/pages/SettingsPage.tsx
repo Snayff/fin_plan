@@ -46,6 +46,7 @@ export default function SettingsPage() {
         {SECTIONS.map((s) => (
           <button
             key={s.id}
+            type="button"
             className="w-full text-left text-sm px-2 py-1.5 rounded hover:bg-accent transition-colors"
             onClick={() => scrollTo(s.id)}
           >
@@ -55,7 +56,7 @@ export default function SettingsPage() {
       </aside>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-8" aria-busy={isLoading}>
         <h1 className="sr-only">Settings</h1>
         {isLoading ? (
           <SkeletonLoader variant="right-panel" />

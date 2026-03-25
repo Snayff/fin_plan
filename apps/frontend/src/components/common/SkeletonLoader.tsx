@@ -19,7 +19,7 @@ export function SkeletonLoader({ variant, className }: SkeletonLoaderProps) {
 
   if (variant === "left-panel") {
     return (
-      <div className={cn("space-y-3 p-4", shimmer, className)}>
+      <div role="status" aria-label="Loading…" className={cn("space-y-3 p-4", shimmer, className)}>
         <Block className="h-8 w-full" />
         <Block className="h-8 w-full" />
         <Block className="h-8 w-full" />
@@ -32,7 +32,7 @@ export function SkeletonLoader({ variant, className }: SkeletonLoaderProps) {
   }
 
   return (
-    <div className={cn("space-y-4 p-6", shimmer, className)}>
+    <div role="status" aria-label="Loading…" className={cn("space-y-4 p-6", shimmer, className)}>
       <Block className="h-12 w-2/3" />
       <Block className="h-40 w-full" />
       <div className="flex gap-2">

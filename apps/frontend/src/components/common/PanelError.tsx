@@ -1,3 +1,5 @@
+import { useId } from "react";
+
 interface PanelErrorProps {
   onRetry: () => void;
   variant: "left" | "right" | "detail";
@@ -48,20 +50,27 @@ function GhostSkeleton({ variant }: { variant: "left" | "right" | "detail" }) {
 }
 
 export function PanelError({ onRetry, variant, message }: PanelErrorProps) {
+  const id = useId();
+  const messageId = `${id}-msg`;
+
   return (
     <div className="relative w-full h-full min-h-[200px]">
       <GhostSkeleton variant={variant} />
       <div
+        role="alert"
         className="absolute inset-0 flex flex-col items-center justify-center gap-3"
         style={{ background: "rgba(8,10,20,0.70)", backdropFilter: "blur(2px)" }}
       >
         <p className="text-sm font-medium text-destructive">Failed to load</p>
         {message && (
-          <p className="text-xs text-muted-foreground text-center max-w-[180px]">{message}</p>
+          <p id={messageId} className="text-xs text-muted-foreground text-center max-w-[180px]">
+            {message}
+          </p>
         )}
         <button
           type="button"
           onClick={onRetry}
+          aria-describedby={message ? messageId : undefined}
           className="text-xs px-3 py-1.5 rounded-md transition-opacity hover:opacity-80"
           style={{
             background: "hsl(0,40%,15%)",

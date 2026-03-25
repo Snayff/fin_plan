@@ -1,6 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { format } from "date-fns";
 import { useSnapshots } from "@/hooks/useSettings";
+import { usePrefersReducedMotion } from "@/utils/motion";
 
 interface SnapshotTimelineProps {
   selectedId: string | null;
@@ -18,6 +19,7 @@ export function SnapshotTimeline({
   onOpenReview,
 }: SnapshotTimelineProps) {
   const { data: snapshots, isLoading, isError, refetch } = useSnapshots();
+  const reduced = usePrefersReducedMotion();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
@@ -63,15 +65,19 @@ export function SnapshotTimeline({
         {isLoading ? (
           <>
             {Array.from({ length: 3 }).map((_, i) => (
-              <div key={i} className="shrink-0 h-1.5 w-8 rounded animate-pulse bg-muted" />
+              <div
+                key={i}
+                className={`shrink-0 h-1.5 w-8 rounded bg-muted ${reduced ? "" : "animate-pulse"}`}
+              />
             ))}
           </>
         ) : isError ? (
-          <span className="text-destructive text-xs flex items-center gap-1.5">
+          <span role="alert" className="text-destructive text-xs flex items-center gap-1.5">
             Failed to load
             <button
               type="button"
               onClick={() => refetch()}
+              aria-label="Retry loading snapshots"
               className="underline hover:no-underline"
             >
               Retry
