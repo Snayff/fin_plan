@@ -1,10 +1,10 @@
-import { describe, it, expect, mock, beforeEach, beforeAll, afterAll } from 'bun:test';
-import type { FastifyInstance } from 'fastify';
-import { buildTestApp } from '../test/helpers/fastify';
-import { errorHandler } from '../middleware/errorHandler';
-import { AuthenticationError } from '../utils/errors';
+import { describe, it, expect, mock, beforeEach, beforeAll, afterAll } from "bun:test";
+import type { FastifyInstance } from "fastify";
+import { buildTestApp } from "../test/helpers/fastify";
+import { errorHandler } from "../middleware/errorHandler";
+import { AuthenticationError } from "../utils/errors";
 
-mock.module('../services/household.service', () => ({
+mock.module("../services/household.service", () => ({
   householdService: {
     getUserHouseholds: mock(() => {}),
     createHousehold: mock(() => {}),
@@ -14,23 +14,24 @@ mock.module('../services/household.service', () => ({
     inviteMember: mock(() => {}),
     removeMember: mock(() => {}),
     cancelInvite: mock(() => {}),
+    leaveHousehold: mock(() => {}),
   },
 }));
 
-mock.module('../middleware/auth.middleware', () => ({
+mock.module("../middleware/auth.middleware", () => ({
   authMiddleware: mock(() => {}),
 }));
 
-import { householdService } from '../services/household.service';
-import { authMiddleware } from '../middleware/auth.middleware';
-import { householdRoutes } from './households';
+import { householdService } from "../services/household.service";
+import { authMiddleware } from "../middleware/auth.middleware";
+import { householdRoutes } from "./households";
 
 let app: FastifyInstance;
 
 beforeAll(async () => {
   app = await buildTestApp();
   app.setErrorHandler(errorHandler);
-  await app.register(householdRoutes, { prefix: '/api' });
+  await app.register(householdRoutes, { prefix: "/api" });
   await app.ready();
 });
 
@@ -39,18 +40,18 @@ afterAll(async () => {
 });
 
 const mockHousehold = {
-  id: 'household-1',
-  name: 'Test Household',
-  createdAt: new Date('2025-01-01T00:00:00Z'),
-  updatedAt: new Date('2025-01-01T00:00:00Z'),
+  id: "household-1",
+  name: "Test Household",
+  createdAt: new Date("2025-01-01T00:00:00Z"),
+  updatedAt: new Date("2025-01-01T00:00:00Z"),
 };
 
 const mockMembership = {
-  id: 'membership-1',
-  householdId: 'household-1',
-  userId: 'user-1',
-  role: 'owner',
-  joinedAt: new Date('2025-01-01T00:00:00Z'),
+  id: "membership-1",
+  householdId: "household-1",
+  userId: "user-1",
+  role: "owner",
+  joinedAt: new Date("2025-01-01T00:00:00Z"),
   household: {
     ...mockHousehold,
     _count: { members: 1 },
@@ -61,23 +62,23 @@ const mockHouseholdDetails = {
   ...mockHousehold,
   members: [
     {
-      id: 'membership-1',
-      householdId: 'household-1',
-      userId: 'user-1',
-      role: 'owner',
-      joinedAt: new Date('2025-01-01T00:00:00Z'),
-      user: { id: 'user-1', name: 'Test User', email: 'test@test.com' },
+      id: "membership-1",
+      householdId: "household-1",
+      userId: "user-1",
+      role: "owner",
+      joinedAt: new Date("2025-01-01T00:00:00Z"),
+      user: { id: "user-1", name: "Test User", email: "test@test.com" },
     },
   ],
   invites: [],
 };
 
-const authHeaders = { authorization: 'Bearer valid-token' };
+const authHeaders = { authorization: "Bearer valid-token" };
 
 beforeEach(() => {
   // Reset all service mock call histories
   for (const method of Object.values(householdService) as any[]) {
-    if (typeof method?.mockReset === 'function') method.mockReset();
+    if (typeof method?.mockReset === "function") method.mockReset();
   }
 
   // Re-apply default mock return values
@@ -87,28 +88,29 @@ beforeEach(() => {
   (householdService.getHouseholdDetails as any).mockResolvedValue(mockHouseholdDetails);
   (householdService.renameHousehold as any).mockResolvedValue({
     ...mockHousehold,
-    name: 'Renamed Household',
+    name: "Renamed Household",
   });
-  (householdService.inviteMember as any).mockResolvedValue({ token: 'mock-invite-token' });
+  (householdService.inviteMember as any).mockResolvedValue({ token: "mock-invite-token" });
   (householdService.removeMember as any).mockResolvedValue(undefined);
   (householdService.cancelInvite as any).mockResolvedValue(undefined);
+  (householdService.leaveHousehold as any).mockResolvedValue(undefined);
 
   // Re-apply auth middleware mock
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
-    if (!authHeader?.startsWith('Bearer ')) {
-      throw new AuthenticationError('No authorization token provided');
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new AuthenticationError("No authorization token provided");
     }
-    request.user = { userId: 'user-1', email: 'test@test.com' };
-    request.householdId = 'household-1';
+    request.user = { userId: "user-1", email: "test@test.com" };
+    request.householdId = "household-1";
   });
 });
 
-describe('GET /api/households', () => {
-  it('returns 200 with list of households', async () => {
+describe("GET /api/households", () => {
+  it("returns 200 with list of households", async () => {
     const response = await app.inject({
-      method: 'GET',
-      url: '/api/households',
+      method: "GET",
+      url: "/api/households",
       headers: authHeaders,
     });
 
@@ -116,61 +118,61 @@ describe('GET /api/households', () => {
     const body = response.json();
     expect(body.households).toBeDefined();
     expect(body.households).toHaveLength(1);
-    expect(body.households[0].householdId).toBe('household-1');
+    expect(body.households[0].householdId).toBe("household-1");
   });
 
-  it('calls service with userId from auth', async () => {
+  it("calls service with userId from auth", async () => {
     (householdService.getUserHouseholds as any).mockResolvedValue([]);
 
     await app.inject({
-      method: 'GET',
-      url: '/api/households',
+      method: "GET",
+      url: "/api/households",
       headers: authHeaders,
     });
 
-    expect(householdService.getUserHouseholds).toHaveBeenCalledWith('user-1');
+    expect(householdService.getUserHouseholds).toHaveBeenCalledWith("user-1");
   });
 
-  it('returns 401 without auth', async () => {
+  it("returns 401 without auth", async () => {
     const response = await app.inject({
-      method: 'GET',
-      url: '/api/households',
+      method: "GET",
+      url: "/api/households",
     });
 
     expect(response.statusCode).toBe(401);
   });
 });
 
-describe('POST /api/households', () => {
-  it('returns 201 with created household', async () => {
+describe("POST /api/households", () => {
+  it("returns 201 with created household", async () => {
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households',
+      method: "POST",
+      url: "/api/households",
       headers: authHeaders,
-      payload: { name: 'Test Household' },
+      payload: { name: "Test Household" },
     });
 
     expect(response.statusCode).toBe(201);
     const body = response.json();
     expect(body.household).toBeDefined();
-    expect(body.household.id).toBe('household-1');
+    expect(body.household.id).toBe("household-1");
   });
 
-  it('calls service with userId and household name', async () => {
+  it("calls service with userId and household name", async () => {
     await app.inject({
-      method: 'POST',
-      url: '/api/households',
+      method: "POST",
+      url: "/api/households",
       headers: authHeaders,
-      payload: { name: 'My New Household' },
+      payload: { name: "My New Household" },
     });
 
-    expect(householdService.createHousehold).toHaveBeenCalledWith('user-1', 'My New Household');
+    expect(householdService.createHousehold).toHaveBeenCalledWith("user-1", "My New Household");
   });
 
-  it('returns 400 when name is missing', async () => {
+  it("returns 400 when name is missing", async () => {
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households',
+      method: "POST",
+      url: "/api/households",
       headers: authHeaders,
       payload: {},
     });
@@ -178,105 +180,105 @@ describe('POST /api/households', () => {
     expect(response.statusCode).toBe(400);
     const body = response.json();
     expect(body.error).toBeDefined();
-    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it('returns 400 when name is empty string', async () => {
+  it("returns 400 when name is empty string", async () => {
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households',
+      method: "POST",
+      url: "/api/households",
       headers: authHeaders,
-      payload: { name: '' },
+      payload: { name: "" },
     });
 
     expect(response.statusCode).toBe(400);
     const body = response.json();
     expect(body.error).toBeDefined();
-    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it('returns 401 without auth', async () => {
+  it("returns 401 without auth", async () => {
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households',
-      payload: { name: 'Test Household' },
+      method: "POST",
+      url: "/api/households",
+      payload: { name: "Test Household" },
     });
 
     expect(response.statusCode).toBe(401);
   });
 });
 
-describe('GET /api/households/:id', () => {
-  it('returns 200 with household details', async () => {
+describe("GET /api/households/:id", () => {
+  it("returns 200 with household details", async () => {
     const response = await app.inject({
-      method: 'GET',
-      url: '/api/households/household-1',
+      method: "GET",
+      url: "/api/households/household-1",
       headers: authHeaders,
     });
 
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.household).toBeDefined();
-    expect(body.household.id).toBe('household-1');
+    expect(body.household.id).toBe("household-1");
     expect(body.household.members).toBeDefined();
   });
 
-  it('calls service with householdId and userId', async () => {
+  it("calls service with householdId and userId", async () => {
     await app.inject({
-      method: 'GET',
-      url: '/api/households/household-abc',
+      method: "GET",
+      url: "/api/households/household-abc",
       headers: authHeaders,
     });
 
-    expect(householdService.getHouseholdDetails).toHaveBeenCalledWith('household-abc', 'user-1');
+    expect(householdService.getHouseholdDetails).toHaveBeenCalledWith("household-abc", "user-1");
   });
 
-  it('returns 401 without auth', async () => {
+  it("returns 401 without auth", async () => {
     const response = await app.inject({
-      method: 'GET',
-      url: '/api/households/household-1',
+      method: "GET",
+      url: "/api/households/household-1",
     });
 
     expect(response.statusCode).toBe(401);
   });
 });
 
-describe('PATCH /api/households/:id', () => {
-  it('returns 200 with renamed household', async () => {
+describe("PATCH /api/households/:id", () => {
+  it("returns 200 with renamed household", async () => {
     const response = await app.inject({
-      method: 'PATCH',
-      url: '/api/households/household-1',
+      method: "PATCH",
+      url: "/api/households/household-1",
       headers: authHeaders,
-      payload: { name: 'Renamed Household' },
+      payload: { name: "Renamed Household" },
     });
 
     expect(response.statusCode).toBe(200);
     const body = response.json();
     expect(body.household).toBeDefined();
-    expect(body.household.name).toBe('Renamed Household');
+    expect(body.household.name).toBe("Renamed Household");
   });
 
-  it('calls service with householdId, userId, and new name', async () => {
+  it("calls service with householdId, userId, and new name", async () => {
     (householdService.renameHousehold as any).mockResolvedValue(mockHousehold);
 
     await app.inject({
-      method: 'PATCH',
-      url: '/api/households/household-1',
+      method: "PATCH",
+      url: "/api/households/household-1",
       headers: authHeaders,
-      payload: { name: 'Updated Name' },
+      payload: { name: "Updated Name" },
     });
 
     expect(householdService.renameHousehold).toHaveBeenCalledWith(
-      'household-1',
-      'user-1',
-      'Updated Name'
+      "household-1",
+      "user-1",
+      "Updated Name"
     );
   });
 
-  it('returns 400 when name is missing', async () => {
+  it("returns 400 when name is missing", async () => {
     const response = await app.inject({
-      method: 'PATCH',
-      url: '/api/households/household-1',
+      method: "PATCH",
+      url: "/api/households/household-1",
       headers: authHeaders,
       payload: {},
     });
@@ -284,25 +286,25 @@ describe('PATCH /api/households/:id', () => {
     expect(response.statusCode).toBe(400);
     const body = response.json();
     expect(body.error).toBeDefined();
-    expect(body.error.code).toBe('VALIDATION_ERROR');
+    expect(body.error.code).toBe("VALIDATION_ERROR");
   });
 
-  it('returns 401 without auth', async () => {
+  it("returns 401 without auth", async () => {
     const response = await app.inject({
-      method: 'PATCH',
-      url: '/api/households/household-1',
-      payload: { name: 'Updated Name' },
+      method: "PATCH",
+      url: "/api/households/household-1",
+      payload: { name: "Updated Name" },
     });
 
     expect(response.statusCode).toBe(401);
   });
 });
 
-describe('POST /api/households/:id/switch', () => {
-  it('returns 200 with success', async () => {
+describe("POST /api/households/:id/switch", () => {
+  it("returns 200 with success", async () => {
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households/household-1/switch',
+      method: "POST",
+      url: "/api/households/household-1/switch",
       headers: authHeaders,
     });
 
@@ -311,44 +313,44 @@ describe('POST /api/households/:id/switch', () => {
     expect(body.success).toBe(true);
   });
 
-  it('calls service with userId and householdId', async () => {
+  it("calls service with userId and householdId", async () => {
     await app.inject({
-      method: 'POST',
-      url: '/api/households/household-xyz/switch',
+      method: "POST",
+      url: "/api/households/household-xyz/switch",
       headers: authHeaders,
     });
 
-    expect(householdService.switchHousehold).toHaveBeenCalledWith('user-1', 'household-xyz');
+    expect(householdService.switchHousehold).toHaveBeenCalledWith("user-1", "household-xyz");
   });
 
-  it('returns 401 without auth', async () => {
+  it("returns 401 without auth", async () => {
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households/household-1/switch',
+      method: "POST",
+      url: "/api/households/household-1/switch",
     });
 
     expect(response.statusCode).toBe(401);
   });
 });
 
-describe('POST /api/households/:id/invite', () => {
-  it('returns 201 with a token when email is provided', async () => {
+describe("POST /api/households/:id/invite", () => {
+  it("returns 201 with a token when email is provided", async () => {
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households/household-1/invite',
+      method: "POST",
+      url: "/api/households/household-1/invite",
       headers: authHeaders,
-      payload: { email: 'invitee@example.com' },
+      payload: { email: "invitee@example.com" },
     });
 
     expect(response.statusCode).toBe(201);
     const body = response.json();
-    expect(typeof body.token).toBe('string');
+    expect(typeof body.token).toBe("string");
   });
 
-  it('returns 400 when email is missing', async () => {
+  it("returns 400 when email is missing", async () => {
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households/household-1/invite',
+      method: "POST",
+      url: "/api/households/household-1/invite",
       headers: authHeaders,
       payload: {},
     });
@@ -356,54 +358,54 @@ describe('POST /api/households/:id/invite', () => {
     expect(response.statusCode).toBe(400);
   });
 
-  it('calls service with householdId, userId, and email', async () => {
+  it("calls service with householdId, userId, and email", async () => {
     await app.inject({
-      method: 'POST',
-      url: '/api/households/household-1/invite',
+      method: "POST",
+      url: "/api/households/household-1/invite",
       headers: authHeaders,
-      payload: { email: 'invitee@example.com' },
+      payload: { email: "invitee@example.com" },
     });
 
     expect(householdService.inviteMember).toHaveBeenCalledWith(
-      'household-1',
-      'user-1',
-      'invitee@example.com'
+      "household-1",
+      "user-1",
+      "invitee@example.com"
     );
   });
 
-  it('returns invitedEmail when invite is email-bound', async () => {
+  it("returns invitedEmail when invite is email-bound", async () => {
     (householdService.inviteMember as any).mockResolvedValue({
-      token: 'mock-invite-token',
-      email: 'invitee@example.com',
+      token: "mock-invite-token",
+      email: "invitee@example.com",
     });
 
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households/household-1/invite',
+      method: "POST",
+      url: "/api/households/household-1/invite",
       headers: authHeaders,
-      payload: { email: 'invitee@example.com' },
+      payload: { email: "invitee@example.com" },
     });
 
     expect(response.statusCode).toBe(201);
     const body = response.json();
-    expect(body.invitedEmail).toBe('invitee@example.com');
+    expect(body.invitedEmail).toBe("invitee@example.com");
   });
 
-  it('returns 400 for invalid email payload', async () => {
+  it("returns 400 for invalid email payload", async () => {
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households/household-1/invite',
+      method: "POST",
+      url: "/api/households/household-1/invite",
       headers: authHeaders,
-      payload: { email: 'bad-email' },
+      payload: { email: "bad-email" },
     });
 
     expect(response.statusCode).toBe(400);
   });
 
-  it('returns 401 without auth', async () => {
+  it("returns 401 without auth", async () => {
     const response = await app.inject({
-      method: 'POST',
-      url: '/api/households/household-1/invite',
+      method: "POST",
+      url: "/api/households/household-1/invite",
       payload: {},
     });
 
@@ -411,11 +413,11 @@ describe('POST /api/households/:id/invite', () => {
   });
 });
 
-describe('DELETE /api/households/:id/members/:memberId', () => {
-  it('returns 200 with success', async () => {
+describe("DELETE /api/households/:id/members/:memberId", () => {
+  it("returns 200 with success", async () => {
     const response = await app.inject({
-      method: 'DELETE',
-      url: '/api/households/household-1/members/member-user-2',
+      method: "DELETE",
+      url: "/api/households/household-1/members/member-user-2",
       headers: authHeaders,
     });
 
@@ -424,35 +426,35 @@ describe('DELETE /api/households/:id/members/:memberId', () => {
     expect(body.success).toBe(true);
   });
 
-  it('calls service with householdId, userId, and memberId', async () => {
+  it("calls service with householdId, userId, and memberId", async () => {
     await app.inject({
-      method: 'DELETE',
-      url: '/api/households/household-1/members/user-to-remove',
+      method: "DELETE",
+      url: "/api/households/household-1/members/user-to-remove",
       headers: authHeaders,
     });
 
     expect(householdService.removeMember).toHaveBeenCalledWith(
-      'household-1',
-      'user-1',
-      'user-to-remove'
+      "household-1",
+      "user-1",
+      "user-to-remove"
     );
   });
 
-  it('returns 401 without auth', async () => {
+  it("returns 401 without auth", async () => {
     const response = await app.inject({
-      method: 'DELETE',
-      url: '/api/households/household-1/members/member-user-2',
+      method: "DELETE",
+      url: "/api/households/household-1/members/member-user-2",
     });
 
     expect(response.statusCode).toBe(401);
   });
 });
 
-describe('DELETE /api/households/:id/invites/:inviteId', () => {
-  it('returns 200 with success', async () => {
+describe("DELETE /api/households/:id/invites/:inviteId", () => {
+  it("returns 200 with success", async () => {
     const response = await app.inject({
-      method: 'DELETE',
-      url: '/api/households/household-1/invites/invite-1',
+      method: "DELETE",
+      url: "/api/households/household-1/invites/invite-1",
       headers: authHeaders,
     });
 
@@ -461,24 +463,57 @@ describe('DELETE /api/households/:id/invites/:inviteId', () => {
     expect(body.success).toBe(true);
   });
 
-  it('calls service with householdId, userId, and inviteId', async () => {
+  it("calls service with householdId, userId, and inviteId", async () => {
     await app.inject({
-      method: 'DELETE',
-      url: '/api/households/household-1/invites/invite-abc',
+      method: "DELETE",
+      url: "/api/households/household-1/invites/invite-abc",
       headers: authHeaders,
     });
 
     expect(householdService.cancelInvite).toHaveBeenCalledWith(
-      'household-1',
-      'user-1',
-      'invite-abc'
+      "household-1",
+      "user-1",
+      "invite-abc"
     );
   });
 
-  it('returns 401 without auth', async () => {
+  it("returns 401 without auth", async () => {
     const response = await app.inject({
-      method: 'DELETE',
-      url: '/api/households/household-1/invites/invite-1',
+      method: "DELETE",
+      url: "/api/households/household-1/invites/invite-1",
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("DELETE /api/households/:id/leave", () => {
+  it("returns 200 with success", async () => {
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/households/household-1/leave",
+      headers: authHeaders,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.success).toBe(true);
+  });
+
+  it("calls service with householdId and userId", async () => {
+    await app.inject({
+      method: "DELETE",
+      url: "/api/households/household-xyz/leave",
+      headers: authHeaders,
+    });
+
+    expect(householdService.leaveHousehold).toHaveBeenCalledWith("household-xyz", "user-1");
+  });
+
+  it("returns 401 without auth", async () => {
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/households/household-1/leave",
     });
 
     expect(response.statusCode).toBe(401);
