@@ -1,4 +1,4 @@
-import { apiClient } from '../lib/api';
+import { apiClient } from "../lib/api";
 
 export interface Household {
   id: string;
@@ -10,7 +10,7 @@ export interface Household {
 export interface HouseholdMember {
   userId: string;
   householdId: string;
-  role: 'owner' | 'member';
+  role: "owner" | "member";
   joinedAt: string;
   user: {
     id: string;
@@ -39,7 +39,7 @@ export interface HouseholdDetails extends Household {
 export interface Membership {
   householdId: string;
   userId: string;
-  role: 'owner' | 'member';
+  role: "owner" | "member";
   joinedAt: string;
   household: Household & {
     _count: { members: number };
@@ -55,11 +55,11 @@ export interface InviteInfo {
 
 export const householdService = {
   async getHouseholds(): Promise<{ households: Membership[] }> {
-    return apiClient.get<{ households: Membership[] }>('/api/households');
+    return apiClient.get<{ households: Membership[] }>("/api/households");
   },
 
   async createHousehold(name: string): Promise<{ household: Household }> {
-    return apiClient.post<{ household: Household }>('/api/households', { name });
+    return apiClient.post<{ household: Household }>("/api/households", { name });
   },
 
   async switchHousehold(id: string): Promise<{ success: boolean }> {
@@ -88,11 +88,19 @@ export const householdService = {
   },
 
   async removeMember(householdId: string, memberId: string): Promise<{ success: boolean }> {
-    return apiClient.delete<{ success: boolean }>(`/api/households/${householdId}/members/${memberId}`);
+    return apiClient.delete<{ success: boolean }>(
+      `/api/households/${householdId}/members/${memberId}`
+    );
   },
 
   async cancelInvite(householdId: string, inviteId: string): Promise<{ success: boolean }> {
-    return apiClient.delete<{ success: boolean }>(`/api/households/${householdId}/invites/${inviteId}`);
+    return apiClient.delete<{ success: boolean }>(
+      `/api/households/${householdId}/invites/${inviteId}`
+    );
+  },
+
+  async leaveHousehold(householdId: string): Promise<{ success: boolean }> {
+    return apiClient.delete<{ success: boolean }>(`/api/households/${householdId}/leave`);
   },
 
   async validateInvite(token: string): Promise<InviteInfo> {
@@ -100,7 +108,10 @@ export const householdService = {
   },
 
   async acceptInvite(token: string, data: { name: string; email: string; password: string }) {
-    return apiClient.post<{ user: any; accessToken: string }>(`/api/auth/invite/${token}/accept`, data);
+    return apiClient.post<{ user: any; accessToken: string }>(
+      `/api/auth/invite/${token}/accept`,
+      data
+    );
   },
 
   async joinViaInvite(token: string): Promise<{ household: Household }> {

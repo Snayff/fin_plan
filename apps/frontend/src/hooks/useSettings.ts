@@ -3,6 +3,8 @@ import { settingsService } from "@/services/settings.service";
 import { snapshotService } from "@/services/snapshot.service";
 import { householdService } from "@/services/household.service";
 import { waterfallService } from "@/services/waterfall.service";
+import { useAuthStore } from "@/stores/authStore";
+import { authService } from "@/services/auth.service";
 import type { UpdateSettingsInput } from "@finplan/shared";
 
 export const SETTINGS_KEYS = {
@@ -126,6 +128,21 @@ export function useRemoveMember() {
       householdService.removeMember(householdId, userId),
     onSuccess: (_data, { householdId }) => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+  });
+}
+
+export function useLeaveHousehold() {
+  const queryClient = useQueryClient();
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const setUser = useAuthStore((s) => s.setUser);
+
+  return useMutation({
+    mutationFn: (householdId: string) => householdService.leaveHousehold(householdId),
+    onSuccess: async () => {
+      const { user } = await authService.getCurrentUser(accessToken!);
+      setUser(user, accessToken!);
+      void queryClient.invalidateQueries();
     },
   });
 }
