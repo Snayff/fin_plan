@@ -1,9 +1,11 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useAuthStore } from "@/stores/authStore";
 import {
   useHouseholdDetails,
@@ -11,12 +13,14 @@ import {
   useInviteMember,
   useCancelInvite,
   useRemoveMember,
+  useLeaveHousehold,
 } from "@/hooks/useSettings";
 import { Section } from "./Section";
 
 export function HouseholdSection() {
   const user = useAuthStore((s) => s.user);
   const householdId = user?.activeHouseholdId ?? "";
+  const navigate = useNavigate();
 
   const { data } = useHouseholdDetails(householdId);
   const household = data?.household;
@@ -25,6 +29,7 @@ export function HouseholdSection() {
   const inviteMember = useInviteMember();
   const cancelInvite = useCancelInvite();
   const removeMember = useRemoveMember();
+  const leaveHousehold = useLeaveHousehold();
 
   const [editName, setEditName] = useState("");
   const [editingName, setEditingName] = useState(false);
@@ -33,10 +38,13 @@ export function HouseholdSection() {
     token: string;
     invitedEmail: string;
   } | null>(null);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const currentUserId = user?.id;
   const currentMember = household?.members.find((m) => m.userId === currentUserId);
   const isOwner = currentMember?.role === "owner";
+  const ownerCount = household?.members.filter((m) => m.role === "owner").length ?? 0;
+  const isSoleOwner = isOwner && ownerCount <= 1;
 
   function startRename() {
     setEditName(household?.name ?? "");
@@ -67,6 +75,15 @@ export function HouseholdSection() {
         },
       }
     );
+  }
+
+  function handleLeave() {
+    leaveHousehold.mutate(householdId, {
+      onSuccess: () => {
+        toast.success("You have left the household");
+        navigate("/overview");
+      },
+    });
   }
 
   const inviteUrl = inviteResult ? `${window.location.origin}/invite/${inviteResult.token}` : null;
@@ -136,6 +153,27 @@ export function HouseholdSection() {
           </div>
         ))}
       </div>
+
+      {/* Leave household */}
+      {!isSoleOwner && currentMember && (
+        <div>
+          <button
+            className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+            onClick={() => setShowLeaveConfirm(true)}
+          >
+            Leave household
+          </button>
+          <ConfirmDialog
+            isOpen={showLeaveConfirm}
+            onClose={() => setShowLeaveConfirm(false)}
+            title="Leave household?"
+            message="You will lose access to this household's data. This cannot be undone."
+            confirmText="Leave"
+            onConfirm={handleLeave}
+            variant="danger"
+          />
+        </div>
+      )}
 
       {/* Invite form */}
       {isOwner && (
