@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import type React from "react";
 import { useSearchParams } from "react-router-dom";
 import { useWaterfallSummary } from "@/hooks/useWaterfall";
@@ -12,6 +12,7 @@ import { CashflowCalendar } from "@/components/overview/CashflowCalendar";
 import { IncomeTypePanel } from "@/components/overview/IncomeTypePanel";
 import { CommittedBillsPanel } from "@/components/overview/CommittedBillsPanel";
 import { SnapshotTimeline } from "@/components/overview/SnapshotTimeline";
+import { OverviewPageHeader } from "@/components/overview/OverviewPageHeader";
 import { CreateSnapshotModal } from "@/components/overview/CreateSnapshotModal";
 import { ReviewWizard } from "@/components/overview/ReviewWizard";
 import { WaterfallConnector } from "@/components/overview/WaterfallConnector";
@@ -90,7 +91,17 @@ export default function OverviewPage() {
   }
 
   const { data: liveSummary, isLoading, isError, refetch } = useWaterfallSummary();
-  const { data: snapshotData } = useSnapshot(selectedSnapshotId);
+  const {
+    data: snapshotData,
+    isLoading: snapshotIsLoading,
+    isError: snapshotError,
+  } = useSnapshot(selectedSnapshotId);
+
+  useEffect(() => {
+    if (snapshotError && selectedSnapshotId) {
+      setSelectedSnapshotId(null);
+    }
+  }, [snapshotError, selectedSnapshotId]);
 
   const isViewingSnapshot = selectedSnapshotId !== null;
   const summary: WaterfallSummary | undefined =
@@ -308,43 +319,35 @@ export default function OverviewPage() {
             Exit setup
           </button>
         </div>
-      ) : isViewingSnapshot ? (
-        /* Snapshot mode banner */
-        <div className="h-8 border-b flex items-center px-4 gap-2 text-xs bg-amber-50 dark:bg-amber-950/20">
-          <span
-            className="inline-block h-[5px] w-[5px] rounded-full shrink-0"
-            style={{ background: "#f59e0b" }}
-          />
-          <span className="font-medium" style={{ color: "#f59e0b" }}>
-            Viewing: {snapshotData?.name}
-          </span>
-          <button
-            type="button"
-            className="ml-auto text-xs hover:underline"
-            style={{ color: "#f59e0b" }}
-            onClick={() => {
+      ) : (
+        <>
+          <OverviewPageHeader
+            activeSnapshot={
+              isViewingSnapshot && snapshotData
+                ? { id: snapshotData.id, name: snapshotData.name }
+                : null
+            }
+            onExitSnapshot={() => {
               setSelectedSnapshotId(null);
               setView({ type: "none" });
             }}
-          >
-            Return to current ▸
-          </button>
-        </div>
-      ) : (
-        /* Live timeline */
-        <SnapshotTimeline
-          selectedId={selectedSnapshotId}
-          onSelect={(id) => {
-            setSelectedSnapshotId(id);
-            setView({ type: "none" });
-          }}
-          onSelectNow={() => {
-            setSelectedSnapshotId(null);
-            setView({ type: "none" });
-          }}
-          onOpenCreate={() => setShowCreateModal(true)}
-          onOpenReview={() => setShowReviewWizard(true)}
-        />
+          />
+          <SnapshotTimeline
+            selectedId={selectedSnapshotId}
+            loadingId={snapshotIsLoading ? selectedSnapshotId : null}
+            isViewingSnapshot={isViewingSnapshot}
+            onSelect={(id) => {
+              setSelectedSnapshotId(id);
+              setView({ type: "none" });
+            }}
+            onSelectNow={() => {
+              setSelectedSnapshotId(null);
+              setView({ type: "none" });
+            }}
+            onOpenCreate={() => setShowCreateModal(true)}
+            onOpenReview={() => setShowReviewWizard(true)}
+          />
+        </>
       )}
 
       <div className="flex-1 min-h-0">

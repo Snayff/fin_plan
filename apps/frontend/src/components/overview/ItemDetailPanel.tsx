@@ -24,11 +24,17 @@ interface ItemDetailPanelProps {
   item: SelectedItem;
   onBack: () => void;
   snapshotDate?: Date | null;
+  isReadOnly?: boolean;
 }
 
 type InlineMode = "none" | "edit" | "end";
 
-export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelProps) {
+export function ItemDetailPanel({
+  item,
+  onBack,
+  snapshotDate,
+  isReadOnly: isReadOnlyProp,
+}: ItemDetailPanelProps) {
   const [inlineMode, setInlineMode] = useState<InlineMode>("none");
   const [editAmount, setEditAmount] = useState(String(item.amount));
   const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -59,7 +65,7 @@ export function ItemDetailPanel({ item, onBack, snapshotDate }: ItemDetailPanelP
     })
   );
 
-  const isReadOnly = snapshotDate != null;
+  const isReadOnly = !!isReadOnlyProp || snapshotDate != null;
 
   const thresholdMonths = (() => {
     const t = settings?.stalenessThresholds;
