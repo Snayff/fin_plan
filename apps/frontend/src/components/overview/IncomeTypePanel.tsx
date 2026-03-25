@@ -1,6 +1,8 @@
 import type { IncomeSourceRow } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/lib/utils";
+import { StalenessIndicator } from "@/components/common/StalenessIndicator";
+import { useSettings } from "@/hooks/useSettings";
 
 const ROW_CLASS =
   "flex items-center justify-between py-2 px-3 rounded cursor-pointer hover:bg-accent/50 transition-colors text-[13px] font-body text-text-secondary";
@@ -28,6 +30,9 @@ export function IncomeTypePanel({
   onBack,
   selectedItemId,
 }: IncomeTypePanelProps) {
+  const { data: settings } = useSettings();
+  const threshold = settings?.stalenessThresholds?.income_source ?? 12;
+
   return (
     <div className="space-y-4">
       {/* Breadcrumb */}
@@ -67,9 +72,15 @@ export function IncomeTypePanel({
                 }
               >
                 <span>{src.name}</span>
-                <div className="flex items-center gap-1 font-numeric text-[#cbd5e1]">
-                  {isAnnual && <span className="text-xs text-muted-foreground">÷12</span>}
-                  <span>{formatCurrency(displayAmount)}</span>
+                <div className="flex items-center gap-2">
+                  <StalenessIndicator
+                    lastReviewedAt={src.lastReviewedAt}
+                    thresholdMonths={threshold}
+                  />
+                  <div className="flex items-center gap-1 font-numeric text-[#cbd5e1]">
+                    {isAnnual && <span className="text-xs text-muted-foreground">÷12</span>}
+                    <span>{formatCurrency(displayAmount)}</span>
+                  </div>
                 </div>
               </div>
             );

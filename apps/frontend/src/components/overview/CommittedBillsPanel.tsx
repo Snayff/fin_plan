@@ -1,6 +1,8 @@
 import type { CommittedBillRow } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/lib/utils";
+import { StalenessIndicator } from "@/components/common/StalenessIndicator";
+import { useSettings } from "@/hooks/useSettings";
 
 const ROW_CLASS =
   "flex items-center justify-between py-2 px-3 rounded cursor-pointer hover:bg-accent/50 transition-colors text-[13px] font-body text-text-secondary";
@@ -26,6 +28,9 @@ export function CommittedBillsPanel({
   onBack,
   selectedItemId,
 }: CommittedBillsPanelProps) {
+  const { data: settings } = useSettings();
+  const threshold = settings?.stalenessThresholds?.committed_bill ?? 6;
+
   return (
     <div className="space-y-4">
       {/* Breadcrumb */}
@@ -62,7 +67,13 @@ export function CommittedBillsPanel({
               }
             >
               <span>{bill.name}</span>
-              <span className="font-numeric text-[#cbd5e1]">{formatCurrency(bill.amount)}</span>
+              <div className="flex items-center gap-2">
+                <StalenessIndicator
+                  lastReviewedAt={bill.lastReviewedAt}
+                  thresholdMonths={threshold}
+                />
+                <span className="font-numeric text-[#cbd5e1]">{formatCurrency(bill.amount)}</span>
+              </div>
             </div>
           ))}
         </div>
