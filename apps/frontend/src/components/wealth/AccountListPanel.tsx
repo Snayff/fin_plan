@@ -1,4 +1,5 @@
 import type { AssetClass, IsaAllowance } from "@finplan/shared";
+import { format } from "date-fns";
 import { formatCurrency } from "@/utils/format";
 import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
 import { cn } from "@/lib/utils";
@@ -12,7 +13,7 @@ import { CLASS_LABELS } from "./assetClassLabels";
 interface AccountListPanelProps {
   assetClass: AssetClass | string;
   accounts: any[];
-  isaTotals?: IsaAllowance[];
+  isaTotals?: IsaAllowance;
   onSelectAccount: (acc: any) => void;
   onBack: () => void;
   selectedAccountId: string | null;
@@ -34,7 +35,7 @@ export function AccountListPanel({
   );
 
   const isSavings = assetClass === "savings";
-  const isaData = isSavings && isaTotals && isaTotals.length > 0 ? isaTotals[0] : null;
+  const isaData = isSavings ? (isaTotals ?? null) : null;
   const isaPersons = isaData?.byPerson ?? [];
   const annualLimit = isaData?.annualLimit ?? 20000;
 
@@ -93,6 +94,11 @@ export function AccountListPanel({
               </div>
             );
           })}
+          {isaData?.taxYearEnd && (
+            <p className="text-xs text-muted-foreground">
+              Deadline: {format(new Date(isaData.taxYearEnd), "d MMMM yyyy")}
+            </p>
+          )}
         </div>
       )}
 

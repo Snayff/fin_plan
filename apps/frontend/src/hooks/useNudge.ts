@@ -118,29 +118,27 @@ export function useWealthAccountNudge(account: any): NudgeContent | null {
   if (account?.assetClass !== "savings") return null;
 
   // ── ISA nudges (priority) ──────────────────────────────────────────────────
-  if (account.isISA && Array.isArray(isaData) && isaData.length > 0) {
-    const entry = isaData[0]!;
+  if (account.isISA && isaData) {
     const personEntry = account.ownerId
-      ? entry.byPerson.find((p: any) => p.ownerId === account.ownerId)
+      ? isaData.byPerson.find((p: any) => p.ownerId === account.ownerId)
       : null;
     const remaining: number =
       personEntry?.remaining ??
-      entry.byPerson.reduce((s: number, p: any) => s + (p.remaining as number), 0);
+      isaData.byPerson.reduce((s: number, p: any) => s + (p.remaining as number), 0);
 
-    if (remaining > 0 && remaining <= 2000) {
+    if (remaining <= 0) {
+      return { message: "Your ISA allowance is fully used for this tax year" };
+    }
+    if (remaining <= 2000) {
       const now = new Date();
       const deadlineYear = now.getMonth() < 3 ? now.getFullYear() : now.getFullYear() + 1;
       return {
         message: `${formatCurrency(remaining)} remaining in your ISA allowance — deadline: 5 April ${deadlineYear}`,
       };
     }
-    if (remaining > 2000) {
-      return {
-        message: `${formatCurrency(remaining)} ISA allowance remaining this tax year`,
-      };
-    }
-    // remaining <= 0: at/over limit — no nudge
-    return null;
+    return {
+      message: `${formatCurrency(remaining)} ISA allowance remaining this tax year`,
+    };
   }
 
   // ── Higher-rate arbitrage ──────────────────────────────────────────────────

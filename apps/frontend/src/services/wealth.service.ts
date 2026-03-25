@@ -10,7 +10,7 @@ import type {
 
 export const wealthService = {
   getSummary: () => apiClient.get<WealthSummary>("/api/wealth"),
-  getIsaAllowance: () => apiClient.get<IsaAllowance[]>("/api/wealth/isa-allowance"),
+  getIsaAllowance: () => apiClient.get<IsaAllowance>("/api/wealth/isa-allowance"),
   listAccounts: () => apiClient.get<any[]>("/api/wealth/accounts"),
   getAccount: (id: string) => apiClient.get<any>(`/api/wealth/accounts/${id}`),
   createAccount: (data: CreateWealthAccountInput) =>
