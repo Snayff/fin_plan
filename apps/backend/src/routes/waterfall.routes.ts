@@ -15,6 +15,7 @@ import {
   createSavingsAllocationSchema,
   updateSavingsAllocationSchema,
   confirmBatchSchema,
+  deleteAllWaterfallSchema,
 } from "@finplan/shared";
 
 export async function waterfallRoutes(fastify: FastifyInstance) {
@@ -232,6 +233,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   });
 
   fastify.delete("/all", pre, async (req, reply) => {
+    deleteAllWaterfallSchema.parse(req.body);
     await waterfallService.deleteAll(req.householdId!);
     return reply.status(204).send();
   });

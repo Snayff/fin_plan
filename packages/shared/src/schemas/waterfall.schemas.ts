@@ -245,3 +245,8 @@ export interface CashflowMonth {
   potAfter: number;
   shortfall: boolean;
 }
+
+export const deleteAllWaterfallSchema = z.object({
+  confirm: z.literal(true),
+});
+export type DeleteAllWaterfallInput = z.infer<typeof deleteAllWaterfallSchema>;

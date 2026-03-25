@@ -76,7 +76,7 @@ export const waterfallService = {
     apiClient.get<any[]>(`/api/waterfall/history/${type}/${id}`),
   confirmBatch: (data: ConfirmBatchInput) =>
     apiClient.post<void>("/api/waterfall/confirm-batch", data),
-  deleteAll: () => apiClient.delete<void>("/api/waterfall/all"),
+  deleteAll: () => apiClient.delete<void>("/api/waterfall/all", { confirm: true }),
 
   // Planner year budget (waterfall-adjacent)
   getYearBudget: (year: number) => apiClient.get<any>(`/api/planner/budget/${year}`),
