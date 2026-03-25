@@ -1797,3 +1797,9 @@ Files not yet migrated (follow MIGRATION_GUIDE.md):
 - **Implemented:** 2026-03-25
 - **Spec:** `docs/5. built/foundation-ui-primitives/foundation-ui-primitives-spec.md`
 - **Summary:** Five foundational UI components — SkeletonLoader, StaleDataBanner, ButtonPair, EntityAvatar, and PanelTransition — plus usePrefersReducedMotion hook, all built before page-level feature work begins to ensure consistent behaviour and avoid duplication.
+
+## NudgeCard
+
+- **Implemented:** 2026-03-25
+- **Spec:** `docs/5. built/nudge-card/nudge-card-spec.md`
+- **Summary:** Contextual prompt component that surfaces mechanical financial observations (cashflow shortfalls, higher-rate savings opportunities, ISA allowance) in right panels — one at a time, arithmetic-only, never prescriptive — using amber attention tokens and absence as the default state.
