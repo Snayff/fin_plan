@@ -20,14 +20,18 @@ export function OverviewPageHeader({ activeSnapshot, onExitSnapshot }: OverviewP
   return (
     <div className="h-8 border-b flex items-center px-4 gap-1.5 text-sm">
       <span className="text-muted-foreground font-heading">Overview</span>
-      <span className="text-muted-foreground/50">›</span>
+      <span className="text-muted-foreground/50" aria-hidden="true">
+        ›
+      </span>
       <span
         title={activeSnapshot.name}
         className="font-heading font-medium text-foreground max-w-[40ch] overflow-hidden text-ellipsis whitespace-nowrap"
       >
         {activeSnapshot.name}
       </span>
-      <span className="text-muted-foreground/50 mx-0.5">·</span>
+      <span className="text-muted-foreground/50 mx-0.5" aria-hidden="true">
+        ·
+      </span>
       <span
         className="text-[11px] font-medium px-1.5 py-0.5 rounded"
         style={{
