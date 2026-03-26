@@ -11,16 +11,11 @@ mock.module("@/hooks/useSettings", () => ({
     refetch: () => {},
   }),
   useUpdateSettings: () => ({ mutate: () => {}, isPending: false }),
-  useSnapshots: () => ({ data: undefined, isLoading: false, isError: false }),
-  useSnapshot: () => ({ data: undefined }),
-  useDeleteSnapshot: () => ({ mutate: () => {}, isPending: false }),
   useUpdateProfile: () => ({ mutate: () => {}, isPending: false }),
   useHousehold: () => ({ data: undefined, isLoading: false }),
   useHouseholdMembers: () => ({ data: undefined, isLoading: false }),
   useInviteMember: () => ({ mutate: () => {}, isPending: false }),
   useRemoveMember: () => ({ mutate: () => {}, isPending: false }),
-  useEndedIncome: () => ({ data: undefined, isLoading: false }),
-  useRestoreIncomeSource: () => ({ mutate: () => {}, isPending: false }),
 }));
 
 mock.module("@/hooks/useWealth", () => ({
@@ -35,7 +30,6 @@ mock.module("@/hooks/useWealth", () => ({
 
 mock.module("@/hooks/useWaterfall", () => ({
   useWaterfallSummary: () => ({ data: undefined, isLoading: false, isError: false }),
-  useRebuildWaterfall: () => ({ mutate: () => {}, isPending: false }),
   useCashflow: () => ({ data: undefined, isLoading: false, isError: false }),
   useItemHistory: () => ({ data: undefined, isLoading: false, isError: false }),
   useConfirmItem: () => ({ mutate: () => {}, isPending: false }),
