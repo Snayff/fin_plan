@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Add Item — Options</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080a14;
+    color: rgba(238,242,255,0.92);
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    font-size: 13px;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  h2 { font-family: 'Outfit', system-ui, sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .subtitle { color: rgba(238,242,255,0.5); font-size: 12px; margin-bottom: 28px; line-height: 1.5; }
+  .section-label {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: rgba(238,242,255,0.4); margin-bottom: 6px;
+  }
+  hr { border: none; border-top: 1px solid rgba(238,242,255,0.06); margin: 28px 0; }
+
+  /* Shared item row styles */
+  .panel {
+    background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px;
+    overflow: hidden; width: 420px;
+  }
+  .panel-header { padding: 10px 14px 6px; border-bottom: 1px solid #1a1f35; }
+  .panel-title { font-family: 'Outfit', system-ui, sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 1px; }
+  .panel-sub { font-size: 10px; color: rgba(238,242,255,0.4); }
+  .panel-body { padding: 8px 10px; }
+
+  .item-row {
+    display: flex; align-items: center; padding: 7px 8px;
+    border-radius: 5px; gap: 0;
+  }
+  .item-row:hover { background: rgba(255,255,255,0.04); }
+  .item-stale-col { width: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .stale-dot { width: 5px; height: 5px; border-radius: 50%; background: #f59e0b; }
+  .item-name { flex: 1; font-size: 11px; color: rgba(238,242,255,0.75); }
+  .item-meta { display: flex; align-items: center; gap: 6px; }
+  .item-age { font-size: 9px; color: #f59e0b; }
+  .item-amt { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #cbd5e1; }
+  .item-freq { font-size: 9px; color: rgba(238,242,255,0.3); }
+
+  /* Options grid */
+  .options-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .option-card {
+    border: 1px solid #1a1f35; border-radius: 8px; padding: 16px;
+    background: rgba(13,17,32,0.6);
+    cursor: pointer; transition: border-color 0.15s ease;
+  }
+  .option-card:hover { border-color: rgba(124,58,237,0.4); }
+  .option-card.selected { border-color: #7c3aed; background: rgba(124,58,237,0.06); }
+  .option-label {
+    font-family: 'Outfit', system-ui, sans-serif; font-size: 12px; font-weight: 700;
+    color: rgba(238,242,255,0.85); margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .option-letter {
+    width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center;
+    font-family: 'Outfit', system-ui, sans-serif; font-size: 10px; font-weight: 800;
+    background: rgba(124,58,237,0.15); color: #8b5cf6; flex-shrink: 0;
+  }
+  .option-desc { font-size: 10px; color: rgba(238,242,255,0.5); margin-bottom: 12px; line-height: 1.4; }
+  .option-pros { font-size: 9px; color: rgba(74,220,208,0.7); margin-top: 8px; line-height: 1.5; }
+  .option-cons { font-size: 9px; color: rgba(238,242,255,0.35); margin-top: 2px; line-height: 1.5; }
+
+  /* ─── OPTION A: Ghost row ─── */
+  .ghost-row {
+    display: flex; align-items: center; padding: 7px 8px;
+    border-radius: 5px; gap: 0; cursor: pointer;
+    border: 1px dashed rgba(238,242,255,0.1);
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .ghost-row:hover { border-color: rgba(124,58,237,0.35); background: rgba(124,58,237,0.05); }
+  .ghost-row .ghost-icon {
+    width: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: rgba(238,242,255,0.2); transition: color 0.15s ease;
+  }
+  .ghost-row:hover .ghost-icon { color: rgba(124,58,237,0.7); }
+  .ghost-row .ghost-text {
+    font-size: 11px; color: rgba(238,242,255,0.2); font-style: italic;
+    transition: color 0.15s ease;
+  }
+  .ghost-row:hover .ghost-text { color: rgba(238,242,255,0.45); }
+
+  /* ─── OPTION B: Subtle text link ─── */
+  .text-add {
+    display: flex; align-items: center; gap: 4px;
+    padding: 5px 8px; cursor: pointer;
+    font-size: 10px; color: rgba(238,242,255,0.2);
+    transition: color 0.15s ease;
+  }
+  .text-add:hover { color: rgba(238,242,255,0.5); }
+  .text-add .plus { font-size: 12px; }
+
+  /* ─── OPTION C: Header action ─── */
+  .header-with-action {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 14px 6px; border-bottom: 1px solid #1a1f35;
+  }
+  .header-add-btn {
+    display: flex; align-items: center; gap: 4px;
+    padding: 3px 10px; border-radius: 4px; cursor: pointer;
+    font-family: 'Outfit', system-ui, sans-serif; font-size: 10px; font-weight: 600;
+    color: rgba(238,242,255,0.45); border: 1px solid rgba(238,242,255,0.1);
+    background: transparent;
+    transition: all 0.15s ease;
+  }
+  .header-add-btn:hover {
+    color: rgba(238,242,255,0.75);
+    border-color: rgba(124,58,237,0.4);
+    background: rgba(124,58,237,0.08);
+  }
+  .header-add-btn .plus { font-size: 12px; }
+
+  /* ─── OPTION D: Icon button in header ─── */
+  .header-icon-btn {
+    width: 26px; height: 26px; border-radius: 5px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; color: rgba(238,242,255,0.35);
+    border: 1px solid rgba(238,242,255,0.08);
+    background: transparent;
+    transition: all 0.15s ease;
+  }
+  .header-icon-btn:hover {
+    color: #8b5cf6;
+    border-color: rgba(124,58,237,0.4);
+    background: rgba(124,58,237,0.08);
+  }
+</style>
+</head>
+<body>
+
+<h2>Add Item — Design Options</h2>
+<p class="subtitle">The current solid purple button is too attention-grabbing and competes with the data. Below are four alternatives — all designed to stay quiet until needed. Click the panels to interact with hover states.</p>
+
+<div class="options-grid">
+
+  <!-- OPTION A: Ghost row at top of list -->
+  <div class="option-card" onclick="this.classList.toggle('selected')">
+    <div class="option-label"><div class="option-letter">A</div> Ghost row at top of list</div>
+    <div class="option-desc">A dashed-border placeholder row sits at the top of the item list. Nearly invisible at rest — appears on hover with a subtle accent tint. Lives in the same visual rhythm as the data rows.</div>
+    <div class="panel" style="margin-top:8px">
+      <div class="panel-header">
+        <div class="panel-title">Housing</div>
+        <div class="panel-sub">3 items · £1,200/mo</div>
+      </div>
+      <div class="panel-body">
+        <div class="ghost-row" style="margin-bottom:4px">
+          <div class="ghost-icon">+</div>
+          <span class="ghost-text">Add item…</span>
+        </div>
+        <div class="item-row">
+          <div class="item-stale-col"></div>
+          <span class="item-name">Mortgage</span>
+          <div class="item-meta"><span class="item-amt">£950</span><span class="item-freq">monthly</span></div>
+        </div>
+        <div class="item-row">
+          <div class="item-stale-col"><div class="stale-dot"></div></div>
+          <span class="item-name">Council Tax</span>
+          <div class="item-meta"><span class="item-age">14mo</span><span class="item-amt">£180</span><span class="item-freq">monthly</span></div>
+        </div>
+        <div class="item-row">
+          <div class="item-stale-col"></div>
+          <span class="item-name">Buildings Ins.</span>
+          <div class="item-meta"><span class="item-amt">£840</span><span class="item-freq">yearly · £70/mo</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="option-pros">✓ Discoverable without competing · aligns with item rows · no new visual element</div>
+    <div class="option-cons">△ Slightly less discoverable for first-time users</div>
+  </div>
+
+  <!-- OPTION B: Subtle text link below header -->
+  <div class="option-card" onclick="this.classList.toggle('selected')">
+    <div class="option-label"><div class="option-letter">B</div> Subtle text link below header</div>
+    <div class="option-desc">A very quiet "+ Add item" text link sits between the header and the list. Nearly invisible when scanning data — appears clearly on hover. No border, no background at rest.</div>
+    <div class="panel" style="margin-top:8px">
+      <div class="panel-header">
+        <div class="panel-title">Housing</div>
+        <div class="panel-sub">3 items · £1,200/mo</div>
+      </div>
+      <div class="panel-body">
+        <div class="text-add" style="margin-bottom:4px">
+          <span class="plus">+</span>
+          <span>Add item</span>
+        </div>
+        <div class="item-row">
+          <div class="item-stale-col"></div>
+          <span class="item-name">Mortgage</span>
+          <div class="item-meta"><span class="item-amt">£950</span><span class="item-freq">monthly</span></div>
+        </div>
+        <div class="item-row">
+          <div class="item-stale-col"><div class="stale-dot"></div></div>
+          <span class="item-name">Council Tax</span>
+          <div class="item-meta"><span class="item-age">14mo</span><span class="item-amt">£180</span><span class="item-freq">monthly</span></div>
+        </div>
+        <div class="item-row">
+          <div class="item-stale-col"></div>
+          <span class="item-name">Buildings Ins.</span>
+          <div class="item-meta"><span class="item-amt">£840</span><span class="item-freq">yearly · £70/mo</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="option-pros">✓ Quietest option · data takes full visual priority · zero visual weight at rest</div>
+    <div class="option-cons">△ May be too hidden — users might not find it without learning</div>
+  </div>
+
+  <!-- OPTION C: Text button in header row -->
+  <div class="option-card" onclick="this.classList.toggle('selected')">
+    <div class="option-label"><div class="option-letter">C</div> Header-aligned button</div>
+    <div class="option-desc">A ghost button sits right-aligned in the panel header, next to the title. Quiet border at rest — reveals accent on hover. The header is already a "chrome" zone, so the button doesn't compete with data rows.</div>
+    <div class="panel" style="margin-top:8px">
+      <div class="header-with-action">
+        <div>
+          <div class="panel-title">Housing</div>
+          <div class="panel-sub">3 items · £1,200/mo</div>
+        </div>
+        <button class="header-add-btn"><span class="plus">+</span> Add</button>
+      </div>
+      <div class="panel-body">
+        <div class="item-row">
+          <div class="item-stale-col"></div>
+          <span class="item-name">Mortgage</span>
+          <div class="item-meta"><span class="item-amt">£950</span><span class="item-freq">monthly</span></div>
+        </div>
+        <div class="item-row">
+          <div class="item-stale-col"><div class="stale-dot"></div></div>
+          <span class="item-name">Council Tax</span>
+          <div class="item-meta"><span class="item-age">14mo</span><span class="item-amt">£180</span><span class="item-freq">monthly</span></div>
+        </div>
+        <div class="item-row">
+          <div class="item-stale-col"></div>
+          <span class="item-name">Buildings Ins.</span>
+          <div class="item-meta"><span class="item-amt">£840</span><span class="item-freq">yearly · £70/mo</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="option-pros">✓ Always visible · clearly in the "actions" zone · doesn't interrupt data flow</div>
+    <div class="option-cons">△ Slightly more chrome — but contained in the header</div>
+  </div>
+
+  <!-- OPTION D: Icon-only button in header -->
+  <div class="option-card" onclick="this.classList.toggle('selected')">
+    <div class="option-label"><div class="option-letter">D</div> Icon-only in header</div>
+    <div class="option-desc">A minimal "+" icon button in the header corner. Smallest possible footprint — just a square with a plus. Reveals accent border and colour on hover. Relies on the universal "+" affordance.</div>
+    <div class="panel" style="margin-top:8px">
+      <div class="header-with-action">
+        <div>
+          <div class="panel-title">Housing</div>
+          <div class="panel-sub">3 items · £1,200/mo</div>
+        </div>
+        <button class="header-icon-btn">+</button>
+      </div>
+      <div class="panel-body">
+        <div class="item-row">
+          <div class="item-stale-col"></div>
+          <span class="item-name">Mortgage</span>
+          <div class="item-meta"><span class="item-amt">£950</span><span class="item-freq">monthly</span></div>
+        </div>
+        <div class="item-row">
+          <div class="item-stale-col"><div class="stale-dot"></div></div>
+          <span class="item-name">Council Tax</span>
+          <div class="item-meta"><span class="item-age">14mo</span><span class="item-amt">£180</span><span class="item-freq">monthly</span></div>
+        </div>
+        <div class="item-row">
+          <div class="item-stale-col"></div>
+          <span class="item-name">Buildings Ins.</span>
+          <div class="item-meta"><span class="item-amt">£840</span><span class="item-freq">yearly · £70/mo</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="option-pros">✓ Minimal footprint · universally understood · zero text weight</div>
+    <div class="option-cons">△ No label — first-time users rely on hover tooltip or icon recognition</div>
+  </div>
+
+</div>
+
+<hr>
+
+<div style="font-size:11px;color:rgba(238,242,255,0.5);line-height:1.6">
+  <strong style="color:rgba(238,242,255,0.75)">My recommendation: C (Header-aligned button)</strong><br>
+  It's discoverable without dominating. The header is already a "chrome" zone — the button lives with the title, not with the data. Ghost border at rest means it reads as part of the heading until you need it. It also scales well: if we later add other header actions (sort, filter), they sit naturally alongside.
+</div>
+
+</body>
+</html>

@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nav & Layouts v3</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080a14;
+    color: rgba(238,242,255,0.92);
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    font-size: 13px;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  h2 { font-family: 'Outfit', system-ui, sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .subtitle { color: rgba(238,242,255,0.5); font-size: 12px; margin-bottom: 28px; }
+  .section-label {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: rgba(238,242,255,0.4); margin-bottom: 8px;
+  }
+  hr { border: none; border-top: 1px solid rgba(238,242,255,0.06); margin: 28px 0; }
+  .change-tag {
+    display: inline-block; font-size: 9px; font-weight: 700;
+    background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25);
+    color: #f59e0b; border-radius: 4px; padding: 1px 6px; margin-left: 6px;
+  }
+
+  /* ─── TOP NAV ─── */
+  .nav-bar {
+    background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px;
+    padding: 0 16px; display: flex; align-items: center; height: 48px; gap: 0;
+    margin-bottom: 6px;
+  }
+  .nav-wordmark {
+    font-family: 'Outfit', system-ui, sans-serif; font-weight: 800; font-size: 14px;
+    background: linear-gradient(135deg, #0ea5e9, #a855f7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    margin-right: 10px; flex-shrink: 0;
+  }
+  .nav-item {
+    padding: 5px 10px; font-size: 12px;
+    font-family: 'Outfit', system-ui, sans-serif; font-weight: 600;
+    color: rgba(238,242,255,0.55); white-space: nowrap;
+  }
+  .nav-item.overview  { color: #8b5cf6; border-bottom: 2px solid #8b5cf6; }
+  .nav-item.t-income  { color: #0ea5e9; }
+  .nav-item.t-committed { color: #6366f1; }
+  .nav-item.t-discret { color: #a855f7; }
+  .nav-item.t-surplus { color: #4adcd0; }
+  .nav-vsep {
+    width: 1px; height: 20px; background: rgba(238,242,255,0.12);
+    margin: 0 6px; flex-shrink: 0;
+  }
+  .nav-spacer { flex: 1; }
+  .nav-note { font-size: 10px; color: rgba(238,242,255,0.4); margin-bottom: 20px; font-style: italic; }
+
+  /* ─── MINI PAGE LAYOUTS GRID ─── */
+  .layouts { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+  .app-frame {
+    background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px;
+    overflow: hidden; height: 320px; display: flex; flex-direction: column;
+  }
+  .frame-nav {
+    background: #0d1120; border-bottom: 1px solid #1a1f35;
+    height: 32px; display: flex; align-items: center; padding: 0 8px; flex-shrink: 0; gap: 0;
+  }
+  .fn-logo {
+    font-family: 'Outfit', system-ui, sans-serif; font-weight: 800; font-size: 10px;
+    background: linear-gradient(135deg, #0ea5e9, #a855f7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-right: 6px;
+  }
+  .fn-item { font-family: 'Outfit', system-ui, sans-serif; font-size: 9px; font-weight: 600; padding: 2px 5px; color: rgba(238,242,255,0.35); }
+  .fn-item.fn-overview { color: #8b5cf6; border-bottom: 1.5px solid #8b5cf6; }
+  .fn-item.fn-committed-active { color: #6366f1; border-bottom: 1.5px solid #6366f1; }
+  .fn-item.t-income { color: #0ea5e9; }
+  .fn-item.t-committed { color: #6366f1; }
+  .fn-item.t-discret { color: #a855f7; }
+  .fn-item.t-surplus { color: #4adcd0; }
+  .fn-vsep { width: 1px; height: 14px; background: rgba(238,242,255,0.1); margin: 0 3px; flex-shrink: 0; }
+
+  .frame-body { display: flex; flex: 1; overflow: hidden; }
+  .frame-left {
+    width: 136px; border-right: 1px solid #1a1f35; padding: 8px 6px;
+    flex-shrink: 0; overflow-y: auto; background: #0d1120;
+  }
+  .frame-right { flex: 1; padding: 8px; background: #080a14; overflow-y: auto; }
+
+  /* ─── WATERFALL LEFT PANEL ─── */
+  .tier-connector { display: flex; align-items: center; gap: 3px; margin: 2px 0; padding: 0 4px; }
+  .connector-line { flex: 1; height: 1px; background: rgba(238,242,255,0.07); }
+  .connector-text { font-size: 7.5px; color: rgba(238,242,255,0.22); white-space: nowrap; font-family: 'JetBrains Mono', monospace; }
+  .tier-row { display: flex; align-items: center; justify-content: space-between; padding: 4px 5px; border-radius: 4px; cursor: pointer; margin-bottom: 1px; }
+  .tier-row:hover { background: rgba(255,255,255,0.04); }
+  .tier-name { font-family: 'Outfit', system-ui, sans-serif; font-size: 8px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+  .tn-income { color: #0ea5e9; } .tn-committed { color: #6366f1; }
+  .tn-discret { color: #a855f7; } .tn-surplus { color: #4adcd0; }
+  .tier-amount { font-family: 'JetBrains Mono', monospace; font-size: 8px; font-weight: 600; }
+  .tier-items { padding: 1px 4px 3px 4px; }
+  .tier-item-row { display: flex; align-items: center; padding: 1.5px 0; gap: 0; }
+  .stale-col { width: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .stale-dot { width: 4px; height: 4px; border-radius: 50%; background: #f59e0b; }
+  .tier-item-name { flex: 1; font-size: 8px; color: rgba(238,242,255,0.5); }
+  .tier-item-amt { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: rgba(203,213,225,0.65); }
+  .analytics-placeholder {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; height: 100%; gap: 6px; opacity: 0.35;
+  }
+  .analytics-placeholder .icon { font-size: 20px; }
+  .analytics-placeholder .lbl { font-size: 8.5px; color: rgba(238,242,255,0.5); text-align: center; line-height: 1.4; }
+
+  /* Subcat left panel */
+  .subcat-section-label {
+    font-family: 'Outfit', system-ui, sans-serif; font-size: 7.5px; font-weight: 700;
+    letter-spacing: 0.09em; text-transform: uppercase; margin-bottom: 4px; padding: 0 4px;
+  }
+  .subcat-row {
+    display: flex; align-items: center; padding: 3px 5px; border-radius: 4px;
+    margin-bottom: 1px; cursor: pointer; gap: 0;
+  }
+  .subcat-row:hover { background: rgba(255,255,255,0.04); }
+  .subcat-row.selected { background: rgba(99,102,241,0.1); border-left: 2px solid #6366f1; padding-left: 3px; }
+  .subcat-stale-col { width: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .subcat-name { flex: 1; font-size: 8.5px; color: rgba(238,242,255,0.65); }
+  .subcat-row.selected .subcat-name { color: rgba(238,242,255,0.85); }
+  .subcat-amt { font-family: 'JetBrains Mono', monospace; font-size: 8px; color: rgba(203,213,225,0.7); }
+  .subcat-total {
+    display: flex; justify-content: space-between; padding: 5px 5px 0;
+    border-top: 1px solid rgba(238,242,255,0.06); margin-top: 4px;
+  }
+  .subcat-total-label { font-size: 7.5px; color: rgba(238,242,255,0.35); }
+  .subcat-total-amt { font-family: 'JetBrains Mono', monospace; font-size: 8.5px; font-weight: 600; color: #6366f1; }
+  .annotations { margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px; }
+  .ann { font-size: 9px; color: #f59e0b; background: rgba(245,158,11,0.07); border: 1px solid rgba(245,158,11,0.15); border-radius: 4px; padding: 2px 6px; }
+
+  /* ─── INTERACTIVE DEMO ─── */
+  .demo-frame {
+    background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px;
+    overflow: hidden; max-width: 520px;
+  }
+  .demo-header { padding: 10px 14px 8px; border-bottom: 1px solid #1a1f35; }
+  .demo-title { font-family: 'Outfit', system-ui, sans-serif; font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+  .demo-sub { font-size: 10px; color: rgba(238,242,255,0.4); }
+  .demo-body { padding: 8px 10px; }
+
+  /* Add button — real button, accent colour */
+  .add-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 6px; cursor: pointer;
+    font-family: 'Outfit', system-ui, sans-serif; font-size: 11px; font-weight: 700;
+    color: white; border: none;
+    background: #7c3aed;
+    margin-bottom: 10px;
+    transition: opacity 0.15s ease;
+    user-select: none;
+  }
+  .add-btn:hover { opacity: 0.88; }
+  .add-btn-icon { font-size: 15px; line-height: 1; font-weight: 400; }
+
+  /* Item rows */
+  .item { margin-bottom: 2px; border-radius: 5px; overflow: hidden; }
+  .item-row {
+    display: flex; align-items: center;
+    padding: 7px 8px; cursor: pointer; border-radius: 5px;
+    transition: background 0.1s ease; user-select: none; gap: 0;
+  }
+  .item-row:hover { background: rgba(255,255,255,0.04); }
+  .item.open .item-row { background: rgba(99,102,241,0.1); border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
+  /* Fixed stale column — LEFT of item name */
+  .item-stale-col { width: 16px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+  .item-stale-dot { width: 5px; height: 5px; border-radius: 50%; background: #f59e0b; }
+  .item-name { flex: 1; font-size: 11px; color: rgba(238,242,255,0.75); }
+  .item-meta { display: flex; align-items: center; gap: 6px; }
+  .item-age { font-size: 9px; color: #f59e0b; }
+  .item-amt { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #cbd5e1; }
+  .item-freq { font-size: 9px; color: rgba(238,242,255,0.3); }
+  .item-chevron { font-size: 10px; color: rgba(238,242,255,0.25); margin-left: 6px; transition: transform 0.15s ease; }
+  .item.open .item-chevron { transform: rotate(90deg); }
+
+  /* Expanded detail panel */
+  .item-detail {
+    background: rgba(99,102,241,0.06);
+    border-left: 2px solid rgba(99,102,241,0.4);
+    padding: 10px 12px;
+    display: none;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+  }
+  .item.open .item-detail { display: block; }
+  .detail-view {} /* container for the normal (non-edit) view */
+  .item.editing .detail-view { display: none; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px 16px; margin-bottom: 6px; }
+  .detail-field {}
+  .detail-lbl { font-size: 9px; color: rgba(238,242,255,0.35); margin-bottom: 1px; }
+  .detail-val { font-size: 10px; color: rgba(238,242,255,0.75); }
+  .detail-val.stale-val { color: #f59e0b; }
+  /* Notes field */
+  .detail-notes { margin-top: 6px; border-top: 1px solid rgba(238,242,255,0.05); padding-top: 6px; }
+  .detail-notes-lbl { font-size: 9px; color: rgba(238,242,255,0.35); margin-bottom: 2px; }
+  .detail-notes-val { font-size: 10px; color: rgba(238,242,255,0.6); font-style: italic; line-height: 1.4; }
+  .detail-notes-empty { font-size: 10px; color: rgba(238,242,255,0.2); font-style: italic; }
+
+  .btn-pair { display: flex; gap: 6px; margin-top: 8px; align-items: center; }
+  .btn {
+    font-family: 'Outfit', system-ui, sans-serif; font-size: 10px; font-weight: 700;
+    padding: 5px 14px; border-radius: 5px; border: none; cursor: pointer;
+    transition: opacity 0.15s ease;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-secondary { background: #141b2e; color: rgba(238,242,255,0.7); border: 1px solid #222c45; }
+  .btn-primary { background: #7c3aed; color: white; }
+  .btn-confirm { background: rgba(74,220,208,0.1); color: #4adcd0; border: 1px solid rgba(74,220,208,0.25); }
+
+  /* Edit form */
+  .edit-form { display: none; }
+  .item.editing .edit-form { display: block; }
+  .form-row { margin-bottom: 8px; }
+  .form-label { font-size: 9px; color: rgba(238,242,255,0.4); margin-bottom: 3px; }
+  .form-inputs { display: flex; gap: 6px; }
+  .mock-input {
+    background: #141b2e; border: 1px solid #222c45; border-radius: 5px;
+    color: rgba(238,242,255,0.85); font-size: 11px; padding: 6px 10px;
+    font-family: 'JetBrains Mono', monospace; outline: none; width: 100%;
+    transition: border-color 0.15s ease;
+  }
+  .mock-input:focus { border-color: #7c3aed; }
+  .mock-input.name-input { font-family: 'Nunito Sans', system-ui, sans-serif; }
+  .mock-input.amt-input { width: 90px; flex-shrink: 0; }
+  .mock-textarea {
+    background: #141b2e; border: 1px solid #222c45; border-radius: 5px;
+    color: rgba(238,242,255,0.85); font-size: 11px; padding: 6px 10px;
+    font-family: 'Nunito Sans', system-ui, sans-serif; outline: none; width: 100%;
+    resize: vertical; min-height: 44px; line-height: 1.4;
+    transition: border-color 0.15s ease;
+  }
+  .mock-textarea:focus { border-color: #7c3aed; }
+  .mock-select {
+    background: #141b2e; border: 1px solid #222c45; border-radius: 5px;
+    color: rgba(238,242,255,0.75); font-size: 11px; padding: 6px 10px;
+    outline: none; cursor: pointer;
+  }
+
+  .instruction {
+    font-size: 11px; color: rgba(238,242,255,0.55); margin-bottom: 12px; line-height: 1.5;
+    background: rgba(238,242,255,0.04); border-radius: 6px; padding: 8px 12px;
+    border-left: 3px solid rgba(124,58,237,0.5);
+  }
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: rgba(238,242,255,0.5); }
+  .note-box {
+    background: rgba(99,102,241,0.06); border: 1px solid rgba(99,102,241,0.15);
+    border-radius: 6px; padding: 10px 14px; font-size: 11px;
+    color: rgba(238,242,255,0.65); line-height: 1.5; margin-top: 16px;
+  }
+  .note-box strong { color: rgba(238,242,255,0.85); }
+</style>
+</head>
+<body>
+
+<h2>Navigation & Page Structure <span style="font-size:13px;font-weight:400;color:rgba(238,242,255,0.4)">— v3</span></h2>
+<p class="subtitle">Separator after Surplus (fixed), real add button, stale dots fixed on tier page, notes field added.</p>
+
+<!-- TOP NAV -->
+<div class="section-label">Top Navigation <span class="change-tag">separator fixed</span></div>
+<div class="nav-bar">
+  <span class="nav-wordmark">finplan</span>
+  <span class="nav-item overview">Overview</span>
+  <div class="nav-vsep"></div>
+  <span class="nav-item t-income">Income</span>
+  <span class="nav-item t-committed">Committed</span>
+  <span class="nav-item t-discret">Discretionary</span>
+  <span class="nav-item t-surplus">Surplus</span>
+  <div class="nav-vsep"></div>
+  <span class="nav-item">Goals</span>
+  <span class="nav-item">Gifts</span>
+  <div class="nav-spacer"></div>
+  <span class="nav-item" style="color:rgba(238,242,255,0.35)">Settings</span>
+</div>
+<p class="nav-note">Overview (accent) | Income · Committed · Discretionary · Surplus | Goals · Gifts ···· Settings</p>
+
+<hr>
+
+<!-- PAGE LAYOUTS -->
+<div class="section-label" style="margin-bottom:14px">Page Layouts</div>
+<div class="layouts">
+  <!-- OVERVIEW -->
+  <div>
+    <div class="section-label">Overview</div>
+    <div class="app-frame">
+      <div class="frame-nav">
+        <span class="fn-logo">fp</span>
+        <span class="fn-item fn-overview">Overview</span>
+        <div class="fn-vsep"></div>
+        <span class="fn-item t-income">Income</span>
+        <span class="fn-item t-committed">Committed</span>
+        <span class="fn-item t-discret">Discret.</span>
+        <span class="fn-item t-surplus">Surplus</span>
+        <div class="fn-vsep"></div>
+        <span class="fn-item">Goals</span>
+        <span class="fn-item">Gifts</span>
+      </div>
+      <div class="frame-body">
+        <div class="frame-left">
+          <div class="tier-row"><span class="tier-name tn-income">Income</span><span class="tier-amount tn-income">£3,650</span></div>
+          <div class="tier-items">
+            <div class="tier-item-row"><div class="stale-col"></div><span class="tier-item-name">Salary</span><span class="tier-item-amt">£3,200</span></div>
+            <div class="tier-item-row"><div class="stale-col"><div class="stale-dot"></div></div><span class="tier-item-name">Rental</span><span class="tier-item-amt">£450</span></div>
+          </div>
+          <div class="tier-connector"><div class="connector-line"></div><span class="connector-text">minus committed</span><div class="connector-line"></div></div>
+          <div class="tier-row"><span class="tier-name tn-committed">Committed</span><span class="tier-amount tn-committed">£1,840</span></div>
+          <div class="tier-items">
+            <div class="tier-item-row"><div class="stale-col"></div><span class="tier-item-name">Housing</span><span class="tier-item-amt">£1,200</span></div>
+            <div class="tier-item-row"><div class="stale-col"></div><span class="tier-item-name">Utilities</span><span class="tier-item-amt">£380</span></div>
+            <div class="tier-item-row"><div class="stale-col"><div class="stale-dot"></div></div><span class="tier-item-name">Services</span><span class="tier-item-amt">£260</span></div>
+          </div>
+          <div class="tier-connector"><div class="connector-line"></div><span class="connector-text">minus discretionary</span><div class="connector-line"></div></div>
+          <div class="tier-row"><span class="tier-name tn-discret">Discret.</span><span class="tier-amount tn-discret">£1,200</span></div>
+          <div class="tier-items">
+            <div class="tier-item-row"><div class="stale-col"></div><span class="tier-item-name">Food</span><span class="tier-item-amt">£450</span></div>
+            <div class="tier-item-row"><div class="stale-col"><div class="stale-dot"></div></div><span class="tier-item-name">Fun</span><span class="tier-item-amt">£300</span></div>
+            <div class="tier-item-row"><div class="stale-col"></div><span class="tier-item-name">+ 2 more</span><span class="tier-item-amt" style="color:rgba(238,242,255,0.2)">…</span></div>
+          </div>
+          <div class="tier-connector"><div class="connector-line"></div><span class="connector-text">equals</span><div class="connector-line"></div></div>
+          <div class="tier-row"><span class="tier-name tn-surplus">Surplus</span><span class="tier-amount tn-surplus">£610</span></div>
+          <div class="tier-items">
+            <div class="tier-item-row"><div class="stale-col"></div><span class="tier-item-name" style="color:rgba(238,242,255,0.35)">16.7% of income</span></div>
+          </div>
+        </div>
+        <div class="frame-right">
+          <div class="analytics-placeholder">
+            <div class="icon">📊</div>
+            <div class="lbl">Analytics<br><span style="font-size:7px;opacity:0.7">Coming soon</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- COMMITTED TIER PAGE -->
+  <div>
+    <div class="section-label">Committed — Tier Page</div>
+    <div class="app-frame">
+      <div class="frame-nav">
+        <span class="fn-logo">fp</span>
+        <span class="fn-item">Overview</span>
+        <div class="fn-vsep"></div>
+        <span class="fn-item t-income">Income</span>
+        <span class="fn-item fn-committed-active">Committed</span>
+        <span class="fn-item t-discret">Discret.</span>
+        <span class="fn-item t-surplus">Surplus</span>
+        <div class="fn-vsep"></div>
+        <span class="fn-item">Goals</span>
+        <span class="fn-item">Gifts</span>
+      </div>
+      <div class="frame-body">
+        <div class="frame-left">
+          <div class="subcat-section-label tn-committed">Committed</div>
+          <div class="subcat-row selected">
+            <div class="subcat-stale-col"></div>
+            <span class="subcat-name">Housing</span>
+            <span class="subcat-amt">£1,200</span>
+          </div>
+          <div class="subcat-row">
+            <div class="subcat-stale-col"></div>
+            <span class="subcat-name">Utilities</span>
+            <span class="subcat-amt">£380</span>
+          </div>
+          <div class="subcat-row">
+            <div class="subcat-stale-col"><div class="stale-dot"></div></div>
+            <span class="subcat-name">Services</span>
+            <span class="subcat-amt">£260</span>
+          </div>
+          <div class="subcat-row">
+            <div class="subcat-stale-col"></div>
+            <span class="subcat-name" style="color:rgba(238,242,255,0.3)">Other</span>
+            <span class="subcat-amt" style="color:rgba(238,242,255,0.2)">—</span>
+          </div>
+          <div class="subcat-total">
+            <span class="subcat-total-label">Total</span>
+            <span class="subcat-total-amt">£1,840</span>
+          </div>
+        </div>
+        <div class="frame-right">
+          <div style="font-size:8px;color:rgba(238,242,255,0.35);margin-bottom:6px">Committed › <span style="color:#8b5cf6">Housing</span></div>
+          <div style="font-family:'Outfit',system-ui,sans-serif;font-size:12px;font-weight:700;margin-bottom:1px">Housing</div>
+          <div style="font-size:8px;color:rgba(238,242,255,0.35);margin-bottom:6px">3 items · £1,200/mo</div>
+          <!-- Real button -->
+          <button style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:4px;color:white;font-size:8px;font-weight:700;font-family:'Outfit',system-ui,sans-serif;border:none;background:#7c3aed;cursor:pointer;margin-bottom:8px">
+            <span style="font-size:11px">+</span> Add Housing item
+          </button>
+          <!-- Items with stale dot column -->
+          <div style="display:flex;align-items:center;padding:4px 0;cursor:pointer;border-radius:4px;background:rgba(99,102,241,0.1);border-left:2px solid #6366f1;padding-left:4px;margin-bottom:1px">
+            <div style="width:10px;flex-shrink:0"></div>
+            <span style="flex:1;font-size:9px;color:rgba(238,242,255,0.75)">Mortgage</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#cbd5e1;margin-right:6px">£950 · monthly</span>
+          </div>
+          <div style="display:flex;align-items:center;padding:4px 0;cursor:pointer;border-radius:4px;margin-bottom:1px">
+            <div style="width:10px;flex-shrink:0;display:flex;justify-content:center"><div style="width:4px;height:4px;border-radius:50%;background:#f59e0b"></div></div>
+            <span style="flex:1;font-size:9px;color:rgba(238,242,255,0.55)">Council Tax</span>
+            <span style="font-size:7px;color:#f59e0b;margin-right:4px">14mo</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#cbd5e1;margin-right:6px">£180 · monthly</span>
+          </div>
+          <div style="display:flex;align-items:center;padding:4px 0;cursor:pointer;border-radius:4px">
+            <div style="width:10px;flex-shrink:0"></div>
+            <span style="flex:1;font-size:9px;color:rgba(238,242,255,0.75)">Buildings Ins.</span>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:8px;color:#cbd5e1;margin-right:6px">£840 · £70/mo</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="annotations">
+      <span class="ann">Real add button, accent #7c3aed</span>
+      <span class="ann">Stale dot in fixed column on items too</span>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<!-- INTERACTIVE DEMO -->
+<div class="section-label" style="margin-bottom:6px">Item Detail — Interactive Demo <span class="change-tag">notes field added</span></div>
+<p class="instruction">Click any item to expand. <strong>Mortgage</strong> has a note, <strong>Council Tax</strong> is stale (shows "Still correct"), <strong>Buildings Insurance</strong> has no note yet. Click <strong>Edit</strong> on any item to see the edit form with the notes textarea.</p>
+
+<div class="demo-frame">
+  <div class="demo-header">
+    <div class="demo-title">Housing</div>
+    <div class="demo-sub">3 items · £1,200/mo · Committed</div>
+  </div>
+  <div class="demo-body">
+    <button class="add-btn" onclick="handleAdd()">
+      <span class="add-btn-icon">+</span>
+      Add Housing item
+    </button>
+
+    <!-- Item 1: Mortgage — fresh, has a note -->
+    <div class="item" id="item-mortgage">
+      <div class="item-row" onclick="toggleItem('item-mortgage')">
+        <div class="item-stale-col"></div>
+        <span class="item-name">Mortgage</span>
+        <div class="item-meta">
+          <span class="item-amt">£950</span>
+          <span class="item-freq">monthly</span>
+          <span class="item-chevron">›</span>
+        </div>
+      </div>
+      <div class="item-detail">
+        <div class="detail-view">
+          <div class="detail-grid">
+            <div class="detail-field"><div class="detail-lbl">Last reviewed</div><div class="detail-val">2 months ago</div></div>
+            <div class="detail-field"><div class="detail-lbl">Spend type</div><div class="detail-val">Monthly</div></div>
+            <div class="detail-field"><div class="detail-lbl">Subcategory</div><div class="detail-val">Housing</div></div>
+          </div>
+          <div class="detail-notes">
+            <div class="detail-notes-lbl">Notes</div>
+            <div class="detail-notes-val">Nationwide fixed rate, ends March 2027. Reminder to remortgage in Jan.</div>
+          </div>
+          <div class="btn-pair">
+            <button class="btn btn-secondary" onclick="startEdit('item-mortgage', event)">Edit</button>
+          </div>
+        </div>
+        <div class="edit-form">
+          <div class="form-row"><div class="form-label">Name</div><input class="mock-input name-input" value="Mortgage" /></div>
+          <div class="form-row">
+            <div class="form-label">Amount & frequency</div>
+            <div class="form-inputs">
+              <input class="mock-input amt-input" value="£950" />
+              <select class="mock-select"><option selected>Monthly</option><option>Yearly</option><option>One-off</option></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-label">Subcategory</div>
+            <select class="mock-select" style="width:100%"><option selected>Housing</option><option>Utilities</option><option>Services</option><option>Other</option></select>
+          </div>
+          <div class="form-row">
+            <div class="form-label">Notes</div>
+            <textarea class="mock-textarea">Nationwide fixed rate, ends March 2027. Reminder to remortgage in Jan.</textarea>
+          </div>
+          <div class="btn-pair">
+            <button class="btn btn-secondary" onclick="cancelEdit('item-mortgage', event)">Cancel</button>
+            <button class="btn btn-confirm" onclick="cancelEdit('item-mortgage', event)">Still correct ✓</button>
+            <button class="btn btn-primary" onclick="cancelEdit('item-mortgage', event)">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item 2: Council Tax — STALE -->
+    <div class="item" id="item-council">
+      <div class="item-row" onclick="toggleItem('item-council')">
+        <div class="item-stale-col"><div class="item-stale-dot"></div></div>
+        <span class="item-name">Council Tax</span>
+        <div class="item-meta">
+          <span class="item-age">14mo</span>
+          <span class="item-amt">£180</span>
+          <span class="item-freq">monthly</span>
+          <span class="item-chevron">›</span>
+        </div>
+      </div>
+      <div class="item-detail">
+        <div class="detail-view">
+          <div class="detail-grid">
+            <div class="detail-field"><div class="detail-lbl">Last reviewed</div><div class="detail-val stale-val">14 months ago</div></div>
+            <div class="detail-field"><div class="detail-lbl">Spend type</div><div class="detail-val">Monthly</div></div>
+            <div class="detail-field"><div class="detail-lbl">Subcategory</div><div class="detail-val">Housing</div></div>
+          </div>
+          <div class="detail-notes">
+            <div class="detail-notes-lbl">Notes</div>
+            <div class="detail-notes-empty">No notes</div>
+          </div>
+          <div class="btn-pair">
+            <button class="btn btn-secondary" onclick="startEdit('item-council', event)">Edit</button>
+            <button class="btn btn-confirm">Still correct ✓</button>
+          </div>
+        </div>
+        <div class="edit-form">
+          <div class="form-row"><div class="form-label">Name</div><input class="mock-input name-input" value="Council Tax" /></div>
+          <div class="form-row">
+            <div class="form-label">Amount & frequency</div>
+            <div class="form-inputs">
+              <input class="mock-input amt-input" value="£180" />
+              <select class="mock-select"><option selected>Monthly</option><option>Yearly</option><option>One-off</option></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-label">Subcategory</div>
+            <select class="mock-select" style="width:100%"><option selected>Housing</option><option>Utilities</option><option>Services</option><option>Other</option></select>
+          </div>
+          <div class="form-row">
+            <div class="form-label">Notes</div>
+            <textarea class="mock-textarea" placeholder="Add a note..."></textarea>
+          </div>
+          <div class="btn-pair">
+            <button class="btn btn-secondary" onclick="cancelEdit('item-council', event)">Cancel</button>
+            <button class="btn btn-confirm" onclick="cancelEdit('item-council', event)">Still correct ✓</button>
+            <button class="btn btn-primary" onclick="cancelEdit('item-council', event)">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Item 3: Buildings Insurance — yearly, fresh, no note -->
+    <div class="item" id="item-insurance">
+      <div class="item-row" onclick="toggleItem('item-insurance')">
+        <div class="item-stale-col"></div>
+        <span class="item-name">Buildings Insurance</span>
+        <div class="item-meta">
+          <span class="item-amt">£840</span>
+          <span class="item-freq">yearly · £70/mo</span>
+          <span class="item-chevron">›</span>
+        </div>
+      </div>
+      <div class="item-detail">
+        <div class="detail-view">
+          <div class="detail-grid">
+            <div class="detail-field"><div class="detail-lbl">Last reviewed</div><div class="detail-val">1 month ago</div></div>
+            <div class="detail-field"><div class="detail-lbl">Spend type</div><div class="detail-val">Yearly <span style="color:rgba(238,242,255,0.4);font-size:9px">(÷12 = £70/mo)</span></div></div>
+            <div class="detail-field"><div class="detail-lbl">Subcategory</div><div class="detail-val">Housing</div></div>
+          </div>
+          <div class="detail-notes">
+            <div class="detail-notes-lbl">Notes</div>
+            <div class="detail-notes-empty">No notes</div>
+          </div>
+          <div class="btn-pair">
+            <button class="btn btn-secondary" onclick="startEdit('item-insurance', event)">Edit</button>
+          </div>
+        </div>
+        <div class="edit-form">
+          <div class="form-row"><div class="form-label">Name</div><input class="mock-input name-input" value="Buildings Insurance" /></div>
+          <div class="form-row">
+            <div class="form-label">Amount & frequency</div>
+            <div class="form-inputs">
+              <input class="mock-input amt-input" value="£840" />
+              <select class="mock-select"><option>Monthly</option><option selected>Yearly</option><option>One-off</option></select>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-label">Subcategory</div>
+            <select class="mock-select" style="width:100%"><option selected>Housing</option><option>Utilities</option><option>Services</option><option>Other</option></select>
+          </div>
+          <div class="form-row">
+            <div class="form-label">Notes</div>
+            <textarea class="mock-textarea" placeholder="Add a note..."></textarea>
+          </div>
+          <div class="btn-pair">
+            <button class="btn btn-secondary" onclick="cancelEdit('item-insurance', event)">Cancel</button>
+            <button class="btn btn-confirm" onclick="cancelEdit('item-insurance', event)">Still correct ✓</button>
+            <button class="btn btn-primary" onclick="cancelEdit('item-insurance', event)">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div style="width:5px;height:5px;border-radius:50%;background:#f59e0b"></div> Stale → "Still correct" in view + edit</div>
+  <div class="legend-item"><div style="width:10px;height:1px;background:rgba(238,242,255,0.3)"></div> Fresh → "Edit" only; "Still correct" appears in edit mode</div>
+  <div class="legend-item"><div style="width:10px;height:1px;background:rgba(99,102,241,0.5)"></div> Notes shown in detail view, editable as textarea in edit form</div>
+</div>
+
+<div class="note-box">
+  <strong>Changes in v3:</strong><br>
+  • Separator moved: now after <strong>Surplus</strong> (not Discretionary)<br>
+  • Add button: real <code>&lt;button&gt;</code> in accent purple (#7c3aed), white text, above the item list<br>
+  • Stale dots: fixed-width column LEFT of item names on tier page items — names align<br>
+  • Notes: free-format text field on every item, shown in detail view (italic), textarea in edit form
+</div>
+
+<script>
+function toggleItem(id) {
+  const el = document.getElementById(id);
+  const wasOpen = el.classList.contains('open');
+  document.querySelectorAll('.item').forEach(i => i.classList.remove('open','editing'));
+  if (!wasOpen) el.classList.add('open');
+}
+function startEdit(id, e) {
+  e.stopPropagation();
+  document.getElementById(id).classList.add('editing');
+}
+function cancelEdit(id, e) {
+  e.stopPropagation();
+  document.getElementById(id).classList.remove('editing');
+}
+function handleAdd() {
+  alert('Inserts a blank item form at the top of the list, ready to fill in.');
+}
+</script>
+</body>
+</html>
