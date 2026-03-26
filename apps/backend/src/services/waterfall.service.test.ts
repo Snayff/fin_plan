@@ -337,6 +337,7 @@ describe("waterfallService.getWaterfallSummary — toGBP rounding", () => {
 
 describe("waterfallService.createCommitted (CommittedItem)", () => {
   it("creates a committed item with subcategoryId and notes", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-1" } as any);
     prismaMock.committedItem.create.mockResolvedValue({
       id: "ci-1",
       householdId: "hh-1",
@@ -363,6 +364,7 @@ describe("waterfallService.createCommitted (CommittedItem)", () => {
 
 describe("waterfallService.createYearly (CommittedItem with spendType=yearly)", () => {
   it("creates a committed item with spendType=yearly and dueMonth", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-1" } as any);
     prismaMock.committedItem.create.mockResolvedValue({
       id: "ci-2",
       householdId: "hh-1",
@@ -409,6 +411,7 @@ describe("waterfallService.updateCommitted (CommittedItem)", () => {
 
 describe("waterfallService.createDiscretionary (DiscretionaryItem)", () => {
   it("creates a discretionary item with subcategoryId", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-food" } as any);
     prismaMock.discretionaryItem.create.mockResolvedValue({
       id: "di-1",
       householdId: "hh-1",
@@ -433,6 +436,7 @@ describe("waterfallService.createDiscretionary (DiscretionaryItem)", () => {
 
 describe("waterfallService.createSavings (DiscretionaryItem)", () => {
   it("creates a discretionary item with wealthAccountId", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-savings" } as any);
     prismaMock.discretionaryItem.create.mockResolvedValue({
       id: "di-2",
       householdId: "hh-1",

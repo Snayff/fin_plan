@@ -69,9 +69,7 @@ export const subcategoryService = {
       where: { householdId, tier, name: "Other" },
     });
     if (!sub) {
-      throw new Error(
-        `Default subcategory not found for tier "${tier}" in household "${householdId}"`
-      );
+      throw new Error(`Default subcategory not found for tier "${tier}"`);
     }
     return sub.id;
   },

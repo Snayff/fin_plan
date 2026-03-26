@@ -32,6 +32,9 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   fastify.get("/cashflow", pre, async (req, reply) => {
     const { year } = req.query as { year?: string };
     const y = year ? parseInt(year, 10) : new Date().getFullYear();
+    if (!Number.isInteger(y) || y < 2000 || y > 2100) {
+      return reply.status(400).send({ error: "Invalid year" });
+    }
     const months = await waterfallService.getCashflow(req.householdId!, y);
     return reply.send(months);
   });

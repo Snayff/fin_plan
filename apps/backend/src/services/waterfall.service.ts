@@ -16,6 +16,7 @@ import type {
   UpdateCommittedItemInput,
   CreateDiscretionaryItemInput,
   UpdateDiscretionaryItemInput,
+  WaterfallTier,
 } from "@finplan/shared";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -34,6 +35,17 @@ async function recordHistory(itemType: string, itemId: string, value: number) {
 function assertOwned(item: { householdId: string } | null, householdId: string, label: string) {
   if (!item) throw new NotFoundError(`${label} not found`);
   if (item.householdId !== householdId) throw new NotFoundError(`${label} not found`);
+}
+
+async function validateSubcategoryOwnership(
+  householdId: string,
+  subcategoryId: string,
+  tier: WaterfallTier
+) {
+  const sub = await prisma.subcategory.findFirst({
+    where: { id: subcategoryId, householdId, tier },
+  });
+  if (!sub) throw new NotFoundError("Subcategory not found");
 }
 
 // ─── Summary ─────────────────────────────────────────────────────────────────
@@ -211,6 +223,9 @@ export const waterfallService = {
     const subcategoryId =
       data.subcategoryId ??
       (await subcategoryService.getDefaultSubcategoryId(householdId, "income"));
+    if (data.subcategoryId) {
+      await validateSubcategoryOwnership(householdId, subcategoryId, "income");
+    }
     const source = await prisma.incomeSource.create({
       data: { ...data, subcategoryId, householdId, lastReviewedAt: new Date() },
     });
@@ -221,6 +236,9 @@ export const waterfallService = {
   async updateIncome(householdId: string, id: string, data: UpdateIncomeSourceInput) {
     const existing = await prisma.incomeSource.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Income source");
+    if (data.subcategoryId) {
+      await validateSubcategoryOwnership(householdId, data.subcategoryId, "income");
+    }
 
     const updated = await prisma.incomeSource.update({
       where: { id },
@@ -274,6 +292,7 @@ export const waterfallService = {
   },
 
   async createCommitted(householdId: string, data: CreateCommittedItemInput) {
+    await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
     const item = await prisma.committedItem.create({
       data: {
         ...data,
@@ -289,6 +308,9 @@ export const waterfallService = {
   async updateCommitted(householdId: string, id: string, data: UpdateCommittedItemInput) {
     const existing = await prisma.committedItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Committed item");
+    if (data.subcategoryId) {
+      await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
+    }
 
     const updated = await prisma.committedItem.update({
       where: { id },
@@ -324,6 +346,7 @@ export const waterfallService = {
   },
 
   async createYearly(householdId: string, data: CreateCommittedItemInput) {
+    await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
     const item = await prisma.committedItem.create({
       data: {
         ...data,
@@ -339,6 +362,9 @@ export const waterfallService = {
   async updateYearly(householdId: string, id: string, data: UpdateCommittedItemInput) {
     const existing = await prisma.committedItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Committed item");
+    if (data.subcategoryId) {
+      await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
+    }
 
     const updated = await prisma.committedItem.update({
       where: { id },
@@ -381,6 +407,7 @@ export const waterfallService = {
   },
 
   async createDiscretionary(householdId: string, data: CreateDiscretionaryItemInput) {
+    await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
     const item = await prisma.discretionaryItem.create({
       data: {
         ...data,
@@ -396,6 +423,9 @@ export const waterfallService = {
   async updateDiscretionary(householdId: string, id: string, data: UpdateDiscretionaryItemInput) {
     const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Discretionary item");
+    if (data.subcategoryId) {
+      await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
+    }
 
     const updated = await prisma.discretionaryItem.update({
       where: { id },
@@ -438,6 +468,7 @@ export const waterfallService = {
   },
 
   async createSavings(householdId: string, data: CreateDiscretionaryItemInput) {
+    await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
     const item = await prisma.discretionaryItem.create({
       data: {
         ...data,
@@ -453,6 +484,9 @@ export const waterfallService = {
   async updateSavings(householdId: string, id: string, data: UpdateDiscretionaryItemInput) {
     const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Savings allocation");
+    if (data.subcategoryId) {
+      await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
+    }
 
     const updated = await prisma.discretionaryItem.update({
       where: { id },
