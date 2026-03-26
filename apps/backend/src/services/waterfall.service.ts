@@ -13,6 +13,8 @@ import type {
   IncomeSourceRow,
   CreateCommittedItemInput,
   UpdateCommittedItemInput,
+  CreateDiscretionaryItemInput,
+  UpdateDiscretionaryItemInput,
 } from "@finplan/shared";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -350,15 +352,114 @@ export const waterfallService = {
   // ─── Discretionary items ─────────────────────────────────────────────────────
 
   async listDiscretionary(householdId: string) {
+    // Exclude savings-subcategory items (those are returned by listSavings)
+    const savingsSubcategory = await prisma.subcategory.findFirst({
+      where: { householdId, tier: "discretionary", name: "Savings" },
+    });
     return prisma.discretionaryItem.findMany({
-      where: { householdId },
+      where: {
+        householdId,
+        ...(savingsSubcategory ? { subcategoryId: { not: savingsSubcategory.id } } : {}),
+      },
       orderBy: { sortOrder: "asc" },
     });
+  },
+
+  async createDiscretionary(householdId: string, data: CreateDiscretionaryItemInput) {
+    const item = await prisma.discretionaryItem.create({
+      data: {
+        ...data,
+        householdId,
+        spendType: data.spendType ?? "monthly",
+        lastReviewedAt: new Date(),
+      },
+    });
+    await recordHistory("discretionary_item", item.id, item.amount);
+    return item;
+  },
+
+  async updateDiscretionary(householdId: string, id: string, data: UpdateDiscretionaryItemInput) {
+    const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Discretionary item");
+
+    const updated = await prisma.discretionaryItem.update({
+      where: { id },
+      data: { ...data, lastReviewedAt: new Date() },
+    });
+
+    if (data.amount !== undefined && data.amount !== existing!.amount) {
+      await recordHistory("discretionary_item", id, updated.amount);
+    }
+
+    return updated;
+  },
+
+  async deleteDiscretionary(householdId: string, id: string) {
+    const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Discretionary item");
+    await prisma.discretionaryItem.delete({ where: { id } });
   },
 
   async confirmDiscretionary(householdId: string, id: string) {
     const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Discretionary item");
+    return prisma.discretionaryItem.update({
+      where: { id },
+      data: { lastReviewedAt: new Date() },
+    });
+  },
+
+  // ─── Savings (DiscretionaryItem with wealthAccountId) ───────────────────────
+
+  async listSavings(householdId: string) {
+    const savingsSubcategory = await prisma.subcategory.findFirst({
+      where: { householdId, tier: "discretionary", name: "Savings" },
+    });
+    if (!savingsSubcategory) return [];
+    return prisma.discretionaryItem.findMany({
+      where: { householdId, subcategoryId: savingsSubcategory.id },
+      orderBy: { sortOrder: "asc" },
+    });
+  },
+
+  async createSavings(householdId: string, data: CreateDiscretionaryItemInput) {
+    const item = await prisma.discretionaryItem.create({
+      data: {
+        ...data,
+        householdId,
+        spendType: data.spendType ?? "monthly",
+        lastReviewedAt: new Date(),
+      },
+    });
+    await recordHistory("discretionary_item", item.id, item.amount);
+    return item;
+  },
+
+  async updateSavings(householdId: string, id: string, data: UpdateDiscretionaryItemInput) {
+    const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Savings allocation");
+
+    const updated = await prisma.discretionaryItem.update({
+      where: { id },
+      data: { ...data, lastReviewedAt: new Date() },
+    });
+
+    if (data.amount !== undefined && data.amount !== existing!.amount) {
+      await recordHistory("discretionary_item", id, updated.amount);
+    }
+
+    return updated;
+  },
+
+  async deleteSavings(householdId: string, id: string) {
+    const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Savings allocation");
+    await prisma.discretionaryItem.delete({ where: { id } });
+  },
+
+  async confirmSavings(householdId: string, id: string) {
+    const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Savings allocation");
     return prisma.discretionaryItem.update({
       where: { id },
       data: { lastReviewedAt: new Date() },

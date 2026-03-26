@@ -407,6 +407,75 @@ describe("waterfallService.updateCommitted (CommittedItem)", () => {
   });
 });
 
+describe("waterfallService.createDiscretionary (DiscretionaryItem)", () => {
+  it("creates a discretionary item with subcategoryId", async () => {
+    prismaMock.discretionaryItem.create.mockResolvedValue({
+      id: "di-1",
+      householdId: "hh-1",
+      subcategoryId: "sub-food",
+      name: "Groceries",
+      amount: 500,
+      spendType: "monthly",
+      notes: null,
+    } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+
+    const result = await waterfallService.createDiscretionary("hh-1", {
+      name: "Groceries",
+      amount: 500,
+      subcategoryId: "sub-food",
+    });
+
+    expect(result.subcategoryId).toBe("sub-food");
+    expect(prismaMock.discretionaryItem.create).toHaveBeenCalled();
+  });
+});
+
+describe("waterfallService.createSavings (DiscretionaryItem)", () => {
+  it("creates a discretionary item with wealthAccountId", async () => {
+    prismaMock.discretionaryItem.create.mockResolvedValue({
+      id: "di-2",
+      householdId: "hh-1",
+      subcategoryId: "sub-savings",
+      name: "Emergency Fund",
+      amount: 200,
+      wealthAccountId: "wa-1",
+    } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+
+    const result = await waterfallService.createSavings("hh-1", {
+      name: "Emergency Fund",
+      amount: 200,
+      subcategoryId: "sub-savings",
+      wealthAccountId: "wa-1",
+    });
+
+    expect(result.wealthAccountId).toBe("wa-1");
+  });
+});
+
+describe("waterfallService.updateDiscretionary (DiscretionaryItem)", () => {
+  it("records history when amount changes", async () => {
+    prismaMock.discretionaryItem.findUnique.mockResolvedValue({
+      id: "di-1",
+      householdId: "hh-1",
+      amount: 500,
+    } as any);
+    prismaMock.discretionaryItem.update.mockResolvedValue({ id: "di-1", amount: 600 } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+
+    await waterfallService.updateDiscretionary("hh-1", "di-1", { amount: 600 });
+
+    expect(prismaMock.waterfallHistory.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        itemType: "discretionary_item",
+        itemId: "di-1",
+        value: 600,
+      }),
+    });
+  });
+});
+
 describe("waterfallService.getCashflow", () => {
   it("correctly calculates pot and marks shortfalls", async () => {
     prismaMock.committedItem.findMany.mockResolvedValue([
