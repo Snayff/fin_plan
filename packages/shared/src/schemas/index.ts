@@ -91,7 +91,12 @@ export {
 } from "./snapshot.schemas";
 
 // Review session schemas and types
-export { updateReviewSessionSchema, type UpdateReviewSessionInput } from "./review-session.schemas";
+export {
+  confirmedItemsSchema,
+  updatedItemsSchema,
+  updateReviewSessionSchema,
+  type UpdateReviewSessionInput,
+} from "./review-session.schemas";
 
 // Setup session schemas and types
 export { updateSetupSessionSchema, type UpdateSetupSessionInput } from "./setup-session.schemas";
