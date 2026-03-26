@@ -1,5 +1,6 @@
 import { prisma } from "../config/database";
 import { hashPassword } from "../utils/password";
+import { subcategoryService } from "../services/subcategory.service";
 
 if (process.env.NODE_ENV === "production") {
   console.log("Seed skipped in production");
@@ -51,6 +52,31 @@ async function main() {
     update: {},
   });
 
+  // ─── Subcategories ─────────────────────────────────────────────────────────
+
+  await subcategoryService.seedDefaults(hId);
+
+  const incomeSalaryId = await subcategoryService.getSubcategoryIdByName(hId, "income", "Salary");
+  const committedOtherId = await subcategoryService.getSubcategoryIdByName(
+    hId,
+    "committed",
+    "Other"
+  );
+  const discretionaryFoodId = await subcategoryService.getSubcategoryIdByName(
+    hId,
+    "discretionary",
+    "Food"
+  );
+  const discretionarySavingsId = await subcategoryService.getSubcategoryIdByName(
+    hId,
+    "discretionary",
+    "Savings"
+  );
+
+  if (!incomeSalaryId || !committedOtherId || !discretionaryFoodId || !discretionarySavingsId) {
+    throw new Error("Failed to resolve subcategory IDs for seeding");
+  }
+
   // ─── Income Sources ────────────────────────────────────────────────────────
 
   const incomeData = [
@@ -59,6 +85,7 @@ async function main() {
       amount: 3500,
       frequency: "monthly" as const,
       incomeType: "salary" as const,
+      subcategoryId: incomeSalaryId,
       ownerId: user.id,
       sortOrder: 0,
     },
@@ -67,6 +94,7 @@ async function main() {
       amount: 2800,
       frequency: "monthly" as const,
       incomeType: "salary" as const,
+      subcategoryId: incomeSalaryId,
       sortOrder: 1,
     },
   ];
@@ -80,66 +108,82 @@ async function main() {
     }
   }
 
-  // ─── Committed Bills ──────────────────────────────────────────────────────
+  // ─── Committed Items (monthly) ─────────────────────────────────────────────
 
   const committedData = [
-    { name: "Rent", amount: 1200, sortOrder: 0 },
-    { name: "Internet", amount: 45, sortOrder: 1 },
-    { name: "Phone", amount: 25, sortOrder: 2 },
+    { name: "Rent", amount: 1200, spendType: "monthly" as const, sortOrder: 0 },
+    { name: "Internet", amount: 45, spendType: "monthly" as const, sortOrder: 1 },
+    { name: "Phone", amount: 25, spendType: "monthly" as const, sortOrder: 2 },
   ];
 
-  for (const bill of committedData) {
-    const existing = await prisma.committedBill.findFirst({
-      where: { householdId: hId, name: bill.name },
+  for (const item of committedData) {
+    const existing = await prisma.committedItem.findFirst({
+      where: { householdId: hId, name: item.name },
     });
     if (!existing) {
-      await prisma.committedBill.create({ data: { householdId: hId, ...bill } });
+      await prisma.committedItem.create({
+        data: { householdId: hId, subcategoryId: committedOtherId, ...item },
+      });
     }
   }
 
-  // ─── Yearly Bills ─────────────────────────────────────────────────────────
+  // ─── Committed Items (yearly) ──────────────────────────────────────────────
 
   const yearlyData = [
-    { name: "Home Insurance", amount: 600, dueMonth: 9, sortOrder: 0 },
-    { name: "Car Tax", amount: 180, dueMonth: 3, sortOrder: 1 },
+    {
+      name: "Home Insurance",
+      amount: 600,
+      spendType: "yearly" as const,
+      dueMonth: 9,
+      sortOrder: 0,
+    },
+    { name: "Car Tax", amount: 180, spendType: "yearly" as const, dueMonth: 3, sortOrder: 1 },
   ];
 
-  for (const bill of yearlyData) {
-    const existing = await prisma.yearlyBill.findFirst({
-      where: { householdId: hId, name: bill.name },
+  for (const item of yearlyData) {
+    const existing = await prisma.committedItem.findFirst({
+      where: { householdId: hId, name: item.name },
     });
     if (!existing) {
-      await prisma.yearlyBill.create({ data: { householdId: hId, ...bill } });
+      await prisma.committedItem.create({
+        data: { householdId: hId, subcategoryId: committedOtherId, ...item },
+      });
     }
   }
 
-  // ─── Discretionary Categories ──────────────────────────────────────────────
+  // ─── Discretionary Items ───────────────────────────────────────────────────
 
   const discretionaryData = [
-    { name: "Groceries", monthlyBudget: 500, sortOrder: 0 },
-    { name: "Dining Out", monthlyBudget: 150, sortOrder: 1 },
-    { name: "Entertainment", monthlyBudget: 80, sortOrder: 2 },
+    { name: "Groceries", amount: 500, spendType: "monthly" as const, sortOrder: 0 },
+    { name: "Dining Out", amount: 150, spendType: "monthly" as const, sortOrder: 1 },
+    { name: "Entertainment", amount: 80, spendType: "monthly" as const, sortOrder: 2 },
   ];
 
-  for (const cat of discretionaryData) {
-    const existing = await prisma.discretionaryCategory.findFirst({
-      where: { householdId: hId, name: cat.name },
+  for (const item of discretionaryData) {
+    const existing = await prisma.discretionaryItem.findFirst({
+      where: { householdId: hId, name: item.name },
     });
     if (!existing) {
-      await prisma.discretionaryCategory.create({ data: { householdId: hId, ...cat } });
+      await prisma.discretionaryItem.create({
+        data: { householdId: hId, subcategoryId: discretionaryFoodId, ...item },
+      });
     }
   }
 
   // ─── Savings Allocations ───────────────────────────────────────────────────
 
-  const savingsData = [{ name: "Emergency Fund", monthlyAmount: 200, sortOrder: 0 }];
+  const savingsData = [
+    { name: "Emergency Fund", amount: 200, spendType: "monthly" as const, sortOrder: 0 },
+  ];
 
-  for (const sav of savingsData) {
-    const existing = await prisma.savingsAllocation.findFirst({
-      where: { householdId: hId, name: sav.name },
+  for (const item of savingsData) {
+    const existing = await prisma.discretionaryItem.findFirst({
+      where: { householdId: hId, name: item.name },
     });
     if (!existing) {
-      await prisma.savingsAllocation.create({ data: { householdId: hId, ...sav } });
+      await prisma.discretionaryItem.create({
+        data: { householdId: hId, subcategoryId: discretionarySavingsId, ...item },
+      });
     }
   }
 

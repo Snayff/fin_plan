@@ -1,5 +1,6 @@
 import { prisma } from "../config/database.js";
 import { NotFoundError } from "../utils/errors.js";
+import { subcategoryService } from "./subcategory.service.js";
 import { toGBP } from "@finplan/shared";
 import type {
   CreateIncomeSourceInput,
@@ -130,14 +131,14 @@ export const waterfallService = {
         monthlyTotal: committedMonthlyTotal,
         monthlyAvg12: yearlyMonthlyAvg,
         bills: monthlyCommitted,
-        yearlyBills: yearlyCommitted,
+        yearlyBills: yearlyCommitted.map((b) => ({ ...b, dueMonth: b.dueMonth ?? 1 })),
       },
       discretionary: {
         total: discretionaryTotal,
-        categories: categoryItems,
+        categories: categoryItems.map((c) => ({ ...c, monthlyBudget: c.amount })),
         savings: {
           total: savingsTotal,
-          allocations: savingsItems,
+          allocations: savingsItems.map((a) => ({ ...a, monthlyAmount: a.amount })),
         },
       },
       surplus: {
@@ -207,8 +208,11 @@ export const waterfallService = {
   },
 
   async createIncome(householdId: string, data: CreateIncomeSourceInput) {
+    const subcategoryId =
+      data.subcategoryId ??
+      (await subcategoryService.getDefaultSubcategoryId(householdId, "income"));
     const source = await prisma.incomeSource.create({
-      data: { ...data, householdId, lastReviewedAt: new Date() },
+      data: { ...data, subcategoryId, householdId, lastReviewedAt: new Date() },
     });
     await recordHistory("income_source", source.id, source.amount);
     return source;
