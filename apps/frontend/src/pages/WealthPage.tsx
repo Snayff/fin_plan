@@ -12,7 +12,7 @@ import { useWealthSummary, useWealthAccounts, useIsaAllowance } from "@/hooks/us
 type RightView =
   | { type: "none" }
   | { type: "list"; assetClass: string }
-  | { type: "detail"; account: any };
+  | { type: "detail"; account: any; originAssetClass: string };
 
 export default function WealthPage() {
   const [view, setView] = useState<RightView>({ type: "none" });
@@ -42,7 +42,13 @@ export default function WealthPage() {
             ? (view.account.assetClass as AssetClass | "trust")
             : null
       }
-      selectedTrustName={null}
+      selectedTrustName={
+        view.type === "list" && view.assetClass.startsWith("trust:")
+          ? view.assetClass.slice(6)
+          : view.type === "detail" && view.account.isTrust
+            ? (view.account.trustBeneficiaryName ?? null)
+            : null
+      }
     />
   ) : null;
 
@@ -58,7 +64,9 @@ export default function WealthPage() {
         assetClass={view.assetClass}
         accounts={filteredAccounts}
         isaTotals={isaTotals}
-        onSelectAccount={(acc: any) => setView({ type: "detail", account: acc })}
+        onSelectAccount={(acc: any) =>
+          setView({ type: "detail", account: acc, originAssetClass: view.assetClass })
+        }
         onBack={() => setView({ type: "none" })}
         selectedAccountId={null}
       />
@@ -67,7 +75,7 @@ export default function WealthPage() {
     right = (
       <AccountDetailPanel
         account={view.account}
-        onBack={() => setView({ type: "list", assetClass: view.account.assetClass })}
+        onBack={() => setView({ type: "list", assetClass: view.originAssetClass })}
       />
     );
   }

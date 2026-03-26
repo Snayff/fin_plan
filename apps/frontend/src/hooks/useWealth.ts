@@ -101,6 +101,7 @@ export function useCreateAccount() {
       wealthService.createAccount(data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: WEALTH_KEYS.accounts });
+      void queryClient.invalidateQueries({ queryKey: WEALTH_KEYS.summary });
     },
   });
 }

@@ -157,10 +157,14 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <button
+          type="button"
           onClick={onBack}
           className="hover:text-foreground transition-colors flex items-center gap-1"
         >
-          ← {CLASS_LABELS[account.assetClass] ?? account.assetClass}
+          ←{" "}
+          {account.isTrust && account.trustBeneficiaryName
+            ? account.trustBeneficiaryName
+            : (CLASS_LABELS[account.assetClass] ?? account.assetClass)}
         </button>
         <span>/</span>
         <span className="text-foreground font-medium">{account.name}</span>

@@ -79,12 +79,15 @@ export function TrustAccountsSection() {
                     </p>
                   )}
                 </div>
-                <button
-                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs h-auto py-1 px-2"
+                  aria-label={`Rename beneficiary name for ${account.name}`}
                   onClick={() => startEdit(account)}
                 >
                   Rename
-                </button>
+                </Button>
               </div>
             )}
           </div>

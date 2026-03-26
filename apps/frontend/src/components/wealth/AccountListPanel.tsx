@@ -1,5 +1,7 @@
+import { useState } from "react";
 import type { AssetClass, IsaAllowance } from "@finplan/shared";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { formatCurrency } from "@/utils/format";
 import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
 import { cn } from "@/lib/utils";
@@ -7,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import { StalenessIndicator } from "@/components/common/StalenessIndicator";
 import { useSettings } from "@/hooks/useSettings";
+import { useCreateAccount } from "@/hooks/useWealth";
 
 import { CLASS_LABELS } from "./assetClassLabels";
 
@@ -29,6 +32,15 @@ export function AccountListPanel({
 }: AccountListPanelProps) {
   const { data: settings } = useSettings();
   const wealthThreshold = settings?.stalenessThresholds?.wealth_account ?? 3;
+  const createAccount = useCreateAccount();
+
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [addName, setAddName] = useState("");
+  const [addBalance, setAddBalance] = useState("");
+
+  const isTrustView = assetClass.startsWith("trust:");
+  const trustBeneficiaryName = isTrustView ? assetClass.slice(6) : undefined;
+  const baseAssetClass: AssetClass = isTrustView ? "savings" : (assetClass as AssetClass);
 
   const sorted = [...accounts].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -39,7 +51,35 @@ export function AccountListPanel({
   const isaPersons = isaData?.byPerson ?? [];
   const annualLimit = isaData?.annualLimit ?? 20000;
 
-  const heading = CLASS_LABELS[assetClass] ?? assetClass;
+  const heading = isTrustView ? trustBeneficiaryName! : (CLASS_LABELS[assetClass] ?? assetClass);
+
+  function openAddForm() {
+    setAddName("");
+    setAddBalance("");
+    setShowAddForm(true);
+  }
+
+  function handleAddAccount() {
+    if (!addName.trim()) return;
+    createAccount.mutate(
+      {
+        name: addName.trim(),
+        assetClass: baseAssetClass,
+        balance: addBalance !== "" ? parseFloat(addBalance) : 0,
+        isTrust: isTrustView,
+        trustBeneficiaryName,
+      },
+      {
+        onSuccess: () => {
+          setShowAddForm(false);
+          toast.success("Account added");
+        },
+        onError: () => {
+          toast.error("Failed to add account");
+        },
+      }
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -56,17 +96,58 @@ export function AccountListPanel({
         <span className="text-foreground font-medium">{heading}</span>
       </div>
 
-      {/* Add account button */}
-      <div className="flex justify-end">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => console.log("add account")}
-          className="text-sm"
-        >
-          + Add account
-        </Button>
-      </div>
+      {/* Add account button / inline form */}
+      {showAddForm ? (
+        <div className="rounded-lg border p-4 space-y-3">
+          <div className="space-y-1">
+            <label className="text-sm font-medium" htmlFor="add-account-name">
+              Name
+            </label>
+            <input
+              id="add-account-name"
+              autoFocus
+              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              value={addName}
+              onChange={(e) => setAddName(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleAddAccount()}
+              placeholder="e.g. Joint savings account"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-sm font-medium" htmlFor="add-account-balance">
+              Opening balance (£)
+            </label>
+            <input
+              id="add-account-balance"
+              type="number"
+              step="0.01"
+              min="0"
+              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              value={addBalance}
+              onChange={(e) => setAddBalance(e.target.value)}
+              placeholder="0"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              onClick={handleAddAccount}
+              disabled={!addName.trim() || createAccount.isPending}
+            >
+              Add
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setShowAddForm(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={openAddForm} className="text-sm">
+            + Add account
+          </Button>
+        </div>
+      )}
 
       {/* ISA Allowance */}
       {isSavings && isaPersons.length > 0 && (
@@ -104,10 +185,10 @@ export function AccountListPanel({
 
       {/* Account List */}
       <div className="space-y-0.5">
-        {sorted.length === 0 && (
+        {sorted.length === 0 && !showAddForm && (
           <GhostedListEmpty
-            ctaText="Add your savings accounts to track balances and contributions"
-            onCtaClick={() => console.log("add account")}
+            ctaText="Add an account to start tracking balances"
+            onCtaClick={openAddForm}
           />
         )}
         {sorted.map((account) => {
@@ -115,6 +196,7 @@ export function AccountListPanel({
           return (
             <button
               key={account.id}
+              type="button"
               className={cn(
                 "w-full flex items-center justify-between px-3 py-2.5 rounded text-sm transition-colors hover:bg-accent text-left",
                 isSelected && "bg-accent"

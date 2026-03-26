@@ -80,7 +80,7 @@ export function WealthLeftPanel({
       {/* Body section */}
       <div className="pt-9 px-5 pb-5">
         {/* By Liquidity */}
-        <p className="text-[10px] font-semibold text-text-muted uppercase tracking-widest mb-2">
+        <p className="text-[10px] font-semibold text-foreground/55 uppercase tracking-widest mb-2">
           By <DefinitionTooltip term="Liquidity">Liquidity</DefinitionTooltip>
         </p>
         <div className="space-y-1">
@@ -108,6 +108,7 @@ export function WealthLeftPanel({
             return (
               <button
                 key={cls}
+                type="button"
                 className={cn(
                   "w-full flex justify-between items-center px-2 py-1.5 rounded text-sm transition-colors hover:bg-accent",
                   isSelected && "bg-accent"
@@ -123,9 +124,9 @@ export function WealthLeftPanel({
 
         {/* Trust Section */}
         {trustBeneficiaries.length > 0 && (
-          <>
+          <section aria-label="Held on behalf of">
             <hr className="my-2" />
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-2 mb-1">
+            <p className="text-xs font-medium uppercase tracking-wide px-2 mb-1 text-foreground/55">
               <DefinitionTooltip term="Held on Behalf Of">Held on Behalf Of</DefinitionTooltip>
             </p>
             <div className="space-y-0.5">
@@ -134,6 +135,7 @@ export function WealthLeftPanel({
                 return (
                   <button
                     key={name}
+                    type="button"
                     className={cn(
                       "w-full flex justify-between items-center px-2 py-1.5 rounded text-sm transition-colors hover:bg-accent",
                       isSelected && "bg-accent"
@@ -146,7 +148,7 @@ export function WealthLeftPanel({
                 );
               })}
             </div>
-          </>
+          </section>
         )}
       </div>
     </div>
