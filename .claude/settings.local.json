@@ -78,7 +78,8 @@
       "Bash(do basename:*)",
       "Skill(agent-browser)",
       "Skill(agent-browser:*)",
-      "Bash(bash \"c:/Users/Gabriel/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/scripts/start-server.sh\" --project-dir \"c:/Users/Gabriel/Documents/Dev/fin_plan\")"
+      "Bash(bash \"c:/Users/Gabriel/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.5/scripts/start-server.sh\" --project-dir \"c:/Users/Gabriel/Documents/Dev/fin_plan\")",
+      "Bash(docker exec:*)"
     ]
   },
   "hooks": {

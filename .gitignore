@@ -60,6 +60,9 @@ docs/scratch/
 # claude
 .claude/screenshots/
 
+# WIP
+docs/mockups/
+
 
 # Misc
 .cache/

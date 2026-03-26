@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import type { WaterfallSummary } from "@finplan/shared";
 import { usePrefersReducedMotion } from "@/utils/motion";
 import { formatCurrency } from "@/utils/format";
+import { AnimatedCurrency } from "@/components/common/AnimatedCurrency";
 import { cn } from "@/lib/utils";
 import { isStale } from "@/utils/staleness";
 import { StalenessIndicator } from "@/components/common/StalenessIndicator";
@@ -73,7 +74,7 @@ function SectionHeader({
   dimmed,
 }: {
   label: React.ReactNode;
-  total: string;
+  total: React.ReactNode;
   colorClass: string;
   staleCount: number;
   dimmed?: boolean;
@@ -175,7 +176,7 @@ export function WaterfallLeftPanel({
       <motion.div variants={itemVariants} className={cn(incomeState === "future" && "opacity-40")}>
         <SectionHeader
           label={<DefinitionTooltip term="Income">Income</DefinitionTooltip>}
-          total={formatCurrency(income.total)}
+          total={<AnimatedCurrency value={income.total} />}
           colorClass="text-tier-income"
           staleCount={incomeStaleCount}
           dimmed={incomeState === "future"}
@@ -227,7 +228,7 @@ export function WaterfallLeftPanel({
       >
         <SectionHeader
           label={<DefinitionTooltip term="Committed Spend">Committed</DefinitionTooltip>}
-          total={formatCurrency(committed.monthlyTotal + committed.monthlyAvg12)}
+          total={<AnimatedCurrency value={committed.monthlyTotal + committed.monthlyAvg12} />}
           colorClass="text-tier-committed"
           staleCount={committedStaleCount}
           dimmed={committedState === "future"}
@@ -308,7 +309,7 @@ export function WaterfallLeftPanel({
       >
         <SectionHeader
           label={<DefinitionTooltip term="Discretionary Spend">Discretionary</DefinitionTooltip>}
-          total={formatCurrency(discretionary.total + discretionary.savings.total)}
+          total={<AnimatedCurrency value={discretionary.total + discretionary.savings.total} />}
           colorClass="text-tier-discretionary"
           staleCount={discretionaryStaleCount}
           dimmed={discretionaryState === "future"}
@@ -443,7 +444,7 @@ export function WaterfallLeftPanel({
         )}
         <SectionHeader
           label={<DefinitionTooltip term="Surplus">Surplus</DefinitionTooltip>}
-          total={formatCurrency(surplus.amount)}
+          total={<AnimatedCurrency value={surplus.amount} />}
           colorClass="text-tier-surplus"
           staleCount={0}
         />
