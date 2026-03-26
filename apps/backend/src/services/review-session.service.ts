@@ -1,9 +1,32 @@
 import { prisma } from "../config/database.js";
+import { confirmedItemsSchema, updatedItemsSchema } from "@finplan/shared";
 import type { UpdateReviewSessionInput } from "@finplan/shared";
+import { ValidationError } from "../utils/errors.js";
 
 export const reviewSessionService = {
   async getSession(householdId: string) {
-    return prisma.reviewSession.findUnique({ where: { householdId } });
+    const session = await prisma.reviewSession.findUnique({ where: { householdId } });
+    if (!session) return null;
+
+    const confirmedResult = confirmedItemsSchema.safeParse(session.confirmedItems);
+    if (!confirmedResult.success) {
+      throw new ValidationError(
+        `ReviewSession confirmedItems failed validation: ${confirmedResult.error.message}`
+      );
+    }
+
+    const updatedResult = updatedItemsSchema.safeParse(session.updatedItems);
+    if (!updatedResult.success) {
+      throw new ValidationError(
+        `ReviewSession updatedItems failed validation: ${updatedResult.error.message}`
+      );
+    }
+
+    return {
+      ...session,
+      confirmedItems: confirmedResult.data,
+      updatedItems: updatedResult.data,
+    };
   },
 
   async createOrResetSession(householdId: string) {
