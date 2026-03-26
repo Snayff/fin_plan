@@ -1,5 +1,6 @@
 import { prisma } from "../config/database.js";
 import { NotFoundError } from "../utils/errors.js";
+import { toGBP } from "@finplan/shared";
 import type {
   CreateIncomeSourceInput,
   UpdateIncomeSourceInput,
@@ -62,9 +63,10 @@ export const waterfallService = {
     const annualIncome = incomeSources.filter((s) => s.frequency === "annual");
     const oneOffIncome = incomeSources.filter((s) => s.frequency === "one_off");
 
-    const incomeTotal =
+    const incomeTotal = toGBP(
       monthlyIncome.reduce((s, i) => s + i.amount, 0) +
-      annualIncome.reduce((s, i) => s + i.amount / 12, 0);
+        annualIncome.reduce((s, i) => s + i.amount / 12, 0)
+    );
 
     // Group active non-oneOff sources by incomeType for left panel navigation
     const INCOME_TYPE_LABELS: Record<IncomeType, string> = {
@@ -98,14 +100,15 @@ export const waterfallService = {
     }));
 
     const committedMonthlyTotal = committedBills.reduce((s, b) => s + b.amount, 0);
-    const yearlyMonthlyAvg = yearlyBills.reduce((s, b) => s + b.amount, 0) / 12;
+    const yearlyMonthlyAvg = toGBP(yearlyBills.reduce((s, b) => s + b.amount, 0) / 12);
 
     const discretionaryTotal = discretionary.reduce((s, c) => s + c.monthlyBudget, 0);
     const savingsTotal = savings.reduce((s, a) => s + a.monthlyAmount, 0);
 
-    const surplusAmount =
-      incomeTotal - committedMonthlyTotal - yearlyMonthlyAvg - discretionaryTotal - savingsTotal;
-    const percentOfIncome = incomeTotal > 0 ? (surplusAmount / incomeTotal) * 100 : 0;
+    const surplusAmount = toGBP(
+      incomeTotal - committedMonthlyTotal - yearlyMonthlyAvg - discretionaryTotal - savingsTotal
+    );
+    const percentOfIncome = toGBP(incomeTotal > 0 ? (surplusAmount / incomeTotal) * 100 : 0);
 
     return {
       income: {

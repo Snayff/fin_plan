@@ -261,6 +261,65 @@ describe("waterfallService.getWaterfallSummary — totals and surplus", () => {
   });
 });
 
+describe("waterfallService.getWaterfallSummary — toGBP rounding", () => {
+  const makeSource = (overrides: object) => ({
+    id: "s1",
+    householdId: "hh-1",
+    name: "Source",
+    amount: 1000,
+    frequency: "monthly" as const,
+    incomeType: "other" as const,
+    expectedMonth: null,
+    ownerId: null,
+    sortOrder: 0,
+    endedAt: null,
+    lastReviewedAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  });
+
+  it("rounds surplus amount to 2dp", async () => {
+    // 1000/3 = 333.333... per month — surplus should be rounded
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      makeSource({ id: "s1", frequency: "annual", amount: 1000 }),
+    ] as any);
+    prismaMock.committedBill.findMany.mockResolvedValue([]);
+    prismaMock.yearlyBill.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue([]);
+    prismaMock.savingsAllocation.findMany.mockResolvedValue([]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    // income: 1000/12 = 83.333... → toGBP → 83.33
+    expect(summary.income.total).toBe(83.33);
+    expect(summary.surplus.amount).toBe(83.33);
+  });
+
+  it("rounds percentOfIncome to 2dp", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      makeSource({ id: "s1", frequency: "monthly", amount: 3000 }),
+    ] as any);
+    prismaMock.committedBill.findMany.mockResolvedValue([
+      { id: "b1", householdId: "hh-1", name: "Rent", amount: 1000 },
+    ] as any);
+    prismaMock.yearlyBill.findMany.mockResolvedValue([
+      { id: "y1", householdId: "hh-1", name: "Insurance", amount: 1000, dueMonth: 3 },
+    ] as any);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue([]);
+    prismaMock.savingsAllocation.findMany.mockResolvedValue([]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    // income: 3000
+    // committed: 1000 bills + 1000/12 yearly = 1083.33
+    // surplus: 3000 - 1083.33 = 1916.67
+    // percent: (1916.67 / 3000) * 100 = 63.89
+    expect(summary.surplus.amount).toBe(1916.67);
+    expect(summary.surplus.percentOfIncome).toBe(63.89);
+  });
+});
+
 describe("waterfallService.getCashflow", () => {
   it("correctly calculates pot and marks shortfalls", async () => {
     prismaMock.yearlyBill.findMany.mockResolvedValue([
