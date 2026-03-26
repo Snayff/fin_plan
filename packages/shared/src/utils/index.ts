@@ -1,0 +1,1 @@
+export { toGBP } from "./toGBP";
