@@ -306,7 +306,7 @@ export default function OverviewPage() {
   }
 
   return (
-    <div data-page="overview" className="relative flex flex-col h-full">
+    <div data-page="overview" data-testid="overview-page" className="relative flex flex-col h-full">
       {inBuild ? (
         /* Build mode header */
         <div className="h-10 border-b flex items-center justify-between px-4 text-sm bg-primary/5">

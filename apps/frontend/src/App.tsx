@@ -14,11 +14,15 @@ const AcceptInvitePage = lazy(() => import("./pages/auth/AcceptInvitePage"));
 
 // App pages
 const OverviewPage = lazy(() => import("./pages/OverviewPage"));
-const WealthPage = lazy(() => import("./pages/WealthPage"));
-const PlannerPage = lazy(() => import("./pages/PlannerPage"));
 const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 const DesignRenewPage = lazy(() => import("./pages/DesignRenewPage"));
 const WelcomePage = lazy(() => import("./pages/WelcomePage"));
+const IncomePage = lazy(() => import("./pages/IncomePage"));
+const CommittedPage = lazy(() => import("./pages/CommittedPage"));
+const DiscretionaryPage = lazy(() => import("./pages/DiscretionaryPage"));
+const SurplusPage = lazy(() => import("./pages/SurplusPage"));
+const GoalsPage = lazy(() => import("./pages/GoalsPage"));
+const GiftsPage = lazy(() => import("./pages/GiftsPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
@@ -53,11 +57,23 @@ export function ProtectedAppRoutes() {
               <ErrorBoundary>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
+                    {/* Legacy redirects */}
+                    <Route path="/wealth" element={<Navigate to="/overview" replace />} />
+                    <Route path="/planner" element={<Navigate to="/overview" replace />} />
                     <Route path="/" element={<Navigate to="/overview" replace />} />
+
+                    {/* Primary routes */}
                     <Route path="/overview" element={<OverviewPage />} />
-                    <Route path="/wealth" element={<WealthPage />} />
-                    <Route path="/planner" element={<PlannerPage />} />
+                    <Route path="/income" element={<IncomePage />} />
+                    <Route path="/committed" element={<CommittedPage />} />
+                    <Route path="/discretionary" element={<DiscretionaryPage />} />
+                    <Route path="/surplus" element={<SurplusPage />} />
+                    <Route path="/goals" element={<GoalsPage />} />
+                    <Route path="/gifts" element={<GiftsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/design-renew" element={<DesignRenewPage />} />
+
+                    {/* Fallback */}
                     <Route path="*" element={<Navigate to="/overview" replace />} />
                   </Routes>
                 </Suspense>

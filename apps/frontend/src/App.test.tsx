@@ -10,8 +10,8 @@ const originalInitializeAuth = useAuthStore.getState().initializeAuth;
 describe("App auth bootstrap", () => {
   beforeEach(() => {
     (window.location as any).origin = "http://localhost:3001";
-    (window.location as any).href = "http://localhost:3001/dashboard";
-    (window.location as any).pathname = "/dashboard";
+    (window.location as any).href = "http://localhost:3001/overview";
+    (window.location as any).pathname = "/overview";
     useAuthStore.setState({ initializeAuth: originalInitializeAuth });
   });
 
@@ -53,23 +53,52 @@ describe("App protected route handling", () => {
     );
   });
 
-  it("redirects legacy /settings/household route to /profile", async () => {
-    renderWithProviders(<ProtectedAppRoutes />, {
-      initialEntries: ["/settings/household"],
-    });
-
+  it("redirects /wealth to /overview", async () => {
+    renderWithProviders(<ProtectedAppRoutes />, { initialEntries: ["/wealth"] });
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /profile/i })).toBeTruthy();
+      expect(screen.getByTestId("overview-page")).toBeTruthy();
     });
   });
 
-  it("redirects unknown protected routes to /dashboard", async () => {
-    renderWithProviders(<ProtectedAppRoutes />, {
-      initialEntries: ["/not-a-real-route"],
-    });
-
+  it("redirects /planner to /overview", async () => {
+    renderWithProviders(<ProtectedAppRoutes />, { initialEntries: ["/planner"] });
     await waitFor(() => {
-      expect(screen.getByRole("heading", { name: /^dashboard$/i })).toBeTruthy();
+      expect(screen.getByTestId("overview-page")).toBeTruthy();
+    });
+  });
+
+  it("renders Income page at /income", async () => {
+    renderWithProviders(<ProtectedAppRoutes />, { initialEntries: ["/income"] });
+    await waitFor(() => {
+      expect(screen.getByTestId("tier-page-income")).toBeTruthy();
+    });
+  });
+
+  it("renders Surplus page at /surplus", async () => {
+    renderWithProviders(<ProtectedAppRoutes />, { initialEntries: ["/surplus"] });
+    await waitFor(() => {
+      expect(screen.getByTestId("surplus-page")).toBeTruthy();
+    });
+  });
+
+  it("renders Goals placeholder at /goals", async () => {
+    renderWithProviders(<ProtectedAppRoutes />, { initialEntries: ["/goals"] });
+    await waitFor(() => {
+      expect(screen.getByTestId("goals-page")).toBeTruthy();
+    });
+  });
+
+  it("renders Gifts placeholder at /gifts", async () => {
+    renderWithProviders(<ProtectedAppRoutes />, { initialEntries: ["/gifts"] });
+    await waitFor(() => {
+      expect(screen.getByTestId("gifts-page")).toBeTruthy();
+    });
+  });
+
+  it("redirects unknown routes to /overview", async () => {
+    renderWithProviders(<ProtectedAppRoutes />, { initialEntries: ["/not-a-real-route"] });
+    await waitFor(() => {
+      expect(screen.getByTestId("overview-page")).toBeTruthy();
     });
   });
 });
