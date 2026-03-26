@@ -62,8 +62,8 @@ export const snapshotService = {
     await prisma.snapshot.delete({ where: { id } });
   },
 
-  async ensureJan1Snapshot(householdId: string) {
-    const today = new Date();
+  async ensureJan1Snapshot(householdId: string, now: Date = new Date()) {
+    const today = now;
     if (today.getMonth() !== 0 || today.getDate() !== 1) return;
 
     const year = today.getFullYear();

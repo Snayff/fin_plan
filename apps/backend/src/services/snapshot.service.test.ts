@@ -103,3 +103,46 @@ describe("snapshotService.deleteSnapshot", () => {
     expect(prismaMock.snapshot.delete).toHaveBeenCalledWith({ where: { id: "s-1" } });
   });
 });
+
+describe("snapshotService.ensureJan1Snapshot", () => {
+  it("creates auto snapshot when now is Jan 1", async () => {
+    const jan1 = new Date("2026-01-01T10:00:00Z");
+
+    prismaMock.snapshot.findUnique.mockResolvedValue(null);
+    prismaMock.snapshot.create.mockResolvedValue({
+      id: "snap-1",
+      name: "January 2026 — Auto",
+    } as any);
+    // Mock for createSnapshot's internal getWaterfallSummary call
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedBill.findMany.mockResolvedValue([]);
+    prismaMock.yearlyBill.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue([]);
+    prismaMock.savingsAllocation.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+
+    await snapshotService.ensureJan1Snapshot("hh-1", jan1);
+
+    expect(prismaMock.snapshot.findUnique).toHaveBeenCalledWith({
+      where: { householdId_name: { householdId: "hh-1", name: "January 2026 — Auto" } },
+    });
+  });
+
+  it("does nothing when now is not Jan 1", async () => {
+    const feb15 = new Date("2026-02-15T10:00:00Z");
+
+    await snapshotService.ensureJan1Snapshot("hh-1", feb15);
+
+    expect(prismaMock.snapshot.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("does nothing when auto snapshot already exists", async () => {
+    const jan1 = new Date("2026-01-01T10:00:00Z");
+
+    prismaMock.snapshot.findUnique.mockResolvedValue({ id: "snap-existing" } as any);
+
+    await snapshotService.ensureJan1Snapshot("hh-1", jan1);
+
+    expect(prismaMock.snapshot.create).not.toHaveBeenCalled();
+  });
+});
