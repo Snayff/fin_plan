@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/api";
 import type {
   WaterfallSummary,
   CashflowMonth,
+  SubcategoryRow,
   CreateIncomeSourceInput,
   UpdateIncomeSourceInput,
   EndIncomeSourceInput,
@@ -77,6 +78,10 @@ export const waterfallService = {
   confirmBatch: (data: ConfirmBatchInput) =>
     apiClient.post<void>("/api/waterfall/confirm-batch", data),
   deleteAll: () => apiClient.delete<void>("/api/waterfall/all", { confirm: true }),
+
+  // Subcategories
+  getSubcategories: (tier: "income" | "committed" | "discretionary") =>
+    apiClient.get<SubcategoryRow[]>(`/api/waterfall/subcategories/${tier}`),
 
   // Planner year budget (waterfall-adjacent)
   getYearBudget: (year: number) => apiClient.get<any>(`/api/planner/budget/${year}`),

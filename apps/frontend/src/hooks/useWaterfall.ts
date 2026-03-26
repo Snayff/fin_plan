@@ -5,6 +5,7 @@ export const WATERFALL_KEYS = {
   summary: ["waterfall", "summary"] as const,
   cashflow: (year: number) => ["waterfall", "cashflow", year] as const,
   history: (type: string, id: string) => ["waterfall", "history", type, id] as const,
+  subcategories: (tier: string) => ["waterfall", "subcategories", tier] as const,
 };
 
 export function useWaterfallSummary() {
@@ -107,6 +108,14 @@ export function useUpdateItem() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
     },
+  });
+}
+
+export function useSubcategories(tier: "income" | "committed" | "discretionary") {
+  return useQuery({
+    queryKey: WATERFALL_KEYS.subcategories(tier),
+    queryFn: () => waterfallService.getSubcategories(tier),
+    staleTime: 10 * 60 * 1000,
   });
 }
 
