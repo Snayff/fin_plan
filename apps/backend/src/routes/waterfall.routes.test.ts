@@ -55,8 +55,20 @@ mock.module("../services/waterfall.service", () => ({
   waterfallService: waterfallServiceMock,
 }));
 
+const subcategoryServiceMock = {
+  ensureSubcategories: mock(() => Promise.resolve()),
+  listByTier: mock(() => Promise.resolve([])),
+  seedDefaults: mock(() => Promise.resolve()),
+  getDefaultSubcategoryId: mock(() => Promise.resolve("sub-other")),
+  getSubcategoryIdByName: mock(() => Promise.resolve(null)),
+};
+
 mock.module("../services/snapshot.service", () => ({
   snapshotService: snapshotServiceMock,
+}));
+
+mock.module("../services/subcategory.service", () => ({
+  subcategoryService: subcategoryServiceMock,
 }));
 
 mock.module("../middleware/auth.middleware", () => ({
@@ -130,7 +142,8 @@ const mockDiscretionaryCategory = {
   id: "disc-1",
   householdId: "hh-1",
   name: "Groceries",
-  monthlyBudget: 400,
+  amount: 400,
+  subcategoryId: "sub-food",
   sortOrder: 0,
   lastReviewedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
@@ -141,7 +154,8 @@ const mockSavingsAllocation = {
   id: "sav-1",
   householdId: "hh-1",
   name: "Emergency Fund",
-  monthlyAmount: 200,
+  amount: 200,
+  subcategoryId: "sub-savings",
   sortOrder: 0,
   wealthAccountId: null,
   lastReviewedAt: new Date().toISOString(),
@@ -154,6 +168,9 @@ beforeEach(() => {
     if (typeof method?.mockReset === "function") method.mockReset();
   }
   for (const method of Object.values(snapshotServiceMock)) {
+    if (typeof method?.mockReset === "function") method.mockReset();
+  }
+  for (const method of Object.values(subcategoryServiceMock)) {
     if (typeof method?.mockReset === "function") method.mockReset();
   }
 
@@ -192,6 +209,12 @@ beforeEach(() => {
   waterfallServiceMock.deleteAll.mockResolvedValue(undefined);
 
   snapshotServiceMock.ensureJan1Snapshot.mockResolvedValue(undefined as any);
+
+  subcategoryServiceMock.ensureSubcategories.mockResolvedValue(undefined as any);
+  subcategoryServiceMock.listByTier.mockResolvedValue([] as any);
+  subcategoryServiceMock.seedDefaults.mockResolvedValue(undefined as any);
+  subcategoryServiceMock.getDefaultSubcategoryId.mockResolvedValue("sub-other" as any);
+  subcategoryServiceMock.getSubcategoryIdByName.mockResolvedValue(null as any);
 
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
@@ -331,7 +354,7 @@ describe("POST /api/waterfall/committed", () => {
       method: "POST",
       url: "/api/waterfall/committed",
       headers: { authorization: "Bearer valid-token" },
-      payload: { name: "Rent", amount: 1000 },
+      payload: { name: "Rent", amount: 1000, subcategoryId: "sub-1" },
     });
     expect(res.statusCode).toBe(201);
     expect(res.json().name).toBe("Rent");
@@ -355,7 +378,7 @@ describe("POST /api/waterfall/yearly", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/waterfall/yearly",
-      payload: { name: "Car Insurance", amount: 600, dueMonth: 3 },
+      payload: { name: "Car Insurance", amount: 600, subcategoryId: "sub-1", dueMonth: 3 },
     });
     expect(res.statusCode).toBe(401);
   });
@@ -365,13 +388,13 @@ describe("POST /api/waterfall/yearly", () => {
       method: "POST",
       url: "/api/waterfall/yearly",
       headers: { authorization: "Bearer valid-token" },
-      payload: { name: "Car Insurance", amount: 600, dueMonth: 3 },
+      payload: { name: "Car Insurance", amount: 600, subcategoryId: "sub-1", dueMonth: 3 },
     });
     expect(res.statusCode).toBe(201);
     expect(res.json().dueMonth).toBe(3);
   });
 
-  it("returns 400 for missing dueMonth", async () => {
+  it("returns 400 for missing subcategoryId", async () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/waterfall/yearly",
@@ -389,7 +412,7 @@ describe("POST /api/waterfall/discretionary", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/waterfall/discretionary",
-      payload: { name: "Groceries", monthlyBudget: 400 },
+      payload: { name: "Groceries", amount: 400, subcategoryId: "sub-food" },
     });
     expect(res.statusCode).toBe(401);
   });
@@ -399,13 +422,13 @@ describe("POST /api/waterfall/discretionary", () => {
       method: "POST",
       url: "/api/waterfall/discretionary",
       headers: { authorization: "Bearer valid-token" },
-      payload: { name: "Groceries", monthlyBudget: 400 },
+      payload: { name: "Groceries", amount: 400, subcategoryId: "sub-food" },
     });
     expect(res.statusCode).toBe(201);
-    expect(res.json().monthlyBudget).toBe(400);
+    expect(res.json().amount).toBe(400);
   });
 
-  it("returns 400 for missing monthlyBudget", async () => {
+  it("returns 400 for missing amount", async () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/waterfall/discretionary",
@@ -423,7 +446,7 @@ describe("POST /api/waterfall/savings", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/waterfall/savings",
-      payload: { name: "Emergency Fund", monthlyAmount: 200 },
+      payload: { name: "Emergency Fund", amount: 200, subcategoryId: "sub-savings" },
     });
     expect(res.statusCode).toBe(401);
   });
@@ -433,13 +456,13 @@ describe("POST /api/waterfall/savings", () => {
       method: "POST",
       url: "/api/waterfall/savings",
       headers: { authorization: "Bearer valid-token" },
-      payload: { name: "Emergency Fund", monthlyAmount: 200 },
+      payload: { name: "Emergency Fund", amount: 200, subcategoryId: "sub-savings" },
     });
     expect(res.statusCode).toBe(201);
-    expect(res.json().monthlyAmount).toBe(200);
+    expect(res.json().amount).toBe(200);
   });
 
-  it("returns 400 for missing monthlyAmount", async () => {
+  it("returns 400 for missing amount", async () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/waterfall/savings",
@@ -489,6 +512,87 @@ describe("POST /api/waterfall/confirm-batch", () => {
         items: [{ type: "unknown_type", id: "inc-1" }],
       },
     });
+    expect(res.statusCode).toBe(400);
+  });
+});
+
+// ─── Subcategories ────────────────────────────────────────────────────────────
+
+describe("GET /api/waterfall/subcategories/:tier", () => {
+  it("returns subcategories for a valid tier", async () => {
+    const mockSubs = [{ id: "sub-1", name: "Salary", tier: "income" }];
+    subcategoryServiceMock.listByTier.mockResolvedValue(mockSubs as any);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/waterfall/subcategories/income",
+      headers: { authorization: "Bearer test" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(subcategoryServiceMock.ensureSubcategories).toHaveBeenCalled();
+    expect(subcategoryServiceMock.listByTier).toHaveBeenCalledWith("hh-1", "income");
+  });
+
+  it("POST /api/waterfall/committed sends valid payload with subcategoryId", async () => {
+    waterfallServiceMock.createCommitted.mockResolvedValue({ id: "ci-1" } as any);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/committed",
+      headers: { authorization: "Bearer test" },
+      payload: { name: "Rent", amount: 1200, subcategoryId: "sub-1" },
+    });
+
+    expect(res.statusCode).toBe(201);
+  });
+
+  it("POST /api/waterfall/yearly sends valid payload with subcategoryId and dueMonth", async () => {
+    waterfallServiceMock.createYearly.mockResolvedValue({ id: "ci-2" } as any);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/yearly",
+      headers: { authorization: "Bearer test" },
+      payload: { name: "Insurance", amount: 600, subcategoryId: "sub-1", dueMonth: 3 },
+    });
+
+    expect(res.statusCode).toBe(201);
+  });
+
+  it("POST /api/waterfall/discretionary sends amount (not monthlyBudget)", async () => {
+    waterfallServiceMock.createDiscretionary.mockResolvedValue({ id: "di-1" } as any);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/discretionary",
+      headers: { authorization: "Bearer test" },
+      payload: { name: "Groceries", amount: 400, subcategoryId: "sub-food" },
+    });
+
+    expect(res.statusCode).toBe(201);
+  });
+
+  it("POST /api/waterfall/savings sends amount (not monthlyAmount)", async () => {
+    waterfallServiceMock.createSavings.mockResolvedValue({ id: "di-2" } as any);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/savings",
+      headers: { authorization: "Bearer test" },
+      payload: { name: "Emergency Fund", amount: 200, subcategoryId: "sub-savings" },
+    });
+
+    expect(res.statusCode).toBe(201);
+  });
+
+  it("returns 400 for invalid tier", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/waterfall/subcategories/surplus",
+      headers: { authorization: "Bearer test" },
+    });
+
     expect(res.statusCode).toBe(400);
   });
 });

@@ -2,20 +2,18 @@ import type { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { waterfallService } from "../services/waterfall.service.js";
 import { snapshotService } from "../services/snapshot.service.js";
+import { subcategoryService } from "../services/subcategory.service.js";
 import {
   createIncomeSourceSchema,
   updateIncomeSourceSchema,
   endIncomeSourceSchema,
-  createCommittedBillSchema,
-  updateCommittedBillSchema,
-  createYearlyBillSchema,
-  updateYearlyBillSchema,
-  createDiscretionaryCategorySchema,
-  updateDiscretionaryCategorySchema,
-  createSavingsAllocationSchema,
-  updateSavingsAllocationSchema,
+  createCommittedItemSchema,
+  updateCommittedItemSchema,
+  createDiscretionaryItemSchema,
+  updateDiscretionaryItemSchema,
   confirmBatchSchema,
   deleteAllWaterfallSchema,
+  WaterfallTierEnum,
 } from "@finplan/shared";
 
 export async function waterfallRoutes(fastify: FastifyInstance) {
@@ -96,14 +94,14 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post("/committed", pre, async (req, reply) => {
-    const data = createCommittedBillSchema.parse(req.body);
+    const data = createCommittedItemSchema.parse(req.body);
     const bill = await waterfallService.createCommitted(req.householdId!, data);
     return reply.status(201).send(bill);
   });
 
   fastify.patch("/committed/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const data = updateCommittedBillSchema.parse(req.body);
+    const data = updateCommittedItemSchema.parse(req.body);
     const bill = await waterfallService.updateCommitted(req.householdId!, id, data);
     return reply.send(bill);
   });
@@ -128,14 +126,14 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post("/yearly", pre, async (req, reply) => {
-    const data = createYearlyBillSchema.parse(req.body);
+    const data = createCommittedItemSchema.parse(req.body);
     const bill = await waterfallService.createYearly(req.householdId!, data);
     return reply.status(201).send(bill);
   });
 
   fastify.patch("/yearly/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const data = updateYearlyBillSchema.parse(req.body);
+    const data = updateCommittedItemSchema.parse(req.body);
     const bill = await waterfallService.updateYearly(req.householdId!, id, data);
     return reply.send(bill);
   });
@@ -160,14 +158,14 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post("/discretionary", pre, async (req, reply) => {
-    const data = createDiscretionaryCategorySchema.parse(req.body);
+    const data = createDiscretionaryItemSchema.parse(req.body);
     const cat = await waterfallService.createDiscretionary(req.householdId!, data);
     return reply.status(201).send(cat);
   });
 
   fastify.patch("/discretionary/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const data = updateDiscretionaryCategorySchema.parse(req.body);
+    const data = updateDiscretionaryItemSchema.parse(req.body);
     const cat = await waterfallService.updateDiscretionary(req.householdId!, id, data);
     return reply.send(cat);
   });
@@ -192,14 +190,14 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post("/savings", pre, async (req, reply) => {
-    const data = createSavingsAllocationSchema.parse(req.body);
+    const data = createDiscretionaryItemSchema.parse(req.body);
     const alloc = await waterfallService.createSavings(req.householdId!, data);
     return reply.status(201).send(alloc);
   });
 
   fastify.patch("/savings/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const data = updateSavingsAllocationSchema.parse(req.body);
+    const data = updateDiscretionaryItemSchema.parse(req.body);
     const alloc = await waterfallService.updateSavings(req.householdId!, id, data);
     return reply.send(alloc);
   });
@@ -236,5 +234,21 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     deleteAllWaterfallSchema.parse(req.body);
     await waterfallService.deleteAll(req.householdId!);
     return reply.status(204).send();
+  });
+
+  // ─── Subcategories ─────────────────────────────────────────────────────────
+
+  fastify.get("/subcategories/:tier", pre, async (req, reply) => {
+    const { tier } = req.params as { tier: string };
+    const parsed = WaterfallTierEnum.safeParse(tier);
+    if (!parsed.success) {
+      return reply
+        .status(400)
+        .send({ error: "Invalid tier. Must be: income, committed, or discretionary" });
+    }
+    const householdId = req.householdId!;
+    await subcategoryService.ensureSubcategories(householdId);
+    const subcategories = await subcategoryService.listByTier(householdId, parsed.data);
+    return reply.send(subcategories);
   });
 }
