@@ -297,6 +297,9 @@ model DiscretionaryItem {
 
 enum WaterfallItemType {
   income_source
+  committed_item
+  discretionary_item
+  // Legacy values (kept for existing WaterfallHistory rows; updated by migration script)
   committed_bill
   yearly_bill
   discretionary_category
