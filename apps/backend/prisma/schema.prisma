@@ -199,7 +199,7 @@ model Subcategory {
 model IncomeSource {
   id             String          @id @default(cuid())
   householdId    String
-  subcategoryId  String?
+  subcategoryId  String
   name           String
   amount         Float
   frequency      IncomeFrequency
@@ -212,19 +212,7 @@ model IncomeSource {
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   notes          String?
-  subcategory    Subcategory?    @relation(fields: [subcategoryId], references: [id])
-}
-
-model CommittedBill {
-  id             String   @id @default(cuid())
-  householdId    String
-  name           String
-  amount         Float
-  ownerId        String?
-  sortOrder      Int      @default(0)
-  lastReviewedAt DateTime @default(now())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  subcategory    Subcategory     @relation(fields: [subcategoryId], references: [id])
 }
 
 model CommittedItem {
@@ -242,41 +230,6 @@ model CommittedItem {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
-}
-
-model YearlyBill {
-  id             String   @id @default(cuid())
-  householdId    String
-  name           String
-  amount         Float
-  dueMonth       Int
-  sortOrder      Int      @default(0)
-  lastReviewedAt DateTime @default(now())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model DiscretionaryCategory {
-  id             String   @id @default(cuid())
-  householdId    String
-  name           String
-  monthlyBudget  Float
-  sortOrder      Int      @default(0)
-  lastReviewedAt DateTime @default(now())
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}
-
-model SavingsAllocation {
-  id              String   @id @default(cuid())
-  householdId     String
-  name            String
-  monthlyAmount   Float
-  sortOrder       Int      @default(0)
-  wealthAccountId String?
-  lastReviewedAt  DateTime @default(now())
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
 }
 
 model DiscretionaryItem {
@@ -299,11 +252,6 @@ enum WaterfallItemType {
   income_source
   committed_item
   discretionary_item
-  // Legacy values (kept for existing WaterfallHistory rows; updated by migration script)
-  committed_bill
-  yearly_bill
-  discretionary_category
-  savings_allocation
 }
 
 model WaterfallHistory {
