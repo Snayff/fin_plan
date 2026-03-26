@@ -476,6 +476,244 @@ describe("waterfallService.updateDiscretionary (DiscretionaryItem)", () => {
   });
 });
 
+describe("waterfallService.getWaterfallSummary — consolidated models", () => {
+  const makeSource = (overrides: object) => ({
+    id: "s1",
+    householdId: "hh-1",
+    name: "Source",
+    amount: 1000,
+    frequency: "monthly" as const,
+    incomeType: "other" as const,
+    expectedMonth: null,
+    ownerId: null,
+    sortOrder: 0,
+    endedAt: null,
+    lastReviewedAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    subcategoryId: "sub-other-inc",
+    notes: null,
+    ...overrides,
+  });
+
+  beforeEach(() => {
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.subcategory.findFirst.mockResolvedValue(null);
+  });
+
+  it("splits committed items into bills and yearlyBills by spendType", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "ci-1",
+        householdId: "hh-1",
+        name: "Rent",
+        amount: 1200,
+        spendType: "monthly",
+        dueMonth: null,
+        ownerId: null,
+        sortOrder: 0,
+        lastReviewedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        subcategoryId: "sub-1",
+        notes: null,
+      },
+      {
+        id: "ci-2",
+        householdId: "hh-1",
+        name: "Insurance",
+        amount: 600,
+        spendType: "yearly",
+        dueMonth: 3,
+        ownerId: null,
+        sortOrder: 1,
+        lastReviewedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        subcategoryId: "sub-2",
+        notes: null,
+      },
+    ] as any);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    expect(summary.committed.bills).toHaveLength(1);
+    expect(summary.committed.bills[0]!.name).toBe("Rent");
+    expect(summary.committed.yearlyBills).toHaveLength(1);
+    expect(summary.committed.yearlyBills[0]!.name).toBe("Insurance");
+  });
+
+  it("splits discretionary items into categories and savings", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([
+      {
+        id: "di-1",
+        householdId: "hh-1",
+        name: "Groceries",
+        amount: 500,
+        spendType: "monthly",
+        subcategoryId: "sub-food",
+        notes: null,
+        wealthAccountId: null,
+        sortOrder: 0,
+        lastReviewedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "di-2",
+        householdId: "hh-1",
+        name: "Emergency Fund",
+        amount: 200,
+        spendType: "monthly",
+        subcategoryId: "sub-savings",
+        notes: null,
+        wealthAccountId: "wa-1",
+        sortOrder: 1,
+        lastReviewedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ] as any);
+    prismaMock.subcategory.findFirst.mockResolvedValue({
+      id: "sub-savings",
+      name: "Savings",
+    } as any);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    expect(summary.discretionary.categories).toHaveLength(1);
+    expect(summary.discretionary.categories[0]!.name).toBe("Groceries");
+    expect(summary.discretionary.savings.allocations).toHaveLength(1);
+    expect(summary.discretionary.savings.allocations[0]!.name).toBe("Emergency Fund");
+  });
+
+  it("calculates correct totals with consolidated models", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      makeSource({ id: "s1", frequency: "monthly", amount: 4000 }),
+    ] as any);
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "ci-1",
+        householdId: "hh-1",
+        name: "Rent",
+        amount: 1200,
+        spendType: "monthly",
+        dueMonth: null,
+        ownerId: null,
+        sortOrder: 0,
+        lastReviewedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        subcategoryId: "sub-1",
+        notes: null,
+      },
+      {
+        id: "ci-2",
+        householdId: "hh-1",
+        name: "Car tax",
+        amount: 1200,
+        spendType: "yearly",
+        dueMonth: 6,
+        ownerId: null,
+        sortOrder: 1,
+        lastReviewedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        subcategoryId: "sub-2",
+        notes: null,
+      },
+    ] as any);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([
+      {
+        id: "di-1",
+        householdId: "hh-1",
+        name: "Groceries",
+        amount: 500,
+        spendType: "monthly",
+        subcategoryId: "sub-food",
+        notes: null,
+        wealthAccountId: null,
+        sortOrder: 0,
+        lastReviewedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: "di-2",
+        householdId: "hh-1",
+        name: "Emergency fund",
+        amount: 200,
+        spendType: "monthly",
+        subcategoryId: "sub-savings",
+        notes: null,
+        wealthAccountId: null,
+        sortOrder: 1,
+        lastReviewedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ] as any);
+    prismaMock.subcategory.findFirst.mockResolvedValue({
+      id: "sub-savings",
+      name: "Savings",
+    } as any);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    // income: 4000, committed: 1200 (monthly) + 100 (1200/12 yearly) = 1300, discretionary: 500 + 200 = 700, surplus: 2000
+    expect(summary.committed.monthlyTotal).toBe(1200);
+    expect(summary.committed.monthlyAvg12).toBe(100);
+    expect(summary.surplus.amount).toBe(2000);
+  });
+});
+
+describe("waterfallService.deleteAll — with subcategories", () => {
+  it("deletes all items and subcategories", async () => {
+    await waterfallService.deleteAll("hh-1");
+
+    expect(prismaMock.incomeSource.deleteMany).toHaveBeenCalledWith({
+      where: { householdId: "hh-1" },
+    });
+    expect(prismaMock.committedItem.deleteMany).toHaveBeenCalledWith({
+      where: { householdId: "hh-1" },
+    });
+    expect(prismaMock.discretionaryItem.deleteMany).toHaveBeenCalledWith({
+      where: { householdId: "hh-1" },
+    });
+    expect(prismaMock.subcategory.deleteMany).toHaveBeenCalledWith({
+      where: { householdId: "hh-1" },
+    });
+  });
+});
+
+describe("waterfallService.confirmBatch — consolidated models", () => {
+  it("updates lastReviewedAt using new model names", async () => {
+    const items = [
+      { type: "income_source" as const, id: "inc-1" },
+      { type: "committed_item" as const, id: "ci-1" },
+      { type: "discretionary_item" as const, id: "di-1" },
+    ];
+
+    await waterfallService.confirmBatch("hh-1", { items });
+
+    expect(prismaMock.incomeSource.updateMany).toHaveBeenCalledWith({
+      where: { id: "inc-1", householdId: "hh-1" },
+      data: { lastReviewedAt: expect.any(Date) },
+    });
+    expect(prismaMock.committedItem.updateMany).toHaveBeenCalledWith({
+      where: { id: "ci-1", householdId: "hh-1" },
+      data: { lastReviewedAt: expect.any(Date) },
+    });
+    expect(prismaMock.discretionaryItem.updateMany).toHaveBeenCalledWith({
+      where: { id: "di-1", householdId: "hh-1" },
+      data: { lastReviewedAt: expect.any(Date) },
+    });
+  });
+});
+
 describe("waterfallService.getCashflow", () => {
   it("correctly calculates pot and marks shortfalls", async () => {
     prismaMock.committedItem.findMany.mockResolvedValue([

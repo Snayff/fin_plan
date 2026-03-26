@@ -97,8 +97,21 @@ export const waterfallService = {
     const committedMonthlyTotal = monthlyCommitted.reduce((s, b) => s + b.amount, 0);
     const yearlyMonthlyAvg = toGBP(yearlyCommitted.reduce((s, b) => s + b.amount, 0) / 12);
 
-    // Discretionary: monthly spend items + savings (wealthAccountId set)
+    // Detect savings subcategory to split discretionary items
+    const savingsSubcategory = await prisma.subcategory.findFirst({
+      where: { householdId, tier: "discretionary", name: "Savings" },
+    });
+
+    const savingsItems = savingsSubcategory
+      ? discretionaryItems.filter((i) => i.subcategoryId === savingsSubcategory.id)
+      : [];
+    const categoryItems = savingsSubcategory
+      ? discretionaryItems.filter((i) => i.subcategoryId !== savingsSubcategory.id)
+      : discretionaryItems;
+
+    // Discretionary: all items summed for waterfall total
     const discretionaryTotal = discretionaryItems.reduce((s, c) => s + c.amount, 0);
+    const savingsTotal = savingsItems.reduce((s, a) => s + a.amount, 0);
 
     const surplusAmount = toGBP(
       incomeTotal - committedMonthlyTotal - yearlyMonthlyAvg - discretionaryTotal
@@ -121,12 +134,10 @@ export const waterfallService = {
       },
       discretionary: {
         total: discretionaryTotal,
-        categories: discretionaryItems.filter((i) => !i.wealthAccountId),
+        categories: categoryItems,
         savings: {
-          total: discretionaryItems
-            .filter((i) => i.wealthAccountId)
-            .reduce((s, a) => s + a.amount, 0),
-          allocations: discretionaryItems.filter((i) => i.wealthAccountId),
+          total: savingsTotal,
+          allocations: savingsItems,
         },
       },
       surplus: {
@@ -533,10 +544,11 @@ export const waterfallService = {
   // ─── Delete all ───────────────────────────────────────────────────────────────
 
   async deleteAll(householdId: string) {
-    await prisma.$transaction([
-      prisma.incomeSource.deleteMany({ where: { householdId } }),
-      prisma.committedItem.deleteMany({ where: { householdId } }),
-      prisma.discretionaryItem.deleteMany({ where: { householdId } }),
-    ]);
+    await prisma.$transaction(async (tx) => {
+      await tx.incomeSource.deleteMany({ where: { householdId } });
+      await tx.committedItem.deleteMany({ where: { householdId } });
+      await tx.discretionaryItem.deleteMany({ where: { householdId } });
+      await tx.subcategory.deleteMany({ where: { householdId } });
+    });
   },
 };
