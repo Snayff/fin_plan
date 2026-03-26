@@ -116,11 +116,11 @@ export const wealthService = {
       );
       const monthlyRate = account!.interestRate / 12 / 100;
 
-      // Linked savings allocations
-      const allocations = await prisma.savingsAllocation.findMany({
+      // Linked savings allocations (discretionary items with wealthAccountId set)
+      const allocations = await prisma.discretionaryItem.findMany({
         where: { householdId, wealthAccountId: id },
       });
-      const monthlyContrib = allocations.reduce((s, a) => s + a.monthlyAmount, 0);
+      const monthlyContrib = allocations.reduce((s, a) => s + a.amount, 0);
 
       if (monthlyRate === 0) {
         projection = account!.balance + monthlyContrib * months;
@@ -163,7 +163,7 @@ export const wealthService = {
     const existing = await prisma.wealthAccount.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Wealth account");
 
-    const linked = await prisma.savingsAllocation.count({ where: { wealthAccountId: id } });
+    const linked = await prisma.discretionaryItem.count({ where: { wealthAccountId: id } });
     if (linked > 0) {
       throw new ConflictError(
         "This account has linked savings allocations. Remove them before deleting."

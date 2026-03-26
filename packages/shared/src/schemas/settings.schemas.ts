@@ -2,10 +2,8 @@ import { z } from "zod";
 
 export const stalenessThresholdsSchema = z.object({
   income_source: z.number().int().min(1).optional(),
-  committed_bill: z.number().int().min(1).optional(),
-  yearly_bill: z.number().int().min(1).optional(),
-  discretionary_category: z.number().int().min(1).optional(),
-  savings_allocation: z.number().int().min(1).optional(),
+  committed_item: z.number().int().min(1).optional(),
+  discretionary_item: z.number().int().min(1).optional(),
   wealth_account: z.number().int().min(1).optional(),
 });
 

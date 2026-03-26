@@ -5,14 +5,6 @@ import type {
   CreateIncomeSourceInput,
   UpdateIncomeSourceInput,
   EndIncomeSourceInput,
-  CreateCommittedBillInput,
-  UpdateCommittedBillInput,
-  CreateYearlyBillInput,
-  UpdateYearlyBillInput,
-  CreateDiscretionaryCategoryInput,
-  UpdateDiscretionaryCategoryInput,
-  CreateSavingsAllocationInput,
-  UpdateSavingsAllocationInput,
   ConfirmBatchInput,
   WaterfallSummary,
   CashflowMonth,
@@ -45,18 +37,13 @@ export const waterfallService = {
   async getWaterfallSummary(householdId: string): Promise<WaterfallSummary> {
     const now = new Date();
 
-    const [incomeSources, committedBills, yearlyBills, discretionary, savings] = await Promise.all([
+    const [incomeSources, committedItems, discretionaryItems] = await Promise.all([
       prisma.incomeSource.findMany({
         where: { householdId, OR: [{ endedAt: null }, { endedAt: { gt: now } }] },
         orderBy: { sortOrder: "asc" },
       }),
-      prisma.committedBill.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } }),
-      prisma.yearlyBill.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } }),
-      prisma.discretionaryCategory.findMany({
-        where: { householdId },
-        orderBy: { sortOrder: "asc" },
-      }),
-      prisma.savingsAllocation.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } }),
+      prisma.committedItem.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } }),
+      prisma.discretionaryItem.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } }),
     ]);
 
     const monthlyIncome = incomeSources.filter((s) => s.frequency === "monthly");
@@ -99,14 +86,18 @@ export const waterfallService = {
       sources,
     }));
 
-    const committedMonthlyTotal = committedBills.reduce((s, b) => s + b.amount, 0);
-    const yearlyMonthlyAvg = toGBP(yearlyBills.reduce((s, b) => s + b.amount, 0) / 12);
+    // Committed: monthly items at face value, yearly items averaged over 12
+    const monthlyCommitted = committedItems.filter((i) => i.spendType === "monthly");
+    const yearlyCommitted = committedItems.filter((i) => i.spendType === "yearly");
 
-    const discretionaryTotal = discretionary.reduce((s, c) => s + c.monthlyBudget, 0);
-    const savingsTotal = savings.reduce((s, a) => s + a.monthlyAmount, 0);
+    const committedMonthlyTotal = monthlyCommitted.reduce((s, b) => s + b.amount, 0);
+    const yearlyMonthlyAvg = toGBP(yearlyCommitted.reduce((s, b) => s + b.amount, 0) / 12);
+
+    // Discretionary: monthly spend items + savings (wealthAccountId set)
+    const discretionaryTotal = discretionaryItems.reduce((s, c) => s + c.amount, 0);
 
     const surplusAmount = toGBP(
-      incomeTotal - committedMonthlyTotal - yearlyMonthlyAvg - discretionaryTotal - savingsTotal
+      incomeTotal - committedMonthlyTotal - yearlyMonthlyAvg - discretionaryTotal
     );
     const percentOfIncome = toGBP(incomeTotal > 0 ? (surplusAmount / incomeTotal) * 100 : 0);
 
@@ -121,13 +112,18 @@ export const waterfallService = {
       committed: {
         monthlyTotal: committedMonthlyTotal,
         monthlyAvg12: yearlyMonthlyAvg,
-        bills: committedBills,
-        yearlyBills,
+        bills: monthlyCommitted,
+        yearlyBills: yearlyCommitted,
       },
       discretionary: {
-        total: discretionaryTotal + savingsTotal,
-        categories: discretionary,
-        savings: { total: savingsTotal, allocations: savings },
+        total: discretionaryTotal,
+        categories: discretionaryItems.filter((i) => !i.wealthAccountId),
+        savings: {
+          total: discretionaryItems
+            .filter((i) => i.wealthAccountId)
+            .reduce((s, a) => s + a.amount, 0),
+          allocations: discretionaryItems.filter((i) => i.wealthAccountId),
+        },
       },
       surplus: {
         amount: surplusAmount,
@@ -139,19 +135,19 @@ export const waterfallService = {
   // ─── Cashflow ───────────────────────────────────────────────────────────────
 
   async getCashflow(householdId: string, year: number): Promise<CashflowMonth[]> {
-    const [yearlyBills, oneOffSources] = await Promise.all([
-      prisma.yearlyBill.findMany({ where: { householdId } }),
+    const [yearlyCommittedItems, oneOffSources] = await Promise.all([
+      prisma.committedItem.findMany({ where: { householdId, spendType: "yearly" } }),
       prisma.incomeSource.findMany({
         where: { householdId, frequency: "one_off", endedAt: null },
       }),
     ]);
 
-    const monthlyContribution = yearlyBills.reduce((s, b) => s + b.amount, 0) / 12;
+    const monthlyContribution = yearlyCommittedItems.reduce((s, b) => s + b.amount, 0) / 12;
     const months: CashflowMonth[] = [];
     let pot = 0;
 
     for (let month = 1; month <= 12; month++) {
-      const bills = yearlyBills
+      const bills = yearlyCommittedItems
         .filter((b) => b.dueMonth === month)
         .map((b) => ({ id: b.id, name: b.name, amount: b.amount }));
 
@@ -249,185 +245,31 @@ export const waterfallService = {
     return prisma.incomeSource.update({ where: { id }, data: { lastReviewedAt: new Date() } });
   },
 
-  // ─── Committed bills ─────────────────────────────────────────────────────────
+  // ─── Committed items ─────────────────────────────────────────────────────────
 
   async listCommitted(householdId: string) {
-    return prisma.committedBill.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } });
-  },
-
-  async createCommitted(householdId: string, data: CreateCommittedBillInput) {
-    const bill = await prisma.committedBill.create({
-      data: { ...data, householdId, lastReviewedAt: new Date() },
-    });
-    await recordHistory("committed_bill", bill.id, bill.amount);
-    return bill;
-  },
-
-  async updateCommitted(householdId: string, id: string, data: UpdateCommittedBillInput) {
-    const existing = await prisma.committedBill.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Committed bill");
-
-    const updated = await prisma.committedBill.update({
-      where: { id },
-      data: { ...data, lastReviewedAt: new Date() },
-    });
-
-    if (data.amount !== undefined && data.amount !== existing!.amount) {
-      await recordHistory("committed_bill", id, updated.amount);
-    }
-
-    return updated;
-  },
-
-  async deleteCommitted(householdId: string, id: string) {
-    const existing = await prisma.committedBill.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Committed bill");
-    await prisma.committedBill.delete({ where: { id } });
+    return prisma.committedItem.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } });
   },
 
   async confirmCommitted(householdId: string, id: string) {
-    const existing = await prisma.committedBill.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Committed bill");
-    return prisma.committedBill.update({ where: { id }, data: { lastReviewedAt: new Date() } });
+    const existing = await prisma.committedItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Committed item");
+    return prisma.committedItem.update({ where: { id }, data: { lastReviewedAt: new Date() } });
   },
 
-  // ─── Yearly bills ────────────────────────────────────────────────────────────
-
-  async listYearly(householdId: string) {
-    return prisma.yearlyBill.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } });
-  },
-
-  async createYearly(householdId: string, data: CreateYearlyBillInput) {
-    const bill = await prisma.yearlyBill.create({
-      data: { ...data, householdId, lastReviewedAt: new Date() },
-    });
-    await recordHistory("yearly_bill", bill.id, bill.amount);
-    return bill;
-  },
-
-  async updateYearly(householdId: string, id: string, data: UpdateYearlyBillInput) {
-    const existing = await prisma.yearlyBill.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Yearly bill");
-
-    const updated = await prisma.yearlyBill.update({
-      where: { id },
-      data: { ...data, lastReviewedAt: new Date() },
-    });
-
-    if (data.amount !== undefined && data.amount !== existing!.amount) {
-      await recordHistory("yearly_bill", id, updated.amount);
-    }
-
-    return updated;
-  },
-
-  async deleteYearly(householdId: string, id: string) {
-    const existing = await prisma.yearlyBill.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Yearly bill");
-    await prisma.yearlyBill.delete({ where: { id } });
-  },
-
-  async confirmYearly(householdId: string, id: string) {
-    const existing = await prisma.yearlyBill.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Yearly bill");
-    return prisma.yearlyBill.update({ where: { id }, data: { lastReviewedAt: new Date() } });
-  },
-
-  // ─── Discretionary ───────────────────────────────────────────────────────────
+  // ─── Discretionary items ─────────────────────────────────────────────────────
 
   async listDiscretionary(householdId: string) {
-    return prisma.discretionaryCategory.findMany({
+    return prisma.discretionaryItem.findMany({
       where: { householdId },
       orderBy: { sortOrder: "asc" },
     });
-  },
-
-  async createDiscretionary(householdId: string, data: CreateDiscretionaryCategoryInput) {
-    const cat = await prisma.discretionaryCategory.create({
-      data: { ...data, householdId, lastReviewedAt: new Date() },
-    });
-    await recordHistory("discretionary_category", cat.id, cat.monthlyBudget);
-    return cat;
-  },
-
-  async updateDiscretionary(
-    householdId: string,
-    id: string,
-    data: UpdateDiscretionaryCategoryInput
-  ) {
-    const existing = await prisma.discretionaryCategory.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Discretionary category");
-
-    const updated = await prisma.discretionaryCategory.update({
-      where: { id },
-      data: { ...data, lastReviewedAt: new Date() },
-    });
-
-    if (data.monthlyBudget !== undefined && data.monthlyBudget !== existing!.monthlyBudget) {
-      await recordHistory("discretionary_category", id, updated.monthlyBudget);
-    }
-
-    return updated;
-  },
-
-  async deleteDiscretionary(householdId: string, id: string) {
-    const existing = await prisma.discretionaryCategory.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Discretionary category");
-    await prisma.discretionaryCategory.delete({ where: { id } });
   },
 
   async confirmDiscretionary(householdId: string, id: string) {
-    const existing = await prisma.discretionaryCategory.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Discretionary category");
-    return prisma.discretionaryCategory.update({
-      where: { id },
-      data: { lastReviewedAt: new Date() },
-    });
-  },
-
-  // ─── Savings allocations ─────────────────────────────────────────────────────
-
-  async listSavings(householdId: string) {
-    return prisma.savingsAllocation.findMany({
-      where: { householdId },
-      orderBy: { sortOrder: "asc" },
-    });
-  },
-
-  async createSavings(householdId: string, data: CreateSavingsAllocationInput) {
-    const alloc = await prisma.savingsAllocation.create({
-      data: { ...data, householdId, lastReviewedAt: new Date() },
-    });
-    await recordHistory("savings_allocation", alloc.id, alloc.monthlyAmount);
-    return alloc;
-  },
-
-  async updateSavings(householdId: string, id: string, data: UpdateSavingsAllocationInput) {
-    const existing = await prisma.savingsAllocation.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Savings allocation");
-
-    const updated = await prisma.savingsAllocation.update({
-      where: { id },
-      data: { ...data, lastReviewedAt: new Date() },
-    });
-
-    if (data.monthlyAmount !== undefined && data.monthlyAmount !== existing!.monthlyAmount) {
-      await recordHistory("savings_allocation", id, updated.monthlyAmount);
-    }
-
-    return updated;
-  },
-
-  async deleteSavings(householdId: string, id: string) {
-    const existing = await prisma.savingsAllocation.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Savings allocation");
-    await prisma.savingsAllocation.delete({ where: { id } });
-  },
-
-  async confirmSavings(householdId: string, id: string) {
-    const existing = await prisma.savingsAllocation.findUnique({ where: { id } });
-    assertOwned(existing, householdId, "Savings allocation");
-    return prisma.savingsAllocation.update({
+    const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Discretionary item");
+    return prisma.discretionaryItem.update({
       where: { id },
       data: { lastReviewedAt: new Date() },
     });
@@ -443,24 +285,14 @@ export const waterfallService = {
         assertOwned(item, householdId, "Income source");
         break;
       }
-      case "committed_bill": {
-        const item = await prisma.committedBill.findUnique({ where: { id } });
-        assertOwned(item, householdId, "Committed bill");
+      case "committed_item": {
+        const item = await prisma.committedItem.findUnique({ where: { id } });
+        assertOwned(item, householdId, "Committed item");
         break;
       }
-      case "yearly_bill": {
-        const item = await prisma.yearlyBill.findUnique({ where: { id } });
-        assertOwned(item, householdId, "Yearly bill");
-        break;
-      }
-      case "discretionary_category": {
-        const item = await prisma.discretionaryCategory.findUnique({ where: { id } });
-        assertOwned(item, householdId, "Discretionary category");
-        break;
-      }
-      case "savings_allocation": {
-        const item = await prisma.savingsAllocation.findUnique({ where: { id } });
-        assertOwned(item, householdId, "Savings allocation");
+      case "discretionary_item": {
+        const item = await prisma.discretionaryItem.findUnique({ where: { id } });
+        assertOwned(item, householdId, "Discretionary item");
         break;
       }
       default:
@@ -490,26 +322,14 @@ export const waterfallService = {
               data: { lastReviewedAt: now },
             });
             break;
-          case "committed_bill":
-            await tx.committedBill.updateMany({
+          case "committed_item":
+            await tx.committedItem.updateMany({
               where: { id: item.id, householdId },
               data: { lastReviewedAt: now },
             });
             break;
-          case "yearly_bill":
-            await tx.yearlyBill.updateMany({
-              where: { id: item.id, householdId },
-              data: { lastReviewedAt: now },
-            });
-            break;
-          case "discretionary_category":
-            await tx.discretionaryCategory.updateMany({
-              where: { id: item.id, householdId },
-              data: { lastReviewedAt: now },
-            });
-            break;
-          case "savings_allocation":
-            await tx.savingsAllocation.updateMany({
+          case "discretionary_item":
+            await tx.discretionaryItem.updateMany({
               where: { id: item.id, householdId },
               data: { lastReviewedAt: now },
             });
@@ -524,10 +344,8 @@ export const waterfallService = {
   async deleteAll(householdId: string) {
     await prisma.$transaction([
       prisma.incomeSource.deleteMany({ where: { householdId } }),
-      prisma.committedBill.deleteMany({ where: { householdId } }),
-      prisma.yearlyBill.deleteMany({ where: { householdId } }),
-      prisma.discretionaryCategory.deleteMany({ where: { householdId } }),
-      prisma.savingsAllocation.deleteMany({ where: { householdId } }),
+      prisma.committedItem.deleteMany({ where: { householdId } }),
+      prisma.discretionaryItem.deleteMany({ where: { householdId } }),
     ]);
   },
 };

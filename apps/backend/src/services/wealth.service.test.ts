@@ -76,7 +76,7 @@ describe("wealthService.deleteAccount", () => {
     const householdId = "hh-1";
 
     prismaMock.wealthAccount.findUnique.mockResolvedValue({ id, householdId } as any);
-    prismaMock.savingsAllocation.count.mockResolvedValue(1 as any);
+    prismaMock.discretionaryItem.count.mockResolvedValue(1 as any);
 
     await expect(wealthService.deleteAccount(householdId, id)).rejects.toThrow(
       "linked savings allocations"

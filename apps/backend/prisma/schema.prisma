@@ -144,7 +144,7 @@ model HouseholdSettings {
   isaAnnualLimit      Float    @default(20000)
   isaYearStartMonth   Int      @default(4)
   isaYearStartDay     Int      @default(6)
-  stalenessThresholds Json     @default("{\"income_source\":12,\"committed_bill\":6,\"yearly_bill\":12,\"discretionary_category\":12,\"savings_allocation\":12,\"wealth_account\":3}")
+  stalenessThresholds Json     @default("{\"income_source\":12,\"committed_item\":6,\"discretionary_item\":12,\"wealth_account\":3}")
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }

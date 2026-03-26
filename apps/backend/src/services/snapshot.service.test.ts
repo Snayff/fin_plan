@@ -115,10 +115,8 @@ describe("snapshotService.ensureJan1Snapshot", () => {
     } as any);
     // Mock for createSnapshot's internal getWaterfallSummary call
     prismaMock.incomeSource.findMany.mockResolvedValue([]);
-    prismaMock.committedBill.findMany.mockResolvedValue([]);
-    prismaMock.yearlyBill.findMany.mockResolvedValue([]);
-    prismaMock.discretionaryCategory.findMany.mockResolvedValue([]);
-    prismaMock.savingsAllocation.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
     prismaMock.householdSettings.findUnique.mockResolvedValue(null);
 
     await snapshotService.ensureJan1Snapshot("hh-1", jan1);
