@@ -15,8 +15,7 @@ import { SnapshotTimeline } from "@/components/overview/SnapshotTimeline";
 import { OverviewPageHeader } from "@/components/overview/OverviewPageHeader";
 import { CreateSnapshotModal } from "@/components/overview/CreateSnapshotModal";
 import { ReviewWizard } from "@/components/overview/ReviewWizard";
-import { WaterfallConnector } from "@/components/overview/WaterfallConnector";
-import { Button } from "@/components/ui/button";
+import OverviewEmptyState from "@/components/overview/OverviewEmptyState";
 import { BuildGuidePanel } from "@/components/overview/build/BuildGuidePanel";
 import { type BuildPhase, BUILD_PHASES } from "@/components/overview/build/quick-picks";
 import {
@@ -125,11 +124,6 @@ export default function OverviewPage() {
 
   const inBuild = buildPhase !== null;
 
-  function enterBuildMode() {
-    createSession.mutate(undefined);
-    setBuildPhase("household");
-  }
-
   const handleNextPhase = useCallback(() => {
     if (!buildPhase) return;
     const idx = BUILD_PHASES.indexOf(buildPhase);
@@ -199,62 +193,7 @@ export default function OverviewPage() {
       }
     />
   ) : (
-    <div className="p-4 space-y-0">
-      {/* Ghosted tier headers */}
-      <div className="flex items-center justify-between py-1.5 px-2 opacity-25">
-        <span className="text-[13px] font-heading font-semibold tracking-tier uppercase text-tier-income">
-          Income
-        </span>
-        <span className="text-[15px] font-numeric font-semibold text-tier-income">£—</span>
-      </div>
-      <div className="opacity-20">
-        <WaterfallConnector text="minus committed" />
-      </div>
-      <div className="flex items-center justify-between py-1.5 px-2 opacity-25">
-        <span className="text-[13px] font-heading font-semibold tracking-tier uppercase text-tier-committed">
-          Committed
-        </span>
-        <span className="text-[15px] font-numeric font-semibold text-tier-committed">£—</span>
-      </div>
-      <div className="opacity-20">
-        <WaterfallConnector text="minus discretionary" />
-      </div>
-      <div className="flex items-center justify-between py-1.5 px-2 opacity-25">
-        <span className="text-[13px] font-heading font-semibold tracking-tier uppercase text-tier-discretionary">
-          Discretionary
-        </span>
-        <span className="text-[15px] font-numeric font-semibold text-tier-discretionary">£—</span>
-      </div>
-      <div className="opacity-20">
-        <WaterfallConnector text="equals" />
-      </div>
-      <div className="flex items-center justify-between py-1.5 px-2 opacity-25">
-        <span className="text-[13px] font-heading font-semibold tracking-tier uppercase text-tier-surplus">
-          Surplus
-        </span>
-        <span className="text-[15px] font-numeric font-semibold text-tier-surplus">£—</span>
-      </div>
-
-      {/* CTA card */}
-      <div
-        className="mt-6 mx-2 p-5 rounded-lg text-center"
-        style={{
-          background:
-            "linear-gradient(135deg, rgba(99, 102, 241, 0.07) 0%, rgba(168, 85, 247, 0.05) 100%)",
-          border: "1px solid rgba(99, 102, 241, 0.1)",
-        }}
-      >
-        <p className="text-[15px] font-heading font-semibold text-foreground">
-          Build your waterfall
-        </p>
-        <p className="text-[13px] text-muted-foreground mt-1">
-          See where your money flows — from income through to surplus.
-        </p>
-        <Button className="mt-4" onClick={enterBuildMode}>
-          Get started
-        </Button>
-      </div>
-    </div>
+    <OverviewEmptyState />
   );
 
   // Build right panel
