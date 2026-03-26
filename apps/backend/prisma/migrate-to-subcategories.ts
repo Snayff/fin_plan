@@ -74,14 +74,18 @@ async function main() {
     }
 
     const getSubId = (tier: string, name: string): string => {
-      return subLookup.get(`${tier}:${name}`) ?? subLookup.get(`${tier}:Other`)!;
+      const id = subLookup.get(`${tier}:${name}`) ?? subLookup.get(`${tier}:Other`);
+      if (!id)
+        throw new Error(`No subcategory found for tier "${tier}" — expected an "Other" entry`);
+      return id;
     };
 
     // 3. Migrate CommittedBill → CommittedItem (spendType=monthly)
     const bills = await prisma.committedBill.findMany({ where: { householdId: hid } });
     for (const bill of bills) {
-      await prisma.committedItem.create({
-        data: {
+      await prisma.committedItem.upsert({
+        where: { id: bill.id },
+        create: {
           id: bill.id,
           householdId: hid,
           subcategoryId: getSubId("committed", "Other"),
@@ -94,6 +98,7 @@ async function main() {
           createdAt: bill.createdAt,
           updatedAt: bill.updatedAt,
         },
+        update: {},
       });
     }
     console.log(`  Migrated ${bills.length} committed bills → CommittedItem`);
@@ -101,8 +106,9 @@ async function main() {
     // 4. Migrate YearlyBill → CommittedItem (spendType=yearly)
     const yearlyBills = await prisma.yearlyBill.findMany({ where: { householdId: hid } });
     for (const yb of yearlyBills) {
-      await prisma.committedItem.create({
-        data: {
+      await prisma.committedItem.upsert({
+        where: { id: yb.id },
+        create: {
           id: yb.id,
           householdId: hid,
           subcategoryId: getSubId("committed", "Other"),
@@ -115,6 +121,7 @@ async function main() {
           createdAt: yb.createdAt,
           updatedAt: yb.updatedAt,
         },
+        update: {},
       });
     }
     console.log(`  Migrated ${yearlyBills.length} yearly bills → CommittedItem`);
@@ -122,8 +129,9 @@ async function main() {
     // 5. Migrate DiscretionaryCategory → DiscretionaryItem
     const cats = await prisma.discretionaryCategory.findMany({ where: { householdId: hid } });
     for (const cat of cats) {
-      await prisma.discretionaryItem.create({
-        data: {
+      await prisma.discretionaryItem.upsert({
+        where: { id: cat.id },
+        create: {
           id: cat.id,
           householdId: hid,
           subcategoryId: getSubId("discretionary", "Other"),
@@ -135,6 +143,7 @@ async function main() {
           createdAt: cat.createdAt,
           updatedAt: cat.updatedAt,
         },
+        update: {},
       });
     }
     console.log(`  Migrated ${cats.length} discretionary categories → DiscretionaryItem`);
@@ -142,8 +151,9 @@ async function main() {
     // 6. Migrate SavingsAllocation → DiscretionaryItem (in Savings subcategory)
     const savings = await prisma.savingsAllocation.findMany({ where: { householdId: hid } });
     for (const sav of savings) {
-      await prisma.discretionaryItem.create({
-        data: {
+      await prisma.discretionaryItem.upsert({
+        where: { id: sav.id },
+        create: {
           id: sav.id,
           householdId: hid,
           subcategoryId: getSubId("discretionary", "Savings"),
@@ -156,6 +166,7 @@ async function main() {
           createdAt: sav.createdAt,
           updatedAt: sav.updatedAt,
         },
+        update: {},
       });
     }
     console.log(`  Migrated ${savings.length} savings allocations → DiscretionaryItem`);
