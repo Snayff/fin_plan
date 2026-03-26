@@ -258,7 +258,7 @@ export default function OverviewPage() {
   );
 
   // Build right panel
-  let right: React.ReactNode | null = null;
+  let right: React.ReactNode;
   if (inBuild) {
     right = (
       <BuildGuidePanel
@@ -302,6 +302,18 @@ export default function OverviewPage() {
         onBack={() => setView({ type: "none" })}
         selectedItemId={null}
       />
+    );
+  } else {
+    right = (
+      <div
+        data-testid="analytics-placeholder"
+        className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center"
+      >
+        <p className="text-sm font-medium text-foreground/40">Analytics</p>
+        <p className="max-w-xs text-xs text-foreground/25">
+          Spending trends and cashflow analytics will be available here in a future update.
+        </p>
+      </div>
     );
   }
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 import type { WaterfallSummary } from "@finplan/shared";
 import { usePrefersReducedMotion } from "@/utils/motion";
 import { formatCurrency } from "@/utils/format";
@@ -72,14 +73,18 @@ function SectionHeader({
   colorClass,
   staleCount,
   dimmed,
+  onHeaderClick,
+  headerTestId,
 }: {
   label: React.ReactNode;
   total: React.ReactNode;
   colorClass: string;
   staleCount: number;
   dimmed?: boolean;
+  onHeaderClick?: () => void;
+  headerTestId?: string;
 }) {
-  return (
+  const content = (
     <div className={cn("flex items-center justify-between py-1.5 px-2", dimmed && "opacity-40")}>
       <div className="flex items-center gap-2">
         <h3
@@ -95,6 +100,20 @@ function SectionHeader({
       <span className={cn("text-[15px] font-numeric font-semibold", colorClass)}>{total}</span>
     </div>
   );
+
+  if (onHeaderClick) {
+    return (
+      <button
+        type="button"
+        data-testid={headerTestId}
+        onClick={onHeaderClick}
+        className="w-full text-left hover:opacity-80 transition-opacity"
+      >
+        {content}
+      </button>
+    );
+  }
+  return content;
 }
 
 export function WaterfallLeftPanel({
@@ -105,6 +124,7 @@ export function WaterfallLeftPanel({
   buildPhase = null,
   prefillName = null,
 }: WaterfallLeftPanelProps) {
+  const navigate = useNavigate();
   const { data: settings } = useSettings();
   const thresholds = settings?.stalenessThresholds ?? {
     income_source: 12,
@@ -180,6 +200,8 @@ export function WaterfallLeftPanel({
           colorClass="text-tier-income"
           staleCount={incomeStaleCount}
           dimmed={incomeState === "future"}
+          onHeaderClick={!inBuild ? () => navigate("/income") : undefined}
+          headerTestId="tier-heading-income"
         />
         {incomeState !== "future" && (
           <div className="space-y-0.5">
@@ -232,6 +254,8 @@ export function WaterfallLeftPanel({
           colorClass="text-tier-committed"
           staleCount={committedStaleCount}
           dimmed={committedState === "future"}
+          onHeaderClick={!inBuild ? () => navigate("/committed") : undefined}
+          headerTestId="tier-heading-committed"
         />
         {committedState !== "future" && (
           <div className="space-y-0.5">
@@ -313,6 +337,8 @@ export function WaterfallLeftPanel({
           colorClass="text-tier-discretionary"
           staleCount={discretionaryStaleCount}
           dimmed={discretionaryState === "future"}
+          onHeaderClick={!inBuild ? () => navigate("/discretionary") : undefined}
+          headerTestId="tier-heading-discretionary"
         />
         {discretionaryState !== "future" && (
           <div className="space-y-0.5">
@@ -447,6 +473,8 @@ export function WaterfallLeftPanel({
           total={<AnimatedCurrency value={surplus.amount} />}
           colorClass="text-tier-surplus"
           staleCount={0}
+          onHeaderClick={!inBuild ? () => navigate("/surplus") : undefined}
+          headerTestId="tier-heading-surplus"
         />
         <div aria-live="polite" aria-atomic="true">
           {!inBuild && surplus.percentOfIncome < surplusBenchmark && (
