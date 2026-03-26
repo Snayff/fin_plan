@@ -1,3 +1,4 @@
+import type { WaterfallTier } from "@finplan/shared";
 import { prisma } from "../config/database.js";
 
 const DEFAULT_SUBCATEGORIES = {
@@ -56,27 +57,32 @@ export const subcategoryService = {
     }
   },
 
-  async listByTier(householdId: string, tier: string) {
+  async listByTier(householdId: string, tier: WaterfallTier) {
     return prisma.subcategory.findMany({
-      where: { householdId, tier: tier as any },
+      where: { householdId, tier },
       orderBy: { sortOrder: "asc" },
     });
   },
 
-  async getDefaultSubcategoryId(householdId: string, tier: string): Promise<string> {
+  async getDefaultSubcategoryId(householdId: string, tier: WaterfallTier): Promise<string> {
     const sub = await prisma.subcategory.findFirst({
-      where: { householdId, tier: tier as any, name: "Other" },
+      where: { householdId, tier, name: "Other" },
     });
-    return sub!.id;
+    if (!sub) {
+      throw new Error(
+        `Default subcategory not found for tier "${tier}" in household "${householdId}"`
+      );
+    }
+    return sub.id;
   },
 
   async getSubcategoryIdByName(
     householdId: string,
-    tier: string,
+    tier: WaterfallTier,
     name: string
   ): Promise<string | null> {
     const sub = await prisma.subcategory.findFirst({
-      where: { householdId, tier: tier as any, name },
+      where: { householdId, tier, name },
     });
     return sub?.id ?? null;
   },

@@ -98,4 +98,12 @@ describe("subcategoryService.getDefaultSubcategoryId", () => {
     const id = await subcategoryService.getDefaultSubcategoryId("hh-1", "committed");
     expect(id).toBe("sub-other");
   });
+
+  it("throws when no 'Other' subcategory exists", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue(null as any);
+
+    await expect(subcategoryService.getDefaultSubcategoryId("hh-1", "committed")).rejects.toThrow(
+      "Default subcategory not found"
+    );
+  });
 });
