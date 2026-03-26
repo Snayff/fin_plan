@@ -76,7 +76,12 @@ finplan does not colour-code financial positions as good or bad. Whether you hav
 
 Financial terminology creates friction. Where a plain English equivalent exists, use it. "Savings", "Pensions", and "Property" are plain English. Asset groupings, liquidity labels, and UI copy must follow the same standard.
 
-Where a term has a specific financial meaning — or a specific meaning within finplan — a tooltip is surfaced on hover. Tooltip definitions are maintained in `definitions.md`. No discrete in-app glossary is provided; contextual tooltips are the only mechanism for explaining terms.
+Where a term has a specific financial meaning — or a specific meaning within finplan — a tooltip is surfaced on hover. Tooltip definitions are maintained in `definitions.md` as a design reference.
+
+Two mechanisms explain terms to users:
+
+- **Contextual tooltips** — the primary mechanism. Interactive popovers on glossary terms (dotted underline, no colour change) showing the full definition with links to related concepts. Applied selectively in body text and descriptions, not headings or labels.
+- **Dedicated Help page** — a searchable, browsable reference with a glossary of terms and concept explainers (visual examples, interactive elements, "Why it matters in finplan" context). Accessible via a top-level nav bar link.
 
 ### 7. Desktop-First
 
