@@ -3,7 +3,7 @@ import { format } from "date-fns";
 import { useSnapshots } from "@/hooks/useSettings";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SnapshotDot } from "./SnapshotDot";
-import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 
 // ─── Position algorithm constants (from spec) ────────────────────────────────
 const PAD_LEFT = 20;
@@ -168,7 +168,7 @@ export function SnapshotTimeline({
       {/* Meta row */}
       <div className="h-7 flex items-center justify-between px-3">
         <span className="text-muted-foreground/60 font-numeric tabular-nums">
-          <DefinitionTooltip term="Snapshot">Snapshots</DefinitionTooltip>
+          <GlossaryTermMarker entryId="snapshot">Snapshots</GlossaryTermMarker>
           {dateRangeLabel ? ` · ${dateRangeLabel}` : ""}
         </span>
         {!isViewingSnapshot && (

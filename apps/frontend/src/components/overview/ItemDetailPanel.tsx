@@ -14,7 +14,7 @@ import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
 import { useYearlyBillNudge, useSavingsNudge } from "@/hooks/useNudge";
 import { Link } from "react-router-dom";
-import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { useWealthAccount } from "@/hooks/useWealth";
 
 interface SelectedItem {
@@ -168,7 +168,7 @@ export function ItemDetailPanel({
         <h2 className="text-lg font-semibold">{item.name}</h2>
         {item.type === "income_source" && (
           <p className="text-xs text-muted-foreground mt-0.5">
-            <DefinitionTooltip term="Net Income">Net Income</DefinitionTooltip>
+            <GlossaryTermMarker entryId="net-income">Net Income</GlossaryTermMarker>
           </p>
         )}
         <p className="text-[30px] font-numeric font-extrabold text-primary mt-1">
@@ -176,7 +176,7 @@ export function ItemDetailPanel({
         </p>
         {item.type === "yearly_bill" && (
           <p className="text-sm text-muted-foreground mt-0.5">
-            <DefinitionTooltip term="Amortised (÷12)">Amortised (÷12)</DefinitionTooltip>{" "}
+            <GlossaryTermMarker entryId="amortised">Amortised (÷12)</GlossaryTermMarker>{" "}
             {formatCurrency(item.amount / 12)}/mo
           </p>
         )}

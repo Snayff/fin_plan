@@ -23,6 +23,7 @@ const DiscretionaryPage = lazy(() => import("./pages/DiscretionaryPage"));
 const SurplusPage = lazy(() => import("./pages/SurplusPage"));
 const GoalsPage = lazy(() => import("./pages/GoalsPage"));
 const GiftsPage = lazy(() => import("./pages/GiftsPage"));
+const HelpPage = lazy(() => import("./pages/HelpPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
@@ -70,6 +71,7 @@ export function ProtectedAppRoutes() {
                     <Route path="/surplus" element={<SurplusPage />} />
                     <Route path="/goals" element={<GoalsPage />} />
                     <Route path="/gifts" element={<GiftsPage />} />
+                    <Route path="/help" element={<HelpPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/design-renew" element={<DesignRenewPage />} />
 
