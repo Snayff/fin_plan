@@ -15,12 +15,89 @@ export type IncomeType = z.infer<typeof IncomeTypeEnum>;
 
 export const WaterfallItemTypeEnum = z.enum([
   "income_source",
+  "committed_item",
+  "discretionary_item",
+  // Legacy (kept for WaterfallHistory backward compat)
   "committed_bill",
   "yearly_bill",
   "discretionary_category",
   "savings_allocation",
 ]);
 export type WaterfallItemType = z.infer<typeof WaterfallItemTypeEnum>;
+
+// ─── New enums ───────────────────────────────────────────────────────────────
+
+export const SpendTypeEnum = z.enum(["monthly", "yearly", "one_off"]);
+export type SpendType = z.infer<typeof SpendTypeEnum>;
+
+export const WaterfallTierEnum = z.enum(["income", "committed", "discretionary"]);
+export type WaterfallTier = z.infer<typeof WaterfallTierEnum>;
+
+// ─── Subcategory ─────────────────────────────────────────────────────────────
+
+export interface SubcategoryRow {
+  id: string;
+  householdId: string;
+  tier: WaterfallTier;
+  name: string;
+  sortOrder: number;
+  isLocked: boolean;
+  isDefault: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+// ─── Committed items (replaces CommittedBill + YearlyBill) ───────────────────
+
+export const createCommittedItemSchema = z.object({
+  name: z.string().min(1),
+  amount: z.number().positive(),
+  subcategoryId: z.string().min(1),
+  spendType: SpendTypeEnum.default("monthly"),
+  notes: z.string().max(500).nullable().optional(),
+  ownerId: z.string().optional(),
+  dueMonth: z.number().int().min(1).max(12).optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+export const updateCommittedItemSchema = z.object({
+  name: z.string().min(1).optional(),
+  amount: z.number().positive().optional(),
+  subcategoryId: z.string().min(1).optional(),
+  spendType: SpendTypeEnum.optional(),
+  notes: z.string().max(500).nullable().optional(),
+  ownerId: z.string().nullable().optional(),
+  dueMonth: z.number().int().min(1).max(12).nullable().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+export type CreateCommittedItemInput = z.infer<typeof createCommittedItemSchema>;
+export type UpdateCommittedItemInput = z.infer<typeof updateCommittedItemSchema>;
+
+// ─── Discretionary items (replaces DiscretionaryCategory + SavingsAllocation) ─
+
+export const createDiscretionaryItemSchema = z.object({
+  name: z.string().min(1),
+  amount: z.number().positive(),
+  subcategoryId: z.string().min(1),
+  spendType: SpendTypeEnum.default("monthly"),
+  notes: z.string().max(500).nullable().optional(),
+  wealthAccountId: z.string().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+export const updateDiscretionaryItemSchema = z.object({
+  name: z.string().min(1).optional(),
+  amount: z.number().positive().optional(),
+  subcategoryId: z.string().min(1).optional(),
+  spendType: SpendTypeEnum.optional(),
+  notes: z.string().max(500).nullable().optional(),
+  wealthAccountId: z.string().nullable().optional(),
+  sortOrder: z.number().int().optional(),
+});
+
+export type CreateDiscretionaryItemInput = z.infer<typeof createDiscretionaryItemSchema>;
+export type UpdateDiscretionaryItemInput = z.infer<typeof updateDiscretionaryItemSchema>;
 
 // ─── Income ──────────────────────────────────────────────────────────────────
 
@@ -32,6 +109,8 @@ export const createIncomeSourceSchema = z.object({
   expectedMonth: z.number().int().min(1).max(12).optional(),
   ownerId: z.string().optional(),
   sortOrder: z.number().int().optional(),
+  subcategoryId: z.string().min(1).optional(),
+  notes: z.string().max(500).nullable().optional(),
 });
 
 export const updateIncomeSourceSchema = z.object({
@@ -42,6 +121,8 @@ export const updateIncomeSourceSchema = z.object({
   expectedMonth: z.number().int().min(1).max(12).nullable().optional(),
   ownerId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
+  subcategoryId: z.string().min(1).optional(),
+  notes: z.string().max(500).nullable().optional(),
 });
 
 export const endIncomeSourceSchema = z.object({
@@ -187,6 +268,8 @@ export interface IncomeSourceRow {
   lastReviewedAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  subcategoryId: string | null;
+  notes: string | null;
 }
 
 export interface CommittedBillRow {
@@ -199,6 +282,10 @@ export interface CommittedBillRow {
   lastReviewedAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  spendType?: SpendType;
+  subcategoryId?: string;
+  notes?: string | null;
+  dueMonth?: number | null;
 }
 
 export interface YearlyBillRow {
@@ -211,6 +298,10 @@ export interface YearlyBillRow {
   lastReviewedAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  spendType?: SpendType;
+  subcategoryId?: string;
+  notes?: string | null;
+  ownerId?: string | null;
 }
 
 export interface DiscretionaryCategoryRow {
@@ -222,6 +313,9 @@ export interface DiscretionaryCategoryRow {
   lastReviewedAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  spendType?: SpendType;
+  subcategoryId?: string;
+  notes?: string | null;
 }
 
 export interface SavingsAllocationRow {
@@ -234,6 +328,9 @@ export interface SavingsAllocationRow {
   lastReviewedAt: Date;
   createdAt: Date;
   updatedAt: Date;
+  spendType?: SpendType;
+  subcategoryId?: string;
+  notes?: string | null;
 }
 
 export interface CashflowMonth {
