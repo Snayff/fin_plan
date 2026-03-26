@@ -83,3 +83,28 @@ describe("wealthService.deleteAccount", () => {
     );
   });
 });
+
+describe("wealthService.getIsaAllowance — toGBP rounding", () => {
+  it("rounds remaining to 2dp", async () => {
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      isaAnnualLimit: 20000,
+      isaYearStartMonth: 4,
+      isaYearStartDay: 6,
+    } as any);
+    prismaMock.wealthAccount.findMany.mockResolvedValue([
+      {
+        id: "wa-1",
+        householdId: "hh-1",
+        isISA: true,
+        ownerId: "user-1",
+        isaYearContribution: 6666.67,
+      },
+    ] as any);
+    prismaMock.user.findMany.mockResolvedValue([{ id: "user-1", name: "Alice" }] as any);
+
+    const result = await wealthService.getIsaAllowance("hh-1");
+
+    // remaining: 20000 - 6666.67 = 13333.33
+    expect(result.byPerson[0]!.remaining).toBe(13333.33);
+  });
+});

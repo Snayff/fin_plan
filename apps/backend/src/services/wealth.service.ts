@@ -1,5 +1,6 @@
 import { prisma } from "../config/database.js";
 import { NotFoundError, ConflictError } from "../utils/errors.js";
+import { toGBP } from "@finplan/shared";
 import type {
   CreateWealthAccountInput,
   UpdateWealthAccountInput,
@@ -269,8 +270,8 @@ export const wealthService = {
     const byPerson = Array.from(groups.entries()).map(([ownerId, { label, used }]) => ({
       ownerId,
       name: label,
-      used,
-      remaining: Math.max(0, limit - used),
+      used: toGBP(used),
+      remaining: toGBP(Math.max(0, limit - used)),
     }));
 
     return {
