@@ -32,13 +32,7 @@ export function OverviewPageHeader({ activeSnapshot, onExitSnapshot }: OverviewP
       <span className="text-muted-foreground/50 mx-0.5" aria-hidden="true">
         ·
       </span>
-      <span
-        className="text-[11px] font-medium px-1.5 py-0.5 rounded"
-        style={{
-          color: "var(--color-attention)",
-          background: "color-mix(in srgb, var(--color-attention) 10%, transparent)",
-        }}
-      >
+      <span className="text-[11px] font-medium px-1.5 py-0.5 rounded text-attention bg-attention-bg">
         Read only
       </span>
       <button
