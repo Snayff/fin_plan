@@ -1,6 +1,7 @@
 import { createHash, randomBytes } from "crypto";
 import { prisma } from "../config/database.js";
 import { hashPassword } from "../utils/password.js";
+import { subcategoryService } from "./subcategory.service.js";
 import {
   generateAccessToken,
   generateRefreshToken,
@@ -59,6 +60,7 @@ export const householdService = {
       },
     });
     await prisma.householdSettings.create({ data: { householdId: household.id } });
+    await subcategoryService.seedDefaults(household.id);
     return household;
   },
 
@@ -259,7 +261,7 @@ export const householdService = {
     const passwordHash = await hashPassword(newUser.password);
 
     // Create user + personal household in a transaction
-    const user = await prisma.$transaction(async (tx) => {
+    const { user, personalHouseholdId } = await prisma.$transaction(async (tx) => {
       const created = await tx.user.create({
         data: {
           email: normalizedEmail!,
@@ -299,8 +301,10 @@ export const householdService = {
         data: { usedAt: new Date() },
       });
 
-      return updated;
+      return { user: updated, personalHouseholdId: personal.id };
     });
+
+    await subcategoryService.seedDefaults(personalHouseholdId);
 
     // Generate auth tokens
     const accessToken = generateAccessToken({ userId: user.id, email: user.email });
