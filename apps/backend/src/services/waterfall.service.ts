@@ -524,12 +524,16 @@ export const waterfallService = {
               data: { lastReviewedAt: now },
             });
             break;
+          case "committed_bill":
+          case "yearly_bill":
           case "committed_item":
             await tx.committedItem.updateMany({
               where: { id: item.id, householdId },
               data: { lastReviewedAt: now },
             });
             break;
+          case "discretionary_category":
+          case "savings_allocation":
           case "discretionary_item":
             await tx.discretionaryItem.updateMany({
               where: { id: item.id, householdId },
