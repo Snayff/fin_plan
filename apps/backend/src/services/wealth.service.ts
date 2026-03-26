@@ -224,7 +224,7 @@ export const wealthService = {
 
   // ─── ISA allowance ────────────────────────────────────────────────────────
 
-  async getIsaAllowance(householdId: string): Promise<IsaAllowance> {
+  async getIsaAllowance(householdId: string, now: Date = new Date()): Promise<IsaAllowance> {
     const [settings, isaAccounts] = await Promise.all([
       prisma.householdSettings.findUnique({ where: { householdId } }),
       prisma.wealthAccount.findMany({
@@ -235,8 +235,6 @@ export const wealthService = {
     const limit = settings?.isaAnnualLimit ?? 20000;
     const startMonth = (settings?.isaYearStartMonth ?? 4) - 1; // 0-indexed
     const startDay = settings?.isaYearStartDay ?? 6;
-
-    const now = new Date();
     let taxYearStartYear = now.getFullYear();
     const yearStart = new Date(taxYearStartYear, startMonth, startDay);
     if (now < yearStart) taxYearStartYear -= 1;

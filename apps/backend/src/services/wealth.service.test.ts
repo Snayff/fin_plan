@@ -108,3 +108,41 @@ describe("wealthService.getIsaAllowance — toGBP rounding", () => {
     expect(result.byPerson[0]!.remaining).toBe(13333.33);
   });
 });
+
+describe("wealthService.getIsaAllowance — DI clock", () => {
+  it("computes correct tax year when now is before April 6", async () => {
+    const now = new Date("2026-03-15");
+
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      isaAnnualLimit: 20000,
+      isaYearStartMonth: 4,
+      isaYearStartDay: 6,
+    } as any);
+    prismaMock.wealthAccount.findMany.mockResolvedValue([]);
+    prismaMock.user.findMany.mockResolvedValue([]);
+
+    const result = await wealthService.getIsaAllowance("hh-1", now);
+
+    // Before April 6, 2026 → tax year is 2025-04-06 to 2026-04-05
+    expect(result.taxYearStart).toContain("2025");
+    expect(result.taxYearEnd).toContain("2026");
+  });
+
+  it("computes correct tax year when now is after April 6", async () => {
+    const now = new Date("2026-05-01");
+
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      isaAnnualLimit: 20000,
+      isaYearStartMonth: 4,
+      isaYearStartDay: 6,
+    } as any);
+    prismaMock.wealthAccount.findMany.mockResolvedValue([]);
+    prismaMock.user.findMany.mockResolvedValue([]);
+
+    const result = await wealthService.getIsaAllowance("hh-1", now);
+
+    // After April 6, 2026 → tax year is 2026-04-06 to 2027-04-05
+    expect(result.taxYearStart).toContain("2026");
+    expect(result.taxYearEnd).toContain("2027");
+  });
+});
