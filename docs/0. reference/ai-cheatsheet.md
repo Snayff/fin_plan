@@ -16,13 +16,13 @@ Every new feature follows this pipeline. Each step ends with the command for the
 
 All five skills are **standalone** — they do not delegate to superpowers skills at runtime.
 
-| Step                     | What happens                                                                                                                                                     | Output                                                             |
-| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------ |
-| `/write-design`          | Hard-gate (no implementation). One area at a time. Flags design standard conflicts with exception/new-standard resolution. Visual companion for UI questions.    | Design doc in `docs/4. planning/<feature>/<feature>-design.md`     |
-| `/write-spec`            | Takes approved design, fills gaps with targeted questions. Runs UX review pass then security review pass. Ends with `/write-plan` command.                       | Spec in `docs/4. planning/<feature>/<feature>-spec.md`             |
-| `/write-plan`            | Creates TDD task plan (failing test → implement → pass → commit). Tasks ordered: schema → shared → BE → FE. Plan review loop. Ends with `/execute-plan` command. | Plan in `docs/4. planning/<feature>/<feature>-plan.md`             |
-| `/execute-plan`          | Runs ~3 tasks per batch with subagents. Post-execution quality sequence. Checks open questions in spec.                                                          | Spec moved to `docs/5. built/<feature>/` |
-| `/verify-implementation` | Agent-browser functional check, security review, accessibility audit. Checks open questions. Can also be invoked standalone.                                     | Verification report with issues by severity                        |
+| Step                     | What happens                                                                                                                                                     | Output                                                         |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `/write-design`          | Hard-gate (no implementation). One area at a time. Flags design standard conflicts with exception/new-standard resolution. Visual companion for UI questions.    | Design doc in `docs/4. planning/<feature>/<feature>-design.md` |
+| `/write-spec`            | Takes approved design, fills gaps with targeted questions. Runs UX review pass then security review pass. Ends with `/write-plan` command.                       | Spec in `docs/4. planning/<feature>/<feature>-spec.md`         |
+| `/write-plan`            | Creates TDD task plan (failing test → implement → pass → commit). Tasks ordered: schema → shared → BE → FE. Plan review loop. Ends with `/execute-plan` command. | Plan in `docs/4. planning/<feature>/<feature>-plan.md`         |
+| `/execute-plan`          | Runs ~3 tasks per batch with subagents. Post-execution quality sequence. Checks open questions in spec.                                                          | Spec moved to `docs/5. built/<feature>/`                       |
+| `/verify-implementation` | Agent-browser functional check, security review, accessibility audit. Checks open questions. Can also be invoked standalone.                                     | Verification report with issues by severity                    |
 
 **Visual companion** (during `/write-design`): Offered once as a dedicated message before questions begin. After consent, Claude silently decides per-question whether to use the browser (mockups, layouts, diagrams) or terminal (text, tradeoffs, scope). Key mockup HTML files are copied to `docs/4. planning/<feature>/mockups/` when the design doc is saved — never left in the transient `.superpowers/brainstorm/` path only.
 
@@ -30,12 +30,10 @@ All five skills are **standalone** — they do not delegate to superpowers skill
 
 1. Code review — correctness, patterns, security, test coverage
 2. Tests — `cd apps/backend && bun scripts/run-tests.ts` + `cd apps/frontend && bun run test`
-3. Simplify via `/simplify`
-4. Tests — second pass (verify no regressions from simplification)
-5. Lint & type check — `bun run lint` + `bun run type-check`
-6. Atomic commits — explicit `git add <files>`, never `git add -A`
-7. Verify implementation via `/verify-implementation` — agent-browser + security + accessibility
-8. Open questions — surfaces any unresolved items from the spec's Open Questions section
+3. Lint & type check — `bun run lint` + `bun run type-check`
+4. Atomic commits — explicit `git add <files>`, never `git add -A`
+5. Verify implementation via `/verify-implementation` — agent-browser + security + accessibility
+6. Open questions — surfaces any unresolved items from the spec's Open Questions section
 
 ---
 
@@ -136,6 +134,28 @@ All five skills are **standalone** — they do not delegate to superpowers skill
 | `/teach-impeccable`   | command | One-time setup — gathers design context for persistent use       |
 | `writing-skills`      | skill   | Create new skills following best practices (TDD-applied-to-docs) |
 | `using-superpowers`   | skill   | Skill discovery and invocation framework — the meta-skill        |
+
+---
+
+## Plugin Configuration
+
+Three plugins are disabled by default in `~/.claude/settings.json` to reduce system-reminder token overhead (~1,500 tokens per tool response — ~22,500 tokens over a 15-tool session):
+
+| Plugin                                    | Why disabled                                | Re-enable when                                                         |
+| ----------------------------------------- | ------------------------------------------- | ---------------------------------------------------------------------- |
+| `impeccable@impeccable`                   | ~20 skill entries in every reminder         | Running design polish sessions (`/animate`, `/audit`, `/polish`, etc.) |
+| `frontend-design@claude-plugins-official` | Duplicated by `impeccable:frontend-design`  | Not needed — use impeccable instead                                    |
+| `skill-creator@claude-plugins-official`   | Meta-skill, only needed when editing skills | Modifying or creating skills                                           |
+
+To re-enable for a session, edit `~/.claude/settings.json`:
+
+```json
+"enabledPlugins": {
+  "impeccable@impeccable": true
+}
+```
+
+`claude-md-management` remains enabled — it's low-overhead and actively used.
 
 ---
 
