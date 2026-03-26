@@ -62,4 +62,11 @@ describe("TopNav", () => {
     renderLayout();
     expect(screen.getByText(/data may be outdated/i)).toBeTruthy();
   });
+
+  it("renders a Help nav link pointing to /help", () => {
+    renderLayout();
+    const helpLink = screen.getByRole("link", { name: "Help" });
+    expect(helpLink).toBeTruthy();
+    expect(helpLink.getAttribute("href")).toContain("/help");
+  });
 });

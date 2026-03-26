@@ -25,6 +25,7 @@ const NAV_ITEMS_GROUP2 = [
 const NAV_ITEMS_GROUP3 = [
   { to: "/goals", label: "Goals", colorClass: "text-foreground/50" },
   { to: "/gifts", label: "Gifts", colorClass: "text-foreground/50" },
+  { to: "/help", label: "Help", colorClass: "text-foreground/50" },
 ] as const;
 
 const SETTINGS_ITEM = { to: "/settings", label: "Settings", colorClass: "text-foreground/50" };
