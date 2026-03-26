@@ -115,6 +115,7 @@ export function TierAddForm({
       {/* Name */}
       <Input
         placeholder={isSavings ? "Savings name…" : "Item name…"}
+        aria-label={isSavings ? "Savings name" : "Item name"}
         value={name}
         onChange={(e) => setName(e.target.value)}
         className="h-8 text-sm"
@@ -123,9 +124,10 @@ export function TierAddForm({
 
       {/* Frequency toggle for committed tier (hidden when frequency is locked) */}
       {phase === "committed" && !lockedFrequency && (
-        <div className="flex gap-1">
+        <div role="group" aria-label="Frequency" className="flex gap-1">
           <button
             type="button"
+            aria-pressed={frequency === "monthly"}
             className={`text-xs px-2 py-1 rounded transition-colors ${
               frequency === "monthly"
                 ? "bg-tier-committed/15 text-tier-committed font-medium"
@@ -137,6 +139,7 @@ export function TierAddForm({
           </button>
           <button
             type="button"
+            aria-pressed={frequency === "yearly"}
             className={`text-xs px-2 py-1 rounded transition-colors ${
               frequency === "yearly"
                 ? "bg-tier-committed/15 text-tier-committed font-medium"
@@ -151,11 +154,12 @@ export function TierAddForm({
 
       {/* Frequency toggle for income tier */}
       {phase === "income" && (
-        <div className="flex gap-1">
+        <div role="group" aria-label="Frequency" className="flex gap-1">
           {(["monthly", "annual", "one_off"] as const).map((freq) => (
             <button
               key={freq}
               type="button"
+              aria-pressed={incomeFrequency === freq}
               className={`text-xs px-2 py-1 rounded transition-colors ${
                 incomeFrequency === freq
                   ? "bg-tier-income/15 text-tier-income font-medium"
@@ -175,6 +179,7 @@ export function TierAddForm({
           <Input
             type="number"
             placeholder={amountLabel}
+            aria-label={amountLabel}
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             min="0"
@@ -184,6 +189,7 @@ export function TierAddForm({
         </div>
         {phase === "committed" && frequency === "yearly" && (
           <select
+            aria-label="Month due"
             value={dueMonth}
             onChange={(e) => setDueMonth(parseInt(e.target.value))}
             className="rounded border px-2 py-1 text-xs bg-background"
@@ -201,7 +207,7 @@ export function TierAddForm({
       {parsedPreview > 0 &&
         ((phase === "committed" && frequency === "yearly") ||
           (phase === "income" && incomeFrequency === "annual")) && (
-          <p className="text-xs text-muted-foreground">
+          <p role="status" className="text-xs text-muted-foreground">
             ≈ {formatCurrency(parsedPreview / 12)}/mo
           </p>
         )}

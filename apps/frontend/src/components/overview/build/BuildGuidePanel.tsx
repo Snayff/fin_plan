@@ -133,10 +133,18 @@ export function BuildGuidePanel({
 
 function ProgressDots({ phaseIndex }: { phaseIndex: number }) {
   return (
-    <div className="flex items-center gap-2 mb-6">
+    <div
+      role="progressbar"
+      aria-valuenow={phaseIndex + 1}
+      aria-valuemin={1}
+      aria-valuemax={BUILD_PHASES.length}
+      aria-label={`Step ${phaseIndex + 1} of ${BUILD_PHASES.length}`}
+      className="flex items-center gap-2 mb-6"
+    >
       {BUILD_PHASES.map((p, i) => (
         <div key={p} className="flex items-center gap-2">
           <div
+            aria-hidden="true"
             className={`h-2 w-2 rounded-full transition-colors ${
               i === phaseIndex
                 ? "bg-primary scale-125"
@@ -146,7 +154,7 @@ function ProgressDots({ phaseIndex }: { phaseIndex: number }) {
             }`}
           />
           {i < BUILD_PHASES.length - 1 && (
-            <div className={`h-px w-4 ${i < phaseIndex ? "bg-primary/40" : "bg-muted"}`} />
+            <div aria-hidden="true" className={`h-px w-4 ${i < phaseIndex ? "bg-primary/40" : "bg-muted"}`} />
           )}
         </div>
       ))}
@@ -226,6 +234,7 @@ function HouseholdPhase({
             <span className="text-sm font-medium">{household?.name ?? "—"}</span>
             <button
               type="button"
+              aria-label="Rename household"
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               onClick={startRename}
             >
@@ -369,6 +378,7 @@ function SummaryPhase({
       </label>
       {saveSnapshot && (
         <Input
+          aria-label="Snapshot name"
           className="mt-2 h-8 text-sm"
           value={snapshotName}
           onChange={(e) => setSnapshotName(e.target.value)}
