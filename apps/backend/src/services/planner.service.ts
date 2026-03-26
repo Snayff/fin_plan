@@ -162,7 +162,7 @@ export const plannerService = {
 
   // ─── Upcoming gifts ───────────────────────────────────────────────────────
 
-  async getUpcomingGifts(householdId: string, year: number) {
+  async getUpcomingGifts(householdId: string, year: number, now: Date = new Date()) {
     const events = await prisma.giftEvent.findMany({
       where: { householdId },
       include: {
@@ -171,7 +171,6 @@ export const plannerService = {
       },
     });
 
-    const now = new Date();
     const withDates = events
       .map((event) => {
         const nextDate = nextEventDate(event, year);

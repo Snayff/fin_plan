@@ -235,3 +235,43 @@ describe("plannerService.getUpcomingGifts", () => {
     expect(christmas.yearRecord).toBeNull();
   });
 });
+
+describe("plannerService.getUpcomingGifts — DI clock", () => {
+  it("marks past events as done based on injected now", async () => {
+    const now = new Date("2026-07-01");
+
+    prismaMock.giftEvent.findMany.mockResolvedValue([
+      {
+        id: "ge-1",
+        householdId: "hh-1",
+        giftPersonId: "gp-1",
+        eventType: "birthday",
+        recurrence: "annual",
+        dateMonth: 3, // March — before July
+        dateDay: 15,
+        specificDate: null,
+        giftPerson: { id: "gp-1", name: "Alice", householdId: "hh-1" },
+        yearRecords: [],
+      },
+      {
+        id: "ge-2",
+        householdId: "hh-1",
+        giftPersonId: "gp-1",
+        eventType: "birthday",
+        recurrence: "annual",
+        dateMonth: 12, // December — after July
+        dateDay: 25,
+        specificDate: null,
+        giftPerson: { id: "gp-1", name: "Bob", householdId: "hh-1" },
+        yearRecords: [],
+      },
+    ] as any);
+
+    const result = await plannerService.getUpcomingGifts("hh-1", 2026, now);
+
+    const marchEvent = result.find((e) => e.id === "ge-1");
+    const decEvent = result.find((e) => e.id === "ge-2");
+    expect(marchEvent!.done).toBe(true); // March 15 < July 1
+    expect(decEvent!.done).toBe(false); // Dec 25 > July 1
+  });
+});
