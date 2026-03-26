@@ -1,5 +1,11 @@
 # Implemented Features
 
+## Navigation and Page Structure — Phase 2 (Frontend Nav & Routing)
+
+- **Implemented:** 2026-03-26
+- **Plan:** `docs/5. built/navigation-and-page-structure/navigation-and-page-structure-plan-phase2-frontend-nav.md`
+- **Summary:** Replaces the 4-item nav with an 8-item TopNav (tier colours, separators, right-aligned Settings), adds 8 routes with legacy redirects, implements Goals/Gifts placeholder pages, builds the Surplus page with waterfall breakdown and benchmark warning, makes Overview tier headings navigable, and adds an analytics placeholder and extracted empty state component.
+
 ## Navigation and Page Structure — Phase 1 (Backend)
 
 - **Implemented:** 2026-03-26
