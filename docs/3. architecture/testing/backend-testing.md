@@ -174,6 +174,39 @@ describe("GET /api/waterfall", () => {
 
 ---
 
+## DI Clock Pattern
+
+**When:** A function depends on the current date/time (`new Date()`), making its tests non-deterministic.
+
+**Convention:** Add an optional `now` parameter with `new Date()` as the default. Call sites that don't pass `now` behave identically to before. Tests pass a synthetic date to exercise boundary conditions.
+
+```typescript
+// Service function — accepts optional now
+async getIsaAllowance(householdId: string, now: Date = new Date()): Promise<IsaAllowance> {
+  // Use `now` instead of `new Date()` throughout
+}
+
+// Test — injects synthetic date
+it("computes correct tax year boundary", async () => {
+  const now = new Date("2026-03-15");
+  const result = await wealthService.getIsaAllowance("hh-1", now);
+  expect(result.taxYearStart).toContain("2025"); // Before April 6
+});
+```
+
+**Functions using this pattern:**
+
+| Function             | File                          | Boundary tested                 |
+| -------------------- | ----------------------------- | ------------------------------- |
+| `ensureJan1Snapshot` | `snapshot.service.ts`         | Jan 1 auto-snapshot creation    |
+| `getIsaAllowance`    | `wealth.service.ts`           | ISA tax year start/end          |
+| `getUpcomingGifts`   | `planner.service.ts`          | Gift event done/upcoming status |
+| `monthsElapsed`      | `frontend/utils/staleness.ts` | Staleness month calculation     |
+| `isStale`            | `frontend/utils/staleness.ts` | Staleness threshold comparison  |
+| `stalenessLabel`     | `frontend/utils/staleness.ts` | Human-readable staleness text   |
+
+---
+
 ## Infrastructure Reference
 
 | File                                       | Purpose                                                                                                                            |
