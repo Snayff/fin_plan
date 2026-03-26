@@ -335,6 +335,78 @@ describe("waterfallService.getWaterfallSummary — toGBP rounding", () => {
   });
 });
 
+describe("waterfallService.createCommitted (CommittedItem)", () => {
+  it("creates a committed item with subcategoryId and notes", async () => {
+    prismaMock.committedItem.create.mockResolvedValue({
+      id: "ci-1",
+      householdId: "hh-1",
+      subcategoryId: "sub-1",
+      name: "Rent",
+      amount: 1200,
+      spendType: "monthly",
+      notes: "Fixed rate until 2027",
+    } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+
+    const result = await waterfallService.createCommitted("hh-1", {
+      name: "Rent",
+      amount: 1200,
+      subcategoryId: "sub-1",
+      notes: "Fixed rate until 2027",
+    });
+
+    expect(result.subcategoryId).toBe("sub-1");
+    expect(result.notes).toBe("Fixed rate until 2027");
+    expect(prismaMock.committedItem.create).toHaveBeenCalled();
+  });
+});
+
+describe("waterfallService.createYearly (CommittedItem with spendType=yearly)", () => {
+  it("creates a committed item with spendType=yearly and dueMonth", async () => {
+    prismaMock.committedItem.create.mockResolvedValue({
+      id: "ci-2",
+      householdId: "hh-1",
+      name: "Insurance",
+      amount: 600,
+      spendType: "yearly",
+      dueMonth: 3,
+    } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+
+    const result = await waterfallService.createYearly("hh-1", {
+      name: "Insurance",
+      amount: 600,
+      subcategoryId: "sub-1",
+      dueMonth: 3,
+    });
+
+    expect(result.spendType).toBe("yearly");
+    expect(result.dueMonth).toBe(3);
+  });
+});
+
+describe("waterfallService.updateCommitted (CommittedItem)", () => {
+  it("records history when amount changes", async () => {
+    prismaMock.committedItem.findUnique.mockResolvedValue({
+      id: "ci-1",
+      householdId: "hh-1",
+      amount: 1200,
+    } as any);
+    prismaMock.committedItem.update.mockResolvedValue({ id: "ci-1", amount: 1300 } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+
+    await waterfallService.updateCommitted("hh-1", "ci-1", { amount: 1300 });
+
+    expect(prismaMock.waterfallHistory.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        itemType: "committed_item",
+        itemId: "ci-1",
+        value: 1300,
+      }),
+    });
+  });
+});
+
 describe("waterfallService.getCashflow", () => {
   it("correctly calculates pot and marks shortfalls", async () => {
     prismaMock.committedItem.findMany.mockResolvedValue([

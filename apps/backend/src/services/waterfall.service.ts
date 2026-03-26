@@ -11,6 +11,8 @@ import type {
   IncomeType,
   IncomeByType,
   IncomeSourceRow,
+  CreateCommittedItemInput,
+  UpdateCommittedItemInput,
 } from "@finplan/shared";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -245,13 +247,101 @@ export const waterfallService = {
     return prisma.incomeSource.update({ where: { id }, data: { lastReviewedAt: new Date() } });
   },
 
-  // ─── Committed items ─────────────────────────────────────────────────────────
+  // ─── Committed items ──────────────────────────────────────────────────────────
 
   async listCommitted(householdId: string) {
-    return prisma.committedItem.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } });
+    return prisma.committedItem.findMany({
+      where: { householdId, spendType: "monthly" },
+      orderBy: { sortOrder: "asc" },
+    });
+  },
+
+  async createCommitted(householdId: string, data: CreateCommittedItemInput) {
+    const item = await prisma.committedItem.create({
+      data: {
+        ...data,
+        householdId,
+        spendType: data.spendType ?? "monthly",
+        lastReviewedAt: new Date(),
+      },
+    });
+    await recordHistory("committed_item", item.id, item.amount);
+    return item;
+  },
+
+  async updateCommitted(householdId: string, id: string, data: UpdateCommittedItemInput) {
+    const existing = await prisma.committedItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Committed item");
+
+    const updated = await prisma.committedItem.update({
+      where: { id },
+      data: { ...data, lastReviewedAt: new Date() },
+    });
+
+    if (data.amount !== undefined && data.amount !== existing!.amount) {
+      await recordHistory("committed_item", id, updated.amount);
+    }
+
+    return updated;
+  },
+
+  async deleteCommitted(householdId: string, id: string) {
+    const existing = await prisma.committedItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Committed item");
+    await prisma.committedItem.delete({ where: { id } });
   },
 
   async confirmCommitted(householdId: string, id: string) {
+    const existing = await prisma.committedItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Committed item");
+    return prisma.committedItem.update({ where: { id }, data: { lastReviewedAt: new Date() } });
+  },
+
+  // ─── Yearly items (CommittedItem with spendType=yearly) ─────────────────────
+
+  async listYearly(householdId: string) {
+    return prisma.committedItem.findMany({
+      where: { householdId, spendType: "yearly" },
+      orderBy: { sortOrder: "asc" },
+    });
+  },
+
+  async createYearly(householdId: string, data: CreateCommittedItemInput) {
+    const item = await prisma.committedItem.create({
+      data: {
+        ...data,
+        householdId,
+        spendType: "yearly",
+        lastReviewedAt: new Date(),
+      },
+    });
+    await recordHistory("committed_item", item.id, item.amount);
+    return item;
+  },
+
+  async updateYearly(householdId: string, id: string, data: UpdateCommittedItemInput) {
+    const existing = await prisma.committedItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Committed item");
+
+    const updated = await prisma.committedItem.update({
+      where: { id },
+      data: { ...data, lastReviewedAt: new Date() },
+    });
+
+    if (data.amount !== undefined && data.amount !== existing!.amount) {
+      await recordHistory("committed_item", id, updated.amount);
+    }
+
+    return updated;
+  },
+
+  async deleteYearly(householdId: string, id: string) {
+    const existing = await prisma.committedItem.findUnique({ where: { id } });
+    assertOwned(existing, householdId, "Committed item");
+    await prisma.committedItem.delete({ where: { id } });
+  },
+
+  async confirmYearly(householdId: string, id: string) {
     const existing = await prisma.committedItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Committed item");
     return prisma.committedItem.update({ where: { id }, data: { lastReviewedAt: new Date() } });
