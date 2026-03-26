@@ -157,6 +157,18 @@ enum IncomeFrequency {
   one_off
 }
 
+enum WaterfallTier {
+  income
+  committed
+  discretionary
+}
+
+enum SpendType {
+  monthly
+  yearly
+  one_off
+}
+
 enum IncomeType {
   salary
   dividends
@@ -166,9 +178,28 @@ enum IncomeType {
   other
 }
 
+model Subcategory {
+  id          String        @id @default(cuid())
+  householdId String
+  tier        WaterfallTier
+  name        String
+  sortOrder   Int           @default(0)
+  isLocked    Boolean       @default(false)
+  isDefault   Boolean       @default(true)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  incomeItems        IncomeSource[]
+  committedItems     CommittedItem[]
+  discretionaryItems DiscretionaryItem[]
+
+  @@unique([householdId, tier, name])
+}
+
 model IncomeSource {
   id             String          @id @default(cuid())
   householdId    String
+  subcategoryId  String?
   name           String
   amount         Float
   frequency      IncomeFrequency
@@ -180,6 +211,8 @@ model IncomeSource {
   lastReviewedAt DateTime        @default(now())
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
+  notes          String?
+  subcategory    Subcategory?    @relation(fields: [subcategoryId], references: [id])
 }
 
 model CommittedBill {
@@ -192,6 +225,23 @@ model CommittedBill {
   lastReviewedAt DateTime @default(now())
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
+}
+
+model CommittedItem {
+  id             String      @id @default(cuid())
+  householdId    String
+  subcategoryId  String
+  name           String
+  amount         Float
+  spendType      SpendType   @default(monthly)
+  notes          String?
+  ownerId        String?
+  dueMonth       Int?
+  sortOrder      Int         @default(0)
+  lastReviewedAt DateTime    @default(now())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
 }
 
 model YearlyBill {
@@ -227,6 +277,22 @@ model SavingsAllocation {
   lastReviewedAt  DateTime @default(now())
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model DiscretionaryItem {
+  id              String      @id @default(cuid())
+  householdId     String
+  subcategoryId   String
+  name            String
+  amount          Float
+  spendType       SpendType   @default(monthly)
+  notes           String?
+  wealthAccountId String?
+  sortOrder       Int         @default(0)
+  lastReviewedAt  DateTime    @default(now())
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
 }
 
 enum WaterfallItemType {
