@@ -9,6 +9,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useStaleDataBanner } from "@/hooks/useStaleDataBanner";
 import { StaleDataBanner } from "@/components/common/StaleDataBanner";
 import { cn } from "@/lib/utils";
+import { GlossaryPopoverProvider } from "@/components/help/GlossaryPopoverContext";
 
 const NAV_ITEMS_GROUP1 = [
   { to: "/overview", label: "Overview", colorClass: "text-page-accent" },
@@ -201,7 +202,7 @@ export default function Layout({ children }: { children: ReactNode }) {
 
       {/* Page content */}
       <main id="main-content" className="flex-1 min-h-0 overflow-hidden">
-        {children}
+        <GlossaryPopoverProvider>{children}</GlossaryPopoverProvider>
       </main>
 
       <Toaster />

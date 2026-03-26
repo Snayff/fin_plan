@@ -1,6 +1,6 @@
 import type { WealthSummary, AssetClass } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
-import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { cn } from "@/lib/utils";
 
 const CLASS_LABELS: Record<AssetClass, string> = {
@@ -59,7 +59,7 @@ export function WealthLeftPanel({
         }}
       >
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
-          <DefinitionTooltip term="Net Worth">Net Worth</DefinitionTooltip>
+          <GlossaryTermMarker entryId="net-worth">Net Worth</GlossaryTermMarker>
         </p>
         <p className="text-[13px] text-text-secondary mt-1">
           Your total assets across all accounts
@@ -81,7 +81,7 @@ export function WealthLeftPanel({
       <div className="pt-9 px-5 pb-5">
         {/* By Liquidity */}
         <p className="text-[10px] font-semibold text-foreground/55 uppercase tracking-widest mb-2">
-          By <DefinitionTooltip term="Liquidity">Liquidity</DefinitionTooltip>
+          By <GlossaryTermMarker entryId="liquidity">Liquidity</GlossaryTermMarker>
         </p>
         <div className="space-y-1">
           <div className="flex justify-between text-sm">
@@ -127,7 +127,7 @@ export function WealthLeftPanel({
           <section aria-label="Held on behalf of">
             <hr className="my-2" />
             <p className="text-xs font-medium uppercase tracking-wide px-2 mb-1 text-foreground/55">
-              <DefinitionTooltip term="Held on Behalf Of">Held on Behalf Of</DefinitionTooltip>
+              <GlossaryTermMarker entryId="held-on-behalf-of">Held on Behalf Of</GlossaryTermMarker>
             </p>
             <div className="space-y-0.5">
               {trustBeneficiaries.map(([name, total]) => {

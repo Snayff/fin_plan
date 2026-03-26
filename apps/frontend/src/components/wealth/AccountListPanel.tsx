@@ -3,7 +3,7 @@ import type { AssetClass, IsaAllowance } from "@finplan/shared";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/format";
-import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
@@ -158,7 +158,7 @@ export function AccountListPanel({
               <div key={person.ownerId} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
                   <span>
-                    <DefinitionTooltip term="ISA Allowance">ISA Allowance</DefinitionTooltip>
+                    <GlossaryTermMarker entryId="isa-allowance">ISA Allowance</GlossaryTermMarker>
                     {" — "}
                     {person.name}
                   </span>

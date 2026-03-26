@@ -18,7 +18,7 @@ import { NudgeCard } from "@/components/common/NudgeCard";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
 import { useWealthAccountNudge } from "@/hooks/useNudge";
-import { DefinitionTooltip } from "@/components/common/DefinitionTooltip";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 
 type InlineMode = "none" | "edit" | "valuation";
 
@@ -182,7 +182,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
       <div>
         {!isSavings && (
           <p className="text-xs text-muted-foreground mb-0.5">
-            <DefinitionTooltip term="Equity Value">Equity Value</DefinitionTooltip>
+            <GlossaryTermMarker entryId="equity-value">Equity Value</GlossaryTermMarker>
           </p>
         )}
         <p className="text-3xl font-bold">{formatCurrency(account.balance ?? 0)}</p>
@@ -213,7 +213,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
       {/* Savings Projection */}
       {isSavings && projectedBalance != null && (
         <p className="text-sm text-muted-foreground">
-          <DefinitionTooltip term="Projection">Projection</DefinitionTooltip> to Dec 31:{" "}
+          <GlossaryTermMarker entryId="projection">Projection</GlossaryTermMarker> to Dec 31:{" "}
           <span className="font-medium text-foreground">{formatCurrency(projectedBalance)}</span>
         </p>
       )}
