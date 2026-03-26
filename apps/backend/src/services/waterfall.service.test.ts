@@ -339,3 +339,45 @@ describe("waterfallService.getCashflow", () => {
     expect(months[1]!.shortfall).toBe(true);
   });
 });
+
+describe("waterfallService.getWaterfallSummary — fixture scenarios", () => {
+  it("returns zeroed summary for emptyHousehold", async () => {
+    const { emptyHousehold } = await import("../test/fixtures/scenarios.js");
+
+    prismaMock.incomeSource.findMany.mockResolvedValue(emptyHousehold.incomeSources);
+    prismaMock.committedBill.findMany.mockResolvedValue(emptyHousehold.committedBills);
+    prismaMock.yearlyBill.findMany.mockResolvedValue(emptyHousehold.yearlyBills);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue(
+      emptyHousehold.discretionaryCategories
+    );
+    prismaMock.savingsAllocation.findMany.mockResolvedValue(emptyHousehold.savingsAllocations);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-empty");
+
+    expect(summary.income.total).toBe(0);
+    expect(summary.surplus.amount).toBe(0);
+  });
+
+  it("computes correct totals for dualIncomeHousehold", async () => {
+    const { dualIncomeHousehold } = await import("../test/fixtures/scenarios.js");
+
+    prismaMock.incomeSource.findMany.mockResolvedValue(dualIncomeHousehold.incomeSources as any);
+    prismaMock.committedBill.findMany.mockResolvedValue(dualIncomeHousehold.committedBills as any);
+    prismaMock.yearlyBill.findMany.mockResolvedValue(dualIncomeHousehold.yearlyBills as any);
+    prismaMock.discretionaryCategory.findMany.mockResolvedValue(
+      dualIncomeHousehold.discretionaryCategories as any
+    );
+    prismaMock.savingsAllocation.findMany.mockResolvedValue(
+      dualIncomeHousehold.savingsAllocations as any
+    );
+
+    const summary = await waterfallService.getWaterfallSummary("hh-dual");
+
+    // 2 salaries: 3500 + 2800 = 6300
+    expect(summary.income.total).toBe(6300);
+    // committed: 1200 + 45 = 1245, yearly avg: 600/12 = 50
+    // discretionary: 500 + 150 = 650, savings: 200
+    // surplus: 6300 - 1245 - 50 - 650 - 200 = 4155
+    expect(summary.surplus.amount).toBe(4155);
+  });
+});
