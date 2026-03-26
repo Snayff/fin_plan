@@ -47,7 +47,7 @@ export const subcategoryService = {
       }
     }
 
-    await prisma.subcategory.createMany({ data: rows });
+    await prisma.subcategory.createMany({ data: rows, skipDuplicates: true });
   },
 
   async ensureSubcategories(householdId: string) {
