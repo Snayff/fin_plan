@@ -69,7 +69,11 @@
       "Bash(git tag:*)",
       "Bash(grep -n \"ConfirmBatchWealthInput\\\\|accountIds\\\\|confirmBatch\" packages/shared/src/schemas/*.ts)",
       "Read(//c/Users/Gabriel/.claude/**)",
-      "Read(//c/Users/Gabriel/.claude/skills/**)"
+      "Read(//c/Users/Gabriel/.claude/skills/**)",
+      "Bash(bunx eslint:*)",
+      "Bash(agent-browser eval:*)",
+      "Bash(grep -r \"setup-session\\\\|setup_session\\\\|setupSession\" apps/backend/src/routes/ --include=*.ts -l)",
+      "Bash(git rm:*)"
     ]
   },
   "hooks": {
