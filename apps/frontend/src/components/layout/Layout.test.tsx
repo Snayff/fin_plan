@@ -6,10 +6,10 @@ import Layout from "./Layout";
 import { useAuthStore } from "@/stores/authStore";
 
 mock.module("@/hooks/useStaleDataBanner", () => ({
-  useStaleDataBanner: () => ({ showBanner: true, lastSyncedAt: new Date() }),
+  useStaleDataBanner: () => ({ showBanner: false, lastSyncedAt: null }),
 }));
 
-function renderLayout() {
+function renderLayout(path = "/overview") {
   useAuthStore.setState({
     user: { id: "1", name: "Test", email: "t@test.com" } as any,
     accessToken: "tok",
@@ -19,7 +19,7 @@ function renderLayout() {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <Layout>
           <div>content</div>
         </Layout>
@@ -28,8 +28,37 @@ function renderLayout() {
   );
 }
 
-describe("Layout StaleDataBanner", () => {
-  it("renders StaleDataBanner when useStaleDataBanner returns showBanner=true", () => {
+describe("TopNav", () => {
+  it("renders all 8 nav items", () => {
+    renderLayout();
+    expect(screen.getByRole("link", { name: /overview/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /income/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /committed/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /discretionary/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /surplus/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /goals/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /gifts/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /settings/i })).toBeTruthy();
+  });
+
+  it("marks the active route with aria-current", () => {
+    renderLayout("/income");
+    const incomeLink = screen.getByRole("link", { name: /income/i });
+    expect(incomeLink.getAttribute("aria-current")).toBe("page");
+    const overviewLink = screen.getByRole("link", { name: /overview/i });
+    expect(overviewLink.getAttribute("aria-current")).toBeNull();
+  });
+
+  it("renders two separators between nav groups", () => {
+    renderLayout();
+    const separators = screen.getAllByRole("separator");
+    expect(separators).toHaveLength(2);
+  });
+
+  it("shows StaleDataBanner when showBanner is true", () => {
+    mock.module("@/hooks/useStaleDataBanner", () => ({
+      useStaleDataBanner: () => ({ showBanner: true, lastSyncedAt: new Date() }),
+    }));
     renderLayout();
     expect(screen.getByText(/data may be outdated/i)).toBeTruthy();
   });

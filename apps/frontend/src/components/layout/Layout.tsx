@@ -8,16 +8,27 @@ import { HouseholdSwitcher } from "./HouseholdSwitcher";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useStaleDataBanner } from "@/hooks/useStaleDataBanner";
 import { StaleDataBanner } from "@/components/common/StaleDataBanner";
+import { cn } from "@/lib/utils";
 
-const NAV_ITEMS = [
-  { label: "Overview", path: "/overview" },
-  { label: "Wealth", path: "/wealth" },
-  { label: "Planner", path: "/planner" },
-  { label: "Settings", path: "/settings" },
-];
+const NAV_ITEMS_GROUP1 = [
+  { to: "/overview", label: "Overview", colorClass: "text-page-accent" },
+] as const;
+
+const NAV_ITEMS_GROUP2 = [
+  { to: "/income", label: "Income", colorClass: "text-tier-income" },
+  { to: "/committed", label: "Committed", colorClass: "text-tier-committed" },
+  { to: "/discretionary", label: "Discretionary", colorClass: "text-tier-discretionary" },
+  { to: "/surplus", label: "Surplus", colorClass: "text-tier-surplus" },
+] as const;
+
+const NAV_ITEMS_GROUP3 = [
+  { to: "/goals", label: "Goals", colorClass: "text-foreground/50" },
+  { to: "/gifts", label: "Gifts", colorClass: "text-foreground/50" },
+] as const;
+
+const SETTINGS_ITEM = { to: "/settings", label: "Settings", colorClass: "text-foreground/50" };
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
@@ -49,9 +60,9 @@ export default function Layout({ children }: { children: ReactNode }) {
         Skip to content
       </a>
       {/* Top bar */}
-      <header className="h-12 shrink-0 border-b flex items-center px-4 gap-6">
+      <header className="h-12 shrink-0 border-b flex items-center px-4 gap-4">
         {/* Left: wordmark + switcher */}
-        <div className="flex items-center gap-3 min-w-0">
+        <div className="flex items-center gap-3 shrink-0">
           {/* Mobile hamburger */}
           <Sheet open={navOpen} onOpenChange={setNavOpen}>
             <SheetTrigger asChild>
@@ -65,27 +76,27 @@ export default function Layout({ children }: { children: ReactNode }) {
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
               <nav className="flex flex-col gap-1 p-4 pt-8">
-                {NAV_ITEMS.map(({ label, path }) => (
-                  <NavLink
-                    key={path}
-                    to={path}
-                    onClick={() => setNavOpen(false)}
-                    className={({ isActive }) =>
-                      [
-                        "px-3 py-2 rounded text-sm font-medium transition-colors",
-                        isActive
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                      ].join(" ")
-                    }
-                  >
-                    {label}
-                  </NavLink>
-                ))}
+                {[...NAV_ITEMS_GROUP1, ...NAV_ITEMS_GROUP2, ...NAV_ITEMS_GROUP3, SETTINGS_ITEM].map(
+                  (item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setNavOpen(false)}
+                      className={({ isActive }) =>
+                        cn(
+                          "px-3 py-2 rounded text-sm font-medium transition-colors",
+                          item.colorClass,
+                          isActive
+                            ? "opacity-100 bg-accent/10"
+                            : "opacity-50 hover:opacity-80 hover:bg-accent/5"
+                        )
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  )
+                )}
                 <div className="border-t mt-4 pt-4 space-y-2">
-                  {user && (
-                    <span className="block text-sm text-muted-foreground px-3">{user.name}</span>
-                  )}
                   <button
                     onClick={() => {
                       setNavOpen(false);
@@ -107,36 +118,83 @@ export default function Layout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Centre: nav (desktop) */}
-        <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
-          {NAV_ITEMS.map(({ label, path }) => (
+        <nav className="hidden md:flex items-center gap-3 flex-1">
+          {NAV_ITEMS_GROUP1.map((item) => (
             <NavLink
-              key={path}
-              to={path}
+              key={item.to}
+              to={item.to}
               className={({ isActive }) =>
-                [
-                  "px-3 py-1.5 rounded text-sm font-medium transition-colors",
+                cn(
+                  "relative pb-0.5 text-sm font-medium transition-colors duration-150",
+                  item.colorClass,
                   isActive
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
-                ].join(" ")
+                    ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
+                    : "opacity-50 hover:opacity-80"
+                )
               }
             >
-              {label}
+              {item.label}
             </NavLink>
           ))}
-        </nav>
-
-        {/* Right: user + sign out (desktop) */}
-        <div className="hidden md:flex items-center gap-3 shrink-0">
-          {user && <span className="text-sm text-muted-foreground">{user.name}</span>}
-          <button
-            onClick={handleSignOut}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-            type="button"
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="h-4 w-px bg-foreground/[0.12] mx-1"
+          />
+          {NAV_ITEMS_GROUP2.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  "relative pb-0.5 text-sm font-medium transition-colors duration-150",
+                  item.colorClass,
+                  isActive
+                    ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
+                    : "opacity-50 hover:opacity-80"
+                )
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="h-4 w-px bg-foreground/[0.12] mx-1"
+          />
+          {NAV_ITEMS_GROUP3.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  "relative pb-0.5 text-sm font-medium transition-colors duration-150",
+                  item.colorClass,
+                  isActive
+                    ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
+                    : "opacity-50 hover:opacity-80"
+                )
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+          <NavLink
+            to={SETTINGS_ITEM.to}
+            className={({ isActive }) =>
+              cn(
+                "relative pb-0.5 text-sm font-medium transition-colors duration-150 ml-auto",
+                SETTINGS_ITEM.colorClass,
+                isActive
+                  ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
+                  : "opacity-50 hover:opacity-80"
+              )
+            }
           >
-            Sign out
-          </button>
-        </div>
+            {SETTINGS_ITEM.label}
+          </NavLink>
+        </nav>
       </header>
 
       {showBanner && <StaleDataBanner lastSyncedAt={lastSyncedAt} onRetry={handleBannerRetry} />}
