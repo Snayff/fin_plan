@@ -119,6 +119,77 @@ export function useSubcategories(tier: "income" | "committed" | "discretionary")
   });
 }
 
+export interface TierItemRow {
+  id: string;
+  name: string;
+  amount: number;
+  spendType: "monthly" | "yearly" | "one_off";
+  subcategoryId: string;
+  notes: string | null;
+  lastReviewedAt: Date;
+  sortOrder: number;
+}
+
+const TIER_ITEM_KEYS = {
+  items: (tier: string) => ["waterfall", "tier-items", tier] as const,
+};
+
+function normaliseIncomeFrequency(frequency: string): "monthly" | "yearly" | "one_off" {
+  if (frequency === "annual") return "yearly";
+  if (frequency === "one_off") return "one_off";
+  return "monthly";
+}
+
+async function fetchTierItems(
+  tier: "income" | "committed" | "discretionary"
+): Promise<TierItemRow[]> {
+  if (tier === "income") {
+    const rows = await waterfallService.listIncome();
+    return rows.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      amount: r.amount,
+      spendType: normaliseIncomeFrequency(r.frequency),
+      subcategoryId: r.subcategoryId ?? "",
+      notes: r.notes ?? null,
+      lastReviewedAt: new Date(r.lastReviewedAt),
+      sortOrder: r.sortOrder ?? 0,
+    }));
+  }
+  if (tier === "committed") {
+    const rows = await waterfallService.listCommitted();
+    return rows.map((r: any) => ({
+      id: r.id,
+      name: r.name,
+      amount: r.amount,
+      spendType: (r.spendType ?? "monthly") as "monthly" | "yearly" | "one_off",
+      subcategoryId: r.subcategoryId ?? "",
+      notes: r.notes ?? null,
+      lastReviewedAt: new Date(r.lastReviewedAt),
+      sortOrder: r.sortOrder ?? 0,
+    }));
+  }
+  // discretionary
+  const rows = await waterfallService.listDiscretionary();
+  return rows.map((r: any) => ({
+    id: r.id,
+    name: r.name,
+    amount: r.amount,
+    spendType: (r.spendType ?? "monthly") as "monthly" | "yearly" | "one_off",
+    subcategoryId: r.subcategoryId ?? "",
+    notes: r.notes ?? null,
+    lastReviewedAt: new Date(r.lastReviewedAt),
+    sortOrder: r.sortOrder ?? 0,
+  }));
+}
+
+export function useTierItems(tier: "income" | "committed" | "discretionary") {
+  return useQuery({
+    queryKey: TIER_ITEM_KEYS.items(tier),
+    queryFn: () => fetchTierItems(tier),
+  });
+}
+
 export function useEndIncome() {
   const queryClient = useQueryClient();
 

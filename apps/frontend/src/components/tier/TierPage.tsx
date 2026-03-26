@@ -1,24 +1,50 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import SubcategoryList from "./SubcategoryList";
 import ItemArea from "./ItemArea";
-import { useSubcategories, useWaterfallSummary } from "@/hooks/useWaterfall";
+import { useSubcategories, useTierItems, type TierItemRow } from "@/hooks/useWaterfall";
 import { TIER_CONFIGS, type TierKey } from "./tierConfig";
 
 interface TierPageProps {
   tier: TierKey;
 }
 
+interface SubcategorySummary {
+  subcategoryId: string;
+  name: string;
+  total: number;
+  items: TierItemRow[];
+}
+
 export default function TierPage({ tier }: TierPageProps) {
   const config = TIER_CONFIGS[tier];
   const [searchParams] = useSearchParams();
   const { data: subcategories, isLoading: subsLoading } = useSubcategories(tier);
-  const { data: summary, isLoading: summaryLoading } = useWaterfallSummary();
+  const { data: allItems, isLoading: itemsLoading } = useTierItems(tier);
 
-  const tierSummary = summary?.[tier];
-  const subcategoryTotals = Object.fromEntries(
-    (tierSummary?.subcategories ?? []).map((s) => [s.subcategoryId, s])
-  );
+  // Group items by subcategoryId and compute monthly totals
+  const subcategoryTotals = useMemo<Record<string, SubcategorySummary>>(() => {
+    if (!subcategories || !allItems) return {};
+    const nameMap = Object.fromEntries(subcategories.map((s) => [s.id, s.name]));
+    const groups: Record<string, SubcategorySummary> = {};
+    for (const item of allItems) {
+      const sid = item.subcategoryId;
+      if (!groups[sid]) {
+        groups[sid] = {
+          subcategoryId: sid,
+          name: nameMap[sid] ?? "",
+          total: 0,
+          items: [],
+        };
+      }
+      const monthly = item.spendType === "monthly" ? item.amount : Math.round(item.amount / 12);
+      groups[sid].total += monthly;
+      groups[sid].items.push(item);
+    }
+    return groups;
+  }, [subcategories, allItems]);
+
+  const tierTotal = Object.values(subcategoryTotals).reduce((sum, s) => sum + s.total, 0);
 
   // Select subcategory: URL param → first in list
   const paramId = searchParams.get("subcategory");
@@ -32,7 +58,9 @@ export default function TierPage({ tier }: TierPageProps) {
       : (subcategories?.[0]?.id ?? null);
 
   const selectedSubcategory = subcategories?.find((s) => s.id === resolvedSelectedId) ?? null;
-  const selectedSummary = resolvedSelectedId ? subcategoryTotals[resolvedSelectedId] : null;
+  const selectedSummary = resolvedSelectedId
+    ? (subcategoryTotals[resolvedSelectedId] ?? null)
+    : null;
 
   return (
     <div data-testid={`tier-page-${tier}`} className="relative min-h-screen">
@@ -49,7 +77,7 @@ export default function TierPage({ tier }: TierPageProps) {
         config={config}
         subcategories={subcategories ?? []}
         subcategoryTotals={subcategoryTotals}
-        tierTotal={tierSummary?.total ?? 0}
+        tierTotal={tierTotal}
         selectedId={resolvedSelectedId}
         onSelect={setSelectedId}
         isLoading={subsLoading}
@@ -58,9 +86,9 @@ export default function TierPage({ tier }: TierPageProps) {
         tier={tier}
         config={config}
         subcategory={selectedSubcategory}
-        subcategories={subcategories ?? []}
+        subcategories={(subcategories ?? []).map((s) => ({ id: s.id, name: s.name }))}
         items={selectedSummary?.items ?? []}
-        isLoading={summaryLoading}
+        isLoading={itemsLoading}
       />
     </div>
   );

@@ -12,17 +12,9 @@ mock.module("@/hooks/useWaterfall", () => ({
       { id: "sub-utilities", name: "Utilities", tier: "committed", sortOrder: 1, isLocked: false },
     ],
   })),
-  useWaterfallSummary: mock(() => ({
+  useTierItems: mock(() => ({
     isLoading: false,
-    data: {
-      committed: {
-        total: 1500,
-        subcategories: [
-          { subcategoryId: "sub-housing", name: "Housing", total: 1200, items: [] },
-          { subcategoryId: "sub-utilities", name: "Utilities", total: 300, items: [] },
-        ],
-      },
-    },
+    data: [],
   })),
 }));
 
