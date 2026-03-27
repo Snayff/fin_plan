@@ -1,4 +1,11 @@
 import { useState } from "react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type { TierConfig } from "./tierConfig";
 import type { SpendType } from "./formatAmount";
 
@@ -92,28 +99,34 @@ export default function ItemForm({
           step={0.01}
           className="rounded-md border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-sm text-foreground placeholder-foreground/30 focus:outline-none focus:ring-1 focus:ring-page-accent/40"
         />
-        <select
-          value={spendType}
-          onChange={(e) => setSpendType(e.target.value as SpendType)}
-          aria-label="Spend type"
-          className="rounded-md border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-page-accent/40"
-        >
-          <option value="monthly">Monthly</option>
-          <option value="yearly">Yearly</option>
-          <option value="one_off">One-off</option>
-        </select>
-        <select
-          value={subcategoryId}
-          onChange={(e) => setSubcategoryId(e.target.value)}
-          aria-label="Subcategory"
-          className="rounded-md border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-sm text-foreground focus:outline-none focus:ring-1 focus:ring-page-accent/40"
-        >
-          {subcategories.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name}
-            </option>
-          ))}
-        </select>
+        <Select value={spendType} onValueChange={(v) => setSpendType(v as SpendType)}>
+          <SelectTrigger
+            aria-label="Spend type"
+            className="h-auto rounded-md border-foreground/10 bg-foreground/5 py-1.5 text-sm focus:ring-page-accent/40"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="monthly">Monthly</SelectItem>
+            <SelectItem value="yearly">Yearly</SelectItem>
+            <SelectItem value="one_off">One-off</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={subcategoryId} onValueChange={setSubcategoryId}>
+          <SelectTrigger
+            aria-label="Subcategory"
+            className="h-auto rounded-md border-foreground/10 bg-foreground/5 py-1.5 text-sm focus:ring-page-accent/40"
+          >
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {subcategories.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <textarea
         placeholder="Notes (optional)"
