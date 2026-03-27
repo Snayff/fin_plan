@@ -62,10 +62,6 @@ export default function ItemAreaRow({
           item={{ ...item, subcategoryName }}
           config={config}
           onEdit={() => onStartEdit(item.id)}
-          onConfirm={async () => {
-            await confirmItem.mutateAsync();
-            onToggleExpand(item.id); // collapse
-          }}
           now={now}
           stalenessMonths={stalenessMonths}
         />
