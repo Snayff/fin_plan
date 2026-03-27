@@ -69,4 +69,46 @@ describe("SubcategoryList", () => {
     expect(screen.getByText(/1,200/)).toBeTruthy();
     expect(screen.getByText(/300/)).toBeTruthy();
   });
+
+  it("shows amber stale dot when any item in the subcategory is stale", () => {
+    const staleItem = {
+      id: "item-stale",
+      lastReviewedAt: new Date("2024-01-01"),
+      amount: 100,
+      spendType: "monthly" as const,
+      subcategoryId: "sub-housing",
+      notes: null,
+      sortOrder: 0,
+    };
+    const totalsWithStaleItem = {
+      "sub-housing": {
+        subcategoryId: "sub-housing",
+        name: "Housing",
+        total: 1200,
+        items: [staleItem],
+      },
+      "sub-utilities": {
+        subcategoryId: "sub-utilities",
+        name: "Utilities",
+        total: 300,
+        items: [],
+      },
+    };
+    render(
+      <SubcategoryList
+        tier="committed"
+        config={TIER_CONFIGS.committed}
+        subcategories={subcategories}
+        subcategoryTotals={totalsWithStaleItem}
+        tierTotal={1500}
+        selectedId="sub-housing"
+        onSelect={() => {}}
+        isLoading={false}
+        now={new Date("2026-01-15")}
+        stalenessMonths={6}
+      />
+    );
+    expect(screen.getByTestId("stale-dot-sub-housing")).toBeTruthy();
+    expect(screen.queryByTestId("stale-dot-sub-utilities")).toBeNull();
+  });
 });

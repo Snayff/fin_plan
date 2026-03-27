@@ -1,5 +1,6 @@
 import { toGBP } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
+import { isStale } from "./formatAmount";
 import type { TierConfig, TierKey } from "./tierConfig";
 import type { TierItemRow } from "@/hooks/useWaterfall";
 
@@ -39,6 +40,8 @@ export default function SubcategoryList({
   selectedId,
   onSelect,
   isLoading,
+  now = new Date(),
+  stalenessMonths = 12,
 }: Props) {
   if (isLoading) {
     return (
@@ -56,6 +59,9 @@ export default function SubcategoryList({
         {subcategories.map((sub) => {
           const isSelected = sub.id === selectedId;
           const summary = subcategoryTotals[sub.id];
+          const isSubStale = (subcategoryTotals[sub.id]?.items ?? []).some((item) =>
+            isStale(item.lastReviewedAt, now, stalenessMonths)
+          );
           return (
             <button
               key={sub.id}
@@ -69,8 +75,16 @@ export default function SubcategoryList({
                   : "border-l-2 border-transparent text-foreground/60 hover:bg-foreground/5",
               ].join(" ")}
             >
-              {/* Stale dot column (fixed width, always present — active in Task 10) */}
-              <span className="w-2 shrink-0" aria-hidden />
+              {/* Stale dot column (fixed width, always present) */}
+              <span className="w-2 shrink-0 flex items-center justify-center">
+                {isSubStale && (
+                  <span
+                    data-testid={`stale-dot-${sub.id}`}
+                    className="h-1.5 w-1.5 rounded-full bg-attention"
+                    aria-hidden
+                  />
+                )}
+              </span>
               <span className="flex-1">{sub.name}</span>
               <span className="font-numeric text-xs text-foreground/50">
                 {summary ? formatCurrency(toGBP(summary.total)) : "£0"}
