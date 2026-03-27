@@ -316,6 +316,38 @@
   }
 }
 
+/* ===== Number input spinner buttons ===== */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  background-color: hsl(var(--input));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14'%3E%3Cpath d='M5 2 L9 6 L1 6 Z' fill='rgba(238,242,255,0.45)'/%3E%3Cpath d='M5 12 L9 8 L1 8 Z' fill='rgba(238,242,255,0.45)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  border-left: 1px solid hsl(var(--border));
+  border-radius: 0 0.375rem 0.375rem 0;
+  cursor: pointer;
+  opacity: 1;
+  transition: background-color 150ms ease;
+}
+
+input[type="number"]::-webkit-inner-spin-button:hover,
+input[type="number"]::-webkit-outer-spin-button:hover {
+  background-color: hsl(var(--surface-elevated));
+}
+
+input[type="number"]:focus-visible::-webkit-inner-spin-button,
+input[type="number"]:focus-visible::-webkit-outer-spin-button {
+  border-left-color: hsl(var(--ring) / 0.5);
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 /* ===== Toast (Sonner) Animation Overrides ===== */
 /* Entrance: fade-up 150ms ease-out; Exit: fade-out 150ms ease-in */
 [data-sonner-toast][data-mounted="true"] {
