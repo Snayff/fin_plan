@@ -1,5 +1,11 @@
 # Implemented Features
 
+## Navigation and Page Structure — Phase 3 (Frontend Tier Pages)
+
+- **Implemented:** 2026-03-26
+- **Plan:** `docs/5. built/navigation-and-page-structure/navigation-and-page-structure-plan-phase3-frontend-tier-pages.md`
+- **Summary:** Builds the three tier pages (Income, Committed, Discretionary) using a shared TierPage shell with SubcategoryList, ItemArea, ItemRow, ItemAccordion, ItemForm, GhostAddButton, and EmptyStateCard components, with full CRUD mutations (create, update, confirm, delete) wired to TanStack Query and stale-dot indicators in the subcategory list.
+
 ## Navigation and Page Structure — Phase 2 (Frontend Nav & Routing)
 
 - **Implemented:** 2026-03-26
