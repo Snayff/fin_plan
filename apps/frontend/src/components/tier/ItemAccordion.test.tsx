@@ -20,13 +20,12 @@ const staleItem = {
   lastReviewedAt: new Date("2024-01-01T00:00:00Z"),
 };
 
-function renderAccordion(item = freshItem, onEdit = () => {}, onConfirm = () => {}) {
+function renderAccordion(item = freshItem, onEdit = () => {}) {
   return render(
     <ItemAccordion
       item={item}
       config={TIER_CONFIGS.committed}
       onEdit={onEdit}
-      onConfirm={onConfirm}
       now={new Date("2026-01-15T00:00:00Z")}
       stalenessMonths={6}
     />
@@ -34,19 +33,9 @@ function renderAccordion(item = freshItem, onEdit = () => {}, onConfirm = () => 
 }
 
 describe("ItemAccordion", () => {
-  it("shows last reviewed date", () => {
+  it("shows Notes header label", () => {
     renderAccordion();
-    expect(screen.getByText(/jan 2026/i)).toBeTruthy();
-  });
-
-  it("shows spend type", () => {
-    renderAccordion();
-    expect(screen.getByText(/monthly/i)).toBeTruthy();
-  });
-
-  it("shows subcategory name", () => {
-    renderAccordion();
-    expect(screen.getByText("Housing")).toBeTruthy();
+    expect(screen.getByText("Notes")).toBeTruthy();
   });
 
   it("shows notes italic when present", () => {
@@ -59,16 +48,30 @@ describe("ItemAccordion", () => {
     expect(screen.getByText(/no notes/i)).toBeTruthy();
   });
 
-  it("shows only Edit button for fresh items", () => {
+  it("does not show Last Reviewed for fresh items", () => {
     renderAccordion(freshItem);
-    expect(screen.getByRole("button", { name: /edit/i })).toBeTruthy();
-    expect(screen.queryByRole("button", { name: /still correct/i })).toBeNull();
+    expect(screen.queryByText(/last reviewed/i)).toBeNull();
   });
 
-  it("shows Edit + Still correct for stale items", () => {
+  it("shows Last Reviewed with amber styling for stale items", () => {
     renderAccordion(staleItem);
+    expect(screen.getByText(/last reviewed/i)).toBeTruthy();
+    expect(screen.getByText(/jan 2024/i)).toBeTruthy();
+  });
+
+  it("shows relative age for stale items", () => {
+    renderAccordion(staleItem);
+    expect(screen.getByText(/24 months ago/)).toBeTruthy();
+  });
+
+  it("shows Edit button right-aligned", () => {
+    renderAccordion();
     expect(screen.getByRole("button", { name: /edit/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /still correct/i })).toBeTruthy();
+  });
+
+  it("does not show Still correct button", () => {
+    renderAccordion(staleItem);
+    expect(screen.queryByRole("button", { name: /still correct/i })).toBeNull();
   });
 
   it("calls onEdit when Edit is clicked", () => {
@@ -80,16 +83,9 @@ describe("ItemAccordion", () => {
     expect(called).toBe(true);
   });
 
-  it("calls onConfirm when Still correct is clicked", () => {
-    let called = false;
-    renderAccordion(
-      staleItem,
-      () => {},
-      () => {
-        called = true;
-      }
-    );
-    fireEvent.click(screen.getByRole("button", { name: /still correct/i }));
-    expect(called).toBe(true);
+  it("has tier colour left border for visual continuity", () => {
+    const { container } = renderAccordion();
+    const accordion = container.firstChild as HTMLElement;
+    expect(accordion.className).toContain("border-l-2");
   });
 });

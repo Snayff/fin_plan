@@ -1,6 +1,7 @@
 import ItemRow from "./ItemRow";
 import ItemAccordion from "./ItemAccordion";
 import ItemForm from "./ItemForm";
+import { isStale } from "./formatAmount";
 import { useTierUpdateItem, useConfirmWaterfallItem, type TierItemRow } from "@/hooks/useWaterfall";
 import type { TierConfig, TierKey } from "./tierConfig";
 
@@ -44,10 +45,11 @@ export default function ItemAreaRow({
   const isEditing = editingItemId === item.id;
   const updateItem = useTierUpdateItem(tier, item.id);
   const confirmItem = useConfirmWaterfallItem(tier, item.id);
+  const stale = isStale(item.lastReviewedAt, now, stalenessMonths);
 
   return (
     <ItemRow
-      item={item}
+      item={{ ...item, subcategoryName }}
       config={config}
       isExpanded={isExpanded}
       onToggle={() => {
@@ -62,10 +64,6 @@ export default function ItemAreaRow({
           item={{ ...item, subcategoryName }}
           config={config}
           onEdit={() => onStartEdit(item.id)}
-          onConfirm={async () => {
-            await confirmItem.mutateAsync();
-            onToggleExpand(item.id); // collapse
-          }}
           now={now}
           stalenessMonths={stalenessMonths}
         />
@@ -78,11 +76,12 @@ export default function ItemAreaRow({
           subcategories={subcategories}
           initialSubcategoryId={item.subcategoryId}
           isSaving={updateItem.isPending}
+          isStale={stale}
           onSave={async (data) => {
             try {
               await updateItem.mutateAsync(data as Record<string, unknown>);
               onCancelEdit();
-              onToggleExpand(item.id); // collapse
+              onToggleExpand(item.id);
             } catch {
               // error handled by useUpdateItem onError (toast)
             }

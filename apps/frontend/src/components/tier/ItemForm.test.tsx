@@ -9,7 +9,7 @@ const subcategories = [
 ];
 
 describe("ItemForm — add mode", () => {
-  it("renders all fields", () => {
+  it("renders field labels with asterisks for required fields", () => {
     render(
       <ItemForm
         mode="add"
@@ -20,14 +20,30 @@ describe("ItemForm — add mode", () => {
         onCancel={() => {}}
       />
     );
-    expect(screen.getByPlaceholderText(/name/i)).toBeTruthy();
-    expect(screen.getByPlaceholderText(/amount/i)).toBeTruthy();
-    expect(screen.getByRole("combobox", { name: /spend type/i })).toBeTruthy();
-    expect(screen.getByRole("combobox", { name: /subcategory/i })).toBeTruthy();
-    expect(screen.getByPlaceholderText(/notes/i)).toBeTruthy();
+    expect(screen.getByText(/name/i)).toBeTruthy();
+    expect(screen.getByText(/amount/i)).toBeTruthy();
+    // Asterisks on required fields
+    const labels = screen.getAllByText("*");
+    expect(labels.length).toBeGreaterThanOrEqual(2);
   });
 
-  it("renders Cancel and Save buttons only", () => {
+  it("renders descriptive placeholders", () => {
+    render(
+      <ItemForm
+        mode="add"
+        config={TIER_CONFIGS.committed}
+        subcategories={subcategories}
+        initialSubcategoryId="sub-housing"
+        onSave={() => {}}
+        onCancel={() => {}}
+      />
+    );
+    expect(screen.getByPlaceholderText("e.g. Netflix, Council Tax")).toBeTruthy();
+    expect(screen.getByPlaceholderText("0.00")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Any details worth remembering")).toBeTruthy();
+  });
+
+  it("renders Cancel and Save buttons only in add mode", () => {
     render(
       <ItemForm
         mode="add"
@@ -41,6 +57,23 @@ describe("ItemForm — add mode", () => {
     expect(screen.getByRole("button", { name: /cancel/i })).toBeTruthy();
     expect(screen.getByRole("button", { name: /^save$/i })).toBeTruthy();
     expect(screen.queryByRole("button", { name: /still correct/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /delete/i })).toBeNull();
+  });
+
+  it("Save is the rightmost button in add mode", () => {
+    const { container } = render(
+      <ItemForm
+        mode="add"
+        config={TIER_CONFIGS.committed}
+        subcategories={subcategories}
+        initialSubcategoryId="sub-housing"
+        onSave={() => {}}
+        onCancel={() => {}}
+      />
+    );
+    const buttons = container.querySelectorAll("[data-testid='form-actions'] button");
+    const lastButton = buttons[buttons.length - 1];
+    expect(lastButton?.textContent).toMatch(/save/i);
   });
 
   it("calls onSave with form data on submit", () => {
@@ -57,8 +90,10 @@ describe("ItemForm — add mode", () => {
         onCancel={() => {}}
       />
     );
-    fireEvent.change(screen.getByPlaceholderText(/name/i), { target: { value: "Rent" } });
-    fireEvent.change(screen.getByPlaceholderText(/amount/i), { target: { value: "1200" } });
+    fireEvent.change(screen.getByPlaceholderText("e.g. Netflix, Council Tax"), {
+      target: { value: "Rent" },
+    });
+    fireEvent.change(screen.getByPlaceholderText("0.00"), { target: { value: "1200" } });
     fireEvent.click(screen.getByRole("button", { name: /^save$/i }));
     expect(savedData).toBeTruthy();
     expect(savedData.name).toBe("Rent");
@@ -84,8 +119,8 @@ describe("ItemForm — add mode", () => {
   });
 });
 
-describe("ItemForm — edit mode", () => {
-  const editItem = {
+describe("ItemForm — edit mode (stale item)", () => {
+  const staleItem = {
     id: "item-1",
     name: "Rent",
     amount: 1200,
@@ -95,11 +130,11 @@ describe("ItemForm — edit mode", () => {
     lastReviewedAt: new Date("2024-01-01"),
   };
 
-  it("renders Cancel, Still correct, Save buttons and a delete button", () => {
-    render(
+  it("renders button order: Cancel, Delete, Still correct, Save", () => {
+    const { container } = render(
       <ItemForm
         mode="edit"
-        item={editItem}
+        item={staleItem}
         config={TIER_CONFIGS.committed}
         subcategories={subcategories}
         initialSubcategoryId="sub-housing"
@@ -107,11 +142,48 @@ describe("ItemForm — edit mode", () => {
         onCancel={() => {}}
         onConfirm={() => {}}
         onDelete={() => {}}
+        isStale={true}
       />
     );
-    expect(screen.getByRole("button", { name: /cancel/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /still correct/i })).toBeTruthy();
-    expect(screen.getByRole("button", { name: /^save$/i })).toBeTruthy();
+    const buttons = container.querySelectorAll("[data-testid='form-actions'] button");
+    expect(buttons[0]?.textContent).toMatch(/cancel/i);
+    // After spacer: Delete, Still correct, Save
+    const rightButtons = Array.from(buttons).slice(1);
+    expect(rightButtons.some((b) => b.textContent?.match(/delete/i))).toBe(true);
+    expect(rightButtons.some((b) => b.textContent?.match(/still correct/i))).toBe(true);
+    const lastButton = buttons[buttons.length - 1];
+    expect(lastButton?.textContent).toMatch(/save/i);
+  });
+});
+
+describe("ItemForm — edit mode (fresh item)", () => {
+  const freshItem = {
+    id: "item-2",
+    name: "Gym",
+    amount: 3999,
+    spendType: "monthly" as const,
+    subcategoryId: "sub-housing",
+    notes: null,
+    lastReviewedAt: new Date("2026-01-01"),
+  };
+
+  it("does not show Still correct for non-stale items", () => {
+    render(
+      <ItemForm
+        mode="edit"
+        item={freshItem}
+        config={TIER_CONFIGS.committed}
+        subcategories={subcategories}
+        initialSubcategoryId="sub-housing"
+        onSave={() => {}}
+        onCancel={() => {}}
+        onConfirm={() => {}}
+        onDelete={() => {}}
+        isStale={false}
+      />
+    );
+    expect(screen.queryByRole("button", { name: /still correct/i })).toBeNull();
     expect(screen.getByRole("button", { name: /delete/i })).toBeTruthy();
+    expect(screen.getByRole("button", { name: /^save$/i })).toBeTruthy();
   });
 });

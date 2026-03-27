@@ -79,7 +79,7 @@ describe("ItemArea", () => {
     renderArea();
     fireEvent.click(screen.getByRole("button", { name: /\+ add/i }));
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/name/i)).toBeTruthy();
+      expect(screen.getByPlaceholderText("e.g. Netflix, Council Tax")).toBeTruthy();
     });
   });
 
@@ -87,7 +87,7 @@ describe("ItemArea", () => {
     renderArea();
     fireEvent.click(screen.getByTestId("item-row-item-rent"));
     await waitFor(() => {
-      expect(screen.getByText(/monthly/i)).toBeTruthy(); // accordion shows spend type
+      expect(screen.getByText("Notes")).toBeTruthy(); // accordion shows notes section
     });
   });
 
@@ -104,10 +104,10 @@ describe("ItemArea", () => {
   it("collapses accordion when same row is clicked again", async () => {
     renderArea();
     fireEvent.click(screen.getByTestId("item-row-item-rent"));
-    await waitFor(() => expect(screen.getByText(/monthly/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText("Notes")).toBeTruthy());
     fireEvent.click(screen.getByTestId("item-row-item-rent"));
     await waitFor(() => {
-      expect(screen.queryByText(/monthly/i)).toBeNull();
+      expect(screen.queryByText("Notes")).toBeNull();
     });
   });
 });
