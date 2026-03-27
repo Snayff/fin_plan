@@ -56,4 +56,17 @@ describe("TierPage", () => {
     const utilities = screen.getByTestId("subcategory-row-sub-utilities");
     expect(utilities.getAttribute("aria-selected")).toBe("true");
   });
+
+  it("sets data-page attribute matching the tier", () => {
+    renderTierPage();
+    const page = screen.getByTestId("tier-page-committed");
+    expect(page.getAttribute("data-page")).toBe("committed");
+  });
+
+  it("renders subcategories inside a left aside panel", () => {
+    renderTierPage();
+    const aside = document.querySelector("aside");
+    expect(aside).toBeTruthy();
+    expect(aside!.querySelector("[role='tablist']")).toBeTruthy();
+  });
 });
