@@ -1,4 +1,4 @@
-import { isStale, type SpendType } from "./formatAmount";
+import { isStale, getMonthsAgo, type SpendType } from "./formatAmount";
 import type { TierConfig } from "./tierConfig";
 
 interface Item {
@@ -17,16 +17,9 @@ interface Props {
   item: Item;
   config: TierConfig;
   onEdit: () => void;
-  onConfirm: () => void;
   now: Date;
   stalenessMonths?: number;
 }
-
-const SPEND_TYPE_LABELS: Record<SpendType, string> = {
-  monthly: "Monthly",
-  yearly: "Yearly",
-  one_off: "One-off",
-};
 
 function formatReviewDate(date: Date): string {
   return new Date(date).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
@@ -34,63 +27,60 @@ function formatReviewDate(date: Date): string {
 
 export default function ItemAccordion({
   item,
-  config: _config,
+  config,
   onEdit,
-  onConfirm,
   now,
   stalenessMonths = 12,
 }: Props) {
   const stale = isStale(item.lastReviewedAt, now, stalenessMonths);
+  const monthsAgo = stale ? getMonthsAgo(item.lastReviewedAt, now) : 0;
 
   return (
-    <div className="border-t border-foreground/5 bg-foreground/[0.03] px-4 py-3 text-sm">
-      {/* Detail grid */}
-      <div className="grid grid-cols-3 gap-x-4 gap-y-1 text-xs text-foreground/50">
-        <div>
-          <span className="block text-foreground/30 uppercase tracking-wide text-[10px]">
-            Reviewed
-          </span>
-          <span className="text-foreground/60">{formatReviewDate(item.lastReviewedAt)}</span>
-        </div>
-        <div>
-          <span className="block text-foreground/30 uppercase tracking-wide text-[10px]">Type</span>
-          <span className="text-foreground/60">{SPEND_TYPE_LABELS[item.spendType]}</span>
-        </div>
-        <div>
-          <span className="block text-foreground/30 uppercase tracking-wide text-[10px]">
-            Category
-          </span>
-          <span className="text-foreground/60">{item.subcategoryName}</span>
-        </div>
-      </div>
+    <div
+      className={[
+        "border-t border-foreground/5 bg-foreground/[0.02] py-2.5 pr-4",
+        `border-l-2 ${config.borderClass}`,
+        `${config.bgClass}/8`,
+        "pl-[30px]",
+      ].join(" ")}
+    >
+      <div className="flex items-start gap-3">
+        {/* Content */}
+        <div className="flex-1 flex flex-col gap-2">
+          {/* Notes */}
+          <div>
+            <span className="block text-foreground/30 uppercase tracking-[0.07em] text-[10px]">
+              Notes
+            </span>
+            {item.notes ? (
+              <p className="text-xs italic text-foreground/50">{item.notes}</p>
+            ) : (
+              <p className="text-xs text-foreground/20">No notes</p>
+            )}
+          </div>
 
-      {/* Notes */}
-      <div className="mt-2">
-        {item.notes ? (
-          <p className="text-xs italic text-foreground/60">{item.notes}</p>
-        ) : (
-          <p className="text-xs text-foreground/30">No notes</p>
-        )}
-      </div>
+          {/* Last Reviewed — only when stale */}
+          {stale && (
+            <div>
+              <span className="block text-foreground/30 uppercase tracking-[0.07em] text-[10px]">
+                Last Reviewed
+              </span>
+              <span className="flex items-center gap-1.5 text-xs text-attention">
+                <span className="h-[5px] w-[5px] rounded-full bg-attention shrink-0" aria-hidden />
+                {formatReviewDate(item.lastReviewedAt)} · {monthsAgo} months ago
+              </span>
+            </div>
+          )}
+        </div>
 
-      {/* Actions */}
-      <div className="mt-3 flex items-center gap-2">
+        {/* Edit button — right-aligned, top-aligned */}
         <button
           type="button"
           onClick={onEdit}
-          className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-foreground/60 hover:bg-foreground/5 transition-colors"
+          className="shrink-0 rounded-md border border-foreground/10 px-3 py-1 text-xs text-foreground/60 hover:bg-foreground/5 transition-colors"
         >
           Edit
         </button>
-        {stale && (
-          <button
-            type="button"
-            onClick={onConfirm}
-            className="rounded-md border border-teal-500/30 bg-teal-500/10 px-3 py-1 text-xs font-medium text-teal-400 hover:bg-teal-500/20 transition-colors"
-          >
-            Still correct ✓
-          </button>
-        )}
       </div>
     </div>
   );
