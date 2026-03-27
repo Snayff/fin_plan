@@ -111,11 +111,78 @@ export function useUpdateItem() {
   });
 }
 
+const TIER_ITEM_KEYS = {
+  items: (tier: string) => ["waterfall", "tier-items", tier] as const,
+};
+
 export function useSubcategories(tier: "income" | "committed" | "discretionary") {
   return useQuery({
     queryKey: WATERFALL_KEYS.subcategories(tier),
     queryFn: () => waterfallService.getSubcategories(tier),
     staleTime: 10 * 60 * 1000,
+  });
+}
+
+export function useCreateItem(tier: "income" | "committed" | "discretionary") {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => {
+      if (tier === "income") return waterfallService.createIncome(data as any);
+      if (tier === "committed") return waterfallService.createCommitted(data as any);
+      return waterfallService.createDiscretionary(data as any);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
+    },
+  });
+}
+
+export function useConfirmWaterfallItem(
+  tier: "income" | "committed" | "discretionary",
+  id: string
+) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => {
+      if (tier === "income") return waterfallService.confirmIncome(id);
+      if (tier === "committed") return waterfallService.confirmCommitted(id);
+      return waterfallService.confirmDiscretionary(id);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
+    },
+  });
+}
+
+export function useDeleteItem(tier: "income" | "committed" | "discretionary", id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => {
+      if (tier === "income") return waterfallService.deleteIncome(id);
+      if (tier === "committed") return waterfallService.deleteCommitted(id);
+      return waterfallService.deleteDiscretionary(id);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
+    },
+  });
+}
+
+export function useTierUpdateItem(tier: "income" | "committed" | "discretionary", id: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (data: Record<string, unknown>) => {
+      if (tier === "income") return waterfallService.updateIncome(id, data as any);
+      if (tier === "committed") return waterfallService.updateCommitted(id, data as any);
+      return waterfallService.updateDiscretionary(id, data as any);
+    },
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
+    },
   });
 }
 
@@ -129,10 +196,6 @@ export interface TierItemRow {
   lastReviewedAt: Date;
   sortOrder: number;
 }
-
-const TIER_ITEM_KEYS = {
-  items: (tier: string) => ["waterfall", "tier-items", tier] as const,
-};
 
 function normaliseIncomeFrequency(frequency: string): "monthly" | "yearly" | "one_off" {
   if (frequency === "annual") return "yearly";
