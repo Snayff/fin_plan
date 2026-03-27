@@ -126,7 +126,7 @@ describe("ItemRow", () => {
   });
 
   it("applies selected highlight when expanded", () => {
-    const { container } = render(
+    const { container: _container } = render(
       <ItemRow
         item={baseItem}
         config={TIER_CONFIGS.committed}
