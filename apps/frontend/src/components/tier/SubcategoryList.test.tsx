@@ -70,6 +70,12 @@ describe("SubcategoryList", () => {
     expect(screen.getByText(/300/)).toBeTruthy();
   });
 
+  it("unselected row uses tier colour for hover background", () => {
+    renderList("sub-housing");
+    const unselected = screen.getByTestId("subcategory-row-sub-utilities");
+    expect(unselected.className).toContain("hover:bg-tier-committed/5");
+  });
+
   it("shows amber stale dot when any item in the subcategory is stale", () => {
     const staleItem = {
       id: "item-stale",
