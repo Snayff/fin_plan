@@ -8,6 +8,8 @@ const { waterfallService } = await import("./waterfall.service.js");
 
 beforeEach(() => {
   resetPrismaMocks();
+  // Default: no subcategories (tests that need them can override)
+  prismaMock.subcategory.findMany.mockResolvedValue([]);
 });
 
 describe("waterfallService.confirmIncome", () => {
@@ -585,10 +587,10 @@ describe("waterfallService.getWaterfallSummary — consolidated models", () => {
         updatedAt: new Date(),
       },
     ] as any);
-    prismaMock.subcategory.findFirst.mockResolvedValue({
-      id: "sub-savings",
-      name: "Savings",
-    } as any);
+    prismaMock.subcategory.findMany.mockResolvedValue([
+      { id: "sub-food", name: "Food", tier: "discretionary", sortOrder: 0 },
+      { id: "sub-savings", name: "Savings", tier: "discretionary", sortOrder: 1 },
+    ] as any);
 
     const summary = await waterfallService.getWaterfallSummary("hh-1");
 
