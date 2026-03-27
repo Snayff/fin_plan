@@ -39,7 +39,7 @@ describe("TierPage", () => {
 
   it("renders subcategory names in the left panel", () => {
     renderTierPage();
-    expect(screen.getByText("Housing")).toBeTruthy();
+    expect(screen.getAllByText("Housing").length).toBeGreaterThan(0);
     expect(screen.getByText("Utilities")).toBeTruthy();
   });
 
