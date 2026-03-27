@@ -91,6 +91,16 @@ describe("ItemArea", () => {
     });
   });
 
+  it("empty state CTA card uses correct gradient opacity", () => {
+    const { container } = renderArea([]);
+    const allElements = container.querySelectorAll("*");
+    const ctaCard = Array.from(allElements).find((el) =>
+      (el as HTMLElement).style?.background?.includes("linear-gradient")
+    ) as HTMLElement;
+    expect(ctaCard).toBeTruthy();
+    expect(ctaCard.style.background).toContain("0.08");
+  });
+
   it("collapses accordion when same row is clicked again", async () => {
     renderArea();
     fireEvent.click(screen.getByTestId("item-row-item-rent"));

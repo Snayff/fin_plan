@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import SubcategoryList from "./SubcategoryList";
 import ItemArea from "./ItemArea";
+import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { useSubcategories, useTierItems, type TierItemRow } from "@/hooks/useWaterfall";
 import { TIER_CONFIGS, type TierKey } from "./tierConfig";
 
@@ -63,32 +64,30 @@ export default function TierPage({ tier }: TierPageProps) {
     : null;
 
   return (
-    <div data-testid={`tier-page-${tier}`} className="relative min-h-screen">
-      {/* Tier ambient glow */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background: `radial-gradient(ellipse 60% 40% at 20% 20%, var(--color-tier-${tier}-glow, rgba(0,0,0,0.06)) 0%, transparent 70%)`,
-        }}
-      />
-      <SubcategoryList
-        tier={tier}
-        config={config}
-        subcategories={subcategories ?? []}
-        subcategoryTotals={subcategoryTotals}
-        tierTotal={tierTotal}
-        selectedId={resolvedSelectedId}
-        onSelect={setSelectedId}
-        isLoading={subsLoading}
-      />
-      <ItemArea
-        tier={tier}
-        config={config}
-        subcategory={selectedSubcategory}
-        subcategories={(subcategories ?? []).map((s) => ({ id: s.id, name: s.name }))}
-        items={selectedSummary?.items ?? []}
-        isLoading={itemsLoading}
+    <div data-page={tier} data-testid={`tier-page-${tier}`} className="h-full">
+      <TwoPanelLayout
+        left={
+          <SubcategoryList
+            tier={tier}
+            config={config}
+            subcategories={subcategories ?? []}
+            subcategoryTotals={subcategoryTotals}
+            tierTotal={tierTotal}
+            selectedId={resolvedSelectedId}
+            onSelect={setSelectedId}
+            isLoading={subsLoading}
+          />
+        }
+        right={
+          <ItemArea
+            tier={tier}
+            config={config}
+            subcategory={selectedSubcategory}
+            subcategories={(subcategories ?? []).map((s) => ({ id: s.id, name: s.name }))}
+            items={selectedSummary?.items ?? []}
+            isLoading={itemsLoading}
+          />
+        }
       />
     </div>
   );

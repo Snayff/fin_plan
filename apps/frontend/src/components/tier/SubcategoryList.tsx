@@ -74,7 +74,7 @@ export default function SubcategoryList({
                 "flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors",
                 isSelected
                   ? `border-l-2 ${config.borderClass} ${config.bgClass}/14 font-medium ${config.textClass}`
-                  : "border-l-2 border-transparent text-foreground/60 hover:bg-foreground/5",
+                  : `border-l-2 border-transparent text-foreground/60 ${config.hoverBgClass}`,
               ].join(" ")}
             >
               {/* Stale dot column (fixed width, always present) */}

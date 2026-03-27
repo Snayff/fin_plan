@@ -16,15 +16,7 @@ export default function SurplusPage() {
   const showBenchmarkWarning = !isLoading && surplus < (income * SURPLUS_BENCHMARK_PCT) / 100;
 
   return (
-    <div data-testid="surplus-page" className="relative min-h-screen">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10"
-        style={{
-          background:
-            "radial-gradient(ellipse 60% 40% at 20% 20%, rgba(20,184,166,0.08) 0%, transparent 70%)",
-        }}
-      />
+    <div data-page="surplus" data-testid="surplus-page" className="h-full">
       <TwoPanelLayout
         left={
           <div className="flex flex-col gap-6 p-6">
