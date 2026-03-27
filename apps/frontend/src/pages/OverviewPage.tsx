@@ -4,6 +4,7 @@ import { useWaterfallSummary } from "@/hooks/useWaterfall";
 import type { WaterfallSummary, IncomeType } from "@finplan/shared";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
+import { PageHeader } from "@/components/common/PageHeader";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { WaterfallLeftPanel } from "@/components/overview/WaterfallLeftPanel";
 import { ItemDetailPanel } from "@/components/overview/ItemDetailPanel";
@@ -14,7 +15,6 @@ import { SnapshotTimeline } from "@/components/overview/SnapshotTimeline";
 import { OverviewPageHeader } from "@/components/overview/OverviewPageHeader";
 import { CreateSnapshotModal } from "@/components/overview/CreateSnapshotModal";
 import { ReviewWizard } from "@/components/overview/ReviewWizard";
-import OverviewEmptyState from "@/components/overview/OverviewEmptyState";
 import { useSnapshot } from "@/hooks/useSettings";
 
 interface SelectedItem {
@@ -58,21 +58,12 @@ export default function OverviewPage() {
   const snapshotDate =
     isViewingSnapshot && snapshotData?.createdAt ? new Date(snapshotData.createdAt) : null;
 
-  const isWaterfallEmpty =
-    summary &&
-    summary.income.monthly.length === 0 &&
-    summary.income.annual.length === 0 &&
-    summary.committed.bills.length === 0 &&
-    summary.committed.yearlyBills.length === 0 &&
-    summary.discretionary.categories.length === 0 &&
-    summary.discretionary.savings.allocations.length === 0;
-
-  // Build left panel
-  const left = isLoading ? (
+  // Build left panel content (below the header)
+  const leftContent = isLoading ? (
     <SkeletonLoader variant="left-panel" />
   ) : isError && !liveSummary ? (
     <PanelError variant="left" onRetry={refetch} message="Could not load your waterfall" />
-  ) : summary && !isWaterfallEmpty ? (
+  ) : summary ? (
     <WaterfallLeftPanel
       summary={summary}
       onSelectItem={(item) => {
@@ -99,8 +90,13 @@ export default function OverviewPage() {
               : null
       }
     />
-  ) : (
-    <OverviewEmptyState />
+  ) : null;
+
+  const left = (
+    <div className="flex flex-col h-full">
+      <PageHeader title="Overview" />
+      <div className="flex-1 overflow-y-auto">{leftContent}</div>
+    </div>
   );
 
   // Build right panel

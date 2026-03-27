@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useSearchParams } from "react-router-dom";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
+import { PageHeader } from "@/components/common/PageHeader";
 import { HelpSidebar } from "@/components/help/HelpSidebar";
 import { GlossaryDetailView } from "@/components/help/GlossaryDetailView";
 import { ConceptDetailView } from "@/components/help/ConceptDetailView";
@@ -11,9 +12,7 @@ import { getConceptEntry } from "@/data/concepts";
 const DEFAULT_ENTRY_ID = GLOSSARY_ENTRIES[0]!.id; // "amortised" (first alphabetically)
 
 function isValidEntryId(id: string): boolean {
-  return (
-    getGlossaryEntry(id) !== undefined || getConceptEntry(id) !== undefined
-  );
+  return getGlossaryEntry(id) !== undefined || getConceptEntry(id) !== undefined;
 }
 
 export default function HelpPage() {
@@ -25,7 +24,7 @@ export default function HelpPage() {
     (id: string) => {
       setSearchParams({ entry: id }, { replace: false });
     },
-    [setSearchParams],
+    [setSearchParams]
   );
 
   const isGlossaryEntry = getGlossaryEntry(selectedId) !== undefined;
@@ -42,18 +41,19 @@ export default function HelpPage() {
           }}
         />
         <TwoPanelLayout
-          left={<HelpSidebar selectedId={selectedId} onSelect={handleSelect} />}
+          left={
+            <div className="flex flex-col h-full">
+              <PageHeader title="Help" />
+              <div className="flex-1 overflow-y-auto">
+                <HelpSidebar selectedId={selectedId} onSelect={handleSelect} />
+              </div>
+            </div>
+          }
           right={
             isGlossaryEntry ? (
-              <GlossaryDetailView
-                entryId={selectedId}
-                onNavigate={handleSelect}
-              />
+              <GlossaryDetailView entryId={selectedId} onNavigate={handleSelect} />
             ) : (
-              <ConceptDetailView
-                conceptId={selectedId}
-                onNavigate={handleSelect}
-              />
+              <ConceptDetailView conceptId={selectedId} onNavigate={handleSelect} />
             )
           }
         />

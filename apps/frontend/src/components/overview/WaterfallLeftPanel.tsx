@@ -143,7 +143,7 @@ export function WaterfallLeftPanel({
 
   return (
     <motion.div
-      className="space-y-4 text-sm"
+      className="space-y-4 p-4 text-sm"
       variants={containerVariants}
       initial={reduced ? false : "initial"}
       animate="animate"

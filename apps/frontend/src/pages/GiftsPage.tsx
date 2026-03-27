@@ -1,4 +1,5 @@
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
+import { PageHeader } from "@/components/common/PageHeader";
 
 export default function GiftsPage() {
   return (
@@ -13,8 +14,9 @@ export default function GiftsPage() {
       />
       <TwoPanelLayout
         left={
-          <div className="flex h-full items-start p-6">
-            <h1 className="font-heading text-2xl font-extrabold text-foreground">Gifts</h1>
+          <div className="flex flex-col h-full">
+            <PageHeader title="Gifts" />
+            <div className="flex-1 overflow-y-auto p-6" />
           </div>
         }
         right={

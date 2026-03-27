@@ -3,6 +3,7 @@ import { useSearchParams } from "react-router-dom";
 import SubcategoryList from "./SubcategoryList";
 import ItemArea from "./ItemArea";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
+import { PageHeader } from "@/components/common/PageHeader";
 import { useSubcategories, useTierItems, type TierItemRow } from "@/hooks/useWaterfall";
 import { TIER_CONFIGS, type TierKey } from "./tierConfig";
 
@@ -67,16 +68,26 @@ export default function TierPage({ tier }: TierPageProps) {
     <div data-page={tier} data-testid={`tier-page-${tier}`} className="h-full">
       <TwoPanelLayout
         left={
-          <SubcategoryList
-            tier={tier}
-            config={config}
-            subcategories={subcategories ?? []}
-            subcategoryTotals={subcategoryTotals}
-            tierTotal={tierTotal}
-            selectedId={resolvedSelectedId}
-            onSelect={setSelectedId}
-            isLoading={subsLoading}
-          />
+          <div className="flex flex-col h-full">
+            <PageHeader
+              title={config.label}
+              colorClass={config.textClass}
+              total={tierTotal}
+              totalColorClass={config.textClass}
+            />
+            <div className="flex-1 overflow-y-auto">
+              <SubcategoryList
+                tier={tier}
+                config={config}
+                subcategories={subcategories ?? []}
+                subcategoryTotals={subcategoryTotals}
+                tierTotal={tierTotal}
+                selectedId={resolvedSelectedId}
+                onSelect={setSelectedId}
+                isLoading={subsLoading}
+              />
+            </div>
+          </div>
         }
         right={
           <ItemArea
