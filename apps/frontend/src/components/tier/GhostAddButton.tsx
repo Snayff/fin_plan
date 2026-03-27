@@ -6,6 +6,7 @@ interface Props {
 export default function GhostAddButton({ onClick, disabled }: Props) {
   return (
     <button
+      type="button"
       onClick={onClick}
       disabled={disabled}
       className={[

@@ -126,6 +126,7 @@ export default function ItemForm({
       />
       <div className="flex items-center gap-2">
         <button
+          type="button"
           onClick={onCancel}
           className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-foreground/60 hover:bg-foreground/5 transition-colors"
         >
@@ -133,6 +134,7 @@ export default function ItemForm({
         </button>
         {mode === "edit" && onConfirm && (
           <button
+            type="button"
             onClick={onConfirm}
             className="rounded-md border border-teal-500/30 bg-teal-500/10 px-3 py-1 text-xs font-medium text-teal-400 hover:bg-teal-500/20 transition-colors"
           >
@@ -140,6 +142,7 @@ export default function ItemForm({
           </button>
         )}
         <button
+          type="button"
           onClick={handleSave}
           disabled={isSaving || !name.trim()}
           className={[
@@ -152,6 +155,7 @@ export default function ItemForm({
         </button>
         {mode === "edit" && onDelete && (
           <button
+            type="button"
             onClick={onDelete}
             className="ml-2 text-xs text-foreground/30 hover:text-red-400 transition-colors"
           >

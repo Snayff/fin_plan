@@ -55,7 +55,7 @@ export default function SubcategoryList({
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto">
+      <div role="tablist" aria-label="Subcategories" className="flex-1 overflow-y-auto">
         {subcategories.map((sub) => {
           const isSelected = sub.id === selectedId;
           const summary = subcategoryTotals[sub.id];
@@ -64,6 +64,8 @@ export default function SubcategoryList({
           );
           return (
             <button
+              type="button"
+              role="tab"
               key={sub.id}
               data-testid={`subcategory-row-${sub.id}`}
               aria-selected={isSelected}

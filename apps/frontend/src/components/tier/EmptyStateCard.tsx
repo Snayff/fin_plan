@@ -32,6 +32,7 @@ export default function EmptyStateCard({ subcategoryName, tier, onAddItem }: Pro
         </h3>
         <p className="mt-2 text-sm text-foreground/60">{copy.body}</p>
         <button
+          type="button"
           onClick={onAddItem}
           className="mt-4 rounded-lg bg-page-accent/20 px-4 py-2 text-sm font-medium text-page-accent hover:bg-page-accent/30 transition-colors"
         >

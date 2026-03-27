@@ -38,6 +38,7 @@ export default function ItemRow({
   return (
     <div>
       <button
+        type="button"
         data-testid={`item-row-${item.id}`}
         onClick={onToggle}
         className={[

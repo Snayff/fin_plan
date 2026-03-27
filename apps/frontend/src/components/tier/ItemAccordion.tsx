@@ -76,6 +76,7 @@ export default function ItemAccordion({
       {/* Actions */}
       <div className="mt-3 flex items-center gap-2">
         <button
+          type="button"
           onClick={onEdit}
           className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-foreground/60 hover:bg-foreground/5 transition-colors"
         >
@@ -83,6 +84,7 @@ export default function ItemAccordion({
         </button>
         {stale && (
           <button
+            type="button"
             onClick={onConfirm}
             className="rounded-md border border-teal-500/30 bg-teal-500/10 px-3 py-1 text-xs font-medium text-teal-400 hover:bg-teal-500/20 transition-colors"
           >
