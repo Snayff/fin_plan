@@ -48,6 +48,20 @@ async function validateSubcategoryOwnership(
   if (!sub) throw new NotFoundError("Subcategory not found");
 }
 
+async function validateMemberOwnership(householdId: string, memberId: string) {
+  const member = await prisma.householdMember.findFirst({
+    where: { householdId, userId: memberId },
+  });
+  if (!member) throw new NotFoundError("Household member not found");
+}
+
+async function validateWealthAccountOwnership(householdId: string, wealthAccountId: string) {
+  const account = await prisma.wealthAccount.findFirst({
+    where: { id: wealthAccountId, householdId },
+  });
+  if (!account) throw new NotFoundError("Wealth account not found");
+}
+
 // ─── Summary ─────────────────────────────────────────────────────────────────
 
 export const waterfallService = {
@@ -224,7 +238,10 @@ export const waterfallService = {
       data.subcategoryId ??
       (await subcategoryService.getDefaultSubcategoryId(householdId, "income"));
     if (data.subcategoryId) {
-      await validateSubcategoryOwnership(householdId, subcategoryId, "income");
+      await validateSubcategoryOwnership(householdId, data.subcategoryId, "income");
+    }
+    if (data.ownerId) {
+      await validateMemberOwnership(householdId, data.ownerId);
     }
     const source = await prisma.incomeSource.create({
       data: { ...data, subcategoryId, householdId, lastReviewedAt: new Date() },
@@ -238,6 +255,9 @@ export const waterfallService = {
     assertOwned(existing, householdId, "Income source");
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "income");
+    }
+    if (data.ownerId) {
+      await validateMemberOwnership(householdId, data.ownerId);
     }
 
     const updated = await prisma.incomeSource.update({
@@ -293,6 +313,9 @@ export const waterfallService = {
 
   async createCommitted(householdId: string, data: CreateCommittedItemInput) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
+    if (data.ownerId) {
+      await validateMemberOwnership(householdId, data.ownerId);
+    }
     const item = await prisma.committedItem.create({
       data: {
         ...data,
@@ -310,6 +333,9 @@ export const waterfallService = {
     assertOwned(existing, householdId, "Committed item");
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
+    }
+    if (data.ownerId) {
+      await validateMemberOwnership(householdId, data.ownerId);
     }
 
     const updated = await prisma.committedItem.update({
@@ -469,6 +495,9 @@ export const waterfallService = {
 
   async createSavings(householdId: string, data: CreateDiscretionaryItemInput) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
+    if (data.wealthAccountId) {
+      await validateWealthAccountOwnership(householdId, data.wealthAccountId);
+    }
     const item = await prisma.discretionaryItem.create({
       data: {
         ...data,
@@ -486,6 +515,9 @@ export const waterfallService = {
     assertOwned(existing, householdId, "Savings allocation");
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
+    }
+    if (data.wealthAccountId) {
+      await validateWealthAccountOwnership(householdId, data.wealthAccountId);
     }
 
     const updated = await prisma.discretionaryItem.update({

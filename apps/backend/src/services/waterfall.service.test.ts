@@ -437,6 +437,10 @@ describe("waterfallService.createDiscretionary (DiscretionaryItem)", () => {
 describe("waterfallService.createSavings (DiscretionaryItem)", () => {
   it("creates a discretionary item with wealthAccountId", async () => {
     prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-savings" } as any);
+    prismaMock.wealthAccount.findFirst.mockResolvedValue({
+      id: "wa-1",
+      householdId: "hh-1",
+    } as any);
     prismaMock.discretionaryItem.create.mockResolvedValue({
       id: "di-2",
       householdId: "hh-1",
