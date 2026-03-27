@@ -1,3 +1,5 @@
+import TierPage from "@/components/tier/TierPage";
+
 export default function IncomePage() {
-  return <div data-testid="tier-page-income" />;
+  return <TierPage tier="income" />;
 }

@@ -1,3 +1,5 @@
+import TierPage from "@/components/tier/TierPage";
+
 export default function DiscretionaryPage() {
-  return <div data-testid="tier-page-discretionary" />;
+  return <TierPage tier="discretionary" />;
 }

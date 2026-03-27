@@ -1,3 +1,5 @@
+import TierPage from "@/components/tier/TierPage";
+
 export default function CommittedPage() {
-  return <div data-testid="tier-page-committed" />;
+  return <TierPage tier="committed" />;
 }

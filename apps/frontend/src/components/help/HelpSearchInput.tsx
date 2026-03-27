@@ -12,16 +12,20 @@ export function HelpSearchInput({ value, onChange }: Props) {
 
   return (
     <div className="relative">
-      <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+      <Search
+        aria-hidden
+        className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none"
+      />
       <input
         ref={inputRef}
         type="text"
+        aria-label="Search glossary and concepts"
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder="Search…"
         className={cn(
           "w-full rounded-md border bg-card py-1.5 pl-8 pr-7 text-sm outline-none",
-          "placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-page-accent/50",
+          "placeholder:text-muted-foreground/50 focus:ring-1 focus:ring-page-accent/50"
         )}
       />
       {value && (

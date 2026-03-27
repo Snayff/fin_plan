@@ -26,9 +26,7 @@ export function HelpSidebar({ selectedId, onSelect }: Props) {
     if (!debouncedQuery) return GLOSSARY_ENTRIES;
     const q = debouncedQuery.toLowerCase();
     return GLOSSARY_ENTRIES.filter(
-      (e) =>
-        e.term.toLowerCase().includes(q) ||
-        e.definition.toLowerCase().includes(q),
+      (e) => e.term.toLowerCase().includes(q) || e.definition.toLowerCase().includes(q)
     );
   }, [debouncedQuery]);
 
@@ -39,21 +37,19 @@ export function HelpSidebar({ selectedId, onSelect }: Props) {
       (e) =>
         e.title.toLowerCase().includes(q) ||
         e.summary.toLowerCase().includes(q) ||
-        e.whyItMatters.toLowerCase().includes(q),
+        e.whyItMatters.toLowerCase().includes(q)
     );
   }, [debouncedQuery]);
 
   const hasNoResults =
-    debouncedQuery &&
-    filteredGlossary.length === 0 &&
-    filteredConcepts.length === 0;
+    debouncedQuery && filteredGlossary.length === 0 && filteredConcepts.length === 0;
 
   const itemClass = (id: string) =>
     cn(
       "w-full text-left text-sm px-3 py-1.5 rounded-sm transition-colors cursor-pointer",
       "text-foreground/70 hover:text-foreground hover:bg-page-accent/10",
       selectedId === id &&
-        "text-foreground bg-page-accent/[0.14] border-l-2 border-page-accent pl-[10px]",
+        "text-foreground bg-page-accent/[0.14] border-l-2 border-page-accent pl-[10px]"
     );
 
   return (
@@ -70,7 +66,7 @@ export function HelpSidebar({ selectedId, onSelect }: Props) {
         ) : (
           <>
             {filteredGlossary.length > 0 && (
-              <section>
+              <section aria-label="Glossary">
                 <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                   Glossary
                 </p>
@@ -93,7 +89,7 @@ export function HelpSidebar({ selectedId, onSelect }: Props) {
             )}
 
             {filteredConcepts.length > 0 && (
-              <section>
+              <section aria-label="Concepts">
                 <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
                   Concepts
                 </p>
@@ -102,9 +98,7 @@ export function HelpSidebar({ selectedId, onSelect }: Props) {
                     key={concept.id}
                     type="button"
                     className={itemClass(concept.id)}
-                    aria-current={
-                      selectedId === concept.id ? "true" : undefined
-                    }
+                    aria-current={selectedId === concept.id ? "true" : undefined}
                     onClick={() => onSelect(concept.id)}
                   >
                     {concept.title}

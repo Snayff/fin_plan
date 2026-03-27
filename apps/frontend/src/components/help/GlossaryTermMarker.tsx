@@ -54,6 +54,7 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
         role="button"
         tabIndex={0}
         aria-expanded={isOpen}
+        aria-haspopup="dialog"
         className="border-b border-dotted border-current/50 cursor-help"
         onMouseEnter={scheduleOpen}
         onMouseLeave={scheduleClose}
@@ -62,7 +63,11 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
-            isOpen ? closePopover() : openPopover(entryId);
+            if (isOpen) {
+              closePopover();
+            } else {
+              openPopover(entryId);
+            }
           }
         }}
       >
@@ -73,26 +78,21 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
         <div
           ref={popoverRef}
           role="dialog"
+          aria-modal="true"
           aria-label={`Definition: ${entry.term}`}
           className={cn(
             "absolute left-0 top-full mt-1 z-[70] w-72 rounded-lg border bg-card p-3 shadow-lg",
-            reduced ? "" : "animate-in fade-in duration-150",
+            reduced ? "" : "animate-in fade-in duration-150"
           )}
           onMouseEnter={cancelClose}
           onMouseLeave={scheduleClose}
         >
-          <p className="text-xs font-semibold text-foreground mb-1">
-            {entry.term}
-          </p>
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            {entry.definition}
-          </p>
+          <p className="text-xs font-semibold text-foreground mb-1">{entry.term}</p>
+          <p className="text-xs text-muted-foreground leading-relaxed">{entry.definition}</p>
 
           {entry.relatedConceptIds.length > 0 && (
             <div className="mt-2 pt-2 border-t">
-              <p className="text-[11px] text-muted-foreground/70 mb-1">
-                Related
-              </p>
+              <p className="text-[11px] text-muted-foreground/70 mb-1">Related</p>
               <div className="flex flex-wrap gap-1">
                 {entry.relatedConceptIds.map((conceptId) => {
                   const concept = getConceptEntry(conceptId);
