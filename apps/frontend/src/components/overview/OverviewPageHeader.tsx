@@ -10,19 +10,11 @@ interface OverviewPageHeaderProps {
 
 export function OverviewPageHeader({ activeSnapshot, onExitSnapshot }: OverviewPageHeaderProps) {
   if (!activeSnapshot) {
-    return (
-      <div className="h-8 border-b flex items-center px-4">
-        <span className="text-sm font-heading font-semibold text-foreground">Overview</span>
-      </div>
-    );
+    return <div className="h-8 border-b" />;
   }
 
   return (
     <div className="h-8 border-b flex items-center px-4 gap-1.5 text-sm">
-      <span className="text-muted-foreground font-heading">Overview</span>
-      <span className="text-muted-foreground/50" aria-hidden="true">
-        ›
-      </span>
       <span
         title={activeSnapshot.name}
         className="font-heading font-medium text-foreground max-w-[40ch] overflow-hidden text-ellipsis whitespace-nowrap"

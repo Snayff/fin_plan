@@ -4,15 +4,18 @@ import { renderWithProviders } from "@/test/helpers/render";
 import { OverviewPageHeader } from "./OverviewPageHeader";
 
 describe("OverviewPageHeader", () => {
-  it("renders 'Overview' heading in live mode", () => {
-    renderWithProviders(<OverviewPageHeader activeSnapshot={null} onExitSnapshot={() => {}} />, {
-      initialEntries: ["/overview"],
-    });
-    expect(screen.getByText("Overview")).toBeTruthy();
+  it("renders blank strip in live mode (no Overview text)", () => {
+    const { container } = renderWithProviders(
+      <OverviewPageHeader activeSnapshot={null} onExitSnapshot={() => {}} />,
+      { initialEntries: ["/overview"] }
+    );
+    expect(screen.queryByText("Overview")).toBeNull();
     expect(screen.queryByText("Read only")).toBeNull();
+    // Strip still renders for layout spacing
+    expect(container.querySelector(".h-8.border-b")).toBeTruthy();
   });
 
-  it("renders breadcrumb in snapshot mode", () => {
+  it("renders snapshot context without Overview prefix", () => {
     renderWithProviders(
       <OverviewPageHeader
         activeSnapshot={{ id: "s1", name: "March 2025" }}
@@ -20,7 +23,7 @@ describe("OverviewPageHeader", () => {
       />,
       { initialEntries: ["/overview"] }
     );
-    expect(screen.getByText("Overview")).toBeTruthy();
+    expect(screen.queryByText("Overview")).toBeNull();
     expect(screen.getByText("March 2025")).toBeTruthy();
     expect(screen.getByText("Read only")).toBeTruthy();
     expect(screen.getByText("← Live view")).toBeTruthy();
