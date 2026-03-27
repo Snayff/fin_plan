@@ -43,6 +43,12 @@ describe("SurplusPage", () => {
     renderWithProviders(<SurplusPage />, { initialEntries: ["/surplus"] });
     expect(screen.queryByTestId("surplus-benchmark-warning")).toBeNull();
   });
+
+  it("sets data-page attribute to surplus", () => {
+    renderWithProviders(<SurplusPage />, { initialEntries: ["/surplus"] });
+    const page = screen.getByTestId("surplus-page");
+    expect(page.getAttribute("data-page")).toBe("surplus");
+  });
 });
 
 describe("SurplusPage — benchmark warning", () => {
