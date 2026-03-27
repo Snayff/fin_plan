@@ -67,11 +67,18 @@ export default function ItemForm({
   const [spendType, setSpendType] = useState<SpendType>(item?.spendType ?? "monthly");
   const [subcategoryId, setSubcategoryId] = useState(item?.subcategoryId ?? initialSubcategoryId);
   const [notes, setNotes] = useState(item?.notes ?? "");
+  const [amountError, setAmountError] = useState<string | null>(null);
 
   function handleSave() {
+    const parsed = parseFloat(amount);
+    if (!amount || isNaN(parsed) || parsed <= 0) {
+      setAmountError("Amount must be greater than 0");
+      return;
+    }
+    setAmountError(null);
     onSave({
       name: name.trim(),
-      amount: parseFloat(amount) || 0,
+      amount: parsed,
       spendType,
       subcategoryId,
       notes: notes.trim() || null,
@@ -87,18 +94,27 @@ export default function ItemForm({
           value={name}
           onChange={(e) => setName(e.target.value)}
           aria-label="Name"
-          className="col-span-2 rounded-md border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-sm text-foreground placeholder-foreground/30 focus:outline-none focus:ring-1 focus:ring-page-accent/40"
+          className="col-span-2 rounded-md border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-sm text-foreground placeholder-foreground/30 focus:outline-none focus:border-page-accent/60"
         />
         <input
           type="number"
           placeholder="Amount"
           value={amount}
-          onChange={(e) => setAmount(e.target.value)}
+          onChange={(e) => {
+            setAmount(e.target.value);
+            setAmountError(null);
+          }}
           aria-label="Amount"
           min={0}
           step={0.01}
-          className="rounded-md border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-sm text-foreground placeholder-foreground/30 focus:outline-none focus:ring-1 focus:ring-page-accent/40"
+          className={[
+            "rounded-md border bg-foreground/5 px-3 py-1.5 text-sm text-foreground placeholder-foreground/30 focus:outline-none",
+            amountError
+              ? "border-amber-400/60 focus:border-amber-400"
+              : "border-foreground/10 focus:border-page-accent/60",
+          ].join(" ")}
         />
+        {amountError && <p className="col-span-2 -mt-1 text-xs text-amber-400">{amountError}</p>}
         <Select value={spendType} onValueChange={(v) => setSpendType(v as SpendType)}>
           <SelectTrigger
             aria-label="Spend type"
@@ -135,7 +151,7 @@ export default function ItemForm({
         aria-label="Notes"
         rows={2}
         maxLength={500}
-        className="w-full rounded-md border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-sm text-foreground placeholder-foreground/30 resize-none focus:outline-none focus:ring-1 focus:ring-page-accent/40"
+        className="w-full rounded-md border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-sm text-foreground placeholder-foreground/30 resize-none focus:outline-none focus:border-page-accent/60"
       />
       <div className="flex items-center gap-2">
         <button

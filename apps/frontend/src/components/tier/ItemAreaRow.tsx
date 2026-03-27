@@ -79,14 +79,22 @@ export default function ItemAreaRow({
           initialSubcategoryId={item.subcategoryId}
           isSaving={updateItem.isPending}
           onSave={async (data) => {
-            await updateItem.mutateAsync(data as Record<string, unknown>);
-            onCancelEdit();
-            onToggleExpand(item.id); // collapse
+            try {
+              await updateItem.mutateAsync(data as Record<string, unknown>);
+              onCancelEdit();
+              onToggleExpand(item.id); // collapse
+            } catch {
+              // error handled by useUpdateItem onError (toast)
+            }
           }}
           onCancel={onCancelEdit}
           onConfirm={async () => {
-            await confirmItem.mutateAsync();
-            onCancelEdit();
+            try {
+              await confirmItem.mutateAsync();
+              onCancelEdit();
+            } catch {
+              // error handled by mutation onError (toast)
+            }
           }}
           onDelete={() => onDeleteRequest(item.id)}
         />

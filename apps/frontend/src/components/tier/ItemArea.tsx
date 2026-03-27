@@ -107,8 +107,12 @@ export default function ItemArea({
             initialSubcategoryId={subcategory.id}
             isSaving={createItem.isPending}
             onSave={async (data) => {
-              await createItem.mutateAsync(data as Record<string, unknown>);
-              setIsAddingItem(false);
+              try {
+                await createItem.mutateAsync(data as Record<string, unknown>);
+                setIsAddingItem(false);
+              } catch {
+                // error handled by useCreateItem onError (toast)
+              }
             }}
             onCancel={() => setIsAddingItem(false)}
           />
