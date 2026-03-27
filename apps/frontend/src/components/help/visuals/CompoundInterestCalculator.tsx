@@ -9,12 +9,7 @@ function formatGBP(value: number): string {
 }
 
 // FV = PV(1 + r/12)^(12t) + PMT × [((1 + r/12)^(12t) − 1) / (r/12)]
-function calculateFV(
-  pv: number,
-  pmt: number,
-  annualRate: number,
-  years: number,
-): number {
+function calculateFV(pv: number, pmt: number, annualRate: number, years: number): number {
   if (annualRate === 0) {
     return pv + pmt * 12 * years;
   }
@@ -32,7 +27,7 @@ export function CompoundInterestCalculator() {
   const horizons = [1, 5, 10] as const;
 
   const inputClass =
-    "w-full rounded-md border bg-card py-1.5 px-3 text-sm font-mono outline-none focus:ring-1 focus:ring-page-accent/50";
+    "w-full rounded-md border bg-card py-1.5 px-3 text-sm font-mono outline-none focus:border-page-accent/60";
   const labelClass = "block text-xs text-muted-foreground mb-1";
 
   return (
@@ -86,14 +81,9 @@ export function CompoundInterestCalculator() {
           const fv = calculateFV(balance, monthly, rate, years);
           const label = years === 1 ? "1 year" : `${years} years`;
           return (
-            <div
-              key={years}
-              className="rounded-md border bg-card p-3 text-center"
-            >
+            <div key={years} className="rounded-md border bg-card p-3 text-center">
               <p className="text-xs text-muted-foreground mb-1">{label}</p>
-              <p className="font-mono text-lg font-semibold text-foreground">
-                {formatGBP(fv)}
-              </p>
+              <p className="font-mono text-lg font-semibold text-foreground">{formatGBP(fv)}</p>
             </div>
           );
         })}

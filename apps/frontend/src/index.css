@@ -136,6 +136,13 @@
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
 
+  /* Input fields use border recolor instead of ring */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply ring-0 ring-offset-0 border-ring;
+  }
+
   /* Heading styles — Outfit, tighter tracking */
   h1,
   h2,

@@ -48,7 +48,7 @@ export function CreateSnapshotModal({ onClose, onCreated }: CreateSnapshotModalP
             </label>
             <input
               id="snapshot-name"
-              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
               value={name}
               onChange={(e) => {
                 setName(e.target.value);

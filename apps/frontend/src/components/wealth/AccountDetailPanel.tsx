@@ -236,7 +236,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
           <div className="space-y-1">
             <label className="text-sm font-medium">Name</label>
             <input
-              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
             />
@@ -244,7 +244,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
           <div className="space-y-1">
             <label className="text-sm font-medium">Provider</label>
             <input
-              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
               value={editProvider}
               onChange={(e) => setEditProvider(e.target.value)}
             />
@@ -255,7 +255,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
               <input
                 type="number"
                 step="0.01"
-                className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
                 value={editInterestRate}
                 onChange={(e) => setEditInterestRate(e.target.value)}
               />
@@ -280,7 +280,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
             <input
               type="number"
               step="0.01"
-              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
               value={valuationBalance}
               onChange={(e) => setValuationBalance(e.target.value)}
             />
@@ -289,7 +289,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
             <label className="text-sm font-medium">Valuation date</label>
             <input
               type="date"
-              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
               value={valuationDate}
               onChange={(e) => setValuationDate(e.target.value)}
             />

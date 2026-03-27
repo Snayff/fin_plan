@@ -117,7 +117,7 @@ function ItemCard({
         <div className="flex items-center gap-2">
           <input
             type="number"
-            className="flex-1 rounded border px-2 py-1 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+            className="flex-1 rounded border px-2 py-1 text-sm bg-background focus:outline-none focus:border-primary"
             value={editValue}
             onChange={(e) => setEditValue(e.target.value)}
             autoFocus
@@ -512,7 +512,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Snapshot name</label>
                 <input
-                  className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
                   value={snapshotName}
                   onChange={(e) => setSnapshotName(e.target.value)}
                 />

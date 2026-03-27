@@ -106,7 +106,7 @@ export function AccountListPanel({
             <input
               id="add-account-name"
               autoFocus
-              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
               value={addName}
               onChange={(e) => setAddName(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleAddAccount()}
@@ -122,7 +122,7 @@ export function AccountListPanel({
               type="number"
               step="0.01"
               min="0"
-              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+              className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
               value={addBalance}
               onChange={(e) => setAddBalance(e.target.value)}
               placeholder="0"

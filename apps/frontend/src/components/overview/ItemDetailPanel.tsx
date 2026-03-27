@@ -234,7 +234,7 @@ export function ItemDetailPanel({
                 type="number"
                 value={editAmount}
                 onChange={(e) => setEditAmount(e.target.value)}
-                className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-ring"
               />
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleSaveEdit} disabled={updateItem.isPending}>
@@ -267,7 +267,7 @@ export function ItemDetailPanel({
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+                className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-ring"
               />
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleEndIncome} disabled={endIncome.isPending}>
