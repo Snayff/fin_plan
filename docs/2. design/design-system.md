@@ -27,16 +27,20 @@ The background is never a plain solid. Ambient radial glows give the canvas dept
 
 #### Page Ambient Glows
 
-Each page has dual radial gradient glows at very low opacity, creating a subtle sense of place. The primary glow carries the page's dominant colour; the secondary adds atmospheric depth.
+Each page has dual radial gradient glows at low opacity, creating a subtle sense of place. Glows are corner-centred — primary radiates from the top-right corner, secondary from the bottom-left. The tight fade (25%) ensures the centre and majority of the page shows the true `#080a14` background, with colour only as a subtle corner accent.
 
-| Page     | Primary                          | Secondary                         |
-| -------- | -------------------------------- | --------------------------------- |
-| Overview | Indigo, top-right, 6% opacity    | Violet, bottom-left, 3.5% opacity |
-| Wealth   | Blue, top-left, 5% opacity       | Teal, bottom-right, 3% opacity    |
-| Planner  | Purple, center-right, 5% opacity | Indigo, bottom-left, 3% opacity   |
-| Settings | Neutral, bottom-right, 2.5%      | None                              |
+| Page          | Primary colour                | Primary opacity | Secondary colour   | Secondary opacity |
+| ------------- | ----------------------------- | --------------- | ------------------ | ----------------- |
+| Overview      | Indigo (`#6366f1`)            | 9%              | Violet (`#8b5cf6`) | 5%                |
+| Income        | Blue (`#0ea5e9`)              | 9%              | Indigo (`#6366f1`) | 5%                |
+| Committed     | Indigo (`#6366f1`)            | 9%              | Purple (`#a855f7`) | 5%                |
+| Discretionary | Purple (`#a855f7`)            | 9%              | Teal (`#4adcd0`)   | 5%                |
+| Surplus       | Teal (`#4adcd0`)              | 9%              | Indigo (`#6366f1`) | 5%                |
+| Settings      | Neutral (`rgba(238,242,255)`) | 4%              | None               | —                 |
 
-**Implementation:** CSS `[data-page]` attribute on the page wrapper + `::before` / `::after` pseudo-elements with `position: fixed`, `pointer-events: none`, `z-index: 0`. Glows use `radial-gradient(ellipse, ... 0%, transparent 65%)`. No animation — static only.
+Secondary colours follow the waterfall spectrum: each tier's secondary is the next tier's primary.
+
+**Implementation:** CSS `[data-page]` attribute on the page wrapper + `::before` / `::after` pseudo-elements with `position: fixed`, `pointer-events: none`, `z-index: 0`. Glows use `radial-gradient(ellipse at [corner], [colour] 0%, transparent 25%)`. Primary at `100% 0%` (top-right), secondary at `0% 100%` (bottom-left). No animation — static only.
 
 #### Surfaces
 

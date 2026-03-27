@@ -31,14 +31,14 @@ The current 3-page structure (Overview, Wealth, Planner) creates silos. Wealth a
 | Gifts         | `/gifts`         | People + events config; feeds Discretionary > Gifts subcategory |
 | Settings      | `/settings`      | Existing settings page, no structural change                    |
 
-**Top nav (8 items):** Overview | Income · Committed · Discretionary · Surplus | Goals · Gifts ···· Settings
+**Top nav (9 items):** Overview | Income · Committed · Discretionary · Surplus | Goals · Gifts · Help ···· Settings
 
 **Top nav visual treatment:**
 
 - Overview: `page-accent` purple (`#8b5cf6`) — active underline in same colour
 - Tier names: their tier colour (Income=blue, Committed=indigo, Discretionary=purple, Surplus=teal)
-- Goals, Gifts: default muted text colour — no tier colour
-- **Vertical separators** (1px, `rgba(238,242,255,0.12)`) after Overview and after Surplus — grouping: `[Overview] | [4 tiers] | [Goals · Gifts ···· Settings]`
+- Goals, Gifts, Help: default muted text colour — no tier colour
+- **Vertical separators** (1px, `rgba(238,242,255,0.12)`) after Overview and after Surplus — grouping: `[Overview] | [4 tiers] | [Goals · Gifts · Help ···· Settings]`
 
 ---
 
