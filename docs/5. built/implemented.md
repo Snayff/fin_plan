@@ -139,6 +139,12 @@ Features that have completed the full pipeline and shipped, organised by categor
 - **Spec:** `docs/5. built/ui/staleness-indicators/staleness-indicators-spec.md`
 - **Summary:** Users need to know when a financial value hasn't been reviewed recently and may no longer reflect reality.
 
+### Tier Page Fixes
+
+- **Implemented:** 2026-03-27
+- **Spec:** `docs/5. built/ui/tier-page-fixes/tier-page-fixes-spec.md`
+- **Summary:** Six categories of visual deviation in tier pages are corrected: ambient glows rewritten to CSS pseudo-elements, TwoPanelLayout adopted, inline glow divs removed, empty state tokens fixed, tier-coloured hover states applied, and data-page attributes added.
+
 ---
 
 ## Infrastructure
