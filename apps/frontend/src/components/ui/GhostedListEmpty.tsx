@@ -49,7 +49,7 @@ export function GhostedListEmpty({
           className="mx-2 mt-3 flex items-center justify-between gap-3 rounded-lg p-3.5"
           style={{
             background:
-              "linear-gradient(135deg, rgba(99, 102, 241, 0.07) 0%, rgba(168, 85, 247, 0.05) 100%)",
+              "linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.05) 100%)",
             border: "1px solid rgba(99, 102, 241, 0.1)",
           }}
         >
