@@ -3,6 +3,7 @@ import GhostAddButton from "./GhostAddButton";
 import ItemAreaRow from "./ItemAreaRow";
 import ItemForm from "./ItemForm";
 import EmptyStateCard from "./EmptyStateCard";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useCreateItem, useDeleteItem, type TierItemRow } from "@/hooks/useWaterfall";
 import { toGBP } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
@@ -142,33 +143,21 @@ export default function ItemArea({
         ))}
       </div>
 
-      {/* Delete confirmation modal */}
-      {deletingItemId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="rounded-xl border border-foreground/10 bg-background p-6 max-w-sm w-full mx-4">
-            <p className="text-sm text-foreground">Are you sure you want to delete this item?</p>
-            <div className="mt-4 flex gap-3 justify-end">
-              <button
-                onClick={() => setDeletingItemId(null)}
-                className="rounded-md border border-foreground/10 px-3 py-1.5 text-sm text-foreground/60"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={async () => {
-                  await deleteItem.mutateAsync();
-                  setDeletingItemId(null);
-                  setEditingItemId(null);
-                  setExpandedItemId(null);
-                }}
-                className="rounded-md bg-red-500/20 px-3 py-1.5 text-sm font-medium text-red-400 hover:bg-red-500/30"
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        isOpen={!!deletingItemId}
+        onClose={() => setDeletingItemId(null)}
+        onConfirm={async () => {
+          await deleteItem.mutateAsync();
+          setDeletingItemId(null);
+          setEditingItemId(null);
+          setExpandedItemId(null);
+        }}
+        title="Delete item"
+        message="Are you sure you want to delete this item?"
+        confirmText="Delete"
+        variant="danger"
+        isLoading={deleteItem.isPending}
+      />
     </div>
   );
 }
