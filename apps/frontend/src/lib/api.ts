@@ -100,7 +100,10 @@ export class ApiClient {
       };
 
       const response = await fetch(url, config);
-      const data = await response.json();
+      const data =
+        response.status === 204 || response.headers.get("content-length") === "0"
+          ? undefined
+          : await response.json();
 
       if (!response.ok) {
         const apiError: ApiError = {
