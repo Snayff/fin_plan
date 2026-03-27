@@ -48,7 +48,7 @@ docs/
   2. design/        # Design anchors, philosophy, system, definitions
   3. architecture/  # Architecture, testing approach, auth lifecycle
   4. planning/      # Implementation plan + feature spec folders
-  5. built/         # Completed feature tracking
+  5. built/         # Completed features by category (income/committed/discretionary/surplus/overview/ui/infrastructure)
 ```
 
 ---
@@ -86,13 +86,13 @@ Each test file runs in its own subprocess to prevent mock leakage between tests.
 
 Before implementing any feature, read the relevant specs in `docs/`:
 
-| Location                                   | Purpose                                              |
-| ------------------------------------------ | ---------------------------------------------------- |
-| `docs/2. design/design-anchors.md`         | Non-negotiable product invariants — read first       |
-| `docs/2. design/design-system.md`          | Design tokens, components, typography, color, motion |
-| `docs/2. design/definitions.md`            | Canonical tooltip text for financial terms           |
-| `docs/3. architecture/`                    | Architecture, testing approach, auth lifecycle       |
-| `docs/4. planning/[feature]/`              | 22 feature spec folders (spec + plan per feature)    |
+| Location                           | Purpose                                              |
+| ---------------------------------- | ---------------------------------------------------- |
+| `docs/2. design/design-anchors.md` | Non-negotiable product invariants — read first       |
+| `docs/2. design/design-system.md`  | Design tokens, components, typography, color, motion |
+| `docs/2. design/definitions.md`    | Canonical tooltip text for financial terms           |
+| `docs/3. architecture/`            | Architecture, testing approach, auth lifecycle       |
+| `docs/4. planning/[feature]/`      | 22 feature spec folders (spec + plan per feature)    |
 
 ---
 
@@ -141,4 +141,4 @@ Household financial planners — typically one person managing finances for a co
 2. **Silence is approval** — If a value is healthy, show nothing. No green checkmarks, no "looking good!" badges. Attention (amber) appears only when something is genuinely noteworthy. Calm is the default state.
 3. **Precision without density** — Show exact numbers in tabular monospace, but give them room to breathe. The interface should feel spacious and scannable, not spreadsheet-like. Typography hierarchy does the heavy lifting.
 4. **Empower, don't advise** — Surface the arithmetic clearly so users draw their own conclusions. No recommendations, no scoring, no "you should..." language. Use "budgeted", "planned", "allocated" — never "spent" or "paid".
-5. **Earn every pixel** —  Every colour, icon, and animation serves a specific, targeted purpose. If removing something changes nothing, remove it.
+5. **Earn every pixel** — Every colour, icon, and animation serves a specific, targeted purpose. If removing something changes nothing, remove it.

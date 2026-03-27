@@ -3,7 +3,8 @@
 > This is the entry point for the finplan design documentation. Start here to understand the design philosophy, constraints, and concrete rules that govern the UI.
 
 > Start here. This is the navigation guide for all design documentation.
->>>>>>> Stashed changes:docs/2. design/_design-readme.md
+>
+> > > > > > > Stashed changes:docs/2. design/\_design-readme.md
 
 ---
 
@@ -15,7 +16,8 @@ finplan is a personal financial planning tool for households. It is not a ledger
 
 ## Where to Find What You Need
 
-<<<<<<< Updated upstream:docs/renew-finplan/design/_design-readme.md
+<<<<<<< Updated upstream:docs/renew-finplan/design/\_design-readme.md
+
 ### Design docs (this directory)
 
 | Document                                     | Purpose                                                                                             | Read when                             |
@@ -51,4 +53,4 @@ finplan is a personal financial planning tool for households. It is not a ledger
 
 - Features to be built live in `../4. planning/` — each in its own folder with a `*-spec.md`
 - Add a `*-plan.md` to the folder when a feature enters active development (`status: in-progress`)
-- Move the folder to `../5. built/` and fill `implemented_date` when the feature ships (`status: implemented`)
+- Move the folder to `../5. built/<category>/` and fill `implemented_date` when the feature ships (`status: implemented`)
