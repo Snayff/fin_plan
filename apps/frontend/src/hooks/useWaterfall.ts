@@ -135,7 +135,7 @@ export function useCreateItem(tier: "income" | "committed" | "discretionary") {
   return useMutation({
     mutationFn: (data: Record<string, unknown>) => {
       if (tier === "income") {
-        const { spendType, subcategoryId: _subcategoryId, notes: _notes, ...rest } = data;
+        const { spendType, ...rest } = data;
         return waterfallService.createIncome({
           ...rest,
           frequency: spendTypeToFrequency[spendType as string] ?? "monthly",
