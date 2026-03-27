@@ -111,7 +111,6 @@ export default function ItemForm({
       className={[
         "border-t border-foreground/5 bg-foreground/[0.02] py-3 pr-4 flex flex-col gap-3",
         `border-l-2 ${config.borderClass}`,
-        `${config.bgClass}/8`,
         "pl-[30px]",
       ].join(" ")}
     >

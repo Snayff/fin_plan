@@ -25,13 +25,7 @@ function formatReviewDate(date: Date): string {
   return new Date(date).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
 }
 
-export default function ItemAccordion({
-  item,
-  config,
-  onEdit,
-  now,
-  stalenessMonths = 12,
-}: Props) {
+export default function ItemAccordion({ item, config, onEdit, now, stalenessMonths = 12 }: Props) {
   const stale = isStale(item.lastReviewedAt, now, stalenessMonths);
   const monthsAgo = stale ? getMonthsAgo(item.lastReviewedAt, now) : 0;
 
@@ -40,7 +34,6 @@ export default function ItemAccordion({
       className={[
         "border-t border-foreground/5 bg-foreground/[0.02] py-2.5 pr-4",
         `border-l-2 ${config.borderClass}`,
-        `${config.bgClass}/8`,
         "pl-[30px]",
       ].join(" ")}
     >

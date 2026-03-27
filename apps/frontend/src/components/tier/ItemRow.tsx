@@ -42,11 +42,9 @@ export default function ItemRow({
         data-testid={`item-row-${item.id}`}
         onClick={onToggle}
         className={[
-          "flex w-full items-start gap-2 px-4 py-2.5 text-left text-sm transition-colors",
+          "flex w-full items-start gap-2 px-4 py-2.5 text-left text-[13px] transition-colors",
           config.hoverBgClass,
-          isExpanded
-            ? `${config.bgClass}/8 border-l-2 ${config.borderClass} pl-[14px]`
-            : "",
+          isExpanded ? `${config.bgClass}/8 border-l-2 ${config.borderClass} pl-[14px]` : "",
         ].join(" ")}
       >
         {/* Stale dot — fixed-width column */}
@@ -72,7 +70,7 @@ export default function ItemRow({
         <span className="flex flex-col items-end gap-px">
           <span
             className={[
-              "font-numeric text-sm",
+              "font-numeric",
               amounts.monthly.bright ? "text-foreground/70" : "text-foreground/30",
             ].join(" ")}
           >
