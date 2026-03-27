@@ -1,8 +1,13 @@
 import { describe, it, expect, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import TierPage from "./TierPage";
+
+let _searchParams = new URLSearchParams();
+
+mock.module("react-router-dom", () => ({
+  useSearchParams: () => [_searchParams, () => {}],
+}));
 
 mock.module("@/hooks/useWaterfall", () => ({
   useSubcategories: mock(() => ({
@@ -18,15 +23,12 @@ mock.module("@/hooks/useWaterfall", () => ({
   })),
 }));
 
-function renderTierPage(path = "/committed") {
+function renderTierPage(searchParams = new URLSearchParams()) {
+  _searchParams = searchParams;
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[path]}>
-        <Routes>
-          <Route path="/committed" element={<TierPage tier="committed" />} />
-        </Routes>
-      </MemoryRouter>
+      <TierPage tier="committed" />
     </QueryClientProvider>
   );
 }
@@ -50,7 +52,7 @@ describe("TierPage", () => {
   });
 
   it("selects a subcategory from the URL ?subcategory= param", () => {
-    renderTierPage("/committed?subcategory=sub-utilities");
+    renderTierPage(new URLSearchParams("subcategory=sub-utilities"));
     const utilities = screen.getByTestId("subcategory-row-sub-utilities");
     expect(utilities.getAttribute("aria-selected")).toBe("true");
   });

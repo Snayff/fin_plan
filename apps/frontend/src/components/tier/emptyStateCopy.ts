@@ -1,4 +1,5 @@
 // Empty state copy per subcategory, keyed by normalised name.
+import type { TierKey } from "./tierConfig";
 
 interface EmptyStateCopy {
   header: string;
@@ -36,7 +37,7 @@ const FALLBACKS: Record<string, EmptyStateCopy> = {
   discretionary: { header: "Add your spending", body: "Add a discretionary spending category" },
 };
 
-export function getEmptyStateCopy(subcategoryName: string, tier: string): EmptyStateCopy {
+export function getEmptyStateCopy(subcategoryName: string, tier: TierKey): EmptyStateCopy {
   const key = subcategoryName.toLowerCase().trim();
   if (COPY[key]) return COPY[key];
   const otherKey = `${tier}-other`;

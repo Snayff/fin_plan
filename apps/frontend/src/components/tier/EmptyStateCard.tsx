@@ -1,8 +1,9 @@
 import { getEmptyStateCopy } from "./emptyStateCopy";
+import type { TierKey } from "./tierConfig";
 
 interface Props {
   subcategoryName: string;
-  tier: string;
+  tier: TierKey;
   onAddItem: () => void;
 }
 

@@ -1,5 +1,6 @@
 import { toGBP } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
+import { monthsElapsed, isStale as stalenessIsStale } from "@/utils/staleness";
 
 export type SpendType = "monthly" | "yearly" | "one_off";
 
@@ -31,11 +32,12 @@ export function formatItemAmount(
   };
 }
 
+/** Returns whole calendar months elapsed since lastReviewedAt (uses date-fns). */
 export function getMonthsAgo(lastReviewedAt: Date, now: Date): number {
-  const diffMs = now.getTime() - new Date(lastReviewedAt).getTime();
-  return Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30.44));
+  return monthsElapsed(lastReviewedAt, now);
 }
 
+/** Returns true when lastReviewedAt is at least thresholdMonths calendar months before now. */
 export function isStale(lastReviewedAt: Date, now: Date, thresholdMonths: number): boolean {
-  return getMonthsAgo(lastReviewedAt, now) >= thresholdMonths;
+  return stalenessIsStale(lastReviewedAt, thresholdMonths, now);
 }

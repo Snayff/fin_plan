@@ -160,6 +160,7 @@ export function useDeleteItem(tier: "income" | "committed" | "discretionary", id
   const qc = useQueryClient();
   return useMutation({
     mutationFn: () => {
+      if (!id) return Promise.reject(new Error("No item ID provided for delete"));
       if (tier === "income") return waterfallService.deleteIncome(id);
       if (tier === "committed") return waterfallService.deleteCommitted(id);
       return waterfallService.deleteDiscretionary(id);
