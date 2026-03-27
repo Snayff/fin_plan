@@ -17,6 +17,7 @@ import type {
   CreateDiscretionaryItemInput,
   UpdateDiscretionaryItemInput,
   WaterfallTier,
+  SubcategoryTotal,
 } from "@finplan/shared";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -62,20 +63,80 @@ async function validateWealthAccountOwnership(householdId: string, wealthAccount
   if (!account) throw new NotFoundError("Wealth account not found");
 }
 
+// ─── Subcategory totals helper ────────────────────────────────────────────────
+
+function buildSubcategoryTotals(
+  subcategories: Array<{ id: string; name: string; sortOrder: number }>,
+  items: Array<{
+    subcategoryId: string | null;
+    amount: number;
+    spendType?: string;
+    frequency?: string;
+    lastReviewedAt: Date;
+  }>,
+  otherSubcategoryId: string | null
+): SubcategoryTotal[] {
+  const map = new Map<string, { total: number; oldest: Date | null; count: number }>();
+
+  for (const sub of subcategories) {
+    map.set(sub.id, { total: 0, oldest: null, count: 0 });
+  }
+
+  for (const item of items) {
+    const subId = item.subcategoryId ?? otherSubcategoryId;
+    if (!subId || !map.has(subId)) continue;
+    const entry = map.get(subId)!;
+
+    let monthlyAmount = item.amount;
+    if (item.spendType === "yearly" || item.frequency === "annual") {
+      monthlyAmount = item.amount / 12;
+    }
+
+    entry.total += monthlyAmount;
+    entry.count += 1;
+
+    const reviewDate = new Date(item.lastReviewedAt);
+    if (!entry.oldest || reviewDate < entry.oldest) {
+      entry.oldest = reviewDate;
+    }
+  }
+
+  return subcategories.map((sub) => {
+    const entry = map.get(sub.id)!;
+    return {
+      id: sub.id,
+      name: sub.name,
+      sortOrder: sub.sortOrder,
+      monthlyTotal: toGBP(entry.total),
+      oldestReviewedAt: entry.oldest,
+      itemCount: entry.count,
+    };
+  });
+}
+
 // ─── Summary ─────────────────────────────────────────────────────────────────
 
 export const waterfallService = {
   async getWaterfallSummary(householdId: string): Promise<WaterfallSummary> {
     const now = new Date();
 
-    const [incomeSources, committedItems, discretionaryItems] = await Promise.all([
-      prisma.incomeSource.findMany({
-        where: { householdId, OR: [{ endedAt: null }, { endedAt: { gt: now } }] },
-        orderBy: { sortOrder: "asc" },
-      }),
-      prisma.committedItem.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } }),
-      prisma.discretionaryItem.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } }),
-    ]);
+    const [incomeSources, committedItems, discretionaryItems, allSubcategories] = await Promise.all(
+      [
+        prisma.incomeSource.findMany({
+          where: { householdId, OR: [{ endedAt: null }, { endedAt: { gt: now } }] },
+          orderBy: { sortOrder: "asc" },
+        }),
+        prisma.committedItem.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } }),
+        prisma.discretionaryItem.findMany({
+          where: { householdId },
+          orderBy: { sortOrder: "asc" },
+        }),
+        prisma.subcategory.findMany({
+          where: { householdId },
+          orderBy: { sortOrder: "asc" },
+        }),
+      ]
+    );
 
     const monthlyIncome = incomeSources.filter((s) => s.frequency === "monthly");
     const annualIncome = incomeSources.filter((s) => s.frequency === "annual");
@@ -125,9 +186,8 @@ export const waterfallService = {
     const yearlyMonthlyAvg = toGBP(yearlyCommitted.reduce((s, b) => s + b.amount, 0) / 12);
 
     // Detect savings subcategory to split discretionary items
-    const savingsSubcategory = await prisma.subcategory.findFirst({
-      where: { householdId, tier: "discretionary", name: "Savings" },
-    });
+    const savingsSubcategory =
+      allSubcategories.find((s) => s.tier === "discretionary" && s.name === "Savings") ?? null;
 
     const savingsItems = savingsSubcategory
       ? discretionaryItems.filter((i) => i.subcategoryId === savingsSubcategory.id)
@@ -145,10 +205,39 @@ export const waterfallService = {
     );
     const percentOfIncome = toGBP(incomeTotal > 0 ? (surplusAmount / incomeTotal) * 100 : 0);
 
+    // Build subcategory totals per tier
+    const incomeSubs = allSubcategories.filter((s) => s.tier === "income");
+    const committedSubs = allSubcategories.filter((s) => s.tier === "committed");
+    const discretionarySubs = allSubcategories.filter((s) => s.tier === "discretionary");
+
+    const incomeOtherId = incomeSubs.find((s) => s.name === "Other")?.id ?? null;
+    const committedOtherId = committedSubs.find((s) => s.name === "Other")?.id ?? null;
+    const discretionaryOtherId = discretionarySubs.find((s) => s.name === "Other")?.id ?? null;
+
+    // Exclude one-off income (consistent with incomeTotal calculation)
+    const incomeForSubcategories = incomeSources.filter((s) => s.frequency !== "one_off");
+
+    const incomeBySubcategory = buildSubcategoryTotals(
+      incomeSubs,
+      incomeForSubcategories,
+      incomeOtherId
+    );
+    const committedBySubcategory = buildSubcategoryTotals(
+      committedSubs,
+      committedItems,
+      committedOtherId
+    );
+    const discretionaryBySubcategory = buildSubcategoryTotals(
+      discretionarySubs,
+      discretionaryItems,
+      discretionaryOtherId
+    );
+
     return {
       income: {
         total: incomeTotal,
         byType,
+        bySubcategory: incomeBySubcategory,
         monthly: monthlyIncome,
         annual: annualWithMonthly,
         oneOff: oneOffIncome,
@@ -156,11 +245,13 @@ export const waterfallService = {
       committed: {
         monthlyTotal: committedMonthlyTotal,
         monthlyAvg12: yearlyMonthlyAvg,
+        bySubcategory: committedBySubcategory,
         bills: monthlyCommitted,
         yearlyBills: yearlyCommitted.map((b) => ({ ...b, dueMonth: b.dueMonth ?? 1 })),
       },
       discretionary: {
         total: discretionaryTotal,
+        bySubcategory: discretionaryBySubcategory,
         categories: categoryItems.map((c) => ({ ...c, monthlyBudget: c.amount })),
         savings: {
           total: savingsTotal,

@@ -47,6 +47,17 @@ export interface SubcategoryRow {
   updatedAt: Date;
 }
 
+// ─── Subcategory totals (for overview left panel) ────────────────────────────
+
+export interface SubcategoryTotal {
+  id: string;
+  name: string;
+  sortOrder: number;
+  monthlyTotal: number;
+  oldestReviewedAt: Date | null;
+  itemCount: number;
+}
+
 // ─── Committed items (replaces CommittedBill + YearlyBill) ───────────────────
 
 export const createCommittedItemSchema = z.object({
@@ -233,6 +244,7 @@ export interface WaterfallSummary {
   income: {
     total: number;
     byType: IncomeByType[];
+    bySubcategory: SubcategoryTotal[];
     monthly: IncomeSourceRow[];
     annual: (IncomeSourceRow & { monthlyAmount: number })[];
     oneOff: IncomeSourceRow[];
@@ -240,11 +252,13 @@ export interface WaterfallSummary {
   committed: {
     monthlyTotal: number;
     monthlyAvg12: number;
+    bySubcategory: SubcategoryTotal[];
     bills: CommittedBillRow[];
     yearlyBills: YearlyBillRow[];
   };
   discretionary: {
     total: number;
+    bySubcategory: SubcategoryTotal[];
     categories: DiscretionaryCategoryRow[];
     savings: { total: number; allocations: SavingsAllocationRow[] };
   };

@@ -49,7 +49,7 @@ export default function WelcomePage() {
   }, [name, accessToken, setUser]);
 
   function handleContinue() {
-    navigate("/overview?build=1", { replace: true });
+    navigate("/overview", { replace: true });
   }
 
   return (
@@ -121,12 +121,11 @@ export default function WelcomePage() {
             <div className="space-y-3">
               <h1 className="text-2xl font-bold tracking-tight">{name} is ready!</h1>
               <p className="text-muted-foreground">
-                Now let's build your waterfall — we'll guide you through adding your income, bills,
-                and spending step by step.
+                Your waterfall is ready for you to start adding income, bills, and spending.
               </p>
             </div>
             <Button size="lg" onClick={handleContinue}>
-              Build my waterfall →
+              Go to overview →
             </Button>
           </>
         )}

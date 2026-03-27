@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import type { WaterfallSummary } from "@finplan/shared";
@@ -10,8 +9,6 @@ import { isStale } from "@/utils/staleness";
 import { StalenessIndicator } from "@/components/common/StalenessIndicator";
 import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { useSettings } from "@/hooks/useSettings";
-import { TierAddForm } from "@/components/overview/build/TierAddForm";
-import type { BuildPhase } from "@/components/overview/build/quick-picks";
 import { WaterfallConnector } from "@/components/overview/WaterfallConnector";
 
 interface SelectedItem {
@@ -28,28 +25,12 @@ interface WaterfallLeftPanelProps {
   onSelectItem: (item: SelectedItem) => void;
   onOpenCashflowCalendar: () => void;
   selectedItemId: string | null;
-  /** Build mode: which phase is active (null = normal mode) */
-  buildPhase?: BuildPhase | null;
-  /** Pre-filled name from quick-pick chip */
-  prefillName?: string | null;
 }
 
 const ROW_CLASS =
   "flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-accent/50 transition-colors text-[13px] font-body text-text-secondary";
 
 const AMOUNT_CLASS = "font-numeric text-foreground/60";
-
-const PHASE_TIER_INDEX: Record<BuildPhase, number> = {
-  household: -1,
-  income: 0,
-  committed: 1,
-  yearly_bills: 1,
-  discretionary: 2,
-  savings: 2,
-  summary: 3,
-};
-
-const TIER_IDX = { income: 0, committed: 1, discretionary: 2 } as const;
 
 function StaleCountBadge({ count }: { count: number }) {
   if (count === 0) return null;
@@ -72,7 +53,6 @@ function SectionHeader({
   total,
   colorClass,
   staleCount,
-  dimmed,
   onHeaderClick,
   headerTestId,
 }: {
@@ -80,12 +60,11 @@ function SectionHeader({
   total: React.ReactNode;
   colorClass: string;
   staleCount: number;
-  dimmed?: boolean;
   onHeaderClick?: () => void;
   headerTestId?: string;
 }) {
   const content = (
-    <div className={cn("flex items-center justify-between py-1.5 px-2", dimmed && "opacity-40")}>
+    <div className="flex items-center justify-between py-1.5 px-2">
       <div className="flex items-center gap-2">
         <h3
           className={cn(
@@ -95,7 +74,7 @@ function SectionHeader({
         >
           {label}
         </h3>
-        {!dimmed && <StaleCountBadge count={staleCount} />}
+        <StaleCountBadge count={staleCount} />
       </div>
       <span className={cn("text-[15px] font-numeric font-semibold", colorClass)}>{total}</span>
     </div>
@@ -107,7 +86,7 @@ function SectionHeader({
         type="button"
         data-testid={headerTestId}
         onClick={onHeaderClick}
-        className="w-full text-left hover:opacity-80 transition-opacity"
+        className="w-full text-left rounded hover:bg-accent/50 transition-colors"
       >
         {content}
       </button>
@@ -120,9 +99,7 @@ export function WaterfallLeftPanel({
   summary,
   onSelectItem,
   onOpenCashflowCalendar,
-  selectedItemId,
-  buildPhase = null,
-  prefillName = null,
+  selectedItemId: _selectedItemId,
 }: WaterfallLeftPanelProps) {
   const navigate = useNavigate();
   const { data: settings } = useSettings();
@@ -135,45 +112,24 @@ export function WaterfallLeftPanel({
     wealth_account: 3,
   };
 
-  const [showAllCategories, setShowAllCategories] = useState(false);
-
   const { income, committed, discretionary, surplus } = summary;
 
-  const allIncomeSources = [...income.monthly, ...income.annual, ...income.oneOff];
-  const incomeStaleCount = allIncomeSources.filter((s) =>
-    isStale(s.lastReviewedAt, thresholds.income_source ?? 12)
+  const isSubStale = (oldestReviewedAt: Date | null, thresholdMonths: number) =>
+    oldestReviewedAt ? isStale(oldestReviewedAt, thresholdMonths) : false;
+
+  const incomeStaleCount = income.bySubcategory.filter((s) =>
+    isSubStale(s.oldestReviewedAt, thresholds.income_source ?? 12)
   ).length;
 
-  const committedStaleCount = committed.bills.filter((b) =>
-    isStale(b.lastReviewedAt, thresholds.committed_bill ?? 6)
+  const committedStaleCount = committed.bySubcategory.filter((s) =>
+    isSubStale(s.oldestReviewedAt, thresholds.committed_bill ?? 6)
   ).length;
 
-  const discCatStaleCount = discretionary.categories.filter((c) =>
-    isStale(c.lastReviewedAt, thresholds.discretionary_category ?? 12)
+  const discretionaryStaleCount = discretionary.bySubcategory.filter((s) =>
+    isSubStale(s.oldestReviewedAt, thresholds.discretionary_category ?? 12)
   ).length;
-  const savingsStaleCount = discretionary.savings.allocations.filter((s) =>
-    isStale(s.lastReviewedAt, thresholds.savings_allocation ?? 12)
-  ).length;
-  const discretionaryStaleCount = discCatStaleCount + savingsStaleCount;
 
   const surplusBenchmark = settings?.surplusBenchmarkPct ?? 10;
-
-  const inBuild = buildPhase !== null;
-  const activeIdx = buildPhase !== null ? PHASE_TIER_INDEX[buildPhase] : -1;
-
-  function tierState(tier: "income" | "committed" | "discretionary") {
-    if (!inBuild) return "normal" as const;
-    const tierIdx = TIER_IDX[tier];
-    if (tierIdx === activeIdx) return "active" as const;
-    if (tierIdx < activeIdx) return "completed" as const;
-    return "future" as const;
-  }
-
-  const isSavingsActive = buildPhase === "savings";
-
-  const incomeState = tierState("income");
-  const committedState = tierState("committed");
-  const discretionaryState = tierState("discretionary");
 
   const reduced = usePrefersReducedMotion();
 
@@ -193,50 +149,41 @@ export function WaterfallLeftPanel({
       animate="animate"
     >
       {/* INCOME */}
-      <motion.div variants={itemVariants} className={cn(incomeState === "future" && "opacity-40")}>
+      <motion.div variants={itemVariants}>
         <SectionHeader
           label={<GlossaryTermMarker entryId="net-income">Income</GlossaryTermMarker>}
           total={<AnimatedCurrency value={income.total} />}
           colorClass="text-tier-income"
           staleCount={incomeStaleCount}
-          dimmed={incomeState === "future"}
-          onHeaderClick={!inBuild ? () => navigate("/income") : undefined}
+          onHeaderClick={() => navigate("/income")}
           headerTestId="tier-heading-income"
         />
-        {incomeState !== "future" && (
-          <div className="space-y-0.5">
-            {income.byType.map((group) => {
-              const handleSelect = () =>
-                !inBuild &&
-                onSelectItem({
-                  id: `type:${group.type}`,
-                  type: "income_type",
-                  name: group.label,
-                  amount: group.monthlyTotal,
-                  lastReviewedAt: new Date(),
-                });
-              return (
-                <div
-                  key={group.type}
-                  role="button"
-                  tabIndex={inBuild ? -1 : 0}
-                  aria-pressed={selectedItemId === `type:${group.type}`}
-                  className={cn(
-                    ROW_CLASS,
-                    selectedItemId === `type:${group.type}` && "bg-accent",
-                    inBuild && "cursor-default hover:bg-transparent"
+        <div className="space-y-0.5">
+          {income.bySubcategory.map((sub) => {
+            const handleClick = () => navigate(`/income?subcategory=${sub.id}`);
+            return (
+              <div
+                key={sub.id}
+                role="button"
+                tabIndex={0}
+                className={ROW_CLASS}
+                onClick={handleClick}
+                onKeyDown={(e) => e.key === "Enter" && handleClick()}
+              >
+                <div className="flex items-center gap-2">
+                  <span>{sub.name}</span>
+                  {isSubStale(sub.oldestReviewedAt, thresholds.income_source ?? 12) && (
+                    <StalenessIndicator
+                      lastReviewedAt={sub.oldestReviewedAt!}
+                      thresholdMonths={thresholds.income_source ?? 12}
+                    />
                   )}
-                  onClick={handleSelect}
-                  onKeyDown={(e) => e.key === "Enter" && handleSelect()}
-                >
-                  <span>{group.label}</span>
-                  <span className={AMOUNT_CLASS}>{formatCurrency(group.monthlyTotal)}</span>
                 </div>
-              );
-            })}
-            {incomeState === "active" && <TierAddForm phase="income" prefillName={prefillName} />}
-          </div>
-        )}
+                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal)}</span>
+              </div>
+            );
+          })}
+        </div>
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -244,82 +191,51 @@ export function WaterfallLeftPanel({
       </motion.div>
 
       {/* COMMITTED */}
-      <motion.div
-        variants={itemVariants}
-        className={cn(committedState === "future" && "opacity-40")}
-      >
+      <motion.div variants={itemVariants}>
         <SectionHeader
           label={<GlossaryTermMarker entryId="committed-spend">Committed</GlossaryTermMarker>}
           total={<AnimatedCurrency value={committed.monthlyTotal + committed.monthlyAvg12} />}
           colorClass="text-tier-committed"
           staleCount={committedStaleCount}
-          dimmed={committedState === "future"}
-          onHeaderClick={!inBuild ? () => navigate("/committed") : undefined}
+          onHeaderClick={() => navigate("/committed")}
           headerTestId="tier-heading-committed"
         />
-        {committedState !== "future" && (
-          <div className="space-y-0.5">
-            <div
-              role="button"
-              tabIndex={inBuild ? -1 : 0}
-              aria-pressed={selectedItemId === "aggregate:committed_bills"}
-              className={cn(
-                ROW_CLASS,
-                selectedItemId === "aggregate:committed_bills" && "bg-accent",
-                inBuild && "cursor-default hover:bg-transparent"
-              )}
-              onClick={() =>
-                !inBuild &&
-                onSelectItem({
-                  id: "aggregate:committed_bills",
-                  type: "committed_bills",
-                  name: "Monthly bills",
-                  amount: committed.monthlyTotal,
-                  lastReviewedAt: new Date(),
-                })
-              }
-              onKeyDown={(e) =>
-                e.key === "Enter" &&
-                !inBuild &&
-                onSelectItem({
-                  id: "aggregate:committed_bills",
-                  type: "committed_bills",
-                  name: "Monthly bills",
-                  amount: committed.monthlyTotal,
-                  lastReviewedAt: new Date(),
-                })
-              }
+        <div className="space-y-0.5">
+          {committed.bySubcategory.map((sub) => {
+            const handleClick = () => navigate(`/committed?subcategory=${sub.id}`);
+            return (
+              <div
+                key={sub.id}
+                role="button"
+                tabIndex={0}
+                className={ROW_CLASS}
+                onClick={handleClick}
+                onKeyDown={(e) => e.key === "Enter" && handleClick()}
+              >
+                <div className="flex items-center gap-2">
+                  <span>{sub.name}</span>
+                  {isSubStale(sub.oldestReviewedAt, thresholds.committed_bill ?? 6) && (
+                    <StalenessIndicator
+                      lastReviewedAt={sub.oldestReviewedAt!}
+                      thresholdMonths={thresholds.committed_bill ?? 6}
+                    />
+                  )}
+                </div>
+                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal)}</span>
+              </div>
+            );
+          })}
+          {committed.monthlyAvg12 > 0 && (
+            <button
+              type="button"
+              className={cn(ROW_CLASS, "text-muted-foreground text-xs hover:text-foreground")}
+              onClick={() => onOpenCashflowCalendar()}
             >
-              <span>Monthly bills</span>
-              <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyTotal)}</span>
-            </div>
-            <div
-              role="button"
-              tabIndex={inBuild ? -1 : 0}
-              aria-pressed={false}
-              className={cn(ROW_CLASS, inBuild && "cursor-default hover:bg-transparent")}
-              onClick={() => !inBuild && onOpenCashflowCalendar()}
-              onKeyDown={(e) => e.key === "Enter" && !inBuild && onOpenCashflowCalendar()}
-            >
-              <span>Yearly ÷12</span>
+              <span>incl. yearly ÷12</span>
               <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyAvg12)}</span>
-            </div>
-            {committedState === "active" && (
-              <TierAddForm
-                key={buildPhase === "yearly_bills" ? "yearly" : "monthly"}
-                phase="committed"
-                prefillName={prefillName}
-                lockedFrequency={
-                  buildPhase === "yearly_bills"
-                    ? "yearly"
-                    : buildPhase === "committed"
-                      ? "monthly"
-                      : undefined
-                }
-              />
-            )}
-          </div>
-        )}
+            </button>
+          )}
+        </div>
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -327,124 +243,43 @@ export function WaterfallLeftPanel({
       </motion.div>
 
       {/* DISCRETIONARY */}
-      <motion.div
-        variants={itemVariants}
-        className={cn(discretionaryState === "future" && "opacity-40")}
-      >
+      <motion.div variants={itemVariants}>
         <SectionHeader
-          label={<GlossaryTermMarker entryId="discretionary-spend">Discretionary</GlossaryTermMarker>}
-          total={<AnimatedCurrency value={discretionary.total + discretionary.savings.total} />}
+          label={
+            <GlossaryTermMarker entryId="discretionary-spend">Discretionary</GlossaryTermMarker>
+          }
+          total={<AnimatedCurrency value={discretionary.total} />}
           colorClass="text-tier-discretionary"
           staleCount={discretionaryStaleCount}
-          dimmed={discretionaryState === "future"}
-          onHeaderClick={!inBuild ? () => navigate("/discretionary") : undefined}
+          onHeaderClick={() => navigate("/discretionary")}
           headerTestId="tier-heading-discretionary"
         />
-        {discretionaryState !== "future" && (
-          <div className="space-y-0.5">
-            {(showAllCategories || discretionary.categories.length <= 5
-              ? discretionary.categories
-              : discretionary.categories.slice(0, 5)
-            ).map((cat) => {
-              const handleSelect = () =>
-                !inBuild &&
-                onSelectItem({
-                  id: cat.id,
-                  type: "discretionary_category",
-                  name: cat.name,
-                  amount: cat.monthlyBudget,
-                  lastReviewedAt: new Date(cat.lastReviewedAt),
-                });
-              return (
-                <div
-                  key={cat.id}
-                  role="button"
-                  tabIndex={inBuild ? -1 : 0}
-                  aria-pressed={selectedItemId === cat.id}
-                  className={cn(
-                    ROW_CLASS,
-                    selectedItemId === cat.id && "bg-accent",
-                    inBuild && "cursor-default hover:bg-transparent"
-                  )}
-                  onClick={handleSelect}
-                  onKeyDown={(e) => e.key === "Enter" && handleSelect()}
-                >
-                  <span>{cat.name}</span>
-                  <div className="flex items-center gap-2">
-                    {!inBuild && (
-                      <StalenessIndicator
-                        lastReviewedAt={cat.lastReviewedAt}
-                        thresholdMonths={thresholds.discretionary_category ?? 12}
-                      />
-                    )}
-                    <span className={AMOUNT_CLASS}>{formatCurrency(cat.monthlyBudget)}</span>
-                  </div>
-                </div>
-              );
-            })}
-            {!showAllCategories && discretionary.categories.length > 5 && (
-              <button
-                type="button"
-                onClick={() => setShowAllCategories(true)}
-                className={cn(ROW_CLASS, "text-muted-foreground hover:text-foreground")}
+        <div className="space-y-0.5">
+          {discretionary.bySubcategory.map((sub) => {
+            const handleClick = () => navigate(`/discretionary?subcategory=${sub.id}`);
+            return (
+              <div
+                key={sub.id}
+                role="button"
+                tabIndex={0}
+                className={ROW_CLASS}
+                onClick={handleClick}
+                onKeyDown={(e) => e.key === "Enter" && handleClick()}
               >
-                ··· {discretionary.categories.length - 5} more
-              </button>
-            )}
-            {/* Inline add form for categories (non-savings) */}
-            {discretionaryState === "active" && !isSavingsActive && (
-              <TierAddForm phase="discretionary" prefillName={prefillName} />
-            )}
-
-            <div className="py-1.5 px-2 flex items-center justify-between">
-              <span className="text-xs font-semibold tracking-widest uppercase text-muted-foreground">
-                Savings
-              </span>
-            </div>
-            {discretionary.savings.allocations.map((sav) => {
-              const handleSelect = () =>
-                !inBuild &&
-                onSelectItem({
-                  id: sav.id,
-                  type: "savings_allocation",
-                  name: sav.name,
-                  amount: sav.monthlyAmount,
-                  lastReviewedAt: new Date(sav.lastReviewedAt),
-                  wealthAccountId: sav.wealthAccountId,
-                });
-              return (
-                <div
-                  key={sav.id}
-                  role="button"
-                  tabIndex={inBuild ? -1 : 0}
-                  aria-pressed={selectedItemId === sav.id}
-                  className={cn(
-                    ROW_CLASS,
-                    selectedItemId === sav.id && "bg-accent",
-                    inBuild && "cursor-default hover:bg-transparent"
+                <div className="flex items-center gap-2">
+                  <span>{sub.name}</span>
+                  {isSubStale(sub.oldestReviewedAt, thresholds.discretionary_category ?? 12) && (
+                    <StalenessIndicator
+                      lastReviewedAt={sub.oldestReviewedAt!}
+                      thresholdMonths={thresholds.discretionary_category ?? 12}
+                    />
                   )}
-                  onClick={handleSelect}
-                  onKeyDown={(e) => e.key === "Enter" && handleSelect()}
-                >
-                  <span>{sav.name}</span>
-                  <div className="flex items-center gap-2">
-                    {!inBuild && (
-                      <StalenessIndicator
-                        lastReviewedAt={sav.lastReviewedAt}
-                        thresholdMonths={thresholds.savings_allocation ?? 12}
-                      />
-                    )}
-                    <span className={AMOUNT_CLASS}>{formatCurrency(sav.monthlyAmount)}</span>
-                  </div>
                 </div>
-              );
-            })}
-            {/* Inline add form for savings */}
-            {discretionaryState === "active" && isSavingsActive && (
-              <TierAddForm phase="discretionary" prefillName={prefillName} isSavings />
-            )}
-          </div>
-        )}
+                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal)}</span>
+              </div>
+            );
+          })}
+        </div>
       </motion.div>
 
       <motion.div variants={itemVariants}>
@@ -452,10 +287,7 @@ export function WaterfallLeftPanel({
       </motion.div>
 
       {/* SURPLUS */}
-      <motion.div
-        variants={itemVariants}
-        className={cn("relative", inBuild && buildPhase !== "summary" && "opacity-60")}
-      >
+      <motion.div variants={itemVariants} className="relative">
         {surplus.amount > 0 && !reduced && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -473,18 +305,18 @@ export function WaterfallLeftPanel({
           total={<AnimatedCurrency value={surplus.amount} />}
           colorClass="text-tier-surplus"
           staleCount={0}
-          onHeaderClick={!inBuild ? () => navigate("/surplus") : undefined}
+          onHeaderClick={() => navigate("/surplus")}
           headerTestId="tier-heading-surplus"
         />
         <div aria-live="polite" aria-atomic="true">
-          {!inBuild && surplus.percentOfIncome < surplusBenchmark && (
+          {surplus.percentOfIncome < surplusBenchmark && (
             <div className="flex items-center gap-1.5 px-2 text-xs text-attention">
               <span className="h-[5px] w-[5px] rounded-full shrink-0 bg-attention" aria-hidden />
               <span>Below benchmark</span>
             </div>
           )}
         </div>
-        {!inBuild && discretionary.savings.allocations.length > 0 && (
+        {discretionary.savings.allocations.length > 0 && (
           <button
             type="button"
             onClick={() => {

@@ -57,6 +57,7 @@ export {
   type SpendType,
   type WaterfallTier,
   type SubcategoryRow,
+  type SubcategoryTotal,
   type CreateCommittedItemInput,
   type UpdateCommittedItemInput,
   type CreateDiscretionaryItemInput,
