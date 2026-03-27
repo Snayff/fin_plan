@@ -1,0 +1,172 @@
+<h2>Audit Log — Final Design</h2>
+<p class="subtitle">Complete view within the Settings two-panel layout. All decisions applied.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Settings → Audit Log</div>
+  <div class="mockup-body" style="background: #080a14; padding: 0; min-height: 500px;">
+    <!-- Top Nav -->
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 24px; height: 48px; font-family: 'Outfit', sans-serif;">
+      <div style="display: flex; align-items: center; gap: 32px;">
+        <span style="font-weight: 700; font-size: 16px; color: rgba(238,242,255,0.92); letter-spacing: -0.025em;">finplan</span>
+        <div style="display: flex; gap: 24px;">
+          <span style="color: rgba(238,242,255,0.65); font-size: 13px; font-weight: 500;">Overview</span>
+          <span style="color: rgba(238,242,255,0.65); font-size: 13px; font-weight: 500;">Wealth</span>
+          <span style="color: rgba(238,242,255,0.65); font-size: 13px; font-weight: 500;">Planner</span>
+          <span style="color: rgba(238,242,255,0.92); font-size: 13px; font-weight: 500; border-bottom: 2px solid #7c3aed; padding-bottom: 14px;">Settings</span>
+        </div>
+      </div>
+      <div style="display: flex; gap: 16px; align-items: center;">
+        <span style="color: rgba(238,242,255,0.65); font-size: 12px; font-family: 'Nunito Sans', sans-serif;">Our Home ▾</span>
+        <span style="color: rgba(238,242,255,0.65); font-size: 12px; font-family: 'Nunito Sans', sans-serif;">Gabriel ▾</span>
+      </div>
+    </div>
+
+    <!-- Two-panel layout -->
+    <div style="display: flex; border-top: 1px solid #1a1f35; min-height: 452px;">
+
+      <!-- Left Panel -->
+      <div style="width: 220px; border-right: 1px solid #1a1f35; padding: 20px 16px; font-family: 'Nunito Sans', sans-serif;">
+        <div style="padding: 8px 12px; font-size: 13px; color: rgba(238,242,255,0.65); margin-bottom: 2px; cursor: pointer;">Income sources</div>
+        <div style="padding: 8px 12px; font-size: 13px; color: rgba(238,242,255,0.65); margin-bottom: 2px; cursor: pointer;">Staleness thresholds</div>
+        <div style="padding: 8px 12px; font-size: 13px; color: rgba(238,242,255,0.65); margin-bottom: 2px; cursor: pointer;">Surplus benchmark</div>
+        <div style="padding: 8px 12px; font-size: 13px; color: rgba(238,242,255,0.65); margin-bottom: 2px; cursor: pointer;">ISA tax year</div>
+        <div style="padding: 8px 12px; font-size: 13px; color: rgba(238,242,255,0.65); margin-bottom: 2px; cursor: pointer;">Household</div>
+        <div style="padding: 8px 12px; font-size: 13px; color: rgba(238,242,255,0.65); margin-bottom: 2px; cursor: pointer;">Snapshot management</div>
+        <div style="padding: 8px 12px; font-size: 13px; color: rgba(238,242,255,0.65); margin-bottom: 2px; cursor: pointer;">Trust accounts</div>
+        <div style="padding: 8px 12px; font-size: 13px; color: rgba(238,242,255,0.65); margin-bottom: 2px; cursor: pointer;">Waterfall</div>
+        <div style="padding: 8px 12px; font-size: 13px; color: #8b5cf6; margin-bottom: 2px; border-left: 2px solid #8b5cf6; background: rgba(139,92,246,0.14); border-radius: 0 6px 6px 0; cursor: pointer;">Audit log</div>
+      </div>
+
+      <!-- Right Panel -->
+      <div style="flex: 1; padding: 24px 28px; font-family: 'Nunito Sans', sans-serif;">
+
+        <!-- Section header -->
+        <div style="font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #8b5cf6; margin-bottom: 20px;">AUDIT LOG</div>
+
+        <!-- Filters -->
+        <div style="display: flex; gap: 10px; margin-bottom: 20px; padding-bottom: 16px; border-bottom: 1px solid #1a1f35;">
+          <div style="background: #141b2e; border: 1px solid #222c45; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: rgba(238,242,255,0.65); cursor: pointer;">All members ▾</div>
+          <div style="background: #141b2e; border: 1px solid #222c45; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: rgba(238,242,255,0.65); cursor: pointer;">All resources ▾</div>
+          <div style="background: #141b2e; border: 1px solid #222c45; border-radius: 8px; padding: 6px 12px; font-size: 12px; color: rgba(238,242,255,0.65); cursor: pointer;">Last 30 days ▾</div>
+        </div>
+
+        <!-- Table header -->
+        <div style="display: grid; grid-template-columns: 80px 70px 90px 140px 1fr; gap: 12px; padding: 6px 12px; margin-bottom: 4px;">
+          <span style="color: rgba(238,242,255,0.25); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">When</span>
+          <span style="color: rgba(238,242,255,0.25); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Who</span>
+          <span style="color: rgba(238,242,255,0.25); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Action</span>
+          <span style="color: rgba(238,242,255,0.25); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Resource</span>
+          <span style="color: rgba(238,242,255,0.25); font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600;">Changes</span>
+        </div>
+
+        <!-- Row 1: Update -->
+        <div style="display: grid; grid-template-columns: 80px 70px 90px 140px 1fr; gap: 12px; padding: 8px 12px; border-top: 1px solid rgba(26,31,53,0.5); align-items: start;">
+          <span style="color: rgba(238,242,255,0.40); font-size: 12px; font-family: 'JetBrains Mono', monospace;">2h ago</span>
+          <span style="color: rgba(238,242,255,0.92); font-size: 12px;">Sarah</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; color: rgba(238,242,255,0.65); font-size: 11px; background: rgba(238,242,255,0.06); padding: 2px 8px; border-radius: 4px; width: fit-content;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            Updated
+          </span>
+          <div>
+            <div style="color: rgba(238,242,255,0.65); font-size: 12px;">British Gas</div>
+            <div style="color: rgba(238,242,255,0.25); font-size: 10px; margin-top: 1px;">Committed Spend</div>
+          </div>
+          <div style="font-size: 12px; font-family: 'JetBrains Mono', monospace;">
+            <span style="color: rgba(238,242,255,0.40);">amount</span>
+            <span style="color: rgba(238,242,255,0.25); margin: 0 4px;">£98</span>
+            <span style="color: rgba(238,242,255,0.40);">→</span>
+            <span style="color: rgba(238,242,255,0.92); margin-left: 4px;">£122</span>
+          </div>
+        </div>
+
+        <!-- Row 2: Create -->
+        <div style="display: grid; grid-template-columns: 80px 70px 90px 140px 1fr; gap: 12px; padding: 8px 12px; border-top: 1px solid rgba(26,31,53,0.5); align-items: start;">
+          <span style="color: rgba(238,242,255,0.40); font-size: 12px; font-family: 'JetBrains Mono', monospace;">5h ago</span>
+          <span style="color: rgba(238,242,255,0.92); font-size: 12px;">Gabriel</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; color: rgba(238,242,255,0.65); font-size: 11px; background: rgba(238,242,255,0.06); padding: 2px 8px; border-radius: 4px; width: fit-content;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Created
+          </span>
+          <div>
+            <div style="color: rgba(238,242,255,0.65); font-size: 12px;">Netflix</div>
+            <div style="color: rgba(238,242,255,0.25); font-size: 10px; margin-top: 1px;">Discretionary</div>
+          </div>
+          <div style="font-size: 12px; font-family: 'JetBrains Mono', monospace;">
+            <div style="margin-bottom: 3px;"><span style="color: rgba(238,242,255,0.40);">name</span><span style="color: rgba(238,242,255,0.92); margin-left: 8px;">Netflix</span></div>
+            <div><span style="color: rgba(238,242,255,0.40);">amount</span><span style="color: rgba(238,242,255,0.92); margin-left: 8px;">£15.99</span></div>
+          </div>
+        </div>
+
+        <!-- Row 3: Invite -->
+        <div style="display: grid; grid-template-columns: 80px 70px 90px 140px 1fr; gap: 12px; padding: 8px 12px; border-top: 1px solid rgba(26,31,53,0.5); align-items: start;">
+          <span style="color: rgba(238,242,255,0.40); font-size: 12px; font-family: 'JetBrains Mono', monospace;">Yesterday</span>
+          <span style="color: rgba(238,242,255,0.92); font-size: 12px;">Gabriel</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; color: rgba(238,242,255,0.65); font-size: 11px; background: rgba(238,242,255,0.06); padding: 2px 8px; border-radius: 4px; width: fit-content;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="14"/><line x1="22" y1="11" x2="16" y2="11"/></svg>
+            Invited
+          </span>
+          <div>
+            <div style="color: rgba(238,242,255,0.65); font-size: 12px;">sarah@email.com</div>
+            <div style="color: rgba(238,242,255,0.25); font-size: 10px; margin-top: 1px;">Household · Member</div>
+          </div>
+          <div style="font-size: 12px; font-family: 'JetBrains Mono', monospace;">
+            <span style="color: rgba(238,242,255,0.40);">role</span>
+            <span style="color: rgba(238,242,255,0.92); margin-left: 8px;">member</span>
+          </div>
+        </div>
+
+        <!-- Row 4: Delete -->
+        <div style="display: grid; grid-template-columns: 80px 70px 90px 140px 1fr; gap: 12px; padding: 8px 12px; border-top: 1px solid rgba(26,31,53,0.5); align-items: start;">
+          <span style="color: rgba(238,242,255,0.40); font-size: 12px; font-family: 'JetBrains Mono', monospace;">2 days</span>
+          <span style="color: rgba(238,242,255,0.92); font-size: 12px;">Gabriel</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; color: rgba(238,242,255,0.65); font-size: 11px; background: rgba(238,242,255,0.06); padding: 2px 8px; border-radius: 4px; width: fit-content;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+            Deleted
+          </span>
+          <div>
+            <div style="color: rgba(238,242,255,0.65); font-size: 12px;">Sky TV</div>
+            <div style="color: rgba(238,242,255,0.25); font-size: 10px; margin-top: 1px;">Committed Spend</div>
+          </div>
+          <div style="font-size: 12px; font-family: 'JetBrains Mono', monospace;">
+            <div style="margin-bottom: 3px;"><span style="color: rgba(238,242,255,0.40);">name</span><span style="color: rgba(238,242,255,0.25); margin-left: 8px; text-decoration: line-through;">Sky TV</span></div>
+            <div><span style="color: rgba(238,242,255,0.40);">amount</span><span style="color: rgba(238,242,255,0.25); margin-left: 8px; text-decoration: line-through;">£43</span></div>
+          </div>
+        </div>
+
+        <!-- Row 5: Multi-field update -->
+        <div style="display: grid; grid-template-columns: 80px 70px 90px 140px 1fr; gap: 12px; padding: 8px 12px; border-top: 1px solid rgba(26,31,53,0.5); align-items: start;">
+          <span style="color: rgba(238,242,255,0.40); font-size: 12px; font-family: 'JetBrains Mono', monospace;">3 days</span>
+          <span style="color: rgba(238,242,255,0.92); font-size: 12px;">Sarah</span>
+          <span style="display: inline-flex; align-items: center; gap: 5px; color: rgba(238,242,255,0.65); font-size: 11px; background: rgba(238,242,255,0.06); padding: 2px 8px; border-radius: 4px; width: fit-content;">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+            Updated
+          </span>
+          <div>
+            <div style="color: rgba(238,242,255,0.65); font-size: 12px;">Salary</div>
+            <div style="color: rgba(238,242,255,0.25); font-size: 10px; margin-top: 1px;">Income</div>
+          </div>
+          <div style="font-size: 12px; font-family: 'JetBrains Mono', monospace;">
+            <div style="margin-bottom: 3px;">
+              <span style="color: rgba(238,242,255,0.40);">amount</span>
+              <span style="color: rgba(238,242,255,0.25); margin: 0 4px;">£3,200</span>
+              <span style="color: rgba(238,242,255,0.40);">→</span>
+              <span style="color: rgba(238,242,255,0.92); margin-left: 4px;">£3,450</span>
+            </div>
+            <div>
+              <span style="color: rgba(238,242,255,0.40);">name</span>
+              <span style="color: rgba(238,242,255,0.25); margin: 0 4px;">Salary</span>
+              <span style="color: rgba(238,242,255,0.40);">→</span>
+              <span style="color: rgba(238,242,255,0.92); margin-left: 4px;">Base Salary</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Load more -->
+        <div style="text-align: center; margin-top: 16px; padding-top: 14px; border-top: 1px solid #1a1f35;">
+          <span style="color: #8b5cf6; font-size: 12px; font-family: 'Nunito Sans', sans-serif; cursor: pointer;">Load older entries</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
