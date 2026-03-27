@@ -2,7 +2,8 @@ import { useState } from "react";
 import GhostAddButton from "./GhostAddButton";
 import ItemAreaRow from "./ItemAreaRow";
 import ItemForm from "./ItemForm";
-import EmptyStateCard from "./EmptyStateCard";
+import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
+import { getEmptyStateCopy } from "./emptyStateCopy";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useCreateItem, useDeleteItem, type TierItemRow } from "@/hooks/useWaterfall";
 import { toGBP } from "@finplan/shared";
@@ -115,10 +116,9 @@ export default function ItemArea({
 
         {/* Empty state */}
         {items.length === 0 && !isAddingItem && (
-          <EmptyStateCard
-            subcategoryName={subcategory.name}
-            tier={tier}
-            onAddItem={() => setIsAddingItem(true)}
+          <GhostedListEmpty
+            ctaText={getEmptyStateCopy(subcategory.name, tier).body}
+            onCtaClick={() => setIsAddingItem(true)}
           />
         )}
 

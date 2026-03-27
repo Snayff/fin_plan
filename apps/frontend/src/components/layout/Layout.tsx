@@ -23,12 +23,12 @@ const NAV_ITEMS_GROUP2 = [
 ] as const;
 
 const NAV_ITEMS_GROUP3 = [
-  { to: "/goals", label: "Goals", colorClass: "text-foreground/50" },
-  { to: "/gifts", label: "Gifts", colorClass: "text-foreground/50" },
-  { to: "/help", label: "Help", colorClass: "text-foreground/50" },
+  { to: "/goals", label: "Goals", colorClass: "text-foreground" },
+  { to: "/gifts", label: "Gifts", colorClass: "text-foreground" },
+  { to: "/help", label: "Help", colorClass: "text-foreground" },
 ] as const;
 
-const SETTINGS_ITEM = { to: "/settings", label: "Settings", colorClass: "text-foreground/50" };
+const SETTINGS_ITEM = { to: "/settings", label: "Settings", colorClass: "text-foreground" };
 
 export default function Layout({ children }: { children: ReactNode }) {
   const logout = useAuthStore((s) => s.logout);
@@ -90,7 +90,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                           item.colorClass,
                           isActive
                             ? "opacity-100 bg-accent/10"
-                            : "opacity-50 hover:opacity-80 hover:bg-accent/5"
+                            : "opacity-70 hover:opacity-90 hover:bg-accent/5"
                         )
                       }
                     >
@@ -131,7 +131,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   item.colorClass,
                   isActive
                     ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
-                    : "opacity-50 hover:opacity-80"
+                    : "opacity-70 hover:opacity-90"
                 )
               }
             >
@@ -153,7 +153,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   item.colorClass,
                   isActive
                     ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
-                    : "opacity-50 hover:opacity-80"
+                    : "opacity-70 hover:opacity-90"
                 )
               }
             >
@@ -175,7 +175,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                   item.colorClass,
                   isActive
                     ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
-                    : "opacity-50 hover:opacity-80"
+                    : "opacity-70 hover:opacity-90"
                 )
               }
             >
@@ -190,7 +190,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                 SETTINGS_ITEM.colorClass,
                 isActive
                   ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
-                  : "opacity-50 hover:opacity-80"
+                  : "opacity-70 hover:opacity-90"
               )
             }
           >

@@ -72,7 +72,7 @@ describe("ItemArea", () => {
 
   it("shows empty state when no items", () => {
     renderArea([]);
-    expect(screen.getByText("Add your housing costs")).toBeTruthy();
+    expect(screen.getByText(/rent, mortgage, council tax/i)).toBeTruthy();
   });
 
   it("shows add form when GhostAddButton is clicked", async () => {
