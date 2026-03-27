@@ -1,0 +1,175 @@
+<h2>Page Title Sizing — Overview Page</h2>
+<p class="subtitle">Overview has no tier total, so the header is just the page name. Snapshot context stays in its own strip below.</p>
+
+<div class="cards" style="grid-template-columns: 1fr 1fr 1fr;">
+
+  <!-- Option A: 13px -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0;">
+      <div style="background: #080a14; border-radius: 6px; overflow: hidden; height: 320px; display: flex; flex-direction: column;">
+        <!-- Nav bar -->
+        <div style="padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; gap: 12px; align-items: center; font-size: 11px; flex-shrink: 0;">
+          <span style="font-weight: 700;">finplan</span>
+          <span style="color: #8b5cf6; text-decoration: underline; text-underline-offset: 4px;">Overview</span>
+          <span style="color: rgba(255,255,255,0.4);">Income</span>
+          <span style="color: rgba(255,255,255,0.4);">Committed</span>
+        </div>
+        <!-- Snapshot strip -->
+        <div style="padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 6px; font-size: 10px; flex-shrink: 0;">
+          <span style="color: rgba(255,255,255,0.35);">Snapshots · 03/26</span>
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6;"></span>
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15);"></span>
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15);"></span>
+        </div>
+        <div style="display: flex; flex: 1; min-height: 0;">
+          <!-- Left panel -->
+          <div style="width: 200px; border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column;">
+            <!-- Fixed header -->
+            <div style="padding: 14px 16px 18px; flex-shrink: 0;">
+              <div style="font-size: 13px; font-weight: 700; color: #8b5cf6; text-transform: uppercase; letter-spacing: 0.09em;">Overview</div>
+            </div>
+            <!-- Waterfall tiers -->
+            <div style="flex: 1; padding: 0 12px;">
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #60a5fa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Income</span>
+                <span style="color: #60a5fa; font-family: monospace;">£600</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #f97316; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Committed</span>
+                <span style="color: #f97316; font-family: monospace;">£320</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #a78bfa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Discretionary</span>
+                <span style="color: #a78bfa; font-family: monospace;">£180</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #2dd4bf; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Surplus</span>
+                <span style="color: #2dd4bf; font-family: monospace;">£100</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex: 1; background: #0a0e1a;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — 13px</h3>
+      <p>Same size as the tier headings below it. "OVERVIEW" at 13px blends into the hierarchy — risks looking like just another tier label.</p>
+    </div>
+  </div>
+
+  <!-- Option B: 15px -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0;">
+      <div style="background: #080a14; border-radius: 6px; overflow: hidden; height: 320px; display: flex; flex-direction: column;">
+        <!-- Nav bar -->
+        <div style="padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; gap: 12px; align-items: center; font-size: 11px; flex-shrink: 0;">
+          <span style="font-weight: 700;">finplan</span>
+          <span style="color: #8b5cf6; text-decoration: underline; text-underline-offset: 4px;">Overview</span>
+          <span style="color: rgba(255,255,255,0.4);">Income</span>
+          <span style="color: rgba(255,255,255,0.4);">Committed</span>
+        </div>
+        <!-- Snapshot strip -->
+        <div style="padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 6px; font-size: 10px; flex-shrink: 0;">
+          <span style="color: rgba(255,255,255,0.35);">Snapshots · 03/26</span>
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6;"></span>
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15);"></span>
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15);"></span>
+        </div>
+        <div style="display: flex; flex: 1; min-height: 0;">
+          <!-- Left panel -->
+          <div style="width: 200px; border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column;">
+            <!-- Fixed header -->
+            <div style="padding: 14px 16px 18px; flex-shrink: 0;">
+              <div style="font-size: 15px; font-weight: 700; color: #8b5cf6; text-transform: uppercase; letter-spacing: 0.09em;">Overview</div>
+            </div>
+            <!-- Waterfall tiers -->
+            <div style="flex: 1; padding: 0 12px;">
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #60a5fa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Income</span>
+                <span style="color: #60a5fa; font-family: monospace;">£600</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #f97316; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Committed</span>
+                <span style="color: #f97316; font-family: monospace;">£320</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #a78bfa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Discretionary</span>
+                <span style="color: #a78bfa; font-family: monospace;">£180</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #2dd4bf; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Surplus</span>
+                <span style="color: #2dd4bf; font-family: monospace;">£100</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex: 1; background: #0a0e1a;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — 15px</h3>
+      <p>Clear step above the 11px tier headings. Reads as the page title without overwhelming the waterfall cascade below.</p>
+    </div>
+  </div>
+
+  <!-- Option C: 18px -->
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding: 0;">
+      <div style="background: #080a14; border-radius: 6px; overflow: hidden; height: 320px; display: flex; flex-direction: column;">
+        <!-- Nav bar -->
+        <div style="padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; gap: 12px; align-items: center; font-size: 11px; flex-shrink: 0;">
+          <span style="font-weight: 700;">finplan</span>
+          <span style="color: #8b5cf6; text-decoration: underline; text-underline-offset: 4px;">Overview</span>
+          <span style="color: rgba(255,255,255,0.4);">Income</span>
+          <span style="color: rgba(255,255,255,0.4);">Committed</span>
+        </div>
+        <!-- Snapshot strip -->
+        <div style="padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.06); display: flex; align-items: center; gap: 6px; font-size: 10px; flex-shrink: 0;">
+          <span style="color: rgba(255,255,255,0.35);">Snapshots · 03/26</span>
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #8b5cf6;"></span>
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15);"></span>
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15);"></span>
+        </div>
+        <div style="display: flex; flex: 1; min-height: 0;">
+          <!-- Left panel -->
+          <div style="width: 200px; border-right: 1px solid rgba(255,255,255,0.06); display: flex; flex-direction: column;">
+            <!-- Fixed header -->
+            <div style="padding: 14px 16px 18px; flex-shrink: 0;">
+              <div style="font-size: 18px; font-weight: 700; color: #8b5cf6; text-transform: uppercase; letter-spacing: 0.09em;">Overview</div>
+            </div>
+            <!-- Waterfall tiers -->
+            <div style="flex: 1; padding: 0 12px;">
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #60a5fa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Income</span>
+                <span style="color: #60a5fa; font-family: monospace;">£600</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #f97316; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Committed</span>
+                <span style="color: #f97316; font-family: monospace;">£320</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #a78bfa; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Discretionary</span>
+                <span style="color: #a78bfa; font-family: monospace;">£180</span>
+              </div>
+              <div style="display: flex; justify-content: space-between; padding: 6px 4px; font-size: 11px;">
+                <span style="color: #2dd4bf; font-weight: 600; text-transform: uppercase; letter-spacing: 0.06em;">Surplus</span>
+                <span style="color: #2dd4bf; font-family: monospace;">£100</span>
+              </div>
+            </div>
+          </div>
+          <div style="flex: 1; background: #0a0e1a;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C — 18px</h3>
+      <p>Strong presence. Creates a clear hierarchy — but the jump from 18px title to 11px tier headings is steep. "OVERVIEW" at this size with uppercase + spacing is quite bold.</p>
+    </div>
+  </div>
+
+</div>
+
+<div style="margin-top: 20px; padding: 12px 16px; background: rgba(255,255,255,0.03); border-radius: 8px; font-size: 13px; color: rgba(255,255,255,0.5);">
+  <strong style="color: rgba(255,255,255,0.7);">Key difference from tier pages:</strong> Overview uses <code>page-accent</code> (#8b5cf6 violet) instead of a tier colour. No total — the waterfall tiers below already show their own totals. The existing full-width <code>OverviewPageHeader</code> strip would be removed.
+</div>

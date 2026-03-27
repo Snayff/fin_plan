@@ -165,14 +165,15 @@ Gradient text is reserved for **callout words** — special engagement phrases, 
 
 Six levels in the left panel, each a clear visual step:
 
-| Level                | Size | Weight | Font           | Colour                     | Context                                                 |
-| -------------------- | ---- | ------ | -------------- | -------------------------- | ------------------------------------------------------- |
-| Right panel headline | 30px | 800    | `font-numeric` | `text-primary`             | Selected item's value in detail view                    |
-| Tier total           | 15px | 600    | `font-numeric` | `text-tier-*`              | Sum next to each tier heading, in tier colour           |
-| Tier heading         | 13px | 600    | `font-heading` | `text-tier-*`              | `INCOME`, `COMMITTED`, etc. (uppercase, 0.09em spacing) |
-| Item name            | 13px | 400    | `font-body`    | `text-secondary` (#94a3b8) | Label for each line item — dimmed to recede             |
-| Item amount          | 13px | 400    | `font-numeric` | `#cbd5e1`                  | Value for each line item — subtle but readable          |
-| Metadata             | 12px | 500    | `font-body`    | varies                     | Staleness age, dates, helper text                       |
+| Level                | Size | Weight | Font           | Colour                        | Context                                                                                                               |
+| -------------------- | ---- | ------ | -------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Right panel headline | 30px | 800    | `font-numeric` | `text-primary`                | Selected item's value in detail view                                                                                  |
+| Page title           | 18px | 700    | `font-heading` | `text-tier-*` / `page-accent` | Fixed at top of left panel (uppercase, 0.09em spacing). Tier pages use tier colour; non-tier pages use `page-accent`. |
+| Tier total           | 15px | 600    | `font-numeric` | `text-tier-*`                 | Sum next to each tier heading, in tier colour                                                                         |
+| Tier heading         | 13px | 600    | `font-heading` | `text-tier-*`                 | `INCOME`, `COMMITTED`, etc. (uppercase, 0.09em spacing)                                                               |
+| Item name            | 13px | 400    | `font-body`    | `text-secondary` (#94a3b8)    | Label for each line item — dimmed to recede                                                                           |
+| Item amount          | 13px | 400    | `font-numeric` | `#cbd5e1`                     | Value for each line item — subtle but readable                                                                        |
+| Metadata             | 12px | 500    | `font-body`    | varies                        | Staleness age, dates, helper text                                                                                     |
 
 Tier headings and totals use the same colour as their tier (`text-tier-income`, `text-tier-committed`, `text-tier-discretionary`, `text-tier-surplus`). Surplus is treated identically to other tiers — same size, same weight, just teal.
 
