@@ -83,6 +83,12 @@ Features that have completed the full pipeline and shipped, organised by categor
 
 ## UI
 
+### Data Item Entries
+
+- **Implemented:** 2026-03-27
+- **Spec:** `docs/5. built/ui/data-item-entries/data-item-entries-spec.md`
+- **Summary:** Refines the three states of data item rows on tier pages — collapsed, expanded read-only, and editing — for improved information density, visual hierarchy, and interaction consistency.
+
 ### Foundation UI Primitives
 
 - **Spec:** `docs/5. built/ui/foundation-ui-primitives/foundation-ui-primitives-spec.md`
