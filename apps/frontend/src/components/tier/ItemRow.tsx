@@ -60,8 +60,8 @@ export default function ItemRow({
 
         {/* Left: name + metadata */}
         <span className="flex-1 flex flex-col gap-px">
-          <span className="text-foreground/65">{item.name}</span>
-          <span className="text-[11px] text-foreground/30">
+          <span className="text-text-secondary">{item.name}</span>
+          <span className="text-[11px] text-text-tertiary">
             {SPEND_TYPE_LABELS[item.spendType]} · {item.subcategoryName}
           </span>
         </span>
@@ -71,7 +71,7 @@ export default function ItemRow({
           <span
             className={[
               "font-numeric",
-              amounts.monthly.bright ? "text-foreground/70" : "text-foreground/30",
+              amounts.monthly.bright ? "text-text-secondary" : "text-text-tertiary",
             ].join(" ")}
           >
             {amounts.monthly.value}
@@ -80,7 +80,7 @@ export default function ItemRow({
             <span
               className={[
                 "font-numeric text-[11px]",
-                amounts.yearly.bright ? "text-foreground/70" : "text-foreground/30",
+                amounts.yearly.bright ? "text-text-secondary" : "text-text-tertiary",
               ].join(" ")}
             >
               {amounts.yearly.value}

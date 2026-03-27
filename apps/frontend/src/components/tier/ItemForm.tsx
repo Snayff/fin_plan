@@ -102,9 +102,9 @@ export default function ItemForm({
     });
   }
 
-  const labelClass = "text-foreground/30 uppercase tracking-[0.07em] text-[10px]";
+  const labelClass = "text-text-muted uppercase tracking-[0.07em] text-[10px]";
   const inputClass =
-    "rounded-md border border-foreground/10 bg-foreground/[0.04] px-3 py-1.5 text-sm text-foreground/85 placeholder:italic placeholder:text-foreground/[0.18] focus:outline-none focus:border-page-accent/60";
+    "rounded-md border border-foreground/10 bg-foreground/[0.04] px-3 py-1.5 text-sm text-text-secondary placeholder:italic placeholder:text-text-muted focus:outline-none focus:border-page-accent/60";
 
   return (
     <div
@@ -118,7 +118,7 @@ export default function ItemForm({
         {/* Name */}
         <div className="col-span-2 flex flex-col gap-1">
           <label className={labelClass}>
-            Name <span className="text-foreground/25">*</span>
+            Name <span className="text-text-muted">*</span>
           </label>
           <input
             type="text"
@@ -133,7 +133,7 @@ export default function ItemForm({
         {/* Amount */}
         <div className="flex flex-col gap-1">
           <label className={labelClass}>
-            Amount <span className="text-foreground/25">*</span>
+            Amount <span className="text-text-muted">*</span>
           </label>
           <input
             type="text"
@@ -214,7 +214,7 @@ export default function ItemForm({
         <button
           type="button"
           onClick={onCancel}
-          className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-foreground/50 hover:bg-foreground/5 transition-colors"
+          className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-text-tertiary hover:bg-foreground/5 transition-colors"
         >
           Cancel
         </button>
@@ -225,7 +225,7 @@ export default function ItemForm({
           <button
             type="button"
             onClick={onDelete}
-            className="text-xs text-foreground/25 hover:text-red-400 transition-colors"
+            className="text-xs text-text-muted hover:text-red-400 transition-colors"
           >
             Delete
           </button>

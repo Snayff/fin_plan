@@ -42,20 +42,20 @@ export default function ItemAccordion({ item, config, onEdit, now, stalenessMont
         <div className="flex-1 flex flex-col gap-2">
           {/* Notes */}
           <div>
-            <span className="block text-foreground/30 uppercase tracking-[0.07em] text-[10px]">
+            <span className="block text-text-muted uppercase tracking-[0.07em] text-[10px]">
               Notes
             </span>
             {item.notes ? (
-              <p className="text-xs italic text-foreground/50">{item.notes}</p>
+              <p className="text-xs italic text-text-tertiary">{item.notes}</p>
             ) : (
-              <p className="text-xs text-foreground/20">No notes</p>
+              <p className="text-xs text-text-muted">No notes</p>
             )}
           </div>
 
           {/* Last Reviewed — only when stale */}
           {stale && (
             <div>
-              <span className="block text-foreground/30 uppercase tracking-[0.07em] text-[10px]">
+              <span className="block text-text-muted uppercase tracking-[0.07em] text-[10px]">
                 Last Reviewed
               </span>
               <span className="flex items-center gap-1.5 text-xs text-attention">
@@ -70,7 +70,7 @@ export default function ItemAccordion({ item, config, onEdit, now, stalenessMont
         <button
           type="button"
           onClick={onEdit}
-          className="shrink-0 rounded-md border border-foreground/10 px-3 py-1 text-xs text-foreground/60 hover:bg-foreground/5 transition-colors"
+          className="shrink-0 rounded-md border border-foreground/10 px-3 py-1 text-xs text-text-tertiary hover:bg-foreground/5 transition-colors"
         >
           Edit
         </button>
