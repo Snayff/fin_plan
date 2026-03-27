@@ -6,12 +6,12 @@ import type {
   CreateIncomeSourceInput,
   UpdateIncomeSourceInput,
   EndIncomeSourceInput,
-  CreateCommittedBillInput,
+  CreateCommittedItemInput,
   UpdateCommittedBillInput,
   CreateYearlyBillInput,
   UpdateYearlyBillInput,
-  CreateDiscretionaryCategoryInput,
-  UpdateDiscretionaryCategoryInput,
+  CreateDiscretionaryItemInput,
+  UpdateDiscretionaryItemInput,
   CreateSavingsAllocationInput,
   UpdateSavingsAllocationInput,
   ConfirmBatchInput,
@@ -38,7 +38,7 @@ export const waterfallService = {
 
   // Committed bills
   listCommitted: () => apiClient.get<any[]>("/api/waterfall/committed"),
-  createCommitted: (data: CreateCommittedBillInput) =>
+  createCommitted: (data: CreateCommittedItemInput) =>
     apiClient.post<any>("/api/waterfall/committed", data),
   updateCommitted: (id: string, data: UpdateCommittedBillInput) =>
     apiClient.patch<any>(`/api/waterfall/committed/${id}`, data),
@@ -55,9 +55,9 @@ export const waterfallService = {
 
   // Discretionary
   listDiscretionary: () => apiClient.get<any[]>("/api/waterfall/discretionary"),
-  createDiscretionary: (data: CreateDiscretionaryCategoryInput) =>
+  createDiscretionary: (data: CreateDiscretionaryItemInput) =>
     apiClient.post<any>("/api/waterfall/discretionary", data),
-  updateDiscretionary: (id: string, data: UpdateDiscretionaryCategoryInput) =>
+  updateDiscretionary: (id: string, data: UpdateDiscretionaryItemInput) =>
     apiClient.patch<any>(`/api/waterfall/discretionary/${id}`, data),
   deleteDiscretionary: (id: string) => apiClient.delete<void>(`/api/waterfall/discretionary/${id}`),
   confirmDiscretionary: (id: string) =>

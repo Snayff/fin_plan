@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { waterfallService } from "@/services/waterfall.service";
+import { showError } from "@/lib/toast";
 
 export const WATERFALL_KEYS = {
   summary: ["waterfall", "summary"] as const,
@@ -98,7 +99,7 @@ export function useUpdateItem() {
         case "yearly":
           return waterfallService.updateYearly(id, data);
         case "discretionary":
-          return waterfallService.updateDiscretionary(id, { monthlyBudget: data.amount });
+          return waterfallService.updateDiscretionary(id, { amount: data.amount });
         case "savings":
           return waterfallService.updateSavings(id, { monthlyAmount: data.amount });
         default:
@@ -123,17 +124,36 @@ export function useSubcategories(tier: "income" | "committed" | "discretionary")
   });
 }
 
+const spendTypeToFrequency: Record<string, "monthly" | "annual" | "one_off"> = {
+  monthly: "monthly",
+  yearly: "annual",
+  one_off: "one_off",
+};
+
 export function useCreateItem(tier: "income" | "committed" | "discretionary") {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (data: Record<string, unknown>) => {
-      if (tier === "income") return waterfallService.createIncome(data as any);
+      if (tier === "income") {
+        const { spendType, subcategoryId: _subcategoryId, notes: _notes, ...rest } = data;
+        return waterfallService.createIncome({
+          ...rest,
+          frequency: spendTypeToFrequency[spendType as string] ?? "monthly",
+        } as any);
+      }
       if (tier === "committed") return waterfallService.createCommitted(data as any);
       return waterfallService.createDiscretionary(data as any);
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : ((error as Record<string, unknown>)?.message as string | undefined);
+      showError(message ?? "Failed to save item");
     },
   });
 }
