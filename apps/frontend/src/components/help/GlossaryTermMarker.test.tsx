@@ -47,14 +47,13 @@ describe("GlossaryTermMarker", () => {
     expect(screen.queryByRole("dialog")).toBeNull();
   });
 
-  it("shows Learn more link navigating to /help", async () => {
+  it("does not show a Learn more link", async () => {
     renderMarker();
     const trigger = screen.getByText("Waterfall");
     await act(async () => {
       fireEvent.mouseEnter(trigger);
       await new Promise((r) => setTimeout(r, 200));
     });
-    const learnMore = screen.getByText("Learn more");
-    expect(learnMore.closest("a")?.getAttribute("href")).toContain("/help");
+    expect(screen.queryByText("Learn more")).toBeNull();
   });
 });
