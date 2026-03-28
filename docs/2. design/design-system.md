@@ -1094,14 +1094,15 @@ Toast notifications: non-blocking, anchor consistently (bottom-right), auto-dism
 
 Meaningful motion communicates spatial relationships. All animations follow this spec:
 
-| Transition                              | Direction            | Duration  | Easing         |
-| --------------------------------------- | -------------------- | --------- | -------------- |
-| Right panel deeper (State 2 → State 3)  | Slide-left entrance  | 150–200ms | ease-out-quart |
-| Right panel shallower (breadcrumb back) | Slide-right entrance | 150–200ms | ease-out-quart |
-| Wizard step forward                     | Slide-left           | 150–200ms | ease-out-quart |
-| Wizard step back                        | Slide-right          | 150–200ms | ease-out-quart |
-| Toast entrance                          | Fade-up              | 150ms     | ease-out-quart |
-| Toast exit                              | Fade-out             | 150ms     | ease-in        |
+| Transition                              | Direction                        | Duration  | Easing         |
+| --------------------------------------- | -------------------------------- | --------- | -------------- |
+| Right panel deeper (State 2 → State 3)  | Slide-left entrance              | 150–200ms | ease-out-quart |
+| Right panel shallower (breadcrumb back) | Slide-right entrance             | 150–200ms | ease-out-quart |
+| Tier page left panel subcategories      | Stagger from left (x: -22px → 0) | 200ms/row | ease-out-quart |
+| Wizard step forward                     | Slide-left                       | 150–200ms | ease-out-quart |
+| Wizard step back                        | Slide-right                      | 150–200ms | ease-out-quart |
+| Toast entrance                          | Fade-up                          | 150ms     | ease-out-quart |
+| Toast exit                              | Fade-out                         | 150ms     | ease-in        |
 
 **Easing Canon**
 

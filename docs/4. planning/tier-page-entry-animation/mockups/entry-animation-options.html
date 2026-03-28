@@ -1,0 +1,197 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600&family=Nunito+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  .demo-wrap {
+    display: flex;
+    gap: 32px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .panel-demo {
+    flex: 1;
+    min-width: 280px;
+    background: #0e1120;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tier-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #a78bfa;
+    flex-shrink: 0;
+  }
+
+  .panel-header h4 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #a78bfa;
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+
+  .item-list {
+    padding: 8px 0;
+  }
+
+  .item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .item-row:last-child { border-bottom: none; }
+
+  .item-name {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .item-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* ---- Option A: Whole list slides as one block ---- */
+  @keyframes slide-from-left {
+    from { transform: translateX(-28px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+  }
+
+  .option-a .item-list {
+    animation: slide-from-left 200ms cubic-bezier(0.25, 1, 0.5, 1) both;
+  }
+
+  /* ---- Option B: Items stagger in from left ---- */
+  @keyframes slide-row-in {
+    from { transform: translateX(-22px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+  }
+
+  .option-b .item-row {
+    opacity: 0;
+    animation: slide-row-in 200ms cubic-bezier(0.25, 1, 0.5, 1) forwards;
+  }
+  .option-b .item-row:nth-child(1) { animation-delay: 0ms; }
+  .option-b .item-row:nth-child(2) { animation-delay: 60ms; }
+  .option-b .item-row:nth-child(3) { animation-delay: 120ms; }
+  .option-b .item-row:nth-child(4) { animation-delay: 180ms; }
+  .option-b .item-row:nth-child(5) { animation-delay: 240ms; }
+
+  .replay-btn {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 5px 14px;
+    background: rgba(167, 139, 250, 0.15);
+    border: 1px solid rgba(167, 139, 250, 0.3);
+    border-radius: 6px;
+    color: #a78bfa;
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .replay-btn:hover { background: rgba(167, 139, 250, 0.25); }
+
+  .demo-label {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+</style>
+
+<h2>Entry animation — initial tier selection</h2>
+<p class="subtitle">When a tier is clicked for the first time, how should the subcategory list enter?</p>
+
+<div class="demo-wrap" style="margin-top: 24px;">
+
+  <div class="options" style="flex-direction: column; width: 100%;">
+    <div style="display: flex; gap: 32px; flex-wrap: wrap;">
+
+      <!-- Option A -->
+      <div style="flex: 1; min-width: 280px;">
+        <p class="demo-label">Option A — Single block</p>
+        <div class="option" data-choice="a" onclick="toggleSelect(this)" style="padding: 0; overflow: hidden; border-radius: 12px;">
+          <div class="panel-demo option-a" id="demo-a">
+            <div class="panel-header">
+              <div class="tier-dot"></div>
+              <h4>Committed Spend</h4>
+            </div>
+            <div class="item-list">
+              <div class="item-row"><span class="item-name">Rent / Mortgage</span><span class="item-value">£1,250</span></div>
+              <div class="item-row"><span class="item-name">Council Tax</span><span class="item-value">£180</span></div>
+              <div class="item-row"><span class="item-name">Electricity</span><span class="item-value">£95</span></div>
+              <div class="item-row"><span class="item-name">Internet</span><span class="item-value">£42</span></div>
+              <div class="item-row"><span class="item-name">Car Insurance</span><span class="item-value">£68</span></div>
+            </div>
+          </div>
+          <div style="padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div class="content">
+              <h3 style="margin: 0 0 2px; font-size: 14px;">Whole list as one unit</h3>
+              <p style="margin: 0; font-size: 12px;">All rows slide in together, 200ms. Clean, fast, cohesive.</p>
+            </div>
+          </div>
+        </div>
+        <span class="replay-btn" onclick="replay('a')">↺ Replay</span>
+      </div>
+
+      <!-- Option B -->
+      <div style="flex: 1; min-width: 280px;">
+        <p class="demo-label">Option B — Staggered rows</p>
+        <div class="option" data-choice="b" onclick="toggleSelect(this)" style="padding: 0; overflow: hidden; border-radius: 12px;">
+          <div class="panel-demo option-b" id="demo-b">
+            <div class="panel-header">
+              <div class="tier-dot"></div>
+              <h4>Committed Spend</h4>
+            </div>
+            <div class="item-list">
+              <div class="item-row"><span class="item-name">Rent / Mortgage</span><span class="item-value">£1,250</span></div>
+              <div class="item-row"><span class="item-name">Council Tax</span><span class="item-value">£180</span></div>
+              <div class="item-row"><span class="item-name">Electricity</span><span class="item-value">£95</span></div>
+              <div class="item-row"><span class="item-name">Internet</span><span class="item-value">£42</span></div>
+              <div class="item-row"><span class="item-name">Car Insurance</span><span class="item-value">£68</span></div>
+            </div>
+          </div>
+          <div style="padding: 12px 16px; display: flex; align-items: center; justify-content: space-between;">
+            <div class="content">
+              <h3 style="margin: 0 0 2px; font-size: 14px;">Each row staggers in</h3>
+              <p style="margin: 0; font-size: 12px;">Rows cascade 60ms apart. Communicates list structure, takes ~500ms total.</p>
+            </div>
+          </div>
+        </div>
+        <span class="replay-btn" onclick="replay('b')">↺ Replay</span>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+function replay(id) {
+  const el = document.getElementById('demo-' + id);
+  const cls = 'option-' + id;
+  el.classList.remove(cls);
+  void el.offsetWidth; // force reflow
+  el.classList.add(cls);
+}
+</script>
