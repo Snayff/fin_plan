@@ -91,6 +91,7 @@ export default function TierPage({ tier }: TierPageProps) {
         }
         right={
           <ItemArea
+            key={resolvedSelectedId}
             tier={tier}
             config={config}
             subcategory={selectedSubcategory}
