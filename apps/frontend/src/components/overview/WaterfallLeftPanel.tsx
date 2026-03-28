@@ -309,7 +309,7 @@ export function WaterfallLeftPanel({
           headerTestId="tier-heading-surplus"
         />
         <div aria-live="polite" aria-atomic="true">
-          {surplus.percentOfIncome < surplusBenchmark && (
+          {income.total > 0 && surplus.percentOfIncome < surplusBenchmark && (
             <div className="flex items-center gap-1.5 px-2 text-xs text-attention">
               <span className="h-[5px] w-[5px] rounded-full shrink-0 bg-attention" aria-hidden />
               <span>Below benchmark</span>
