@@ -1,20 +1,21 @@
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useWaterfallSummary } from "@/hooks/useWaterfall";
+import { useSettings } from "@/hooks/useSettings";
 import { toGBP } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
 
-const SURPLUS_BENCHMARK_PCT = 10;
-
 export default function SurplusPage() {
   const { data, isLoading } = useWaterfallSummary();
+  const { data: settings } = useSettings();
+  const benchmarkPct = settings?.surplusBenchmarkPct ?? 10;
 
   const income = data?.income.total ?? 0;
   const committed = (data?.committed.monthlyTotal ?? 0) + (data?.committed.monthlyAvg12 ?? 0);
   const discretionary = (data?.discretionary.total ?? 0) + (data?.discretionary.savings.total ?? 0);
   const surplus = data?.surplus.amount ?? income - committed - discretionary;
   const surplusPct = data?.surplus.percentOfIncome ?? (income > 0 ? (surplus / income) * 100 : 0);
-  const showBenchmarkWarning = !isLoading && surplus < (income * SURPLUS_BENCHMARK_PCT) / 100;
+  const showBenchmarkWarning = !isLoading && income > 0 && surplusPct < benchmarkPct;
 
   return (
     <div data-page="surplus" data-testid="surplus-page" className="h-full">
@@ -64,9 +65,8 @@ export default function SurplusPage() {
                       >
                         <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-attention" />
                         <span>
-                          Your surplus is below your {SURPLUS_BENCHMARK_PCT}% benchmark. A monthly
-                          surplus of around {SURPLUS_BENCHMARK_PCT}% of income is a common planning
-                          benchmark.
+                          Your surplus is below your {benchmarkPct}% benchmark. A monthly surplus of
+                          around {benchmarkPct}% of income is a common planning benchmark.
                         </span>
                       </div>
                     )}

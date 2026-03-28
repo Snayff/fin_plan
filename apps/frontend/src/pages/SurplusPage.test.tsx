@@ -3,6 +3,11 @@ import { renderWithProviders } from "@/test/helpers/render";
 import { screen } from "@testing-library/react";
 import SurplusPage from "./SurplusPage";
 
+mock.module("@/hooks/useSettings", () => ({
+  useSettings: () => ({ data: { surplusBenchmarkPct: 10 } }),
+  useUpdateSettings: () => ({ mutate: () => {}, isPending: false }),
+}));
+
 mock.module("@/hooks/useWaterfall", () => ({
   useWaterfallSummary: () => ({
     isLoading: false,
@@ -66,5 +71,21 @@ describe("SurplusPage — benchmark warning", () => {
     }));
     renderWithProviders(<SurplusPage />, { initialEntries: ["/surplus"] });
     expect(screen.getByTestId("surplus-benchmark-warning")).toBeTruthy();
+  });
+
+  it("does not show benchmark warning when income is 0", () => {
+    mock.module("@/hooks/useWaterfall", () => ({
+      useWaterfallSummary: () => ({
+        isLoading: false,
+        data: {
+          income: { total: 0 },
+          committed: { monthlyTotal: 0, monthlyAvg12: 0 },
+          discretionary: { total: 0, savings: { total: 0 } },
+          surplus: { amount: 0, percentOfIncome: 0 },
+        },
+      }),
+    }));
+    renderWithProviders(<SurplusPage />, { initialEntries: ["/surplus"] });
+    expect(screen.queryByTestId("surplus-benchmark-warning")).toBeNull();
   });
 });
