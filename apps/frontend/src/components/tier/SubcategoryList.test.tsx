@@ -1,7 +1,20 @@
+import React from "react";
 import { describe, it, expect, mock } from "bun:test";
 import { render, screen, fireEvent } from "@testing-library/react";
 import SubcategoryList from "./SubcategoryList";
 import { TIER_CONFIGS } from "./tierConfig";
+
+mock.module("framer-motion", () => ({
+  motion: {
+    div: ({ children, variants: _v, initial: _i, animate: _a, ...props }: any) =>
+      React.createElement("div", props, children),
+    button: ({ children, variants: _v, initial: _i, animate: _a, ...props }: any) =>
+      React.createElement("button", props, children),
+  },
+}));
+
+const motionUtils = { usePrefersReducedMotion: mock(() => false) };
+mock.module("@/utils/motion", () => motionUtils);
 
 const subcategories = [
   { id: "sub-housing", name: "Housing", tier: "committed" as const, sortOrder: 0, isLocked: false },
@@ -116,5 +129,11 @@ describe("SubcategoryList", () => {
     );
     expect(screen.getByTestId("stale-dot-sub-housing")).toBeTruthy();
     expect(screen.queryByTestId("stale-dot-sub-utilities")).toBeNull();
+  });
+
+  it("calls usePrefersReducedMotion to respect reduced motion preference", () => {
+    motionUtils.usePrefersReducedMotion.mockClear();
+    renderList();
+    expect(motionUtils.usePrefersReducedMotion).toHaveBeenCalled();
   });
 });

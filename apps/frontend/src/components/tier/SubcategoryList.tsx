@@ -1,5 +1,7 @@
+import { motion } from "framer-motion";
 import { toGBP } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
+import { usePrefersReducedMotion } from "@/utils/motion";
 import { isStale } from "./formatAmount";
 import type { TierConfig, TierKey } from "./tierConfig";
 import type { TierItemRow } from "@/hooks/useWaterfall";
@@ -32,6 +34,16 @@ interface Props {
   stalenessMonths?: number;
 }
 
+const containerVariants = {
+  initial: {},
+  animate: { transition: { staggerChildren: 0.06 } },
+};
+
+const rowVariants = {
+  initial: { opacity: 0, x: -22 },
+  animate: { opacity: 1, x: 0, transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] } },
+};
+
 export default function SubcategoryList({
   config,
   subcategories,
@@ -43,6 +55,8 @@ export default function SubcategoryList({
   now = new Date(),
   stalenessMonths = 12,
 }: Props) {
+  const reduced = usePrefersReducedMotion();
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-2 p-4">
@@ -55,7 +69,14 @@ export default function SubcategoryList({
 
   return (
     <div className="flex flex-col h-full">
-      <div role="tablist" aria-label="Subcategories" className="flex-1 overflow-y-auto">
+      <motion.div
+        role="tablist"
+        aria-label="Subcategories"
+        className="flex-1 overflow-y-auto"
+        variants={containerVariants}
+        initial={reduced ? false : "initial"}
+        animate="animate"
+      >
         {subcategories.map((sub) => {
           const isSelected = sub.id === selectedId;
           const summary = subcategoryTotals[sub.id];
@@ -63,13 +84,14 @@ export default function SubcategoryList({
             isStale(item.lastReviewedAt, now, stalenessMonths)
           );
           return (
-            <button
+            <motion.button
               type="button"
               role="tab"
               key={sub.id}
               data-testid={`subcategory-row-${sub.id}`}
               aria-selected={isSelected}
               onClick={() => onSelect(sub.id)}
+              variants={rowVariants}
               className={[
                 "flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors",
                 isSelected
@@ -77,7 +99,6 @@ export default function SubcategoryList({
                   : `border-l-2 border-transparent text-foreground/60 ${config.hoverBgClass}`,
               ].join(" ")}
             >
-              {/* Stale dot column (fixed width, always present) */}
               <span className="w-2 shrink-0 flex items-center justify-center">
                 {isSubStale && (
                   <span
@@ -91,11 +112,11 @@ export default function SubcategoryList({
               <span className="font-numeric text-xs text-foreground/50">
                 {summary ? formatCurrency(toGBP(summary.total)) : "£0"}
               </span>
-            </button>
+            </motion.button>
           );
         })}
-      </div>
-      {/* Tier total */}
+      </motion.div>
+      {/* Tier total — static, not animated */}
       <div
         data-testid="tier-total"
         className="border-t border-foreground/10 px-4 py-3 flex justify-between text-sm"
