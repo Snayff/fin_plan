@@ -72,7 +72,7 @@ export default function ItemArea({
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full max-w-3xl">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/5">
         <div className="flex items-center gap-3">

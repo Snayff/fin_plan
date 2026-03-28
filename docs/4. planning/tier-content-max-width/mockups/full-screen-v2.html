@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Full-screen preview — Option A (faithful)</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Nunito+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #080a14;
+    color: rgba(238,242,255,0.92);
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 13px;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* ── Top Nav ── */
+  .nav {
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    height: 40px;
+    border-bottom: 1px solid rgba(238,242,255,0.06);
+    flex-shrink: 0;
+    gap: 0;
+  }
+  .nav-brand { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 14px; color: rgba(238,242,255,0.9); margin-right: 10px; }
+  .nav-household { font-size: 12px; color: rgba(238,242,255,0.35); margin-right: 24px; }
+  .nav-link { font-size: 12px; color: rgba(238,242,255,0.4); padding: 0 10px; height: 40px; display: flex; align-items: center; }
+  .nav-link.active { color: #38bdf8; border-bottom: 2px solid #38bdf8; font-weight: 600; }
+  .nav-link.committed { color: rgba(167,139,250,0.75); }
+  .nav-link.discretionary { color: rgba(52,211,153,0.75); }
+  .nav-link.surplus { color: rgba(251,191,36,0.75); }
+  .nav-spacer { flex: 1; }
+  .nav-settings { font-size: 12px; color: rgba(238,242,255,0.35); }
+
+  /* ── Shell ── */
+  .shell { display: flex; flex: 1; overflow: hidden; }
+
+  /* ── Left Panel ── */
+  .left-panel {
+    width: 248px;
+    flex-shrink: 0;
+    border-right: 1px solid rgba(238,242,255,0.06);
+    padding: 16px 0;
+    overflow-y: auto;
+  }
+  .tier-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 0 16px 12px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #38bdf8;
+  }
+  .tier-heading-total { font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+  .nav-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 16px;
+    color: rgba(238,242,255,0.5);
+    font-size: 13px;
+  }
+  .nav-item.active { color: #38bdf8; }
+  .nav-item-amt { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+  /* ── Right Panel ── */
+  .right-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0;
+  }
+
+  /* ── Category block ── */
+  .category-block {
+    /* The only change: content is capped at 768px, left-aligned */
+    max-width: 768px;
+  }
+
+  .category-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    position: relative;
+  }
+  .cat-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    color: rgba(238,242,255,0.9);
+  }
+  .cat-count { font-size: 11px; color: rgba(238,242,255,0.35); }
+  .cat-total { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #38bdf8; }
+  .cat-spacer { flex: 1; }
+  .cat-add {
+    font-size: 11px;
+    color: rgba(238,242,255,0.5);
+    border: 1px solid rgba(238,242,255,0.15);
+    border-radius: 4px;
+    padding: 3px 10px;
+  }
+  .cat-divider { height: 1px; background: rgba(238,242,255,0.06); margin: 0; }
+
+  /* ── Item Row ── */
+  .item-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 10px 16px;
+  }
+  .item-dot { width: 8px; flex-shrink: 0; }
+  .item-names { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .item-name { color: rgba(238,242,255,0.65); }
+  .item-meta { font-size: 11px; color: rgba(238,242,255,0.4); }
+  .item-amounts { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+  .item-amt-primary { font-family: 'JetBrains Mono', monospace; color: rgba(238,242,255,0.65); }
+  .item-amt-secondary { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(238,242,255,0.4); }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-brand">finplan</span>
+  <span class="nav-household">Snaith Household</span>
+  <span class="nav-link">Overview</span>
+  <span class="nav-link active">Income</span>
+  <span class="nav-link committed">Committed</span>
+  <span class="nav-link discretionary">Discretionary</span>
+  <span class="nav-link surplus">Surplus</span>
+  <span class="nav-link">Goals</span>
+  <span class="nav-link">Gifts</span>
+  <span class="nav-link">Help</span>
+  <span class="nav-spacer"></span>
+  <span class="nav-settings">Settings</span>
+</nav>
+
+<div class="shell">
+
+  <aside class="left-panel">
+    <div class="tier-heading">
+      <span>Income</span>
+      <span class="tier-heading-total">£3,000</span>
+    </div>
+    <div class="nav-item active">
+      <span>Salary</span>
+      <span class="nav-item-amt">£3,000</span>
+    </div>
+    <div class="nav-item">
+      <span>Dividends</span>
+      <span class="nav-item-amt">£0</span>
+    </div>
+    <div class="nav-item">
+      <span>Other</span>
+      <span class="nav-item-amt">£0</span>
+    </div>
+  </aside>
+
+  <main class="right-panel">
+
+    <div class="category-block">
+      <div class="category-header">
+        <span class="cat-title">Salary</span>
+        <span class="cat-count">1 item</span>
+        <span class="cat-total">£3,000</span>
+        <span class="cat-spacer"></span>
+        <span class="cat-add">+ Add</span>
+      </div>
+      <div class="cat-divider"></div>
+      <div class="item-row">
+        <div class="item-dot"></div>
+        <div class="item-names">
+          <span class="item-name">Cat Salary</span>
+          <span class="item-meta">Monthly · Salary</span>
+        </div>
+        <div class="item-amounts">
+          <span class="item-amt-primary">£3,000/mo</span>
+          <span class="item-amt-secondary">£36,000/yr</span>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+</body>
+</html>
