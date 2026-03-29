@@ -49,6 +49,13 @@ const waterfallServiceMock = {
 
 const snapshotServiceMock = {
   ensureJan1Snapshot: mock(() => Promise.resolve()),
+  ensureTodayAutoSnapshot: mock(() => Promise.resolve()),
+  getFinancialSummary: mock(() =>
+    Promise.resolve({
+      current: { netWorth: null, income: 5000, committed: 1300, discretionary: 800, surplus: 2900 },
+      sparklines: { netWorth: [], income: [], committed: [], discretionary: [], surplus: [] },
+    })
+  ),
 };
 
 mock.module("../services/waterfall.service", () => ({
@@ -209,6 +216,11 @@ beforeEach(() => {
   waterfallServiceMock.deleteAll.mockResolvedValue(undefined);
 
   snapshotServiceMock.ensureJan1Snapshot.mockResolvedValue(undefined as any);
+  snapshotServiceMock.ensureTodayAutoSnapshot.mockResolvedValue(undefined as any);
+  snapshotServiceMock.getFinancialSummary.mockResolvedValue({
+    current: { netWorth: null, income: 5000, committed: 1300, discretionary: 800, surplus: 2900 },
+    sparklines: { netWorth: [], income: [], committed: [], discretionary: [], surplus: [] },
+  } as any);
 
   subcategoryServiceMock.ensureSubcategories.mockResolvedValue(undefined as any);
   subcategoryServiceMock.listByTier.mockResolvedValue([] as any);
@@ -594,5 +606,43 @@ describe("GET /api/waterfall/subcategories/:tier", () => {
     });
 
     expect(res.statusCode).toBe(400);
+  });
+});
+
+describe("GET /api/waterfall/financial-summary", () => {
+  it("returns 401 without auth token", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/waterfall/financial-summary",
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("returns 200 with financial summary shape", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/waterfall/financial-summary",
+      headers: { authorization: "Bearer valid-token" },
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body.current).toBeDefined();
+    expect(body.sparklines).toBeDefined();
+    expect(snapshotServiceMock.getFinancialSummary.mock.calls.length).toBeGreaterThan(0);
+  });
+});
+
+describe("POST /api/waterfall/income — auto-snapshot hook", () => {
+  it("triggers ensureTodayAutoSnapshot after a successful mutation", async () => {
+    snapshotServiceMock.ensureTodayAutoSnapshot.mockClear();
+    waterfallServiceMock.createIncome.mockResolvedValue(mockIncomeSource as any);
+    await app.inject({
+      method: "POST",
+      url: "/api/waterfall/income",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { name: "Salary", amount: 5000, frequency: "monthly", subcategoryId: "sub-1" },
+    });
+    await new Promise((r) => setTimeout(r, 0));
+    expect(snapshotServiceMock.ensureTodayAutoSnapshot.mock.calls.length).toBeGreaterThan(0);
   });
 });

@@ -19,6 +19,16 @@ import {
 export async function waterfallRoutes(fastify: FastifyInstance) {
   const pre = { preHandler: [authMiddleware] };
 
+  fastify.addHook("onResponse", async (request, reply) => {
+    if (
+      ["POST", "PATCH", "DELETE"].includes(request.method) &&
+      reply.statusCode < 300 &&
+      request.householdId
+    ) {
+      snapshotService.ensureTodayAutoSnapshot(request.householdId).catch(() => {});
+    }
+  });
+
   // ─── Summary + cashflow ───────────────────────────────────────────────────
 
   fastify.get("/", pre, async (req, reply) => {
@@ -37,6 +47,11 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     }
     const months = await waterfallService.getCashflow(req.householdId!, y);
     return reply.send(months);
+  });
+
+  fastify.get("/financial-summary", pre, async (req, reply) => {
+    const summary = await snapshotService.getFinancialSummary(req.householdId!);
+    return reply.send(summary);
   });
 
   // ─── Income ───────────────────────────────────────────────────────────────
