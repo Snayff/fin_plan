@@ -75,7 +75,7 @@ export default function SettingsPage() {
           <button
             key={s.id}
             type="button"
-            className={`w-full text-left text-sm px-2 py-1.5 rounded transition-colors ${
+            className={`w-full text-left text-sm px-2 py-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
               activeSection === s.id ? "bg-accent text-accent-foreground" : "hover:bg-accent"
             }`}
             onClick={() => scrollTo(s.id)}
