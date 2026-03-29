@@ -119,6 +119,9 @@ export {
 // Setup session schemas and types
 export { updateSetupSessionSchema, type UpdateSetupSessionInput } from "./setup-session.schemas";
 
+// Audit schemas and types
+export * from "./audit.schemas";
+
 // Planner schemas and types
 export {
   PurchasePriorityEnum,
