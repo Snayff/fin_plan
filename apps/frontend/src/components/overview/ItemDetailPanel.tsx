@@ -155,34 +155,36 @@ export function ItemDetailPanel({
   }
 
   return (
-    <div className="space-y-5">
-      <button
-        onClick={onBack}
-        type="button"
-        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-      >
-        ← {breadcrumbLabel} / {item.name}
-      </button>
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <button
+          onClick={onBack}
+          type="button"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+        >
+          ← {breadcrumbLabel} / {item.name}
+        </button>
 
-      <div>
-        <h2 className="text-lg font-semibold">{item.name}</h2>
-        {item.type === "income_source" && (
-          <p className="text-xs text-muted-foreground mt-0.5">
-            <GlossaryTermMarker entryId="net-income">Net Income</GlossaryTermMarker>
+        <div>
+          <h2 className="text-lg font-semibold">{item.name}</h2>
+          {item.type === "income_source" && (
+            <p className="text-xs text-muted-foreground mt-0.5">
+              <GlossaryTermMarker entryId="net-income">Net Income</GlossaryTermMarker>
+            </p>
+          )}
+          <p className="text-hero font-numeric font-extrabold text-primary">
+            {formatCurrency(item.amount)}
           </p>
-        )}
-        <p className="text-[30px] font-numeric font-extrabold text-primary mt-1">
-          {formatCurrency(item.amount)}
-        </p>
-        {item.type === "yearly_bill" && (
-          <p className="text-sm text-muted-foreground mt-0.5">
-            <GlossaryTermMarker entryId="amortised">Amortised (÷12)</GlossaryTermMarker>{" "}
-            {formatCurrency(item.amount / 12)}/mo
+          {item.type === "yearly_bill" && (
+            <p className="text-sm text-muted-foreground mt-0.5">
+              <GlossaryTermMarker entryId="amortised">Amortised (÷12)</GlossaryTermMarker>{" "}
+              {formatCurrency(item.amount / 12)}/mo
+            </p>
+          )}
+          <p className={cn("text-sm mt-0.5", itemIsStale && "text-attention")}>
+            {stalenessLabel(item.lastReviewedAt)}
           </p>
-        )}
-        <p className={cn("text-sm mt-0.5", itemIsStale && "text-attention")}>
-          {stalenessLabel(item.lastReviewedAt)}
-        </p>
+        </div>
       </div>
 
       <HistoryChart data={history} snapshotDate={snapshotDate} />

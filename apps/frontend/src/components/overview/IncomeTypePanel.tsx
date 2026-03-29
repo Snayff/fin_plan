@@ -34,7 +34,7 @@ export function IncomeTypePanel({
   const threshold = settings?.stalenessThresholds?.income_source ?? 12;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <button

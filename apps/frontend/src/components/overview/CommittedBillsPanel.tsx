@@ -32,7 +32,7 @@ export function CommittedBillsPanel({
   const threshold = settings?.stalenessThresholds?.committed_bill ?? 6;
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       {/* Breadcrumb */}
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <button

@@ -70,3 +70,17 @@ describe("ItemDetailPanel isReadOnly", () => {
     expect(screen.getByText("Edit")).toBeTruthy();
   });
 });
+
+describe("ItemDetailPanel spacing", () => {
+  beforeAll(() => {
+    mockHistoryResult = { data: [], isLoading: false, isError: false, refetch: () => {} };
+  });
+
+  it("uses space-y-6 rhythm between sections", () => {
+    const { container } = renderWithProviders(
+      <ItemDetailPanel item={item} onBack={() => {}} />,
+      { initialEntries: ["/overview"] }
+    );
+    expect(container.firstChild?.className ?? "").toContain("space-y-6");
+  });
+});
