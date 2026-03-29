@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -65,13 +66,11 @@ function ItemCard({
   }
 
   return (
-    <div
+    <motion.div
+      animate={{ opacity: isResolved ? 0.6 : 1 }}
+      transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={`rounded-lg border p-3 space-y-2 ${
-        isResolved
-          ? "opacity-60"
-          : stale
-            ? "border-amber-200 bg-amber-50/30 dark:bg-amber-950/10"
-            : ""
+        stale && !isResolved ? "border-amber-200 bg-amber-50/30 dark:bg-amber-950/10" : ""
       }`}
     >
       <div className="flex items-center justify-between">
@@ -130,7 +129,7 @@ function ItemCard({
           </Button>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -177,6 +176,9 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
   const queryClient = useQueryClient();
 
   const [currentStep, setCurrentStep] = useState(0);
+  const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
+  const [allStaleIds, setAllStaleIds] = useState<Set<string>>(new Set());
+  const [reviewedAt] = useState<Date>(new Date());
   const [confirmedItems, setConfirmedItems] = useState<Record<string, string[]>>({});
   const [updatedItems, setUpdatedItems] = useState<
     Record<string, { name: string; from: number; to: number }>
@@ -184,6 +186,16 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
   const [snapshotName, setSnapshotName] = useState(format(new Date(), "MMMM yyyy") + " Review");
   const [finishing, setFinishing] = useState(false);
   const [initialized, setInitialized] = useState(false);
+
+  const slideVariants = {
+    enter: (dir: number) => ({ x: dir * 32, opacity: 0 }),
+    center: { x: 0, opacity: 1, transition: { duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] } },
+    exit: (dir: number) => ({
+      x: dir * -32,
+      opacity: 0,
+      transition: { duration: 0.2, ease: [0.25, 0.46, 0.45, 0.94] },
+    }),
+  };
 
   // Initialize session on mount
   useEffect(() => {
@@ -343,12 +355,15 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
   }
 
   function goNext() {
+    setDirection(1);
+    setAllStaleIds((prev) => new Set([...prev, ...staleItems.map((it) => it.id as string)]));
     const nextStep = currentStep + 1;
     setCurrentStep(nextStep);
     updateSession.mutate({ currentStep: nextStep });
   }
 
   function goPrev() {
+    setDirection(-1);
     const prevStep = Math.max(0, currentStep - 1);
     setCurrentStep(prevStep);
     updateSession.mutate({ currentStep: prevStep });
@@ -416,7 +431,16 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto p-6 space-y-4">
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={currentStep}
+            custom={direction}
+            variants={slideVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            className="max-w-2xl mx-auto p-6 space-y-4"
+          >
           {currentStep < 5 ? (
             <>
               <h2 className="text-lg font-semibold">{STEPS[currentStep]}</h2>
@@ -483,21 +507,35 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
 
               <div className="rounded-lg border p-4 space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Items updated</span>
-                  <span className="font-medium">{Object.keys(updatedItems).length}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Items confirmed</span>
+                  <span className="text-muted-foreground">Items reviewed</span>
                   <span className="font-medium">
-                    {Object.values(confirmedItems).reduce((s, a) => s + a.length, 0)}
+                    {Object.keys(updatedItems).length +
+                      Object.values(confirmedItems).reduce((s, a) => s + a.length, 0)}
                   </span>
                 </div>
+                {(() => {
+                  const resolvedIds = new Set([
+                    ...Object.values(confirmedItems).flat(),
+                    ...Object.keys(updatedItems),
+                  ]);
+                  const stillStale = [...allStaleIds].filter((id) => !resolvedIds.has(id)).length;
+                  return stillStale > 0 ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Still stale</span>
+                      <span className="font-medium text-attention">{stillStale}</span>
+                    </div>
+                  ) : null;
+                })()}
                 {summary && (
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Current surplus</span>
                     <span className="font-medium">{formatCurrency(summary.surplus.amount)}</span>
                   </div>
                 )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Reviewed at</span>
+                  <span className="font-medium">{format(reviewedAt, "d MMM yyyy, HH:mm")}</span>
+                </div>
               </div>
 
               {Object.keys(updatedItems).length > 0 && (
@@ -524,7 +562,8 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
               </div>
             </div>
           )}
-        </div>
+          </motion.div>
+        </AnimatePresence>
       </div>
 
       {/* Footer nav */}
