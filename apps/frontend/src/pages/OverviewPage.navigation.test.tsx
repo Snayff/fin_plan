@@ -56,11 +56,6 @@ mock.module("@/hooks/useWaterfall", () => ({
   useEndIncome: () => ({ mutate: () => {}, isPending: false }),
   useCashflow: () => ({ data: undefined, isLoading: false }),
 }));
-mock.module("@/hooks/useSetupSession", () => ({
-  useSetupSession: () => ({ data: undefined, isLoading: false }),
-  useCreateSetupSession: () => ({ mutate: () => {} }),
-  useUpdateSetupSession: () => ({ mutate: () => {} }),
-}));
 mock.module("@/hooks/useSettings", () => ({
   useSnapshot: () => ({ data: undefined, isLoading: false, isError: false }),
   useSnapshots: () => ({ data: [], isLoading: false, isError: false, refetch: () => {} }),

@@ -1,6 +1,6 @@
 // Renew data display patterns — sparklines, ISA progress bar, empty states
-import { PatternSection } from "../PatternSection";
-import { PatternExample } from "../PatternExample";
+import { PatternSection } from "./PatternSection";
+import { PatternExample } from "./PatternExample";
 
 // Minimal sparkline rendered as an SVG path for demo purposes
 function DemoSparkline({

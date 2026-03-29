@@ -1,8 +1,8 @@
 // Update this file when renew design tokens are modified.
 // Token source: src/config/design-tokens.ts
 // Token rules: docs/renew-finplan/design-system.md
-import { ColorSwatch } from "../ColorSwatch";
-import { PatternSection } from "../PatternSection";
+import { ColorSwatch } from "./ColorSwatch";
+import { PatternSection } from "./PatternSection";
 
 const tierColors = [
   {
