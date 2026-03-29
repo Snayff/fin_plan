@@ -191,7 +191,8 @@ export function PurchaseListPanel({
 
       {purchases.length === 0 && !showAddForm && (
         <GhostedListEmpty
-          ctaText="Plan purchases with cost, priority, and funding source"
+          ctaHeading="What are you planning to buy?"
+          ctaText="Add your first planned purchase"
           onCtaClick={() => setShowAddForm(true)}
         />
       )}

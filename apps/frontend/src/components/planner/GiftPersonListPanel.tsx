@@ -85,7 +85,8 @@ export function GiftPersonListPanel({
 
       {persons.length === 0 && !showAddForm && (
         <GhostedListEmpty
-          ctaText="Plan gifts by person and event — birthdays, Christmas, and more"
+          ctaHeading="Who do you buy gifts for?"
+          ctaText="Add your first person to begin planning gifts"
           onCtaClick={() => setShowAddForm(true)}
         />
       )}

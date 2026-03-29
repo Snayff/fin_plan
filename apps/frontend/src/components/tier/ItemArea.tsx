@@ -123,7 +123,7 @@ export default function ItemArea({
         {/* Empty state */}
         {items.length === 0 && !isAddingItem && (
           <GhostedListEmpty
-            rowCount={0}
+            ctaHeading={getEmptyStateCopy(subcategory.name, tier).header}
             ctaText={getEmptyStateCopy(subcategory.name, tier).body}
             onCtaClick={() => setIsAddingItem(true)}
           />

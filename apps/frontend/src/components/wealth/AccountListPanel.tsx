@@ -187,7 +187,8 @@ export function AccountListPanel({
       <div className="space-y-0.5">
         {sorted.length === 0 && !showAddForm && (
           <GhostedListEmpty
-            ctaText="Add an account to start tracking balances"
+            ctaHeading="What accounts do you have?"
+            ctaText="Add your first account to begin tracking balances"
             onCtaClick={openAddForm}
           />
         )}

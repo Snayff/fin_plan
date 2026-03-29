@@ -5,6 +5,7 @@ const GHOST_OPACITIES = [1, 0.8, 0.5, 0.25];
 
 interface GhostedListEmptyProps {
   rowCount?: number;
+  ctaHeading?: string;
   ctaText: string;
   ctaButtonLabel?: string;
   onCtaClick?: () => void;
@@ -13,35 +14,40 @@ interface GhostedListEmptyProps {
 
 export function GhostedListEmpty({
   rowCount = 3,
+  ctaHeading,
   ctaText,
   ctaButtonLabel = "+ Add",
   onCtaClick,
   showCta = true,
 }: GhostedListEmptyProps) {
+  const isAddable = showCta && !!onCtaClick && !!ctaHeading;
+
   return (
     <div className="py-2">
-      {/* Fading skeleton rows */}
-      <div className="space-y-1">
-        {Array.from({ length: rowCount }, (_, i) => (
-          <div
-            key={i}
-            className="flex items-center justify-between py-2 px-3"
-            style={{ opacity: GHOST_OPACITIES[Math.min(i, GHOST_OPACITIES.length - 1)] }}
-          >
+      {/* Fading skeleton rows — only for informational/contextual variants */}
+      {!isAddable && (
+        <div className="space-y-1">
+          {Array.from({ length: rowCount }, (_, i) => (
             <div
-              className="h-2.5 rounded-full"
-              style={{
-                width: GHOST_WIDTHS[i % GHOST_WIDTHS.length],
-                background: "rgba(255, 255, 255, 0.04)",
-              }}
-            />
-            <div
-              className="h-2.5 w-16 rounded-full"
-              style={{ background: "rgba(255, 255, 255, 0.03)" }}
-            />
-          </div>
-        ))}
-      </div>
+              key={i}
+              className="flex items-center justify-between py-2 px-3"
+              style={{ opacity: GHOST_OPACITIES[Math.min(i, GHOST_OPACITIES.length - 1)] }}
+            >
+              <div
+                className="h-2.5 rounded-full"
+                style={{
+                  width: GHOST_WIDTHS[i % GHOST_WIDTHS.length],
+                  background: "rgba(255, 255, 255, 0.04)",
+                }}
+              />
+              <div
+                className="h-2.5 w-16 rounded-full"
+                style={{ background: "rgba(255, 255, 255, 0.03)" }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* CTA card */}
       {showCta && onCtaClick && (
@@ -53,11 +59,23 @@ export function GhostedListEmpty({
             border: "1px solid rgba(99, 102, 241, 0.1)",
           }}
         >
-          <span className="text-[12.5px] text-muted-foreground leading-snug">{ctaText}</span>
+          <div className="flex flex-col gap-0.5 min-w-0">
+            {ctaHeading && (
+              <span className="text-xs font-medium text-foreground/80 leading-snug">
+                {ctaHeading}
+              </span>
+            )}
+            <span className="text-xs text-muted-foreground leading-snug">{ctaText}</span>
+          </div>
           <Button size="sm" onClick={onCtaClick} className="shrink-0">
             {ctaButtonLabel}
           </Button>
         </div>
+      )}
+
+      {/* Informational-only text (showCta=false, no button) */}
+      {!showCta && ctaText && (
+        <p className="px-3 py-2 text-xs text-muted-foreground italic">{ctaText}</p>
       )}
     </div>
   );
