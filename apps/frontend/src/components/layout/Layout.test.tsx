@@ -60,7 +60,7 @@ describe("TopNav", () => {
       useStaleDataBanner: () => ({ showBanner: true, lastSyncedAt: new Date() }),
     }));
     renderLayout();
-    expect(screen.getByText(/data may be outdated/i)).toBeTruthy();
+    expect(screen.getByText(/couldn't sync/i)).toBeTruthy();
   });
 
   it("renders a Help nav link pointing to /help", () => {

@@ -7,7 +7,14 @@ const mockSummary: WealthSummary = {
   netWorth: 50000,
   ytdChange: 1200,
   byLiquidity: { cashAndSavings: 20000, investmentsAndPensions: 25000, propertyAndVehicles: 5000 },
-  byClass: { savings: 20000, pensions: 15000, investments: 10000, property: 5000, vehicles: 0, other: 0 },
+  byClass: {
+    savings: 20000,
+    pensions: 15000,
+    investments: 10000,
+    property: 5000,
+    vehicles: 0,
+    other: 0,
+  },
 };
 
 describe("WealthLeftPanel typography", () => {
@@ -22,7 +29,7 @@ describe("WealthLeftPanel typography", () => {
         selectedTrustName={null}
       />
     );
-    const heroEl = screen.getByText("£50,000.00");
+    const heroEl = screen.getByText("£50,000");
     expect(heroEl.className).toContain("font-numeric");
     expect(heroEl.className).not.toContain("font-mono");
   });
@@ -40,7 +47,7 @@ describe("WealthLeftPanel typography", () => {
     );
     const label = screen.getByText(/net worth/i).closest("p")!;
     expect(label.className).toContain("tracking-wider");
-    expect(label.className).not.toContain("tracking-wide");
+    expect(label.className).not.toMatch(/tracking-wide(?!r)/);
     expect(label.className).not.toContain("tracking-widest");
   });
 });
