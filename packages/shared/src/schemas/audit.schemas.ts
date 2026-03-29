@@ -54,10 +54,3 @@ export const AuditLogResponseSchema = z.object({
   nextCursor: z.string().nullable(),
 });
 export type AuditLogResponse = z.infer<typeof AuditLogResponseSchema>;
-
-// role: only member or admin can be assigned — owner is immutable
-export const UpdateMemberRoleSchema = z.object({
-  targetUserId: z.string(),
-  role: z.enum(["member", "admin"]),
-});
-export type UpdateMemberRole = z.infer<typeof UpdateMemberRoleSchema>;

@@ -19,7 +19,14 @@ export const acceptInviteSchema = z.object({
   password: z.string().min(12, "Password must be at least 12 characters long"),
 });
 
+// role: only member or admin can be assigned — owner is immutable
+export const updateMemberRoleSchema = z.object({
+  targetUserId: z.string(),
+  role: z.enum(["member", "admin"]),
+});
+
 export type CreateHouseholdInput = z.infer<typeof createHouseholdSchema>;
 export type RenameHouseholdInput = z.infer<typeof renameHouseholdSchema>;
 export type CreateHouseholdInviteInput = z.infer<typeof createHouseholdInviteSchema>;
 export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>;
+export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleSchema>;

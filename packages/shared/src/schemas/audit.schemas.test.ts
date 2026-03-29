@@ -5,8 +5,8 @@ import {
   AuditChangeSchema,
   AuditEntrySchema,
   AuditLogQuerySchema,
-  UpdateMemberRoleSchema,
 } from "./audit.schemas";
+import { updateMemberRoleSchema } from "./household.schemas";
 
 describe("HouseholdRoleEnum", () => {
   it("accepts owner, admin, member", () => {
@@ -53,15 +53,15 @@ describe("AuditLogQuerySchema", () => {
   });
 });
 
-describe("UpdateMemberRoleSchema", () => {
+describe("updateMemberRoleSchema", () => {
   it("accepts valid update", () => {
-    const result = UpdateMemberRoleSchema.parse({
+    const result = updateMemberRoleSchema.parse({
       targetUserId: "u1",
       role: "admin",
     });
     expect(result.role).toBe("admin");
   });
   it("rejects owner role assignment", () => {
-    expect(() => UpdateMemberRoleSchema.parse({ targetUserId: "u1", role: "owner" })).toThrow();
+    expect(() => updateMemberRoleSchema.parse({ targetUserId: "u1", role: "owner" })).toThrow();
   });
 });
