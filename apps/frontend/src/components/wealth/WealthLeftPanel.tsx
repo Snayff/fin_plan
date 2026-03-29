@@ -52,13 +52,13 @@ export function WealthLeftPanel({
     <div>
       {/* Hero section */}
       <div
-        className="relative overflow-visible rounded-t-xl pb-9 px-5 pt-5 border-b border-border"
+        className="relative overflow-visible rounded-t-xl pb-9 px-4 pt-4 border-b border-border"
         style={{
           background:
             "linear-gradient(135deg, rgba(139,92,246,0.06) 0%, rgba(99,102,241,0.04) 100%)",
         }}
       >
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide mb-0.5">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-0.5">
           <GlossaryTermMarker entryId="net-worth">Net Worth</GlossaryTermMarker>
         </p>
         <p className="text-[13px] text-text-secondary mt-1">
@@ -66,8 +66,8 @@ export function WealthLeftPanel({
         </p>
 
         {/* Breakout card */}
-        <div className="absolute -bottom-6 left-4 right-4 z-[3] bg-surface-elevated border border-surface-elevated-border rounded-[10px] px-4 py-3.5">
-          <p className="font-mono text-[28px] font-bold leading-tight">
+        <div className="absolute -bottom-6 left-3 right-3 z-[3] bg-surface-elevated border border-surface-elevated-border rounded-[10px] px-4 py-3.5">
+          <p className="font-numeric text-hero font-extrabold leading-tight">
             {formatCurrency(summary.netWorth)}
           </p>
           <p className="text-xs text-muted-foreground mt-0.5">
@@ -78,9 +78,9 @@ export function WealthLeftPanel({
       </div>
 
       {/* Body section */}
-      <div className="pt-9 px-5 pb-5">
+      <div className="pt-9 px-4 pb-4">
         {/* By Liquidity */}
-        <p className="text-[10px] font-semibold text-foreground/55 uppercase tracking-widest mb-2">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2">
           By <GlossaryTermMarker entryId="liquidity">Liquidity</GlossaryTermMarker>
         </p>
         <div className="space-y-1">
@@ -126,7 +126,7 @@ export function WealthLeftPanel({
         {trustBeneficiaries.length > 0 && (
           <section aria-label="Held on behalf of">
             <hr className="my-2" />
-            <p className="text-xs font-medium uppercase tracking-wide px-2 mb-1 text-foreground/55">
+            <p className="text-xs font-medium uppercase tracking-wider px-2 mb-1 text-muted-foreground">
               <GlossaryTermMarker entryId="held-on-behalf-of">Held on Behalf Of</GlossaryTermMarker>
             </p>
             <div className="space-y-0.5">

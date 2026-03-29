@@ -38,7 +38,7 @@ export function PlannerLeftPanel({
       {/* PURCHASES section */}
       <div className="mb-1">
         <div className="flex items-center justify-between px-2 py-1">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Purchases
           </span>
           <span className="text-sm font-medium">{formatCurrency(purchaseBudget)}</span>
@@ -72,7 +72,7 @@ export function PlannerLeftPanel({
       {/* GIFTS section */}
       <div>
         <div className="flex items-center justify-between px-2 py-1">
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Gifts
           </span>
           <span className="text-sm font-medium">{formatCurrency(giftBudget)}</span>
