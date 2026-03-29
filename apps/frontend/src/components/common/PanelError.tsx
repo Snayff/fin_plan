@@ -8,7 +8,7 @@ interface PanelErrorProps {
 
 function GhostBlock({ className }: { className?: string }) {
   return (
-    <div className={`rounded ${className ?? ""}`} style={{ background: "#2a3f60", opacity: 0.3 }} />
+    <div className={`rounded ${className ?? ""}`} style={{ background: "hsl(var(--surface-elevated))", opacity: 0.3 }} />
   );
 }
 

@@ -83,7 +83,7 @@ function ItemCard({
               : formatCurrency(amount)}
           </p>
           {stale && (
-            <p className="text-xs" style={{ color: "#f59e0b" }}>
+            <p className="text-xs text-attention">
               Stale
             </p>
           )}

@@ -21,12 +21,7 @@ export function StaleDataBanner({ lastSyncedAt, onRetry }: StaleDataBannerProps)
 
   return (
     <div
-      className="w-full px-4 py-1.5 text-xs flex items-center gap-2"
-      style={{
-        background: "rgba(245, 158, 11, 0.04)",
-        borderBottom: "1px solid rgba(245, 158, 11, 0.08)",
-        color: "#f59e0b",
-      }}
+      className="w-full px-4 py-1.5 text-xs flex items-center gap-2 bg-attention/4 border-b border-attention/8 text-attention"
     >
       <span>Data may be outdated — {timeAgo}</span>
       <button

@@ -51,7 +51,7 @@ export function HistoryChart({ data, snapshotDate }: HistoryChartProps) {
             labelFormatter={(label: string) => label}
           />
           {snapshotX && (
-            <ReferenceLine x={snapshotX} stroke="#f59e0b" strokeDasharray="4 4" strokeWidth={1.5} />
+            <ReferenceLine x={snapshotX} stroke="hsl(var(--attention))" strokeDasharray="4 4" strokeWidth={1.5} />
           )}
           <Line
             type="monotone"

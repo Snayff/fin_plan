@@ -72,7 +72,7 @@ export function CommittedBillsPanel({
                   lastReviewedAt={bill.lastReviewedAt}
                   thresholdMonths={threshold}
                 />
-                <span className="font-numeric text-[#cbd5e1]">{formatCurrency(bill.amount)}</span>
+                <span className="font-numeric text-foreground/60">{formatCurrency(bill.amount)}</span>
               </div>
             </div>
           ))}

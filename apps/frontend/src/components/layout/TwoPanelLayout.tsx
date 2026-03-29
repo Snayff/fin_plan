@@ -14,7 +14,7 @@ function PlaceholderMessage({ text }: { text: string }) {
         height="20"
         viewBox="0 0 20 20"
         fill="none"
-        stroke="#475569"
+        stroke="hsl(var(--muted-foreground))"
         strokeWidth="1.5"
         strokeLinecap="round"
         aria-hidden="true"

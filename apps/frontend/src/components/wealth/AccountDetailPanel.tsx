@@ -19,6 +19,7 @@ import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
 import { useWealthAccountNudge } from "@/hooks/useNudge";
 import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
+import { cn } from "@/lib/utils";
 
 type InlineMode = "none" | "edit" | "valuation";
 
@@ -201,7 +202,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
           </p>
         )}
         {lastReviewedAt && (
-          <p className="text-sm mt-0.5" style={accountIsStale ? { color: "#f59e0b" } : undefined}>
+          <p className={cn("text-sm mt-0.5", accountIsStale && "text-attention")}>
             {stalenessLabel(lastReviewedAt)}
           </p>
         )}

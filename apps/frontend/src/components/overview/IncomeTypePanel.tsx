@@ -77,7 +77,7 @@ export function IncomeTypePanel({
                     lastReviewedAt={src.lastReviewedAt}
                     thresholdMonths={threshold}
                   />
-                  <div className="flex items-center gap-1 font-numeric text-[#cbd5e1]">
+                  <div className="flex items-center gap-1 font-numeric text-foreground/60">
                     {isAnnual && <span className="text-xs text-muted-foreground">÷12</span>}
                     <span>{formatCurrency(displayAmount)}</span>
                   </div>

@@ -1,4 +1,5 @@
 import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import { useCashflow } from "@/hooks/useWaterfall";
 import { buildShortfallNudge } from "@/hooks/useNudge";
 import { formatCurrency } from "@/utils/format";
@@ -42,19 +43,16 @@ export function CashflowCalendar({ year, onBack }: CashflowCalendarProps) {
           return (
             <div
               key={`${month.year}-${month.month}`}
-              className="rounded px-3 py-2 text-sm border"
-              style={month.shortfall ? { borderColor: "rgba(245,158,11,0.3)" } : undefined}
+              className={cn("rounded px-3 py-2 text-sm border", month.shortfall && "border-attention/30")}
             >
               <div className="flex items-center justify-between">
                 <span
-                  className="font-medium"
-                  style={month.shortfall ? { color: "#f59e0b" } : undefined}
+                  className={cn("font-medium", month.shortfall ? "text-attention" : undefined)}
                 >
                   {monthName}
                 </span>
                 <span
-                  className="text-xs"
-                  style={month.shortfall ? { color: "#f59e0b" } : undefined}
+                  className={cn("text-xs", month.shortfall ? "text-attention" : undefined)}
                 >
                   Pot after: {formatCurrency(month.potAfter)}
                 </span>
