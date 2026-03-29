@@ -280,8 +280,13 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
       };
       setConfirmedItems(newConfirmed);
       updateSession.mutate({ confirmedItems: newConfirmed });
+
+      const remainingStale = staleItems.filter((it) => !isResolved(it.id) && it.id !== item.id);
+      if (remainingStale.length === 0 && staleItems.length > 0) {
+        toast.success("All caught up — no more stale items");
+      }
     } catch {
-      toast.error("Failed to confirm item");
+      toast.error("Couldn't confirm item — try again");
     }
   }
 
@@ -307,7 +312,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
       updateSession.mutate({ updatedItems: newUpdated });
       void queryClient.invalidateQueries({ queryKey: ["waterfall", "summary"] });
     } catch {
-      toast.error("Failed to update item");
+      toast.error("Couldn't save change — try again");
     }
   }
 
@@ -333,7 +338,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
       setConfirmedItems(newConfirmed);
       updateSession.mutate({ confirmedItems: newConfirmed });
     } catch {
-      toast.error("Failed to confirm items");
+      toast.error("Couldn't confirm items — try again");
     }
   }
 
@@ -356,13 +361,13 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
       deleteSession.mutate();
       void queryClient.invalidateQueries({ queryKey: ["waterfall", "summary"] });
       void queryClient.invalidateQueries({ queryKey: ["snapshots"] });
-      toast.success("Review complete — snapshot saved");
+      toast.success("Review complete — you've saved a snapshot");
       onClose();
     } catch (err: unknown) {
       if ((err as any)?.status === 409) {
-        toast.error("A snapshot with that name already exists — change the name");
+        toast.error("Couldn't save snapshot — that name's already taken");
       } else {
-        toast.error("Failed to save snapshot");
+        toast.error("Couldn't save snapshot — try again");
       }
     } finally {
       setFinishing(false);

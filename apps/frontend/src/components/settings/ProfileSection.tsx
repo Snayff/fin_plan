@@ -21,7 +21,7 @@ export function ProfileSection() {
       setUser(updated, accessToken);
       toast.success("Profile updated");
     } catch {
-      toast.error("Failed to update profile");
+      toast.error("Couldn't save profile — try again");
     } finally {
       setSaving(false);
     }

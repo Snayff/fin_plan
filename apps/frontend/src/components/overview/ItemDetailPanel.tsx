@@ -107,7 +107,7 @@ export function ItemDetailPanel({
       { type: item.type as Parameters<typeof confirmItem.mutate>[0]["type"], id: item.id },
       {
         onSuccess: () => {
-          toast.success("Marked as reviewed");
+          toast.success("Still correct — marked as reviewed");
         },
       }
     );
@@ -137,7 +137,7 @@ export function ItemDetailPanel({
       {
         onSuccess: () => {
           setInlineMode("none");
-          toast.success("Updated");
+          toast.success("Amount saved");
         },
       }
     );

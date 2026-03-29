@@ -28,7 +28,7 @@ export function TrustAccountsSection() {
           toast.success("Beneficiary name updated");
         },
         onError: () => {
-          toast.error("Failed to update beneficiary name");
+          toast.error("Couldn't save beneficiary name — try again");
         },
       }
     );

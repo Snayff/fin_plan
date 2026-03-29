@@ -55,7 +55,7 @@ export function PurchaseDetailPanel({ purchase, isReadOnly, onBack }: PurchaseDe
       },
       {
         onSuccess: () => {
-          toast.success("Purchase updated");
+          toast.success("Purchase saved");
           setShowEdit(false);
         },
       }
@@ -65,7 +65,7 @@ export function PurchaseDetailPanel({ purchase, isReadOnly, onBack }: PurchaseDe
   function handleDelete() {
     deleteMutation.mutate(purchase.id, {
       onSuccess: () => {
-        toast.success("Purchase deleted");
+        toast.success("Purchase removed");
         onBack();
       },
     });

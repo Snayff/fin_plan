@@ -75,7 +75,7 @@ export function AccountListPanel({
           toast.success("Account added");
         },
         onError: () => {
-          toast.error("Failed to add account");
+          toast.error("Couldn't add account — try again");
         },
       }
     );

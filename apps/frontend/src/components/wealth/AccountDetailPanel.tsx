@@ -134,7 +134,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
       {
         onSuccess: () => {
           setInlineMode("none");
-          toast.success("Valuation updated");
+          toast.success("Valuation saved");
         },
       }
     );
@@ -143,7 +143,7 @@ export function AccountDetailPanel({ account, onBack }: AccountDetailPanelProps)
   function handleConfirm() {
     confirmAccount.mutate(account.id, {
       onSuccess: () => {
-        toast.success("Account confirmed");
+        toast.success("Account marked as reviewed");
       },
     });
   }

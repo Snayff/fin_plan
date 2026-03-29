@@ -86,7 +86,7 @@ function EventRow({ event, year, personId: _personId, isReadOnly }: EventRowProp
   function handleDeleteEvent() {
     deleteMutation.mutate(event.id, {
       onSuccess: () => {
-        toast.success("Event deleted");
+        toast.success("Event removed");
         setExpanded(false);
       },
     });
@@ -286,7 +286,7 @@ function EditPersonForm({ person, onCancel }: EditPersonFormProps) {
       { id: person.id, data: { name } as any },
       {
         onSuccess: () => {
-          toast.success("Person updated");
+          toast.success("Person saved");
           onCancel();
         },
       }
