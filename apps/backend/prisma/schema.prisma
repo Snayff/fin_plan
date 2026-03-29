@@ -39,6 +39,7 @@ model Household {
   members        HouseholdMember[]
   invites        HouseholdInvite[]
   activeForUsers User[]            @relation("UserActiveHousehold")
+  auditLogs      AuditLog[]
 
   @@map("households")
 }
@@ -65,8 +66,9 @@ model HouseholdInvite {
   usedAt          DateTime? @map("used_at")
   createdByUserId String    @map("created_by_user_id")
   createdAt       DateTime  @default(now()) @map("created_at")
-  household       Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  createdBy       User      @relation(fields: [createdByUserId], references: [id])
+  intendedRole    HouseholdRole? @map("intended_role")
+  household       Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  createdBy       User           @relation(fields: [createdByUserId], references: [id])
 
   @@index([householdId])
   @@map("household_invites")
@@ -74,24 +76,33 @@ model HouseholdInvite {
 
 enum HouseholdRole {
   owner
+  admin
   member
 }
 
 // ─── Auth tokens ──────────────────────────────────────────────────────────────
 
 model AuditLog {
-  id         String   @id @default(uuid())
-  userId     String?  @map("user_id")
-  action     String
-  resource   String?
-  resourceId String?  @map("resource_id")
-  metadata   Json?
-  ipAddress  String?  @map("ip_address")
-  userAgent  String?  @map("user_agent")
-  createdAt  DateTime @default(now()) @map("created_at")
+  id          String     @id @default(uuid())
+  userId      String?    @map("user_id")
+  action      String
+  resource    String?
+  resourceId  String?    @map("resource_id")
+  metadata    Json?
+  ipAddress   String?    @map("ip_address")
+  userAgent   String?    @map("user_agent")
+  createdAt   DateTime   @default(now()) @map("created_at")
+  householdId String?    @map("household_id")
+  actorId     String?    @map("actor_id")
+  actorName   String?    @map("actor_name")
+  changes     Json?
+  household   Household? @relation(fields: [householdId], references: [id], onDelete: SetNull)
 
   @@index([userId, createdAt])
   @@index([action])
+  @@index([householdId])
+  @@index([actorId])
+  @@index([householdId, createdAt])
   @@map("audit_logs")
 }
 
