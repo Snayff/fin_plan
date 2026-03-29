@@ -16,6 +16,7 @@ import type {
   UpdateSavingsAllocationInput,
   ConfirmBatchInput,
   UpsertYearBudgetInput,
+  FinancialSummary,
 } from "@finplan/shared";
 
 export const waterfallService = {
@@ -87,4 +88,6 @@ export const waterfallService = {
   getYearBudget: (year: number) => apiClient.get<any>(`/api/planner/budget/${year}`),
   upsertYearBudget: (year: number, data: UpsertYearBudgetInput) =>
     apiClient.put<any>(`/api/planner/budget/${year}`, data),
+
+  getFinancialSummary: () => apiClient.get<FinancialSummary>("/api/waterfall/financial-summary"),
 };

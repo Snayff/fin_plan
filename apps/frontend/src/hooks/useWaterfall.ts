@@ -4,6 +4,7 @@ import { showError } from "@/lib/toast";
 
 export const WATERFALL_KEYS = {
   summary: ["waterfall", "summary"] as const,
+  financialSummary: ["waterfall", "financial-summary"] as const,
   cashflow: (year: number) => ["waterfall", "cashflow", year] as const,
   history: (type: string, id: string) => ["waterfall", "history", type, id] as const,
   subcategories: (tier: string) => ["waterfall", "subcategories", tier] as const,
@@ -13,6 +14,13 @@ export function useWaterfallSummary() {
   return useQuery({
     queryKey: WATERFALL_KEYS.summary,
     queryFn: waterfallService.getSummary,
+  });
+}
+
+export function useFinancialSummary() {
+  return useQuery({
+    queryKey: WATERFALL_KEYS.financialSummary,
+    queryFn: waterfallService.getFinancialSummary,
   });
 }
 
@@ -73,6 +81,7 @@ export function useConfirmItem() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
     },
   });
 }
@@ -108,6 +117,7 @@ export function useUpdateItem() {
     },
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
     },
   });
 }
@@ -146,6 +156,7 @@ export function useCreateItem(tier: "income" | "committed" | "discretionary") {
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
     },
     onError: (error: unknown) => {
@@ -171,6 +182,7 @@ export function useConfirmWaterfallItem(
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
     },
   });
@@ -187,6 +199,7 @@ export function useDeleteItem(tier: "income" | "committed" | "discretionary", id
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
     },
   });
@@ -202,6 +215,7 @@ export function useTierUpdateItem(tier: "income" | "committed" | "discretionary"
     },
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
     },
   });
@@ -282,6 +296,7 @@ export function useEndIncome() {
       waterfallService.endIncome(id, { endedAt }),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
     },
   });
 }
