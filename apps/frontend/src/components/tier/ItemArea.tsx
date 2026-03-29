@@ -58,6 +58,8 @@ export default function ItemArea({
     return sum + monthly;
   }, 0);
 
+  const deletingItem = items.find((it) => it.id === deletingItemId);
+
   if (!subcategory) return null;
 
   if (isLoading) {
@@ -157,9 +159,9 @@ export default function ItemArea({
           setEditingItemId(null);
           setExpandedItemId(null);
         }}
-        title="Delete item"
-        message="Are you sure you want to delete this item?"
-        confirmText="Delete"
+        title={deletingItem ? `Remove ${deletingItem.name}?` : "Remove item?"}
+        message={deletingItem ? `${deletingItem.name} will be permanently removed from your plan.` : "This item will be permanently removed from your plan."}
+        confirmText="Remove"
         variant="danger"
         isLoading={deleteItem.isPending}
       />
