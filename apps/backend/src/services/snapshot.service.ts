@@ -7,10 +7,11 @@ import type { CreateSnapshotInput, RenameSnapshotInput, FinancialSummary } from 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 async function buildNetWorthSeries(
-  householdId: string
+  accountIds: string[]
 ): Promise<Array<{ date: string; value: number }>> {
+  if (accountIds.length === 0) return [];
   const history = await prisma.wealthAccountHistory.findMany({
-    where: { wealthAccount: { householdId, isTrust: false } },
+    where: { wealthAccountId: { in: accountIds } },
     orderBy: { valuationDate: "asc" },
     select: { wealthAccountId: true, balance: true, valuationDate: true },
   });
@@ -163,10 +164,10 @@ export const snapshotService = {
     if (wealthAccountCount > 0) {
       const accounts = await prisma.wealthAccount.findMany({
         where: { householdId, isTrust: false },
-        select: { balance: true },
+        select: { id: true, balance: true },
       });
       netWorth = toGBP(accounts.reduce((s, a) => s + a.balance, 0));
-      netWorthSeries = await buildNetWorthSeries(householdId);
+      netWorthSeries = await buildNetWorthSeries(accounts.map((a) => a.id));
     }
 
     const tierSeries = buildTierSeries(autoSnapshots);
