@@ -2,7 +2,7 @@ import { describe, it, expect, mock, beforeEach, beforeAll, afterAll } from "bun
 import type { FastifyInstance } from "fastify";
 import { buildTestApp } from "../test/helpers/fastify";
 import { errorHandler } from "../middleware/errorHandler";
-import { AuthenticationError } from "../utils/errors";
+import { AuthenticationError, AuthorizationError } from "../utils/errors";
 
 const snapshotServiceMock = {
   listSnapshots: mock(() => Promise.resolve([])),
@@ -167,5 +167,34 @@ describe("DELETE /api/snapshots/:id", () => {
       headers: { authorization: "Bearer valid-token" },
     });
     expect(res.statusCode).toBe(204);
+  });
+});
+
+describe("PATCH /api/snapshots/:id — auto-snapshot protection", () => {
+  it("returns 403 when patching an auto-snapshot", async () => {
+    snapshotServiceMock.renameSnapshot.mockRejectedValue(
+      new AuthorizationError("Auto-snapshots cannot be renamed")
+    );
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/snapshots/snap-auto",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { name: "Renamed" },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+});
+
+describe("DELETE /api/snapshots/:id — auto-snapshot protection", () => {
+  it("returns 403 when deleting an auto-snapshot", async () => {
+    snapshotServiceMock.deleteSnapshot.mockRejectedValue(
+      new AuthorizationError("Auto-snapshots cannot be deleted")
+    );
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/snapshots/snap-auto",
+      headers: { authorization: "Bearer valid-token" },
+    });
+    expect(res.statusCode).toBe(403);
   });
 });
