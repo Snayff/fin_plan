@@ -1,6 +1,6 @@
 // Renew component patterns — EntityAvatar, Card, SnapshotBanner, SkeletonLoader, StaleDataBanner
-import { PatternSection } from "../PatternSection";
-import { PatternExample } from "../PatternExample";
+import { PatternSection } from "./PatternSection";
+import { PatternExample } from "./PatternExample";
 
 // Simple deterministic colour for EntityAvatar fallback
 function avatarColor(name: string): string {

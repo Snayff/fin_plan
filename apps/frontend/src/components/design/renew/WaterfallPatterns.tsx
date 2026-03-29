@@ -1,7 +1,7 @@
 // Waterfall-specific component patterns for the renew design system.
 // These components are unique to finplan and have no equivalent in the legacy app.
-import { PatternSection } from "../PatternSection";
-import { PatternExample } from "../PatternExample";
+import { PatternSection } from "./PatternSection";
+import { PatternExample } from "./PatternExample";
 
 // ---------------------------------------------------------------------------
 // Mini component implementations for demonstration purposes.

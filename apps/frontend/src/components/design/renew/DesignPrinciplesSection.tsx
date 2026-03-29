@@ -1,5 +1,5 @@
-import { PatternSection } from "../PatternSection";
-import { PatternExample } from "../PatternExample";
+import { PatternSection } from "./PatternSection";
+import { PatternExample } from "./PatternExample";
 
 const principles = [
   {

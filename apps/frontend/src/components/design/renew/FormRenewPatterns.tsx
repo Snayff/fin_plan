@@ -1,6 +1,6 @@
 // Renew form patterns — input states, progressive disclosure, inline edit transform
-import { PatternSection } from "../PatternSection";
-import { PatternExample } from "../PatternExample";
+import { PatternSection } from "./PatternSection";
+import { PatternExample } from "./PatternExample";
 
 function DemoInput({
   label,

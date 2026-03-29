@@ -1,6 +1,6 @@
 // Renew feedback patterns — toasts, button loading, action feedback
-import { PatternSection } from "../PatternSection";
-import { PatternExample } from "../PatternExample";
+import { PatternSection } from "./PatternSection";
+import { PatternExample } from "./PatternExample";
 
 function DemoToast({
   variant,
