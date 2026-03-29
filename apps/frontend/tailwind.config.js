@@ -155,6 +155,12 @@ export default {
       lineHeight: {
         heading: "1.15",
       },
+      fontSize: {
+        connector: ["10.5px", { lineHeight: "1.4" }],
+        tier: ["13px", { lineHeight: "1.4" }],
+        "tier-total": ["15px", { lineHeight: "1.4" }],
+        hero: ["30px", { lineHeight: "1.15" }],
+      },
     },
   },
   plugins: [tailwindAnimate],
