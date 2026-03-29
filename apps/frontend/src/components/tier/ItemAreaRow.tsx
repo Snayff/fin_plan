@@ -1,9 +1,16 @@
+import { AnimatePresence, motion } from "framer-motion";
 import ItemRow from "./ItemRow";
 import ItemAccordion from "./ItemAccordion";
 import ItemForm from "./ItemForm";
 import { isStale } from "./formatAmount";
 import { useTierUpdateItem, useConfirmWaterfallItem, type TierItemRow } from "@/hooks/useWaterfall";
 import type { TierConfig, TierKey } from "./tierConfig";
+
+const accordionVariants = {
+  initial: { height: 0, opacity: 0 },
+  animate: { height: "auto", opacity: 1, transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] } },
+  exit: { height: 0, opacity: 0, transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] } },
+};
 
 interface SubcategoryOption {
   id: string;
@@ -59,45 +66,65 @@ export default function ItemAreaRow({
       now={now}
       stalenessMonths={stalenessMonths}
     >
-      {isExpanded && !isEditing && (
-        <ItemAccordion
-          item={{ ...item, subcategoryName }}
-          config={config}
-          onEdit={() => onStartEdit(item.id)}
-          now={now}
-          stalenessMonths={stalenessMonths}
-        />
-      )}
-      {isEditing && (
-        <ItemForm
-          mode="edit"
-          item={item}
-          config={config}
-          subcategories={subcategories}
-          initialSubcategoryId={item.subcategoryId}
-          isSaving={updateItem.isPending}
-          isStale={stale}
-          onSave={async (data) => {
-            try {
-              await updateItem.mutateAsync(data as Record<string, unknown>);
-              onCancelEdit();
-              onToggleExpand(item.id);
-            } catch {
-              // error handled by useUpdateItem onError (toast)
-            }
-          }}
-          onCancel={onCancelEdit}
-          onConfirm={async () => {
-            try {
-              await confirmItem.mutateAsync();
-              onCancelEdit();
-            } catch {
-              // error handled by mutation onError (toast)
-            }
-          }}
-          onDelete={() => onDeleteRequest(item.id)}
-        />
-      )}
+      <AnimatePresence initial={false}>
+        {isExpanded && !isEditing && (
+          <motion.div
+            key="accordion"
+            variants={accordionVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            style={{ overflow: "hidden" }}
+          >
+            <ItemAccordion
+              item={{ ...item, subcategoryName }}
+              config={config}
+              onEdit={() => onStartEdit(item.id)}
+              now={now}
+              stalenessMonths={stalenessMonths}
+            />
+          </motion.div>
+        )}
+        {isEditing && (
+          <motion.div
+            key="form"
+            variants={accordionVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            style={{ overflow: "hidden" }}
+          >
+            <ItemForm
+              mode="edit"
+              item={item}
+              config={config}
+              subcategories={subcategories}
+              initialSubcategoryId={item.subcategoryId}
+              isSaving={updateItem.isPending}
+              isStale={stale}
+              onSave={async (data) => {
+                try {
+                  await updateItem.mutateAsync(data as Record<string, unknown>);
+                  onCancelEdit();
+                  onToggleExpand(item.id);
+                } catch {
+                  // error handled by useUpdateItem onError (toast)
+                }
+              }}
+              onCancel={onCancelEdit}
+              onConfirm={async () => {
+                try {
+                  await confirmItem.mutateAsync();
+                  onCancelEdit();
+                } catch {
+                  // error handled by mutation onError (toast)
+                }
+              }}
+              onDelete={() => onDeleteRequest(item.id)}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </ItemRow>
   );
 }

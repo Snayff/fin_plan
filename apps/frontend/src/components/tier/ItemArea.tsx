@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import GhostAddButton from "./GhostAddButton";
 import ItemAreaRow from "./ItemAreaRow";
 import ItemForm from "./ItemForm";
@@ -101,24 +102,38 @@ export default function ItemArea({
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {/* Add form at top */}
-        {isAddingItem && (
-          <ItemForm
-            mode="add"
-            config={config}
-            subcategories={subcategories}
-            initialSubcategoryId={subcategory.id}
-            isSaving={createItem.isPending}
-            onSave={async (data) => {
-              try {
-                await createItem.mutateAsync(data as Record<string, unknown>);
-                setIsAddingItem(false);
-              } catch {
-                // error handled by useCreateItem onError (toast)
-              }
-            }}
-            onCancel={() => setIsAddingItem(false)}
-          />
-        )}
+        <AnimatePresence initial={false}>
+          {isAddingItem && (
+            <motion.div
+              key="add-form"
+              initial={{ height: 0, opacity: 0 }}
+              animate={{
+                height: "auto",
+                opacity: 1,
+                transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] },
+              }}
+              exit={{ height: 0, opacity: 0, transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] } }}
+              style={{ overflow: "hidden" }}
+            >
+              <ItemForm
+                mode="add"
+                config={config}
+                subcategories={subcategories}
+                initialSubcategoryId={subcategory.id}
+                isSaving={createItem.isPending}
+                onSave={async (data) => {
+                  try {
+                    await createItem.mutateAsync(data as Record<string, unknown>);
+                    setIsAddingItem(false);
+                  } catch {
+                    // error handled by useCreateItem onError (toast)
+                  }
+                }}
+                onCancel={() => setIsAddingItem(false)}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Empty state */}
         {items.length === 0 && !isAddingItem && (
