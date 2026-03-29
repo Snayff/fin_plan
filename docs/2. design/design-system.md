@@ -167,7 +167,7 @@ Six levels in the left panel, each a clear visual step:
 
 | Level                | Size | Weight | Font           | Colour                        | Context                                                                                                               |
 | -------------------- | ---- | ------ | -------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Right panel headline | 30px | 800    | `font-numeric` | `text-primary`                | Selected item's value in detail view                                                                                  |
+| Hero amount | text-hero (30px) | font-numeric font-extrabold | Colour by context: text-primary (waterfall items), text-foreground (wealth), text-tier-surplus (surplus page) |
 | Page title           | 18px | 700    | `font-heading` | `text-tier-*` / `page-accent` | Fixed at top of left panel (uppercase, 0.09em spacing). Tier pages use tier colour; non-tier pages use `page-accent`. |
 | Tier total           | 15px | 600    | `font-numeric` | `text-tier-*`                 | Sum next to each tier heading, in tier colour                                                                         |
 | Tier heading         | 13px | 600    | `font-heading` | `text-tier-*`                 | `INCOME`, `COMMITTED`, etc. (uppercase, 0.09em spacing)                                                               |
@@ -190,6 +190,27 @@ Between each tier in the waterfall, a connector reinforces the arithmetic flow:
 Connectors render as: horizontal rule — text — horizontal rule. Text uses `font-numeric`, 10.5px, `font-medium`, `text-muted`, `tracking-wide`. Rules use `bg-border/50` at 1px height.
 
 **Heading typography token:** heading elements use tighter treatment than body text — letter spacing: −0.025em; line height: 1.15. These are defined as dedicated heading tokens in `design-tokens.ts`. They do not apply to body text, labels, or numerical values.
+
+#### Named Font-Size Tokens
+
+| Token             | Size   | Usage                                         |
+| ----------------- | ------ | --------------------------------------------- |
+| `text-connector`  | 10.5px | WaterfallConnector annotation text            |
+| `text-tier`       | 13px   | Tier row item names in left panels            |
+| `text-tier-total` | 15px   | Tier heading total amounts                    |
+| `text-hero`       | 30px   | Hero amount (income, surplus, net worth, etc) |
+
+Standard Tailwind size classes (`text-xs`, `text-sm`, `text-base`, etc.) are used as-is for all other text. Arbitrary size classes (`text-[Xpx]`) are forbidden — use a named token or a Tailwind default.
+
+#### Section Label (canonical)
+
+All section headers — "By Liquidity", "Purchases", "Gifts", "Held on Behalf Of", etc. — use one treatment:
+
+```
+text-xs font-medium uppercase tracking-wider text-muted-foreground
+```
+
+**Exceptions:** Waterfall tier labels (`Income`, `Committed`, `Discretionary`, `Surplus`) use `text-tier font-heading font-semibold tracking-tier uppercase` + their tier colour. This is the only exception.
 
 ---
 
@@ -216,6 +237,16 @@ Connectors render as: horizontal rule — text — horizontal rule. Text uses `f
 - Between groups (e.g. between the Committed Spend section and the Discretionary section): relaxed spacing or a structural divider
 
 Apply consistently to all list and panel layouts throughout the app.
+
+#### Right-Panel Vertical Rhythm
+
+All right-panel detail views follow a two-tier spacing convention:
+
+- **Between major sections:** `space-y-6` (24px) — e.g. between breadcrumb group, amount group, history chart, action buttons.
+- **Within sections:** `space-y-2` (8px) — e.g. between breadcrumb and heading, between amount and staleness label.
+- Related elements are grouped into a container div with `space-y-2` before the outer `space-y-6` separates them from the next section.
+
+**Exception:** Settings page uses `space-y-12` / `space-y-4` — justified by its long-form editing context.
 
 **Information hierarchy:** size, colour, and position communicate importance.
 
@@ -1525,6 +1556,39 @@ Status indicators within these pages follow the standard rules:
 - **Colour as signal, not decoration** — used sparingly and meaningfully
 - **Monochromatic cool palette** — indigo / blue / violet / teal family throughout
 - **Non-judgemental** — no good/bad colour coding of financial positions
+
+---
+
+## Microcopy
+
+### Toast Messages
+
+**Success:** Specific noun-phrase, past tense. Use `"saved"` not `"updated"`, `"removed"` not `"deleted"`, `"sent"` not `"created"`. Use contractions: `"you've"` not `"you have"`. No exclamation marks. No emoji.
+
+Examples:
+
+- `"Amount saved"` ✓ — `"Amount updated!"` ✗
+- `"Purchase removed"` ✓ — `"Purchase deleted"` ✗
+- `"You've left the household"` ✓ — `"You have left the household"` ✗
+
+**Error:** `"Couldn't [verb] [noun] — [next step]"`. Next step is context-sensitive:
+
+- Generic: `"try again"`
+- Network: `"check your connection"`
+- Persistent: `"contact support"`
+
+Example: `"Couldn't save profile — try again"`.
+
+### Delete Confirmations
+
+Heading: `"Remove [Item Name]?"` — never `"Are you sure?"`
+Body: `"[Item Name] will be permanently removed from your plan."`
+Button: `"Remove"` (not `"Delete"` or `"Confirm"`)
+
+### Empty State Headings (addable lists)
+
+Use a question prompt: `"What [x] do you have?"` / `"What are you saving towards?"`.
+Subtext: `"Add your first [x] to begin building your plan"`.
 
 ---
 
