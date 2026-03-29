@@ -70,7 +70,7 @@ function ItemCard({
       animate={{ opacity: isResolved ? 0.6 : 1 }}
       transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
       className={`rounded-lg border p-3 space-y-2 ${
-        stale && !isResolved ? "border-amber-200 bg-amber-50/30 dark:bg-amber-950/10" : ""
+        stale && !isResolved ? "border-attention/30 bg-attention/10" : ""
       }`}
     >
       <div className="flex items-center justify-between">
