@@ -100,8 +100,12 @@ export {
 export {
   createSnapshotSchema,
   renameSnapshotSchema,
+  FinancialSummarySchema,
+  SparklinePointSchema,
   type CreateSnapshotInput,
   type RenameSnapshotInput,
+  type FinancialSummary,
+  type SparklinePoint,
 } from "./snapshot.schemas";
 
 // Review session schemas and types
