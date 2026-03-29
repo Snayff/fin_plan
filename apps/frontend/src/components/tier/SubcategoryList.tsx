@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, LayoutGroup } from "framer-motion";
 import { toGBP } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
 import { usePrefersReducedMotion } from "@/utils/motion";
@@ -45,6 +45,7 @@ const rowVariants = {
 };
 
 export default function SubcategoryList({
+  tier,
   config,
   subcategories,
   subcategoryTotals,
@@ -69,53 +70,67 @@ export default function SubcategoryList({
 
   return (
     <div className="flex flex-col h-full">
-      <motion.div
-        role="tablist"
-        aria-label="Subcategories"
-        className="flex-1 overflow-y-auto"
-        variants={containerVariants}
-        initial={reduced ? false : "initial"}
-        animate="animate"
-      >
-        {subcategories.map((sub) => {
-          const isSelected = sub.id === selectedId;
-          const summary = subcategoryTotals[sub.id];
-          const isSubStale = (subcategoryTotals[sub.id]?.items ?? []).some((item) =>
-            isStale(item.lastReviewedAt, now, stalenessMonths)
-          );
-          return (
-            <motion.button
-              type="button"
-              role="tab"
-              key={sub.id}
-              data-testid={`subcategory-row-${sub.id}`}
-              aria-selected={isSelected}
-              onClick={() => onSelect(sub.id)}
-              variants={rowVariants}
-              className={[
-                "flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors",
-                isSelected
-                  ? `border-l-2 ${config.borderClass} ${config.bgClass}/14 font-medium ${config.textClass}`
-                  : `border-l-2 border-transparent text-foreground/60 ${config.hoverBgClass}`,
-              ].join(" ")}
-            >
-              <span className="w-2 shrink-0 flex items-center justify-center">
-                {isSubStale && (
-                  <span
-                    data-testid={`stale-dot-${sub.id}`}
-                    className="h-1.5 w-1.5 rounded-full bg-attention"
-                    aria-hidden
+      <LayoutGroup>
+        <motion.div
+          role="tablist"
+          aria-label="Subcategories"
+          className="flex-1 overflow-y-auto"
+          variants={containerVariants}
+          initial={reduced ? false : "initial"}
+          animate="animate"
+        >
+          {subcategories.map((sub) => {
+            const isSelected = sub.id === selectedId;
+            const summary = subcategoryTotals[sub.id];
+            const isSubStale = (subcategoryTotals[sub.id]?.items ?? []).some((item) =>
+              isStale(item.lastReviewedAt, now, stalenessMonths)
+            );
+            return (
+              <motion.button
+                type="button"
+                role="tab"
+                key={sub.id}
+                data-testid={`subcategory-row-${sub.id}`}
+                aria-selected={isSelected}
+                onClick={() => onSelect(sub.id)}
+                variants={rowVariants}
+                className={[
+                  "relative flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors",
+                  isSelected
+                    ? `font-medium ${config.textClass}`
+                    : `text-foreground/60 ${config.hoverBgClass}`,
+                ].join(" ")}
+              >
+                {isSelected && !reduced && (
+                  <motion.div
+                    layoutId={`subcategory-indicator-${tier}`}
+                    className={`absolute inset-0 ${config.bgClass}/14 border-l-2 ${config.borderClass} rounded-r-sm`}
+                    transition={{ duration: 0.22, ease: [0.25, 1, 0.5, 1] }}
                   />
                 )}
-              </span>
-              <span className="flex-1">{sub.name}</span>
-              <span className="font-numeric text-xs text-foreground/50">
-                {summary ? formatCurrency(toGBP(summary.total)) : "£0"}
-              </span>
-            </motion.button>
-          );
-        })}
-      </motion.div>
+                {isSelected && reduced && (
+                  <div
+                    className={`absolute inset-0 ${config.bgClass}/14 border-l-2 ${config.borderClass} rounded-r-sm`}
+                  />
+                )}
+                <span className="relative z-10 w-2 shrink-0 flex items-center justify-center">
+                  {isSubStale && (
+                    <span
+                      data-testid={`stale-dot-${sub.id}`}
+                      className="h-1.5 w-1.5 rounded-full bg-attention"
+                      aria-hidden
+                    />
+                  )}
+                </span>
+                <span className="relative z-10 flex-1">{sub.name}</span>
+                <span className="relative z-10 font-numeric text-xs text-foreground/50">
+                  {summary ? formatCurrency(toGBP(summary.total)) : "£0"}
+                </span>
+              </motion.button>
+            );
+          })}
+        </motion.div>
+      </LayoutGroup>
       {/* Tier total — static, not animated */}
       <div
         data-testid="tier-total"

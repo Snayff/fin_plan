@@ -6,11 +6,13 @@ import { TIER_CONFIGS } from "./tierConfig";
 
 mock.module("framer-motion", () => ({
   motion: {
-    div: ({ children, variants: _v, initial: _i, animate: _a, ...props }: any) =>
-      React.createElement("div", props, children),
+    div: ({ children, variants: _v, initial: _i, animate: _a, layoutId, transition: _t, ...props }: any) =>
+      React.createElement("div", { "data-layout-id": layoutId, ...props }, children),
     button: ({ children, variants: _v, initial: _i, animate: _a, ...props }: any) =>
       React.createElement("button", props, children),
   },
+  LayoutGroup: ({ children }: any) => React.createElement(React.Fragment, null, children),
+  AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
 }));
 
 const motionUtils = { usePrefersReducedMotion: mock(() => false) };
@@ -135,5 +137,17 @@ describe("SubcategoryList", () => {
     motionUtils.usePrefersReducedMotion.mockClear();
     renderList();
     expect(motionUtils.usePrefersReducedMotion).toHaveBeenCalled();
+  });
+
+  it("renders layoutId indicator for the selected subcategory", () => {
+    const { container } = renderList("sub-housing");
+    const indicator = container.querySelector('[data-layout-id="subcategory-indicator-committed"]');
+    expect(indicator).toBeTruthy();
+  });
+
+  it("does not render layoutId indicator for unselected subcategories", () => {
+    const { container } = renderList("sub-housing");
+    const indicators = container.querySelectorAll('[data-layout-id="subcategory-indicator-committed"]');
+    expect(indicators.length).toBe(1);
   });
 });
