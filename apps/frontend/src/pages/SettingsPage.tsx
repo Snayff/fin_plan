@@ -7,7 +7,6 @@ import { HouseholdSection } from "@/components/settings/HouseholdSection";
 import { TrustAccountsSection } from "@/components/settings/TrustAccountsSection";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
-import { PageHeader } from "@/components/common/PageHeader";
 import { useSettings } from "@/hooks/useSettings";
 
 const SECTIONS = [
@@ -31,7 +30,7 @@ export default function SettingsPage() {
       .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
 
     if (visible.length > 0) {
-      const id = visible[0]?.target.getAttribute("data-section-id");
+      const id = visible[0].target.getAttribute("data-section-id");
       if (id) setActiveSection(id);
     }
   }, []);
@@ -53,7 +52,10 @@ export default function SettingsPage() {
   }, [isLoading, isError, handleIntersection]);
 
   function scrollTo(id: string) {
-    sectionRefs.current[id]?.scrollIntoView({ behavior: "smooth", block: "start" });
+    sectionRefs.current[id]?.scrollIntoView({
+      behavior: "smooth",
+      block: "start",
+    });
   }
 
   function setRef(id: string) {
@@ -65,22 +67,22 @@ export default function SettingsPage() {
   return (
     <div data-page="settings" className="relative flex h-full overflow-hidden">
       {/* Left nav */}
-      <aside className="w-48 shrink-0 border-r overflow-y-auto flex flex-col">
-        <PageHeader title="Settings" />
-        <div className="px-4 pb-4 space-y-1">
-          {SECTIONS.map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              className={`w-full text-left text-sm px-2 py-1.5 rounded transition-colors ${
-                activeSection === s.id ? "bg-accent text-accent-foreground" : "hover:bg-accent"
-              }`}
-              onClick={() => scrollTo(s.id)}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
+      <aside className="w-48 shrink-0 border-r p-4 space-y-1 overflow-y-auto">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
+          Settings
+        </p>
+        {SECTIONS.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            className={`w-full text-left text-sm px-2 py-1.5 rounded transition-colors ${
+              activeSection === s.id ? "bg-accent text-accent-foreground" : "hover:bg-accent"
+            }`}
+            onClick={() => scrollTo(s.id)}
+          >
+            {s.label}
+          </button>
+        ))}
       </aside>
 
       {/* Content */}
