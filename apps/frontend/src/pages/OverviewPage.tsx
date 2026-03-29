@@ -15,6 +15,7 @@ import { SnapshotTimeline } from "@/components/overview/SnapshotTimeline";
 import { OverviewPageHeader } from "@/components/overview/OverviewPageHeader";
 import { CreateSnapshotModal } from "@/components/overview/CreateSnapshotModal";
 import { ReviewWizard } from "@/components/overview/ReviewWizard";
+import { FinancialSummaryPanel } from "@/components/overview/FinancialSummaryPanel";
 import { useSnapshot } from "@/hooks/useSettings";
 
 interface SelectedItem {
@@ -133,17 +134,7 @@ export default function OverviewPage() {
       />
     );
   } else {
-    right = (
-      <div
-        data-testid="analytics-placeholder"
-        className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center"
-      >
-        <p className="text-sm font-medium text-foreground/40">Analytics</p>
-        <p className="max-w-xs text-xs text-foreground/25">
-          Spending trends and cashflow analytics will be available here in a future update.
-        </p>
-      </div>
-    );
+    right = <FinancialSummaryPanel />;
   }
 
   return (

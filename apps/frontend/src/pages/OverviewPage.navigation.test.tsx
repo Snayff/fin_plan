@@ -23,6 +23,9 @@ mock.module("@/hooks/useWaterfall", () => ({
       income: {
         total: 4000,
         byType: [{ type: "regular", label: "Regular income", monthlyTotal: 4000, sources: [] }],
+        bySubcategory: [
+          { id: "sub1", name: "Salary", monthlyTotal: 4000, oldestReviewedAt: new Date() },
+        ],
         monthly: [
           {
             id: "s1",
@@ -45,8 +48,19 @@ mock.module("@/hooks/useWaterfall", () => ({
         annual: [],
         oneOff: [],
       },
-      committed: { monthlyTotal: 1500, monthlyAvg12: 0, bills: [], yearlyBills: [] },
-      discretionary: { total: 800, categories: [], savings: { total: 0, allocations: [] } },
+      committed: {
+        monthlyTotal: 1500,
+        monthlyAvg12: 0,
+        bills: [],
+        yearlyBills: [],
+        bySubcategory: [],
+      },
+      discretionary: {
+        total: 800,
+        categories: [],
+        savings: { total: 0, allocations: [] },
+        bySubcategory: [],
+      },
       surplus: { amount: 1700, percentOfIncome: 42.5 },
     },
   }),
@@ -55,6 +69,12 @@ mock.module("@/hooks/useWaterfall", () => ({
   useUpdateItem: () => ({ mutate: () => {}, isPending: false }),
   useEndIncome: () => ({ mutate: () => {}, isPending: false }),
   useCashflow: () => ({ data: undefined, isLoading: false }),
+  useFinancialSummary: () => ({
+    data: undefined,
+    isLoading: true,
+    isError: false,
+    refetch: () => {},
+  }),
 }));
 mock.module("@/hooks/useSettings", () => ({
   useSnapshot: () => ({ data: undefined, isLoading: false, isError: false }),
@@ -73,9 +93,9 @@ describe("OverviewPage — tier navigation", () => {
   });
 });
 
-describe("OverviewPage — analytics placeholder", () => {
-  it("shows analytics placeholder in right panel by default", () => {
+describe("OverviewPage — financial summary panel", () => {
+  it("shows financial summary panel in right panel by default", () => {
     renderWithProviders(<OverviewPage />, { initialEntries: ["/overview"] });
-    expect(screen.getByTestId("analytics-placeholder")).toBeTruthy();
+    expect(screen.getByTestId("financial-summary-panel")).toBeTruthy();
   });
 });
