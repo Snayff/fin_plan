@@ -42,7 +42,7 @@ describe("authMiddleware", () => {
     const request = buildMockRequest("Bearer valid-token");
     await authMiddleware(request, mockReply);
 
-    expect(request.user).toEqual({ userId: "user-1", email: "test@test.com" });
+    expect(request.user).toEqual({ userId: "user-1", email: "test@test.com", name: "Test User" });
     expect(request.householdId).toBe("household-1");
   });
 
@@ -53,7 +53,9 @@ describe("authMiddleware", () => {
 
   it("throws AuthenticationError for invalid format (no Bearer prefix)", async () => {
     const request = buildMockRequest("Basic some-token");
-    await expect(authMiddleware(request, mockReply)).rejects.toThrow("Invalid authorization format");
+    await expect(authMiddleware(request, mockReply)).rejects.toThrow(
+      "Invalid authorization format"
+    );
   });
 
   it("throws AuthenticationError for missing token after Bearer", async () => {
@@ -85,5 +87,21 @@ describe("authMiddleware", () => {
 
     const request = buildMockRequest("Bearer invalid-token");
     await expect(authMiddleware(request, mockReply)).rejects.toThrow("Invalid or expired token");
+  });
+
+  it("attaches name to request.user from DB", async () => {
+    const payload = { userId: "user_1", email: "a@b.com" };
+    (verifyAccessToken as any).mockReturnValue(payload);
+    prismaMock.user.findUnique.mockResolvedValue({
+      id: "user_1",
+      email: "a@b.com",
+      name: "Alice",
+      activeHouseholdId: "hh_1",
+    } as any);
+
+    const request = buildMockRequest("Bearer valid_token");
+    await authMiddleware(request, mockReply);
+
+    expect(request.user.name).toBe("Alice");
   });
 });
