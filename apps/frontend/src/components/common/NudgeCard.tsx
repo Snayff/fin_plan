@@ -1,3 +1,5 @@
+import { motion } from "framer-motion";
+
 interface NudgeCardProps {
   message: string;
   options?: string[];
@@ -7,7 +9,12 @@ interface NudgeCardProps {
 
 export function NudgeCard({ message, options, actionLabel, onAction }: NudgeCardProps) {
   return (
-    <div className="rounded-md p-3 text-xs space-y-2 bg-attention-bg border border-attention-border">
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25, ease: "easeOut" }}
+      className="rounded-md p-3 text-xs space-y-2 bg-attention-bg border border-attention-border"
+    >
       <div className="flex items-start gap-1.5">
         <span className="mt-0.5 h-[5px] w-[5px] rounded-full shrink-0 bg-attention" aria-hidden />
         <p>{message}</p>
@@ -28,6 +35,6 @@ export function NudgeCard({ message, options, actionLabel, onAction }: NudgeCard
           {actionLabel}
         </button>
       )}
-    </div>
+    </motion.div>
   );
 }

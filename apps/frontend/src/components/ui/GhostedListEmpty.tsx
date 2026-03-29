@@ -1,3 +1,4 @@
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 
 const GHOST_WIDTHS = [100, 140, 80, 120];
@@ -51,7 +52,10 @@ export function GhostedListEmpty({
 
       {/* CTA card */}
       {showCta && onCtaClick && (
-        <div
+        <motion.div
+          initial={{ opacity: 0, scale: 0.97 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
           className="mx-2 mt-3 flex items-center justify-between gap-3 rounded-lg p-3.5"
           style={{
             background:
@@ -70,7 +74,7 @@ export function GhostedListEmpty({
           <Button size="sm" onClick={onCtaClick} className="shrink-0">
             {ctaButtonLabel}
           </Button>
-        </div>
+        </motion.div>
       )}
 
       {/* Informational-only text (showCta=false, no button) */}
