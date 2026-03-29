@@ -10,7 +10,7 @@ async function buildNetWorthSeries(
   householdId: string
 ): Promise<Array<{ date: string; value: number }>> {
   const history = await prisma.wealthAccountHistory.findMany({
-    where: { wealthAccount: { householdId } },
+    where: { wealthAccount: { householdId, isTrust: false } },
     orderBy: { valuationDate: "asc" },
     select: { wealthAccountId: true, balance: true, valuationDate: true },
   });
@@ -154,7 +154,7 @@ export const snapshotService = {
         orderBy: { createdAt: "asc" },
         select: { data: true, createdAt: true },
       }),
-      prisma.wealthAccount.count({ where: { householdId } }),
+      prisma.wealthAccount.count({ where: { householdId, isTrust: false } }),
     ]);
 
     let netWorth: number | null = null;

@@ -67,6 +67,7 @@ export function FinancialSummaryPanel() {
         <div className="text-center">
           <p className="text-sm text-foreground/40 mb-2">Could not load summary</p>
           <button
+            type="button"
             onClick={() => void refetch()}
             className="text-xs text-foreground/30 hover:text-foreground/50 underline"
           >
