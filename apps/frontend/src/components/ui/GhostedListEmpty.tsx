@@ -71,7 +71,7 @@ export function GhostedListEmpty({
             )}
             <span className="text-xs text-muted-foreground leading-snug">{ctaText}</span>
           </div>
-          <Button size="sm" onClick={onCtaClick} className="shrink-0">
+          <Button size="sm" type="button" onClick={onCtaClick} className="shrink-0">
             {ctaButtonLabel}
           </Button>
         </motion.div>

@@ -95,7 +95,7 @@ export default function SubcategoryList({
                 onClick={() => onSelect(sub.id)}
                 variants={rowVariants}
                 className={[
-                  "relative flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors",
+                  "relative flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
                   isSelected
                     ? `font-medium ${config.textClass}`
                     : `text-foreground/60 ${config.hoverBgClass}`,

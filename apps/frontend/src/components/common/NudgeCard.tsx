@@ -29,7 +29,7 @@ export function NudgeCard({ message, options, actionLabel, onAction }: NudgeCard
       {actionLabel && onAction && (
         <button
           onClick={onAction}
-          className="underline underline-offset-2 hover:no-underline text-xs text-attention"
+          className="underline underline-offset-2 hover:no-underline text-xs text-attention focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
           type="button"
         >
           {actionLabel}
