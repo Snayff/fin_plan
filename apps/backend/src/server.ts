@@ -16,6 +16,7 @@ import { settingsRoutes } from "./routes/settings.routes";
 import { snapshotRoutes } from "./routes/snapshots.routes";
 import { reviewRoutes } from "./routes/review-session.routes";
 import { setupRoutes } from "./routes/setup-session.routes";
+import { auditLogRoutes } from "./routes/audit-log.routes";
 import { errorHandler } from "./middleware/errorHandler";
 
 const server = Fastify({
@@ -88,6 +89,7 @@ async function start() {
     server.register(snapshotRoutes, { prefix: "/api/snapshots" });
     server.register(reviewRoutes, { prefix: "/api/review-session" });
     server.register(setupRoutes, { prefix: "/api/setup-session" });
+    server.register(auditLogRoutes, { prefix: "/api" });
 
     // WebSocket route for sync (placeholder for Phase 1)
     server.register(async (fastify) => {
