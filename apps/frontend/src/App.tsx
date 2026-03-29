@@ -58,9 +58,6 @@ export function ProtectedAppRoutes() {
               <ErrorBoundary>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
-                    {/* Legacy redirects */}
-                    <Route path="/wealth" element={<Navigate to="/overview" replace />} />
-                    <Route path="/planner" element={<Navigate to="/overview" replace />} />
                     <Route path="/" element={<Navigate to="/overview" replace />} />
 
                     {/* Primary routes */}
