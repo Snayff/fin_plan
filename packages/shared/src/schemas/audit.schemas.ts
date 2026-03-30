@@ -42,8 +42,8 @@ export type AuditEntry = z.infer<typeof AuditEntrySchema>;
 export const AuditLogQuerySchema = z.object({
   actorId: z.string().optional(),
   resource: ResourceSlugEnum.optional(),
-  dateFrom: z.string().optional(),
-  dateTo: z.string().optional(),
+  dateFrom: z.string().datetime({ offset: true }).optional(),
+  dateTo: z.string().datetime({ offset: true }).optional(),
   cursor: z.string().optional(),
   limit: z.coerce.number().int().min(1).max(100).default(50),
 });

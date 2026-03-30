@@ -7,8 +7,14 @@ function encodeCursor(createdAt: Date, id: string): string {
   return Buffer.from(JSON.stringify({ createdAt: createdAt.toISOString(), id })).toString("base64");
 }
 
-function decodeCursor(cursor: string): { createdAt: string; id: string } {
-  return JSON.parse(Buffer.from(cursor, "base64").toString("utf-8"));
+function decodeCursor(cursor: string): { createdAt: string; id: string } | null {
+  try {
+    const parsed = JSON.parse(Buffer.from(cursor, "base64").toString("utf-8"));
+    if (typeof parsed?.createdAt !== "string" || typeof parsed?.id !== "string") return null;
+    return parsed as { createdAt: string; id: string };
+  } catch {
+    return null;
+  }
 }
 
 export async function queryAuditLog(
@@ -28,7 +34,9 @@ export async function queryAuditLog(
   }
 
   if (cursor) {
-    const { createdAt, id } = decodeCursor(cursor);
+    const decoded = decodeCursor(cursor);
+    if (!decoded) throw Object.assign(new Error("Invalid cursor"), { statusCode: 400 });
+    const { createdAt, id } = decoded;
     Object.assign(where, {
       OR: [
         { createdAt: { lt: new Date(createdAt) } },

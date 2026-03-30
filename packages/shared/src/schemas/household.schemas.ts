@@ -20,8 +20,8 @@ export const acceptInviteSchema = z.object({
 });
 
 // role: only member or admin can be assigned — owner is immutable
+// targetUserId comes from the URL param, not the body
 export const updateMemberRoleSchema = z.object({
-  targetUserId: z.string(),
   role: z.enum(["member", "admin"]),
 });
 

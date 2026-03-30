@@ -55,13 +55,10 @@ describe("AuditLogQuerySchema", () => {
 
 describe("updateMemberRoleSchema", () => {
   it("accepts valid update", () => {
-    const result = updateMemberRoleSchema.parse({
-      targetUserId: "u1",
-      role: "admin",
-    });
+    const result = updateMemberRoleSchema.parse({ role: "admin" });
     expect(result.role).toBe("admin");
   });
   it("rejects owner role assignment", () => {
-    expect(() => updateMemberRoleSchema.parse({ targetUserId: "u1", role: "owner" })).toThrow();
+    expect(() => updateMemberRoleSchema.parse({ role: "owner" })).toThrow();
   });
 });

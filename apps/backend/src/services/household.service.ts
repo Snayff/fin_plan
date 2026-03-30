@@ -311,7 +311,7 @@ export const householdService = {
         ctx,
         action: "INVITE_MEMBER",
         resource: "household-invite",
-        resourceId: rawToken,
+        resourceId: tokenHash,
         beforeFetch: async () => null,
         mutation: async (tx) =>
           tx.householdInvite.create({
