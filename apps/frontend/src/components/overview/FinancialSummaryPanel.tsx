@@ -45,6 +45,9 @@ export function FinancialSummaryPanel() {
     return (
       <div
         data-testid="financial-summary-panel"
+        role="status"
+        aria-busy="true"
+        aria-label="Loading financial summary"
         className="flex flex-col items-center justify-start h-full overflow-y-auto py-8"
       >
         <div className="flex flex-col gap-3 w-[62%]">

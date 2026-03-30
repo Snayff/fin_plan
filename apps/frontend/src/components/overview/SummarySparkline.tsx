@@ -33,7 +33,7 @@ export function SummarySparkline({
   const yMax = max + range * 0.15;
 
   return (
-    <div style={{ marginLeft: paddingX, marginRight: paddingX }}>
+    <div aria-hidden="true" style={{ marginLeft: paddingX, marginRight: paddingX }}>
       <ResponsiveContainer width="100%" height={40}>
         <AreaChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
           <defs>
