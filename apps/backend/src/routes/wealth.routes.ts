@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { wealthService } from "../services/wealth.service.js";
+import { actorCtx } from "../lib/actor-ctx.js";
 import {
   createWealthAccountSchema,
   updateWealthAccountSchema,
@@ -40,20 +41,20 @@ export async function wealthRoutes(fastify: FastifyInstance) {
 
   fastify.post("/accounts", pre, async (req, reply) => {
     const data = createWealthAccountSchema.parse(req.body);
-    const account = await wealthService.createAccount(req.householdId!, data);
+    const account = await wealthService.createAccount(req.householdId!, data, actorCtx(req));
     return reply.status(201).send(account);
   });
 
   fastify.patch("/accounts/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateWealthAccountSchema.parse(req.body);
-    const account = await wealthService.updateAccount(req.householdId!, id, data);
+    const account = await wealthService.updateAccount(req.householdId!, id, data, actorCtx(req));
     return reply.send(account);
   });
 
   fastify.delete("/accounts/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await wealthService.deleteAccount(req.householdId!, id);
+    await wealthService.deleteAccount(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 

@@ -48,6 +48,64 @@ describe("setupSessionService.updateSession", () => {
   });
 });
 
+describe("setupSessionService.createOrResetSession with audited()", () => {
+  const actor = {
+    householdId: "hh_1",
+    actorId: "user_1",
+    actorName: "Alice",
+  };
+
+  it("writes an AuditLog entry on session create/reset", async () => {
+    prismaMock.waterfallSetupSession.upsert.mockResolvedValue({ householdId: "hh-1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await setupSessionService.createOrResetSession("hh-1", actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CREATE_SETUP_SESSION",
+          resource: "setup-session",
+          actorId: "user_1",
+        }),
+      })
+    );
+  });
+
+  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+    prismaMock.waterfallSetupSession.upsert.mockResolvedValue({ householdId: "hh-1" } as any);
+
+    await setupSessionService.createOrResetSession("hh-1");
+
+    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("setupSessionService.updateSession with audited()", () => {
+  const actor = {
+    householdId: "hh_1",
+    actorId: "user_1",
+    actorName: "Alice",
+  };
+
+  it("writes an AuditLog entry on session update", async () => {
+    prismaMock.waterfallSetupSession.update.mockResolvedValue({ householdId: "hh-1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await setupSessionService.updateSession("hh-1", { currentStep: 3 }, actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "UPDATE_SETUP_SESSION",
+          resource: "setup-session",
+          actorId: "user_1",
+        }),
+      })
+    );
+  });
+});
+
 describe("setupSessionService.deleteSession", () => {
   it("deletes by householdId", async () => {
     prismaMock.waterfallSetupSession.deleteMany.mockResolvedValue({ count: 1 } as any);

@@ -39,6 +39,64 @@ describe("reviewSessionService.createOrResetSession", () => {
   });
 });
 
+describe("reviewSessionService.createOrResetSession with audited()", () => {
+  const actor = {
+    householdId: "hh_1",
+    actorId: "user_1",
+    actorName: "Alice",
+  };
+
+  it("writes an AuditLog entry on session create/reset", async () => {
+    prismaMock.reviewSession.upsert.mockResolvedValue({ householdId: "hh-1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await reviewSessionService.createOrResetSession("hh-1", actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CREATE_REVIEW_SESSION",
+          resource: "review-session",
+          actorId: "user_1",
+        }),
+      })
+    );
+  });
+
+  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+    prismaMock.reviewSession.upsert.mockResolvedValue({ householdId: "hh-1" } as any);
+
+    await reviewSessionService.createOrResetSession("hh-1");
+
+    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("reviewSessionService.updateSession with audited()", () => {
+  const actor = {
+    householdId: "hh_1",
+    actorId: "user_1",
+    actorName: "Alice",
+  };
+
+  it("writes an AuditLog entry on session update", async () => {
+    prismaMock.reviewSession.update.mockResolvedValue({ householdId: "hh-1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await reviewSessionService.updateSession("hh-1", { currentStep: 2 }, actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "UPDATE_REVIEW_SESSION",
+          resource: "review-session",
+          actorId: "user_1",
+        }),
+      })
+    );
+  });
+});
+
 describe("reviewSessionService.deleteSession", () => {
   it("deletes by householdId", async () => {
     prismaMock.reviewSession.deleteMany.mockResolvedValue({ count: 1 } as any);

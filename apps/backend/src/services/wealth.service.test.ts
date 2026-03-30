@@ -109,6 +109,58 @@ describe("wealthService.getIsaAllowance — toGBP rounding", () => {
   });
 });
 
+describe("wealthService.createAccount with audited()", () => {
+  const actor = {
+    householdId: "hh_1",
+    actorId: "user_1",
+    actorName: "Alice",
+  };
+
+  it("writes an AuditLog entry on wealth account creation", async () => {
+    prismaMock.wealthAccount.create.mockResolvedValue({
+      id: "wa_1",
+      balance: 5000,
+      valuationDate: new Date(),
+    } as any);
+    prismaMock.wealthAccountHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await wealthService.createAccount(
+      "hh_1",
+      { name: "Savings Account", assetClass: "savings", balance: 5000, valuationDate: new Date() },
+      actor
+    );
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CREATE_WEALTH_ACCOUNT",
+          resource: "wealth-account",
+          actorId: "user_1",
+        }),
+      })
+    );
+  });
+
+  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+    prismaMock.wealthAccount.create.mockResolvedValue({
+      id: "wa_1",
+      balance: 5000,
+      valuationDate: new Date(),
+    } as any);
+    prismaMock.wealthAccountHistory.create.mockResolvedValue({} as any);
+
+    await wealthService.createAccount("hh_1", {
+      name: "Savings Account",
+      assetClass: "savings",
+      balance: 5000,
+      valuationDate: new Date(),
+    });
+
+    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+  });
+});
+
 describe("wealthService.getIsaAllowance — DI clock", () => {
   it("computes correct tax year when now is before April 6", async () => {
     const now = new Date("2026-03-15");

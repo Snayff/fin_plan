@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { plannerService } from "../services/planner.service.js";
+import { actorCtx } from "../lib/actor-ctx.js";
 import {
   createPurchaseSchema,
   updatePurchaseSchema,
@@ -26,20 +27,20 @@ export async function plannerRoutes(fastify: FastifyInstance) {
 
   fastify.post("/purchases", pre, async (req, reply) => {
     const data = createPurchaseSchema.parse(req.body);
-    const purchase = await plannerService.createPurchase(req.householdId!, data);
+    const purchase = await plannerService.createPurchase(req.householdId!, data, actorCtx(req));
     return reply.status(201).send(purchase);
   });
 
   fastify.patch("/purchases/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updatePurchaseSchema.parse(req.body);
-    const purchase = await plannerService.updatePurchase(req.householdId!, id, data);
+    const purchase = await plannerService.updatePurchase(req.householdId!, id, data, actorCtx(req));
     return reply.send(purchase);
   });
 
   fastify.delete("/purchases/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await plannerService.deletePurchase(req.householdId!, id);
+    await plannerService.deletePurchase(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 

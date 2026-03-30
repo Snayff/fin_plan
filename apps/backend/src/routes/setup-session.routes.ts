@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { setupSessionService } from "../services/setup-session.service.js";
+import { actorCtx } from "../lib/actor-ctx.js";
 import { updateSetupSessionSchema } from "@finplan/shared";
 
 export async function setupRoutes(fastify: FastifyInstance) {
@@ -12,13 +13,13 @@ export async function setupRoutes(fastify: FastifyInstance) {
   });
 
   fastify.post("/", pre, async (req, reply) => {
-    const session = await setupSessionService.createOrResetSession(req.householdId!);
+    const session = await setupSessionService.createOrResetSession(req.householdId!, actorCtx(req));
     return reply.status(201).send(session);
   });
 
   fastify.patch("/", pre, async (req, reply) => {
     const data = updateSetupSessionSchema.parse(req.body);
-    const session = await setupSessionService.updateSession(req.householdId!, data);
+    const session = await setupSessionService.updateSession(req.householdId!, data, actorCtx(req));
     return reply.send(session);
   });
 

@@ -1,6 +1,8 @@
 import { prisma } from "../config/database.js";
 import { NotFoundError, ConflictError } from "../utils/errors.js";
 import { toGBP } from "@finplan/shared";
+import { audited } from "./audit.service.js";
+import type { ActorCtx } from "./audit.service.js";
 import type {
   CreateWealthAccountInput,
   UpdateWealthAccountInput,
@@ -135,7 +137,30 @@ export const wealthService = {
 
   // ─── CRUD ─────────────────────────────────────────────────────────────────
 
-  async createAccount(householdId: string, data: CreateWealthAccountInput) {
+  async createAccount(householdId: string, data: CreateWealthAccountInput, ctx?: ActorCtx) {
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "CREATE_WEALTH_ACCOUNT",
+        resource: "wealth-account",
+        resourceId: "",
+        beforeFetch: async () => null,
+        mutation: async (tx) => {
+          const account = await tx.wealthAccount.create({
+            data: { ...data, householdId, lastReviewedAt: new Date() },
+          });
+          await tx.wealthAccountHistory.create({
+            data: {
+              wealthAccountId: account.id,
+              balance: account.balance,
+              valuationDate: account.valuationDate,
+            },
+          });
+          return account;
+        },
+      });
+    }
     const account = await prisma.wealthAccount.create({
       data: { ...data, householdId, lastReviewedAt: new Date() },
     });
@@ -150,16 +175,37 @@ export const wealthService = {
     return account;
   },
 
-  async updateAccount(householdId: string, id: string, data: UpdateWealthAccountInput) {
+  async updateAccount(
+    householdId: string,
+    id: string,
+    data: UpdateWealthAccountInput,
+    ctx?: ActorCtx
+  ) {
     const existing = await prisma.wealthAccount.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Wealth account");
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "UPDATE_WEALTH_ACCOUNT",
+        resource: "wealth-account",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.wealthAccount.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) =>
+          tx.wealthAccount.update({
+            where: { id },
+            data: { ...data, lastReviewedAt: new Date() },
+          }),
+      });
+    }
     return prisma.wealthAccount.update({
       where: { id },
       data: { ...data, lastReviewedAt: new Date() },
     });
   },
 
-  async deleteAccount(householdId: string, id: string) {
+  async deleteAccount(householdId: string, id: string, ctx?: ActorCtx) {
     const existing = await prisma.wealthAccount.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Wealth account");
 
@@ -168,6 +214,23 @@ export const wealthService = {
       throw new ConflictError(
         "This account has linked savings allocations. Remove them before deleting."
       );
+    }
+
+    if (ctx) {
+      await audited({
+        db: prisma,
+        ctx,
+        action: "DELETE_WEALTH_ACCOUNT",
+        resource: "wealth-account",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.wealthAccount.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) => {
+          await tx.wealthAccount.delete({ where: { id } });
+          return null;
+        },
+      });
+      return;
     }
 
     await prisma.wealthAccount.delete({ where: { id } });

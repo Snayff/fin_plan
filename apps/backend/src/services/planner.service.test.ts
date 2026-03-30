@@ -187,6 +187,39 @@ describe("plannerService.deleteGiftEvent", () => {
 
 // ─── Upcoming gifts ───────────────────────────────────────────────────────────
 
+describe("plannerService.createPurchase with audited()", () => {
+  const actor = {
+    householdId: "hh_1",
+    actorId: "user_1",
+    actorName: "Alice",
+  };
+
+  it("writes an AuditLog entry on purchase creation", async () => {
+    prismaMock.purchaseItem.create.mockResolvedValue({ id: "p_1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await plannerService.createPurchase("hh_1", { name: "Bike", estimatedCost: 500 }, actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CREATE_PLANNER_GOAL",
+          resource: "planner-goal",
+          actorId: "user_1",
+        }),
+      })
+    );
+  });
+
+  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+    prismaMock.purchaseItem.create.mockResolvedValue({ id: "p_1" } as any);
+
+    await plannerService.createPurchase("hh_1", { name: "Bike", estimatedCost: 500 });
+
+    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+  });
+});
+
 describe("plannerService.getUpcomingGifts", () => {
   it("returns events sorted by nextDate with done flag", async () => {
     const now = new Date();
