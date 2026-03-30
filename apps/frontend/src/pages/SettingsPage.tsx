@@ -5,9 +5,12 @@ import { SurplusSection } from "@/components/settings/SurplusSection";
 import { IsaSection } from "@/components/settings/IsaSection";
 import { HouseholdSection } from "@/components/settings/HouseholdSection";
 import { TrustAccountsSection } from "@/components/settings/TrustAccountsSection";
+import { AuditLogSection } from "@/components/settings/AuditLogSection";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
 import { useSettings } from "@/hooks/useSettings";
+import { useAuthStore } from "@/stores/authStore";
+import { useHouseholdDetails } from "@/hooks/useSettings";
 
 const SECTIONS = [
   { id: "profile", label: "Profile" },
@@ -16,6 +19,7 @@ const SECTIONS = [
   { id: "isa", label: "ISA settings" },
   { id: "household", label: "Household" },
   { id: "trust-accounts", label: "Trust accounts" },
+  { id: "audit-log", label: "Audit log", roles: ["owner", "admin"] as string[] },
 ] as const;
 
 export default function SettingsPage() {
@@ -23,6 +27,12 @@ export default function SettingsPage() {
   const scrollContainerRef = useRef<HTMLDivElement | null>(null);
   const { isLoading, isError, refetch } = useSettings();
   const [activeSection, setActiveSection] = useState<string>(SECTIONS[0].id);
+  const user = useAuthStore((s) => s.user);
+  const householdId = user?.activeHouseholdId ?? "";
+  const { data: householdData } = useHouseholdDetails(householdId);
+  const currentMember = householdData?.household?.members.find((m) => m.userId === user?.id);
+  const callerRole = currentMember?.role ?? "member";
+  const canSeeAuditLog = callerRole === "owner" || callerRole === "admin";
 
   const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
     const visible = entries
@@ -71,7 +81,7 @@ export default function SettingsPage() {
         <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
           Settings
         </p>
-        {SECTIONS.map((s) => (
+        {SECTIONS.filter((s) => !("roles" in s) || canSeeAuditLog).map((s) => (
           <button
             key={s.id}
             type="button"
@@ -112,6 +122,11 @@ export default function SettingsPage() {
             <div ref={setRef("trust-accounts")} data-section-id="trust-accounts">
               <TrustAccountsSection />
             </div>
+            {canSeeAuditLog && (
+              <div ref={setRef("audit-log")} data-section-id="audit-log">
+                <AuditLogSection />
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -14,6 +14,7 @@ import {
   useCancelInvite,
   useRemoveMember,
   useLeaveHousehold,
+  useUpdateMemberRole,
 } from "@/hooks/useSettings";
 import { Section } from "./Section";
 
@@ -30,6 +31,7 @@ export function HouseholdSection() {
   const cancelInvite = useCancelInvite();
   const removeMember = useRemoveMember();
   const leaveHousehold = useLeaveHousehold();
+  const updateMemberRole = useUpdateMemberRole(householdId);
 
   const [editName, setEditName] = useState("");
   const [editingName, setEditingName] = useState(false);
@@ -43,6 +45,7 @@ export function HouseholdSection() {
   const currentUserId = user?.id;
   const currentMember = household?.members.find((m) => m.userId === currentUserId);
   const isOwner = currentMember?.role === "owner";
+  const isAdmin = currentMember?.role === "admin";
   const ownerCount = household?.members.filter((m) => m.role === "owner").length ?? 0;
   const isSoleOwner = isOwner && ownerCount <= 1;
 
@@ -137,19 +140,48 @@ export function HouseholdSection() {
                 {member.user.email} · {member.role}
               </p>
             </div>
-            {isOwner && member.userId !== currentUserId && (
-              <button
-                className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-                onClick={() =>
-                  removeMember.mutate(
-                    { householdId, userId: member.userId },
-                    { onSuccess: () => toast.success("Member removed") }
-                  )
-                }
-              >
-                Remove
-              </button>
-            )}
+            <div className="flex items-center gap-3">
+              {/* Role promotion/demotion: owner can change any non-owner; admin can promote/demote members only */}
+              {member.userId !== currentUserId &&
+                member.role !== "owner" &&
+                (isOwner || (isAdmin && member.role === "member")) && (
+                  <button
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                    disabled={updateMemberRole.isPending}
+                    onClick={() =>
+                      updateMemberRole.mutate(
+                        {
+                          targetUserId: member.userId,
+                          role: member.role === "admin" ? "member" : "admin",
+                        },
+                        {
+                          onSuccess: () =>
+                            toast.success(
+                              member.role === "admin"
+                                ? "Role changed to member"
+                                : "Role changed to admin"
+                            ),
+                        }
+                      )
+                    }
+                  >
+                    {member.role === "admin" ? "Make member" : "Make admin"}
+                  </button>
+                )}
+              {isOwner && member.userId !== currentUserId && (
+                <button
+                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
+                  onClick={() =>
+                    removeMember.mutate(
+                      { householdId, userId: member.userId },
+                      { onSuccess: () => toast.success("Member removed") }
+                    )
+                  }
+                >
+                  Remove
+                </button>
+              )}
+            </div>
           </div>
         ))}
       </div>
