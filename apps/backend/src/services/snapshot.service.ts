@@ -2,6 +2,7 @@ import { prisma } from "../config/database.js";
 import { NotFoundError, ConflictError, AuthorizationError } from "../utils/errors.js";
 import { waterfallService } from "./waterfall.service.js";
 import { toGBP } from "@finplan/shared";
+import { FinancialSummarySchema } from "@finplan/shared";
 import type { CreateSnapshotInput, RenameSnapshotInput, FinancialSummary } from "@finplan/shared";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -81,7 +82,7 @@ export const snapshotService = {
         data: {
           householdId,
           name: input.name,
-          isAuto: input.isAuto ?? false,
+          isAuto: false,
           data: data as object,
         },
       });
@@ -132,7 +133,10 @@ export const snapshotService = {
       where: { householdId_name: { householdId, name: autoName } },
     });
     if (!exists) {
-      await snapshotService.createSnapshot(householdId, { name: autoName, isAuto: true });
+      const data = await waterfallService.getWaterfallSummary(householdId);
+      await prisma.snapshot.create({
+        data: { householdId, name: autoName, isAuto: true, data: data as object },
+      });
     }
   },
 
@@ -172,7 +176,7 @@ export const snapshotService = {
 
     const tierSeries = buildTierSeries(autoSnapshots);
 
-    return {
+    return FinancialSummarySchema.parse({
       current: {
         netWorth,
         income: summary.income.total,
@@ -187,6 +191,6 @@ export const snapshotService = {
         discretionary: tierSeries.discretionary,
         surplus: tierSeries.surplus,
       },
-    };
+    });
   },
 };

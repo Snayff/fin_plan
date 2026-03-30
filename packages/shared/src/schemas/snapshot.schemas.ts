@@ -2,7 +2,6 @@ import { z } from "zod";
 
 export const createSnapshotSchema = z.object({
   name: z.string().min(1).max(100).trim(),
-  isAuto: z.boolean().optional(),
 });
 
 export const renameSnapshotSchema = z.object({
