@@ -777,3 +777,54 @@ describe("waterfallService.getWaterfallSummary — fixture scenarios", () => {
     expect(summary.surplus.amount).toBe(4155);
   });
 });
+
+describe("waterfallService.createIncome with audited()", () => {
+  const actor = {
+    householdId: "hh_1",
+    actorId: "user_1",
+    actorName: "Alice",
+  };
+
+  it("writes an AuditLog entry on income creation", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-1" } as any);
+    prismaMock.incomeSource.create.mockResolvedValue({
+      id: "inc_1",
+      amount: 1000,
+    } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await waterfallService.createIncome(
+      "hh_1",
+      { name: "Salary", amount: 1000, subcategoryId: "sub-1" },
+      actor
+    );
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CREATE_INCOME_SOURCE",
+          resource: "income-source",
+          actorId: "user_1",
+        }),
+      })
+    );
+  });
+
+  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-1" } as any);
+    prismaMock.incomeSource.create.mockResolvedValue({
+      id: "inc_1",
+      amount: 1000,
+    } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+
+    await waterfallService.createIncome("hh_1", {
+      name: "Salary",
+      amount: 1000,
+      subcategoryId: "sub-1",
+    });
+
+    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+  });
+});

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { waterfallService } from "../services/waterfall.service.js";
+import { actorCtx } from "../lib/actor-ctx.js";
 import { snapshotService } from "../services/snapshot.service.js";
 import { subcategoryService } from "../services/subcategory.service.js";
 import {
@@ -68,33 +69,33 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
 
   fastify.post("/income", pre, async (req, reply) => {
     const data = createIncomeSourceSchema.parse(req.body);
-    const source = await waterfallService.createIncome(req.householdId!, data);
+    const source = await waterfallService.createIncome(req.householdId!, data, actorCtx(req));
     return reply.status(201).send(source);
   });
 
   fastify.patch("/income/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateIncomeSourceSchema.parse(req.body);
-    const source = await waterfallService.updateIncome(req.householdId!, id, data);
+    const source = await waterfallService.updateIncome(req.householdId!, id, data, actorCtx(req));
     return reply.send(source);
   });
 
   fastify.delete("/income/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await waterfallService.deleteIncome(req.householdId!, id);
+    await waterfallService.deleteIncome(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
   fastify.post("/income/:id/end", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = endIncomeSourceSchema.parse(req.body);
-    const source = await waterfallService.endIncome(req.householdId!, id, data);
+    const source = await waterfallService.endIncome(req.householdId!, id, data, actorCtx(req));
     return reply.send(source);
   });
 
   fastify.post("/income/:id/reactivate", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    const source = await waterfallService.reactivateIncome(req.householdId!, id);
+    const source = await waterfallService.reactivateIncome(req.householdId!, id, actorCtx(req));
     return reply.send(source);
   });
 

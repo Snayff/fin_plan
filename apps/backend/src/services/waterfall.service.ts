@@ -2,6 +2,8 @@ import { prisma } from "../config/database.js";
 import { NotFoundError } from "../utils/errors.js";
 import { subcategoryService } from "./subcategory.service.js";
 import { toGBP } from "@finplan/shared";
+import { audited } from "./audit.service.js";
+import type { ActorCtx } from "./audit.service.js";
 import type {
   CreateIncomeSourceInput,
   UpdateIncomeSourceInput,
@@ -324,7 +326,7 @@ export const waterfallService = {
     });
   },
 
-  async createIncome(householdId: string, data: CreateIncomeSourceInput) {
+  async createIncome(householdId: string, data: CreateIncomeSourceInput, ctx?: ActorCtx) {
     const subcategoryId =
       data.subcategoryId ??
       (await subcategoryService.getDefaultSubcategoryId(householdId, "income"));
@@ -334,6 +336,24 @@ export const waterfallService = {
     if (data.ownerId) {
       await validateMemberOwnership(householdId, data.ownerId);
     }
+    if (ctx) {
+      const source = await audited({
+        db: prisma,
+        ctx,
+        action: "CREATE_INCOME_SOURCE",
+        resource: "income-source",
+        resourceId: "",
+        beforeFetch: async () => null,
+        mutation: async (tx) => {
+          const s = await tx.incomeSource.create({
+            data: { ...data, subcategoryId, householdId, lastReviewedAt: new Date() },
+          });
+          await recordHistory("income_source", s.id, s.amount);
+          return s;
+        },
+      });
+      return source;
+    }
     const source = await prisma.incomeSource.create({
       data: { ...data, subcategoryId, householdId, lastReviewedAt: new Date() },
     });
@@ -341,7 +361,12 @@ export const waterfallService = {
     return source;
   },
 
-  async updateIncome(householdId: string, id: string, data: UpdateIncomeSourceInput) {
+  async updateIncome(
+    householdId: string,
+    id: string,
+    data: UpdateIncomeSourceInput,
+    ctx?: ActorCtx
+  ) {
     const existing = await prisma.incomeSource.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Income source");
     if (data.subcategoryId) {
@@ -349,6 +374,28 @@ export const waterfallService = {
     }
     if (data.ownerId) {
       await validateMemberOwnership(householdId, data.ownerId);
+    }
+
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "UPDATE_INCOME_SOURCE",
+        resource: "income-source",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.incomeSource.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) => {
+          const updated = await tx.incomeSource.update({
+            where: { id },
+            data: { ...data, lastReviewedAt: new Date() },
+          });
+          if (data.amount !== undefined && data.amount !== existing!.amount) {
+            await recordHistory("income_source", id, updated.amount);
+          }
+          return updated;
+        },
+      });
     }
 
     const updated = await prisma.incomeSource.update({
@@ -363,24 +410,72 @@ export const waterfallService = {
     return updated;
   },
 
-  async deleteIncome(householdId: string, id: string) {
+  async deleteIncome(householdId: string, id: string, ctx?: ActorCtx) {
     const existing = await prisma.incomeSource.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Income source");
+    if (ctx) {
+      await audited({
+        db: prisma,
+        ctx,
+        action: "DELETE_INCOME_SOURCE",
+        resource: "income-source",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.incomeSource.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) => {
+          await tx.incomeSource.delete({ where: { id } });
+          return null;
+        },
+      });
+      return;
+    }
     await prisma.incomeSource.delete({ where: { id } });
   },
 
-  async endIncome(householdId: string, id: string, data: EndIncomeSourceInput) {
+  async endIncome(householdId: string, id: string, data: EndIncomeSourceInput, ctx?: ActorCtx) {
     const existing = await prisma.incomeSource.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Income source");
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "UPDATE_INCOME_SOURCE",
+        resource: "income-source",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.incomeSource.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) =>
+          tx.incomeSource.update({
+            where: { id },
+            data: { endedAt: data.endedAt ?? new Date() },
+          }),
+      });
+    }
     return prisma.incomeSource.update({
       where: { id },
       data: { endedAt: data.endedAt ?? new Date() },
     });
   },
 
-  async reactivateIncome(householdId: string, id: string) {
+  async reactivateIncome(householdId: string, id: string, ctx?: ActorCtx) {
     const existing = await prisma.incomeSource.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Income source");
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "UPDATE_INCOME_SOURCE",
+        resource: "income-source",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.incomeSource.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) =>
+          tx.incomeSource.update({
+            where: { id },
+            data: { endedAt: null, lastReviewedAt: new Date() },
+          }),
+      });
+    }
     return prisma.incomeSource.update({
       where: { id },
       data: { endedAt: null, lastReviewedAt: new Date() },
