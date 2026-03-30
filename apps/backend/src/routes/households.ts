@@ -1,11 +1,14 @@
 import { FastifyInstance } from "fastify";
-import { householdService } from "../services/household.service";
+import { householdService, updateMemberRole } from "../services/household.service";
 import { authMiddleware } from "../middleware/auth.middleware";
+import { prisma } from "../config/database.js";
 import {
   createHouseholdSchema,
   createHouseholdInviteSchema,
   renameHouseholdSchema,
+  updateMemberRoleSchema,
 } from "@finplan/shared";
+import { AuthorizationError, NotFoundError } from "../utils/errors.js";
 
 export async function householdRoutes(fastify: FastifyInstance) {
   // List all households the current user belongs to
@@ -110,6 +113,44 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       await householdService.leaveHousehold(id, userId);
       return reply.send({ success: true });
+    }
+  );
+
+  // Update a member's role (owner/admin only)
+  fastify.patch(
+    "/households/:householdId/members/:userId/role",
+    { preHandler: [authMiddleware] },
+    async (request, reply) => {
+      const callerId = request.user!.userId;
+      const { householdId, userId: targetUserId } = request.params as {
+        householdId: string;
+        userId: string;
+      };
+
+      // Security: caller must belong to the active household matching the route param
+      if (householdId !== request.householdId) {
+        return reply.status(403).send({ error: "Forbidden" });
+      }
+
+      const { role: newRole } = updateMemberRoleSchema.parse(request.body);
+
+      try {
+        const updated = await updateMemberRole(prisma, {
+          householdId,
+          callerId,
+          targetUserId,
+          newRole,
+        });
+        return reply.send({ member: updated });
+      } catch (err) {
+        if (err instanceof AuthorizationError) {
+          return reply.status(403).send({ error: err.message });
+        }
+        if (err instanceof NotFoundError) {
+          return reply.status(404).send({ error: err.message });
+        }
+        throw err;
+      }
     }
   );
 }

@@ -1,4 +1,5 @@
 import { createHash, randomBytes } from "crypto";
+import type { PrismaClient } from "@prisma/client";
 import { prisma } from "../config/database.js";
 import { hashPassword } from "../utils/password.js";
 import { subcategoryService } from "./subcategory.service.js";
@@ -47,6 +48,58 @@ async function assertMember(householdId: string, userId: string) {
     where: { householdId_userId: { householdId, userId } },
   });
   if (!m) throw new AuthorizationError("Not a member of this household");
+}
+
+export function assertOwnerOrAdmin(role: string): void {
+  if (role !== "owner" && role !== "admin") {
+    throw new AuthorizationError("Only household owners or admins can perform this action");
+  }
+}
+
+type UpdateMemberRoleParams = {
+  householdId: string;
+  callerId: string;
+  targetUserId: string;
+  newRole: "member" | "admin";
+};
+
+export async function updateMemberRole(
+  db: PrismaClient,
+  { householdId, callerId, targetUserId, newRole }: UpdateMemberRoleParams
+) {
+  const [caller, target] = await Promise.all([
+    db.householdMember.findUnique({
+      where: { householdId_userId: { householdId, userId: callerId } },
+    }),
+    db.householdMember.findUnique({
+      where: { householdId_userId: { householdId, userId: targetUserId } },
+    }),
+  ]);
+
+  if (!caller || !target) throw new NotFoundError("Member not found");
+
+  // Cannot change owner role
+  if (target.role === "owner") {
+    throw new AuthorizationError("Cannot change the role of a household owner");
+  }
+
+  // Admin cannot act on another admin
+  if (caller.role === "admin" && target.role === "admin") {
+    throw new AuthorizationError("Admins cannot change the role of another admin");
+  }
+
+  // Admin cannot demote — only promote
+  if (caller.role === "admin" && newRole === "member") {
+    throw new AuthorizationError("Admins can only promote members, not demote");
+  }
+
+  // Must be owner or admin
+  assertOwnerOrAdmin(caller.role);
+
+  return db.householdMember.update({
+    where: { householdId_userId: { householdId, userId: targetUserId } },
+    data: { role: newRole },
+  });
 }
 
 export const householdService = {
@@ -287,7 +340,11 @@ export const householdService = {
 
       // Join the invited household and set it as active
       await tx.householdMember.create({
-        data: { householdId: invite.householdId, userId: created.id, role: "member" },
+        data: {
+          householdId: invite.householdId,
+          userId: created.id,
+          role: invite.intendedRole ?? "member",
+        },
       });
 
       const updated = await tx.user.update({
@@ -347,7 +404,11 @@ export const householdService = {
 
     await prisma.$transaction([
       prisma.householdMember.create({
-        data: { householdId: invite.householdId, userId: existingUserId, role: "member" },
+        data: {
+          householdId: invite.householdId,
+          userId: existingUserId,
+          role: invite.intendedRole ?? "member",
+        },
       }),
       prisma.user.update({
         where: { id: existingUserId },

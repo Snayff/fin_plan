@@ -24,7 +24,7 @@ mock.module("../utils/password", () => ({
   hashPassword: mock(() => Promise.resolve("hashed-password")),
 }));
 
-import { householdService } from "./household.service";
+import { householdService, assertOwnerOrAdmin, updateMemberRole } from "./household.service";
 import { AuthorizationError, ConflictError, NotFoundError, ValidationError } from "../utils/errors";
 
 beforeEach(() => {
@@ -511,5 +511,97 @@ describe("householdService.leaveHousehold", () => {
     await householdService.leaveHousehold("household-1", "user-1");
 
     expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+});
+
+// ─── assertOwnerOrAdmin ──────────────────────────────────────────────────────
+
+describe("assertOwnerOrAdmin", () => {
+  it("passes for owner", () => {
+    expect(() => assertOwnerOrAdmin("owner")).not.toThrow();
+  });
+  it("passes for admin", () => {
+    expect(() => assertOwnerOrAdmin("admin")).not.toThrow();
+  });
+  it("throws AuthorizationError for member", () => {
+    expect(() => assertOwnerOrAdmin("member")).toThrow(AuthorizationError);
+  });
+});
+
+// ─── updateMemberRole ────────────────────────────────────────────────────────
+
+describe("updateMemberRole", () => {
+  it("allows owner to promote member to admin", async () => {
+    prismaMock.householdMember.findUnique
+      .mockResolvedValueOnce({
+        userId: "user_1",
+        householdId: "hh_1",
+        role: "owner",
+      } as any)
+      .mockResolvedValueOnce({
+        userId: "user_2",
+        householdId: "hh_1",
+        role: "member",
+      } as any);
+    prismaMock.householdMember.update.mockResolvedValue({
+      role: "admin",
+    } as any);
+
+    await updateMemberRole(prismaMock as any, {
+      householdId: "hh_1",
+      callerId: "user_1",
+      targetUserId: "user_2",
+      newRole: "admin",
+    });
+
+    expect(prismaMock.householdMember.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { role: "admin" } })
+    );
+  });
+
+  it("allows admin to promote member to admin", async () => {
+    prismaMock.householdMember.findUnique
+      .mockResolvedValueOnce({ userId: "user_1", householdId: "hh_1", role: "admin" } as any)
+      .mockResolvedValueOnce({ userId: "user_2", householdId: "hh_1", role: "member" } as any);
+    prismaMock.householdMember.update.mockResolvedValue({ role: "admin" } as any);
+
+    await updateMemberRole(prismaMock as any, {
+      householdId: "hh_1",
+      callerId: "user_1",
+      targetUserId: "user_2",
+      newRole: "admin",
+    });
+
+    expect(prismaMock.householdMember.update).toHaveBeenCalled();
+  });
+
+  it("throws AuthorizationError when admin tries to demote another admin", async () => {
+    prismaMock.householdMember.findUnique
+      .mockResolvedValueOnce({ userId: "user_1", householdId: "hh_1", role: "admin" } as any)
+      .mockResolvedValueOnce({ userId: "user_2", householdId: "hh_1", role: "admin" } as any);
+
+    await expect(
+      updateMemberRole(prismaMock as any, {
+        householdId: "hh_1",
+        callerId: "user_1",
+        targetUserId: "user_2",
+        newRole: "member",
+      })
+    ).rejects.toThrow(AuthorizationError);
+  });
+
+  it("throws AuthorizationError when trying to change owner role", async () => {
+    prismaMock.householdMember.findUnique
+      .mockResolvedValueOnce({ userId: "user_1", householdId: "hh_1", role: "owner" } as any)
+      .mockResolvedValueOnce({ userId: "user_2", householdId: "hh_1", role: "owner" } as any);
+
+    await expect(
+      updateMemberRole(prismaMock as any, {
+        householdId: "hh_1",
+        callerId: "user_1",
+        targetUserId: "user_2",
+        newRole: "member",
+      })
+    ).rejects.toThrow(AuthorizationError);
   });
 });

@@ -8,10 +8,12 @@ export {
   renameHouseholdSchema,
   createHouseholdInviteSchema,
   acceptInviteSchema,
+  updateMemberRoleSchema,
   type CreateHouseholdInput,
   type RenameHouseholdInput,
   type CreateHouseholdInviteInput,
   type AcceptInviteInput,
+  type UpdateMemberRoleInput,
 } from "./household.schemas";
 
 // Waterfall schemas and types
