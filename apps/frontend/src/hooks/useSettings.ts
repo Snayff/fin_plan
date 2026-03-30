@@ -1,11 +1,12 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { settingsService } from "@/services/settings.service";
 import { snapshotService } from "@/services/snapshot.service";
 import { householdService } from "@/services/household.service";
 import { waterfallService } from "@/services/waterfall.service";
 import { useAuthStore } from "@/stores/authStore";
 import { authService } from "@/services/auth.service";
-import type { UpdateSettingsInput } from "@finplan/shared";
+import type { UpdateSettingsInput, AuditLogQuery } from "@finplan/shared";
+import { fetchAuditLog, updateMemberRole } from "@/services/auditLog.service";
 
 export const SETTINGS_KEYS = {
   settings: ["settings"] as const,
@@ -162,6 +163,32 @@ export function useReactivateIncome() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.endedIncome });
       void queryClient.invalidateQueries({ queryKey: ["waterfall", "summary"] });
+    },
+  });
+}
+
+export function useAuditLog(filters: Omit<AuditLogQuery, "cursor" | "limit">) {
+  return useInfiniteQuery({
+    queryKey: ["audit-log", filters],
+    queryFn: ({ pageParam }) =>
+      fetchAuditLog({
+        ...filters,
+        cursor: pageParam as string | undefined,
+        limit: 50,
+      }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    initialPageParam: undefined,
+  });
+}
+
+export function useUpdateMemberRole(householdId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ targetUserId, role }: { targetUserId: string; role: "member" | "admin" }) =>
+      updateMemberRole(targetUserId, role, householdId),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["household-members"] });
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
     },
   });
 }

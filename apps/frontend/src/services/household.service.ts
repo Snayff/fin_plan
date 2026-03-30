@@ -10,7 +10,7 @@ export interface Household {
 export interface HouseholdMember {
   userId: string;
   householdId: string;
-  role: "owner" | "member";
+  role: "owner" | "admin" | "member";
   joinedAt: string;
   user: {
     id: string;
@@ -39,7 +39,7 @@ export interface HouseholdDetails extends Household {
 export interface Membership {
   householdId: string;
   userId: string;
-  role: "owner" | "member";
+  role: "owner" | "admin" | "member";
   joinedAt: string;
   household: Household & {
     _count: { members: number };
@@ -74,8 +74,15 @@ export const householdService = {
     return apiClient.patch<{ household: Household }>(`/api/households/${id}`, { name });
   },
 
-  async inviteMember(householdId: string, email: string): Promise<CreateInviteResponse> {
-    return apiClient.post<CreateInviteResponse>(`/api/households/${householdId}/invite`, { email });
+  async inviteMember(
+    householdId: string,
+    email: string,
+    role?: "member" | "admin"
+  ): Promise<CreateInviteResponse> {
+    return apiClient.post<CreateInviteResponse>(`/api/households/${householdId}/invite`, {
+      email,
+      ...(role !== undefined ? { role } : {}),
+    });
   },
 
   async regenerateInvite(
