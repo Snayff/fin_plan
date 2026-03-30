@@ -724,6 +724,108 @@ describe("waterfallService.confirmBatch — consolidated models", () => {
   });
 });
 
+describe("waterfallService.createCommitted with audited()", () => {
+  const actor = {
+    householdId: "hh_1",
+    actorId: "user_1",
+    actorName: "Alice",
+  };
+
+  it("writes an AuditLog entry on committed item creation", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-1" } as any);
+    prismaMock.committedItem.create.mockResolvedValue({
+      id: "ci_1",
+      amount: 1200,
+    } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await waterfallService.createCommitted(
+      "hh_1",
+      { name: "Rent", amount: 1200, subcategoryId: "sub-1" },
+      actor
+    );
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CREATE_COMMITTED_ITEM",
+          resource: "committed-item",
+          actorId: "user_1",
+        }),
+      })
+    );
+  });
+
+  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-1" } as any);
+    prismaMock.committedItem.create.mockResolvedValue({
+      id: "ci_1",
+      amount: 1200,
+    } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+
+    await waterfallService.createCommitted("hh_1", {
+      name: "Rent",
+      amount: 1200,
+      subcategoryId: "sub-1",
+    });
+
+    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("waterfallService.createDiscretionary with audited()", () => {
+  const actor = {
+    householdId: "hh_1",
+    actorId: "user_1",
+    actorName: "Alice",
+  };
+
+  it("writes an AuditLog entry on discretionary item creation", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-food" } as any);
+    prismaMock.discretionaryItem.create.mockResolvedValue({
+      id: "di_1",
+      amount: 500,
+    } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await waterfallService.createDiscretionary(
+      "hh_1",
+      { name: "Groceries", amount: 500, subcategoryId: "sub-food" },
+      actor
+    );
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CREATE_DISCRETIONARY_ITEM",
+          resource: "discretionary-item",
+          actorId: "user_1",
+        }),
+      })
+    );
+  });
+
+  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-food" } as any);
+    prismaMock.discretionaryItem.create.mockResolvedValue({
+      id: "di_1",
+      amount: 500,
+    } as any);
+    prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+
+    await waterfallService.createDiscretionary("hh_1", {
+      name: "Groceries",
+      amount: 500,
+      subcategoryId: "sub-food",
+    });
+
+    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+  });
+});
+
 describe("waterfallService.getCashflow", () => {
   it("correctly calculates pot and marks shortfalls", async () => {
     prismaMock.committedItem.findMany.mockResolvedValue([

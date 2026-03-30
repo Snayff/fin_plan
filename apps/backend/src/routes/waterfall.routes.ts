@@ -114,20 +114,20 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
 
   fastify.post("/committed", pre, async (req, reply) => {
     const data = createCommittedItemSchema.parse(req.body);
-    const bill = await waterfallService.createCommitted(req.householdId!, data);
+    const bill = await waterfallService.createCommitted(req.householdId!, data, actorCtx(req));
     return reply.status(201).send(bill);
   });
 
   fastify.patch("/committed/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateCommittedItemSchema.parse(req.body);
-    const bill = await waterfallService.updateCommitted(req.householdId!, id, data);
+    const bill = await waterfallService.updateCommitted(req.householdId!, id, data, actorCtx(req));
     return reply.send(bill);
   });
 
   fastify.delete("/committed/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await waterfallService.deleteCommitted(req.householdId!, id);
+    await waterfallService.deleteCommitted(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
@@ -146,20 +146,20 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
 
   fastify.post("/yearly", pre, async (req, reply) => {
     const data = createCommittedItemSchema.parse(req.body);
-    const bill = await waterfallService.createYearly(req.householdId!, data);
+    const bill = await waterfallService.createYearly(req.householdId!, data, actorCtx(req));
     return reply.status(201).send(bill);
   });
 
   fastify.patch("/yearly/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateCommittedItemSchema.parse(req.body);
-    const bill = await waterfallService.updateYearly(req.householdId!, id, data);
+    const bill = await waterfallService.updateYearly(req.householdId!, id, data, actorCtx(req));
     return reply.send(bill);
   });
 
   fastify.delete("/yearly/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await waterfallService.deleteYearly(req.householdId!, id);
+    await waterfallService.deleteYearly(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
@@ -178,20 +178,25 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
 
   fastify.post("/discretionary", pre, async (req, reply) => {
     const data = createDiscretionaryItemSchema.parse(req.body);
-    const cat = await waterfallService.createDiscretionary(req.householdId!, data);
+    const cat = await waterfallService.createDiscretionary(req.householdId!, data, actorCtx(req));
     return reply.status(201).send(cat);
   });
 
   fastify.patch("/discretionary/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateDiscretionaryItemSchema.parse(req.body);
-    const cat = await waterfallService.updateDiscretionary(req.householdId!, id, data);
+    const cat = await waterfallService.updateDiscretionary(
+      req.householdId!,
+      id,
+      data,
+      actorCtx(req)
+    );
     return reply.send(cat);
   });
 
   fastify.delete("/discretionary/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await waterfallService.deleteDiscretionary(req.householdId!, id);
+    await waterfallService.deleteDiscretionary(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
@@ -210,20 +215,20 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
 
   fastify.post("/savings", pre, async (req, reply) => {
     const data = createDiscretionaryItemSchema.parse(req.body);
-    const alloc = await waterfallService.createSavings(req.householdId!, data);
+    const alloc = await waterfallService.createSavings(req.householdId!, data, actorCtx(req));
     return reply.status(201).send(alloc);
   });
 
   fastify.patch("/savings/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateDiscretionaryItemSchema.parse(req.body);
-    const alloc = await waterfallService.updateSavings(req.householdId!, id, data);
+    const alloc = await waterfallService.updateSavings(req.householdId!, id, data, actorCtx(req));
     return reply.send(alloc);
   });
 
   fastify.delete("/savings/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await waterfallService.deleteSavings(req.householdId!, id);
+    await waterfallService.deleteSavings(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 

@@ -497,10 +497,32 @@ export const waterfallService = {
     });
   },
 
-  async createCommitted(householdId: string, data: CreateCommittedItemInput) {
+  async createCommitted(householdId: string, data: CreateCommittedItemInput, ctx?: ActorCtx) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
     if (data.ownerId) {
       await validateMemberOwnership(householdId, data.ownerId);
+    }
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "CREATE_COMMITTED_ITEM",
+        resource: "committed-item",
+        resourceId: "",
+        beforeFetch: async () => null,
+        mutation: async (tx) => {
+          const item = await tx.committedItem.create({
+            data: {
+              ...data,
+              householdId,
+              spendType: data.spendType ?? "monthly",
+              lastReviewedAt: new Date(),
+            },
+          });
+          await recordHistory("committed_item", item.id, item.amount);
+          return item;
+        },
+      });
     }
     const item = await prisma.committedItem.create({
       data: {
@@ -514,7 +536,12 @@ export const waterfallService = {
     return item;
   },
 
-  async updateCommitted(householdId: string, id: string, data: UpdateCommittedItemInput) {
+  async updateCommitted(
+    householdId: string,
+    id: string,
+    data: UpdateCommittedItemInput,
+    ctx?: ActorCtx
+  ) {
     const existing = await prisma.committedItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Committed item");
     if (data.subcategoryId) {
@@ -522,6 +549,28 @@ export const waterfallService = {
     }
     if (data.ownerId) {
       await validateMemberOwnership(householdId, data.ownerId);
+    }
+
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "UPDATE_COMMITTED_ITEM",
+        resource: "committed-item",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.committedItem.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) => {
+          const updated = await tx.committedItem.update({
+            where: { id },
+            data: { ...data, lastReviewedAt: new Date() },
+          });
+          if (data.amount !== undefined && data.amount !== existing!.amount) {
+            await recordHistory("committed_item", id, updated.amount);
+          }
+          return updated;
+        },
+      });
     }
 
     const updated = await prisma.committedItem.update({
@@ -536,9 +585,25 @@ export const waterfallService = {
     return updated;
   },
 
-  async deleteCommitted(householdId: string, id: string) {
+  async deleteCommitted(householdId: string, id: string, ctx?: ActorCtx) {
     const existing = await prisma.committedItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Committed item");
+    if (ctx) {
+      await audited({
+        db: prisma,
+        ctx,
+        action: "DELETE_COMMITTED_ITEM",
+        resource: "committed-item",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.committedItem.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) => {
+          await tx.committedItem.delete({ where: { id } });
+          return null;
+        },
+      });
+      return;
+    }
     await prisma.committedItem.delete({ where: { id } });
   },
 
@@ -557,8 +622,30 @@ export const waterfallService = {
     });
   },
 
-  async createYearly(householdId: string, data: CreateCommittedItemInput) {
+  async createYearly(householdId: string, data: CreateCommittedItemInput, ctx?: ActorCtx) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "CREATE_COMMITTED_ITEM",
+        resource: "committed-item",
+        resourceId: "",
+        beforeFetch: async () => null,
+        mutation: async (tx) => {
+          const item = await tx.committedItem.create({
+            data: {
+              ...data,
+              householdId,
+              spendType: "yearly",
+              lastReviewedAt: new Date(),
+            },
+          });
+          await recordHistory("committed_item", item.id, item.amount);
+          return item;
+        },
+      });
+    }
     const item = await prisma.committedItem.create({
       data: {
         ...data,
@@ -571,11 +658,38 @@ export const waterfallService = {
     return item;
   },
 
-  async updateYearly(householdId: string, id: string, data: UpdateCommittedItemInput) {
+  async updateYearly(
+    householdId: string,
+    id: string,
+    data: UpdateCommittedItemInput,
+    ctx?: ActorCtx
+  ) {
     const existing = await prisma.committedItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Committed item");
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
+    }
+
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "UPDATE_COMMITTED_ITEM",
+        resource: "committed-item",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.committedItem.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) => {
+          const updated = await tx.committedItem.update({
+            where: { id },
+            data: { ...data, lastReviewedAt: new Date() },
+          });
+          if (data.amount !== undefined && data.amount !== existing!.amount) {
+            await recordHistory("committed_item", id, updated.amount);
+          }
+          return updated;
+        },
+      });
     }
 
     const updated = await prisma.committedItem.update({
@@ -590,9 +704,25 @@ export const waterfallService = {
     return updated;
   },
 
-  async deleteYearly(householdId: string, id: string) {
+  async deleteYearly(householdId: string, id: string, ctx?: ActorCtx) {
     const existing = await prisma.committedItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Committed item");
+    if (ctx) {
+      await audited({
+        db: prisma,
+        ctx,
+        action: "DELETE_COMMITTED_ITEM",
+        resource: "committed-item",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.committedItem.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) => {
+          await tx.committedItem.delete({ where: { id } });
+          return null;
+        },
+      });
+      return;
+    }
     await prisma.committedItem.delete({ where: { id } });
   },
 
@@ -618,8 +748,34 @@ export const waterfallService = {
     });
   },
 
-  async createDiscretionary(householdId: string, data: CreateDiscretionaryItemInput) {
+  async createDiscretionary(
+    householdId: string,
+    data: CreateDiscretionaryItemInput,
+    ctx?: ActorCtx
+  ) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "CREATE_DISCRETIONARY_ITEM",
+        resource: "discretionary-item",
+        resourceId: "",
+        beforeFetch: async () => null,
+        mutation: async (tx) => {
+          const item = await tx.discretionaryItem.create({
+            data: {
+              ...data,
+              householdId,
+              spendType: data.spendType ?? "monthly",
+              lastReviewedAt: new Date(),
+            },
+          });
+          await recordHistory("discretionary_item", item.id, item.amount);
+          return item;
+        },
+      });
+    }
     const item = await prisma.discretionaryItem.create({
       data: {
         ...data,
@@ -632,11 +788,41 @@ export const waterfallService = {
     return item;
   },
 
-  async updateDiscretionary(householdId: string, id: string, data: UpdateDiscretionaryItemInput) {
+  async updateDiscretionary(
+    householdId: string,
+    id: string,
+    data: UpdateDiscretionaryItemInput,
+    ctx?: ActorCtx
+  ) {
     const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Discretionary item");
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
+    }
+
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "UPDATE_DISCRETIONARY_ITEM",
+        resource: "discretionary-item",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.discretionaryItem.findUnique({ where: { id } }) as Promise<Record<
+            string,
+            unknown
+          > | null>,
+        mutation: async (tx) => {
+          const updated = await tx.discretionaryItem.update({
+            where: { id },
+            data: { ...data, lastReviewedAt: new Date() },
+          });
+          if (data.amount !== undefined && data.amount !== existing!.amount) {
+            await recordHistory("discretionary_item", id, updated.amount);
+          }
+          return updated;
+        },
+      });
     }
 
     const updated = await prisma.discretionaryItem.update({
@@ -651,9 +837,28 @@ export const waterfallService = {
     return updated;
   },
 
-  async deleteDiscretionary(householdId: string, id: string) {
+  async deleteDiscretionary(householdId: string, id: string, ctx?: ActorCtx) {
     const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Discretionary item");
+    if (ctx) {
+      await audited({
+        db: prisma,
+        ctx,
+        action: "DELETE_DISCRETIONARY_ITEM",
+        resource: "discretionary-item",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.discretionaryItem.findUnique({ where: { id } }) as Promise<Record<
+            string,
+            unknown
+          > | null>,
+        mutation: async (tx) => {
+          await tx.discretionaryItem.delete({ where: { id } });
+          return null;
+        },
+      });
+      return;
+    }
     await prisma.discretionaryItem.delete({ where: { id } });
   },
 
@@ -679,10 +884,32 @@ export const waterfallService = {
     });
   },
 
-  async createSavings(householdId: string, data: CreateDiscretionaryItemInput) {
+  async createSavings(householdId: string, data: CreateDiscretionaryItemInput, ctx?: ActorCtx) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
     if (data.wealthAccountId) {
       await validateWealthAccountOwnership(householdId, data.wealthAccountId);
+    }
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "CREATE_DISCRETIONARY_ITEM",
+        resource: "discretionary-item",
+        resourceId: "",
+        beforeFetch: async () => null,
+        mutation: async (tx) => {
+          const item = await tx.discretionaryItem.create({
+            data: {
+              ...data,
+              householdId,
+              spendType: data.spendType ?? "monthly",
+              lastReviewedAt: new Date(),
+            },
+          });
+          await recordHistory("discretionary_item", item.id, item.amount);
+          return item;
+        },
+      });
     }
     const item = await prisma.discretionaryItem.create({
       data: {
@@ -696,7 +923,12 @@ export const waterfallService = {
     return item;
   },
 
-  async updateSavings(householdId: string, id: string, data: UpdateDiscretionaryItemInput) {
+  async updateSavings(
+    householdId: string,
+    id: string,
+    data: UpdateDiscretionaryItemInput,
+    ctx?: ActorCtx
+  ) {
     const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Savings allocation");
     if (data.subcategoryId) {
@@ -704,6 +936,31 @@ export const waterfallService = {
     }
     if (data.wealthAccountId) {
       await validateWealthAccountOwnership(householdId, data.wealthAccountId);
+    }
+
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: "UPDATE_DISCRETIONARY_ITEM",
+        resource: "discretionary-item",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.discretionaryItem.findUnique({ where: { id } }) as Promise<Record<
+            string,
+            unknown
+          > | null>,
+        mutation: async (tx) => {
+          const updated = await tx.discretionaryItem.update({
+            where: { id },
+            data: { ...data, lastReviewedAt: new Date() },
+          });
+          if (data.amount !== undefined && data.amount !== existing!.amount) {
+            await recordHistory("discretionary_item", id, updated.amount);
+          }
+          return updated;
+        },
+      });
     }
 
     const updated = await prisma.discretionaryItem.update({
@@ -718,9 +975,28 @@ export const waterfallService = {
     return updated;
   },
 
-  async deleteSavings(householdId: string, id: string) {
+  async deleteSavings(householdId: string, id: string, ctx?: ActorCtx) {
     const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Savings allocation");
+    if (ctx) {
+      await audited({
+        db: prisma,
+        ctx,
+        action: "DELETE_DISCRETIONARY_ITEM",
+        resource: "discretionary-item",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.discretionaryItem.findUnique({ where: { id } }) as Promise<Record<
+            string,
+            unknown
+          > | null>,
+        mutation: async (tx) => {
+          await tx.discretionaryItem.delete({ where: { id } });
+          return null;
+        },
+      });
+      return;
+    }
     await prisma.discretionaryItem.delete({ where: { id } });
   },
 
