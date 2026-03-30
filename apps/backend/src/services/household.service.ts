@@ -214,8 +214,17 @@ export const householdService = {
 
   // ─── Invites ───────────────────────────────────────────────────────────────
 
-  async inviteMember(householdId: string, ownerUserId: string, email: string) {
-    await assertOwner(householdId, ownerUserId);
+  async inviteMember(
+    householdId: string,
+    ownerUserId: string,
+    email: string,
+    role: "member" | "admin" = "member"
+  ) {
+    const callerMembership = await prisma.householdMember.findUnique({
+      where: { householdId_userId: { householdId, userId: ownerUserId } },
+    });
+    if (!callerMembership) throw new AuthorizationError("Not a member of this household");
+    assertOwnerOrAdmin(callerMembership.role);
 
     const household = await prisma.household.findUnique({ where: { id: householdId } });
     if (!household) throw new NotFoundError("Household not found");
@@ -257,6 +266,7 @@ export const householdService = {
         tokenHash,
         expiresAt,
         createdByUserId: ownerUserId,
+        intendedRole: role,
       },
     });
 

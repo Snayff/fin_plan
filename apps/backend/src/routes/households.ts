@@ -74,8 +74,13 @@ export async function householdRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user!.userId;
       const { id } = request.params as { id: string };
-      const { email } = createHouseholdInviteSchema.parse(request.body ?? {});
-      const { token, email: invitedEmail } = await householdService.inviteMember(id, userId, email);
+      const { email, role } = createHouseholdInviteSchema.parse(request.body ?? {});
+      const { token, email: invitedEmail } = await householdService.inviteMember(
+        id,
+        userId,
+        email,
+        role
+      );
       return reply.status(201).send({ token, invitedEmail });
     }
   );
