@@ -46,3 +46,43 @@ describe("settingsService.updateSettings", () => {
     });
   });
 });
+
+describe("settingsService.updateSettings with audited()", () => {
+  const actor = {
+    householdId: "hh-1",
+    actorId: "user-1",
+    actorName: "Alice",
+  };
+
+  it("writes an UPDATE_HOUSEHOLD_SETTINGS AuditLog entry when ctx is provided", async () => {
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      householdId: "hh-1",
+      surplusBenchmarkPct: 10,
+    } as any);
+    prismaMock.householdSettings.upsert.mockResolvedValue({
+      householdId: "hh-1",
+      surplusBenchmarkPct: 15,
+    } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await settingsService.updateSettings("hh-1", { surplusBenchmarkPct: 15 }, actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "UPDATE_HOUSEHOLD_SETTINGS",
+          resource: "household-settings",
+          actorId: "user-1",
+        }),
+      })
+    );
+  });
+
+  it("does not write AuditLog when ctx is absent (backward compat)", async () => {
+    prismaMock.householdSettings.upsert.mockResolvedValue({ householdId: "hh-1" } as any);
+
+    await settingsService.updateSettings("hh-1", { surplusBenchmarkPct: 15 });
+
+    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+  });
+});

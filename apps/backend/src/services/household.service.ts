@@ -15,6 +15,8 @@ import {
   ConflictError,
   ValidationError,
 } from "../utils/errors.js";
+import { audited } from "./audit.service.js";
+import type { ActorCtx } from "./audit.service.js";
 
 const INVITE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 const IDLE_SESSION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -65,7 +67,8 @@ type UpdateMemberRoleParams = {
 
 export async function updateMemberRole(
   db: PrismaClient,
-  { householdId, callerId, targetUserId, newRole }: UpdateMemberRoleParams
+  { householdId, callerId, targetUserId, newRole }: UpdateMemberRoleParams,
+  ctx?: ActorCtx
 ) {
   const [caller, target] = await Promise.all([
     db.householdMember.findUnique({
@@ -95,6 +98,25 @@ export async function updateMemberRole(
 
   // Must be owner or admin
   assertOwnerOrAdmin(caller.role);
+
+  if (ctx) {
+    return audited({
+      db: prisma,
+      ctx,
+      action: "UPDATE_MEMBER_ROLE",
+      resource: "household-member",
+      resourceId: targetUserId,
+      beforeFetch: async (tx) =>
+        tx.householdMember.findUnique({
+          where: { householdId_userId: { householdId, userId: targetUserId } },
+        }) as Promise<Record<string, unknown> | null>,
+      mutation: async (tx) =>
+        tx.householdMember.update({
+          where: { householdId_userId: { householdId, userId: targetUserId } },
+          data: { role: newRole },
+        }),
+    });
+  }
 
   return db.householdMember.update({
     where: { householdId_userId: { householdId, userId: targetUserId } },
@@ -166,10 +188,33 @@ export const householdService = {
 
   // ─── Members ───────────────────────────────────────────────────────────────
 
-  async removeMember(householdId: string, ownerUserId: string, targetUserId: string) {
+  async removeMember(
+    householdId: string,
+    ownerUserId: string,
+    targetUserId: string,
+    ctx?: ActorCtx
+  ) {
     await assertOwner(householdId, ownerUserId);
     if (targetUserId === ownerUserId) {
       throw new ValidationError("Owner cannot remove themselves from the household");
+    }
+    if (ctx) {
+      await audited({
+        db: prisma,
+        ctx,
+        action: "REMOVE_MEMBER",
+        resource: "household-member",
+        resourceId: targetUserId,
+        beforeFetch: async (tx) =>
+          tx.householdMember.findUnique({
+            where: { householdId_userId: { householdId, userId: targetUserId } },
+          }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) =>
+          tx.householdMember.delete({
+            where: { householdId_userId: { householdId, userId: targetUserId } },
+          }),
+      });
+      return;
     }
     await prisma.householdMember.delete({
       where: { householdId_userId: { householdId, userId: targetUserId } },
@@ -218,7 +263,8 @@ export const householdService = {
     householdId: string,
     ownerUserId: string,
     email: string,
-    role: "member" | "admin" = "member"
+    role: "member" | "admin" = "member",
+    ctx?: ActorCtx
   ) {
     const callerMembership = await prisma.householdMember.findUnique({
       where: { householdId_userId: { householdId, userId: ownerUserId } },
@@ -259,16 +305,38 @@ export const householdService = {
     const tokenHash = hashInviteToken(rawToken);
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_MS);
 
-    await prisma.householdInvite.create({
-      data: {
-        householdId,
-        email: normalizedEmail,
-        tokenHash,
-        expiresAt,
-        createdByUserId: ownerUserId,
-        intendedRole: role,
-      },
-    });
+    if (ctx) {
+      await audited({
+        db: prisma,
+        ctx,
+        action: "INVITE_MEMBER",
+        resource: "household-invite",
+        resourceId: rawToken,
+        beforeFetch: async () => null,
+        mutation: async (tx) =>
+          tx.householdInvite.create({
+            data: {
+              householdId,
+              email: normalizedEmail,
+              tokenHash,
+              expiresAt,
+              createdByUserId: ownerUserId,
+              intendedRole: role,
+            },
+          }),
+      });
+    } else {
+      await prisma.householdInvite.create({
+        data: {
+          householdId,
+          email: normalizedEmail,
+          tokenHash,
+          expiresAt,
+          createdByUserId: ownerUserId,
+          intendedRole: role,
+        },
+      });
+    }
 
     return { token: rawToken, email: normalizedEmail };
   },

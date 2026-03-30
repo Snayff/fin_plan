@@ -320,6 +320,51 @@ describe("householdService.validateInviteToken", () => {
   });
 });
 
+describe("householdService.inviteMember with audited()", () => {
+  const actor = {
+    householdId: "household-1",
+    actorId: "owner-user-id",
+    actorName: "Owner",
+  };
+
+  it("writes an INVITE_MEMBER AuditLog entry when ctx is provided", async () => {
+    const owner = buildUser({ id: "owner-user-id" });
+    const household = buildHousehold({ id: "household-1" });
+    const ownerMember = buildHouseholdMember({
+      householdId: household.id,
+      userId: owner.id,
+      role: "owner",
+    });
+
+    prismaMock.householdMember.findUnique.mockResolvedValue(ownerMember);
+    prismaMock.household.findUnique.mockResolvedValue(household);
+    prismaMock.householdMember.findFirst.mockResolvedValue(null);
+    prismaMock.householdInvite.findFirst.mockResolvedValue(null);
+    prismaMock.householdInvite.create.mockResolvedValue(
+      buildHouseholdInvite({ email: "invitee@test.com" })
+    );
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await householdService.inviteMember(
+      household.id,
+      owner.id,
+      "invitee@test.com",
+      "member",
+      actor
+    );
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "INVITE_MEMBER",
+          resource: "household-invite",
+          actorId: "owner-user-id",
+        }),
+      })
+    );
+  });
+});
+
 describe("householdService.inviteMember", () => {
   it("stores normalized invite email when provided", async () => {
     const owner = buildUser();

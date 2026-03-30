@@ -9,6 +9,7 @@ import {
   updateMemberRoleSchema,
 } from "@finplan/shared";
 import { AuthorizationError, NotFoundError } from "../utils/errors.js";
+import { actorCtx } from "../lib/actor-ctx.js";
 
 export async function householdRoutes(fastify: FastifyInstance) {
   // List all households the current user belongs to
@@ -79,7 +80,8 @@ export async function householdRoutes(fastify: FastifyInstance) {
         id,
         userId,
         email,
-        role
+        role,
+        actorCtx(request)
       );
       return reply.status(201).send({ token, invitedEmail });
     }
@@ -92,7 +94,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user!.userId;
       const { id, memberId } = request.params as { id: string; memberId: string };
-      await householdService.removeMember(id, userId, memberId);
+      await householdService.removeMember(id, userId, memberId, actorCtx(request));
       return reply.send({ success: true });
     }
   );
@@ -140,12 +142,11 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const { role: newRole } = updateMemberRoleSchema.parse(request.body);
 
       try {
-        const updated = await updateMemberRole(prisma, {
-          householdId,
-          callerId,
-          targetUserId,
-          newRole,
-        });
+        const updated = await updateMemberRole(
+          prisma,
+          { householdId, callerId, targetUserId, newRole },
+          actorCtx(request)
+        );
         return reply.send({ member: updated });
       } catch (err) {
         if (err instanceof AuthorizationError) {
