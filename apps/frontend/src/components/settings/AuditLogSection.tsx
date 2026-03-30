@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Section } from "./Section";
 import { AuditLogFilters } from "./AuditLogFilters";
 import { AuditLogTable } from "./AuditLogTable";
-import type { AuditEntry } from "@finplan/shared";
+import type { AuditEntry, ResourceSlug } from "@finplan/shared";
 
 type Filters = {
   actorId?: string;
@@ -32,7 +32,7 @@ export function AuditLogSection() {
 
   const queryFilters = {
     actorId: filters.actorId,
-    resource: filters.resource as any,
+    resource: filters.resource as ResourceSlug | undefined,
     dateFrom: dateFromDays(filters.dateRange),
   };
 
