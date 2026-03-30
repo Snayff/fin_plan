@@ -369,7 +369,9 @@ describe("POST /api/households/:id/invite", () => {
     expect(householdService.inviteMember).toHaveBeenCalledWith(
       "household-1",
       "user-1",
-      "invitee@example.com"
+      "invitee@example.com",
+      "member",
+      expect.any(Object)
     );
   });
 
@@ -436,7 +438,8 @@ describe("DELETE /api/households/:id/members/:memberId", () => {
     expect(householdService.removeMember).toHaveBeenCalledWith(
       "household-1",
       "user-1",
-      "user-to-remove"
+      "user-to-remove",
+      expect.any(Object)
     );
   });
 
