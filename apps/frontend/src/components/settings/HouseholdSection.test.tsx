@@ -8,14 +8,14 @@ import { HouseholdSection } from "./HouseholdSection";
 const toastSuccess = mock(() => {});
 const toastError = mock(() => {});
 
-const inviteMutate = mock((_variables: unknown, options?: { onError?: (error: unknown) => void }) => {
-  options?.onError?.(
-    {
+const inviteMutate = mock(
+  (_variables: unknown, options?: { onError?: (error: unknown) => void }) => {
+    options?.onError?.({
       message: "A user with this email is already a member of this household",
       statusCode: 409,
-    } satisfies ApiError
-  );
-});
+    } satisfies ApiError);
+  }
+);
 
 mock.module("sonner", () => ({
   toast: {
@@ -45,6 +45,7 @@ mock.module("@/hooks/useSettings", () => ({
   useCancelInvite: () => ({ mutate: mock(() => {}), isPending: false }),
   useRemoveMember: () => ({ mutate: mock(() => {}), isPending: false }),
   useLeaveHousehold: () => ({ mutate: mock(() => {}), isPending: false }),
+  useUpdateMemberRole: () => ({ mutate: mock(() => {}), isPending: false }),
 }));
 
 describe("HouseholdSection", () => {

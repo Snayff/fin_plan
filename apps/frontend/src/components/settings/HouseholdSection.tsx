@@ -1,4 +1,5 @@
 import { useState } from "react";
+import type { ApiError } from "@/lib/api";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { QRCodeSVG } from "qrcode.react";
@@ -75,6 +76,9 @@ export function HouseholdSection() {
           setInviteResult(result);
           setInviteEmail("");
           toast.success("Invite created");
+        },
+        onError: (error) => {
+          toast.error((error as ApiError).message ?? "Failed to create invite");
         },
       }
     );
