@@ -45,7 +45,7 @@ export function AuditLogFilters({ filters, members, onChange }: Props) {
         value={filters.actorId ?? "all"}
         onValueChange={(v) => onChange({ ...filters, actorId: v === "all" ? undefined : v })}
       >
-        <SelectTrigger className="h-8 w-40 text-xs">
+        <SelectTrigger className="h-8 w-40 text-xs" aria-label="Filter by member">
           <SelectValue placeholder="All members" />
         </SelectTrigger>
         <SelectContent>
@@ -62,7 +62,7 @@ export function AuditLogFilters({ filters, members, onChange }: Props) {
         value={filters.resource ?? "all"}
         onValueChange={(v) => onChange({ ...filters, resource: v === "all" ? undefined : v })}
       >
-        <SelectTrigger className="h-8 w-44 text-xs">
+        <SelectTrigger className="h-8 w-44 text-xs" aria-label="Filter by resource type">
           <SelectValue placeholder="All resources" />
         </SelectTrigger>
         <SelectContent>
@@ -78,7 +78,7 @@ export function AuditLogFilters({ filters, members, onChange }: Props) {
         value={filters.dateRange ?? "all"}
         onValueChange={(v) => onChange({ ...filters, dateRange: v === "all" ? undefined : v })}
       >
-        <SelectTrigger className="h-8 w-36 text-xs">
+        <SelectTrigger className="h-8 w-36 text-xs" aria-label="Filter by date range">
           <SelectValue placeholder="All time" />
         </SelectTrigger>
         <SelectContent>

@@ -120,6 +120,7 @@ export function HouseholdSection() {
             <p className="font-medium">{household?.name}</p>
             {isOwner && (
               <button
+                type="button"
                 className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                 onClick={startRename}
               >
@@ -150,6 +151,7 @@ export function HouseholdSection() {
                 member.role !== "owner" &&
                 (isOwner || (isAdmin && member.role === "member")) && (
                   <button
+                    type="button"
                     className="text-xs text-muted-foreground hover:text-foreground transition-colors"
                     disabled={updateMemberRole.isPending}
                     onClick={() =>
@@ -174,6 +176,7 @@ export function HouseholdSection() {
                 )}
               {isOwner && member.userId !== currentUserId && (
                 <button
+                  type="button"
                   className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                   onClick={() =>
                     removeMember.mutate(
@@ -193,6 +196,7 @@ export function HouseholdSection() {
       {!isSoleOwner && currentMember && (
         <>
           <button
+            type="button"
             className="text-xs text-muted-foreground hover:text-destructive transition-colors"
             onClick={() => setShowLeaveConfirm(true)}
           >
@@ -235,6 +239,7 @@ export function HouseholdSection() {
               <p className="text-xs text-muted-foreground break-all">{inviteUrl}</p>
               <div className="flex items-center gap-3">
                 <button
+                  type="button"
                   className="text-xs text-primary hover:underline"
                   onClick={() => {
                     void navigator.clipboard.writeText(inviteUrl);
@@ -244,6 +249,7 @@ export function HouseholdSection() {
                   Copy link
                 </button>
                 <button
+                  type="button"
                   className="text-xs text-muted-foreground hover:text-foreground"
                   onClick={() => setInviteResult(null)}
                 >
@@ -274,6 +280,7 @@ export function HouseholdSection() {
                     </p>
                   </div>
                   <button
+                    type="button"
                     className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                     onClick={() =>
                       cancelInvite.mutate(
