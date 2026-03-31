@@ -118,7 +118,6 @@ export function buildDiscretionaryItem(overrides: Record<string, any> = {}) {
     amount: 100,
     spendType: "monthly" as const,
     notes: null,
-    wealthAccountId: null,
     sortOrder: 0,
     lastReviewedAt: new Date("2025-01-01T00:00:00Z"),
     createdAt: new Date("2025-01-01T00:00:00Z"),

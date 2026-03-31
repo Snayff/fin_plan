@@ -243,7 +243,6 @@ describe("waterfallService.getWaterfallSummary — totals and surplus", () => {
         name: "Groceries",
         amount: 500,
         spendType: "monthly",
-        wealthAccountId: null,
       },
       {
         id: "sv1",
@@ -251,7 +250,6 @@ describe("waterfallService.getWaterfallSummary — totals and surplus", () => {
         name: "Emergency fund",
         amount: 200,
         spendType: "monthly",
-        wealthAccountId: "wa-1",
       },
     ] as any);
 
@@ -437,19 +435,14 @@ describe("waterfallService.createDiscretionary (DiscretionaryItem)", () => {
 });
 
 describe("waterfallService.createSavings (DiscretionaryItem)", () => {
-  it("creates a discretionary item with wealthAccountId", async () => {
+  it("creates a discretionary item", async () => {
     prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-savings" } as any);
-    prismaMock.wealthAccount.findFirst.mockResolvedValue({
-      id: "wa-1",
-      householdId: "hh-1",
-    } as any);
     prismaMock.discretionaryItem.create.mockResolvedValue({
       id: "di-2",
       householdId: "hh-1",
       subcategoryId: "sub-savings",
       name: "Emergency Fund",
       amount: 200,
-      wealthAccountId: "wa-1",
     } as any);
     prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
 
@@ -457,10 +450,9 @@ describe("waterfallService.createSavings (DiscretionaryItem)", () => {
       name: "Emergency Fund",
       amount: 200,
       subcategoryId: "sub-savings",
-      wealthAccountId: "wa-1",
     });
 
-    expect(result.wealthAccountId).toBe("wa-1");
+    expect(result.id).toBe("di-2");
   });
 });
 
@@ -566,7 +558,6 @@ describe("waterfallService.getWaterfallSummary — consolidated models", () => {
         spendType: "monthly",
         subcategoryId: "sub-food",
         notes: null,
-        wealthAccountId: null,
         sortOrder: 0,
         lastReviewedAt: new Date(),
         createdAt: new Date(),
@@ -580,7 +571,6 @@ describe("waterfallService.getWaterfallSummary — consolidated models", () => {
         spendType: "monthly",
         subcategoryId: "sub-savings",
         notes: null,
-        wealthAccountId: "wa-1",
         sortOrder: 1,
         lastReviewedAt: new Date(),
         createdAt: new Date(),
@@ -645,7 +635,6 @@ describe("waterfallService.getWaterfallSummary — consolidated models", () => {
         spendType: "monthly",
         subcategoryId: "sub-food",
         notes: null,
-        wealthAccountId: null,
         sortOrder: 0,
         lastReviewedAt: new Date(),
         createdAt: new Date(),
@@ -659,7 +648,6 @@ describe("waterfallService.getWaterfallSummary — consolidated models", () => {
         spendType: "monthly",
         subcategoryId: "sub-savings",
         notes: null,
-        wealthAccountId: null,
         sortOrder: 1,
         lastReviewedAt: new Date(),
         createdAt: new Date(),

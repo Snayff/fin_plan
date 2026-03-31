@@ -50,6 +50,7 @@ const waterfallServiceMock = {
 const snapshotServiceMock = {
   ensureJan1Snapshot: mock(() => Promise.resolve()),
   ensureTodayAutoSnapshot: mock(() => Promise.resolve()),
+  ensureBaselineSnapshot: mock(() => Promise.resolve()),
   getFinancialSummary: mock(() =>
     Promise.resolve({
       current: { netWorth: null, income: 5000, committed: 1300, discretionary: 800, surplus: 2900 },
@@ -164,7 +165,6 @@ const mockSavingsAllocation = {
   amount: 200,
   subcategoryId: "sub-savings",
   sortOrder: 0,
-  wealthAccountId: null,
   lastReviewedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -217,6 +217,7 @@ beforeEach(() => {
 
   snapshotServiceMock.ensureJan1Snapshot.mockResolvedValue(undefined as any);
   snapshotServiceMock.ensureTodayAutoSnapshot.mockResolvedValue(undefined as any);
+  snapshotServiceMock.ensureBaselineSnapshot.mockResolvedValue(undefined as any);
   snapshotServiceMock.getFinancialSummary.mockResolvedValue({
     current: { netWorth: null, income: 5000, committed: 1300, discretionary: 800, surplus: 2900 },
     sparklines: { netWorth: [], income: [], committed: [], discretionary: [], surplus: [] },
@@ -644,5 +645,19 @@ describe("POST /api/waterfall/income — auto-snapshot hook", () => {
     });
     await new Promise((r) => setTimeout(r, 0));
     expect(snapshotServiceMock.ensureTodayAutoSnapshot.mock.calls.length).toBeGreaterThan(0);
+  });
+});
+
+describe("POST /api/waterfall/income — baseline snapshot pre-handler", () => {
+  it("triggers ensureBaselineSnapshot before the mutation handler", async () => {
+    snapshotServiceMock.ensureBaselineSnapshot.mockClear();
+    waterfallServiceMock.createIncome.mockResolvedValue(mockIncomeSource as any);
+    await app.inject({
+      method: "POST",
+      url: "/api/waterfall/income",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { name: "Salary", amount: 5000, frequency: "monthly", subcategoryId: "sub-1" },
+    });
+    expect(snapshotServiceMock.ensureBaselineSnapshot.mock.calls.length).toBeGreaterThan(0);
   });
 });
