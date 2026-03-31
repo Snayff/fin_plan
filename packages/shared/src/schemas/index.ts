@@ -138,3 +138,21 @@ export {
   type UpdateGiftEventInput,
   type UpsertGiftYearRecordInput,
 } from "./planner.schemas";
+
+// Forecast schemas and types
+export {
+  ForecastHorizonSchema,
+  ForecastQuerySchema,
+  NetWorthPointSchema,
+  SurplusPointSchema,
+  RetirementPointSchema,
+  RetirementMemberProjectionSchema,
+  ForecastProjectionSchema,
+  type ForecastHorizon,
+  type ForecastQuery,
+  type NetWorthPoint,
+  type SurplusPoint,
+  type RetirementPoint,
+  type RetirementMemberProjection,
+  type ForecastProjection,
+} from "./forecast.schemas";
