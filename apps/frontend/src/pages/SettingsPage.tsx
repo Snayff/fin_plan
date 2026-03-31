@@ -5,6 +5,7 @@ import { SurplusSection } from "@/components/settings/SurplusSection";
 import { IsaSection } from "@/components/settings/IsaSection";
 import { HouseholdSection } from "@/components/settings/HouseholdSection";
 import { AuditLogSection } from "@/components/settings/AuditLogSection";
+import { GrowthRatesSection } from "@/components/settings/GrowthRatesSection";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
 import { useSettings } from "@/hooks/useSettings";
@@ -17,6 +18,7 @@ const SECTIONS = [
   { id: "surplus", label: "Surplus benchmark" },
   { id: "isa", label: "ISA settings" },
   { id: "household", label: "Household" },
+  { id: "growth-rates", label: "Growth rates", roles: ["owner", "admin"] as string[] },
   { id: "audit-log", label: "Audit log", roles: ["owner", "admin"] as string[] },
 ] as const;
 
@@ -117,6 +119,11 @@ export default function SettingsPage() {
             <div ref={setRef("household")} data-section-id="household">
               <HouseholdSection />
             </div>
+            {canSeeAuditLog && (
+              <div ref={setRef("growth-rates")} data-section-id="growth-rates">
+                <GrowthRatesSection />
+              </div>
+            )}
             {canSeeAuditLog && (
               <div ref={setRef("audit-log")} data-section-id="audit-log">
                 <AuditLogSection />

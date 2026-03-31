@@ -181,6 +181,21 @@ export function useAuditLog(filters: Omit<AuditLogQuery, "cursor" | "limit">) {
   });
 }
 
+export function useHouseholdMembers() {
+  const user = useAuthStore((s) => s.user);
+  const householdId = user?.activeHouseholdId ?? "";
+  const { data } = useHouseholdDetails(householdId);
+  const members = data?.household?.members ?? [];
+  return {
+    data: members.map((m) => ({
+      userId: m.userId,
+      firstName: m.user.name.split(" ")[0] ?? m.user.name,
+      name: m.user.name,
+      role: m.role,
+    })),
+  };
+}
+
 export function useUpdateMemberRole(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
