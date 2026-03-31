@@ -82,7 +82,8 @@
       "Bash(docker exec:*)",
       "Bash(agent-browser navigate:*)",
       "Bash(agent-browser screenshot:*)",
-      "Bash(agent-browser click:*)"
+      "Bash(agent-browser click:*)",
+      "Bash(grep -r \"AreaChart\\\\|LineChart\\\\|BarChart\\\\|PieChart\" /c/Users/Gabriel/Documents/Dev/fin_plan/apps/frontend/src/components/overview --include=*.tsx --include=*.ts)"
     ]
   },
   "hooks": {
