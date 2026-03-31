@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 // ─── Auth / Users ─────────────────────────────────────────────────────────────
@@ -291,6 +290,7 @@ model Asset {
   memberUserId   String?
   name           String
   type           AssetType
+  growthRatePct  Float?
   lastReviewedAt DateTime?
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
@@ -313,17 +313,18 @@ model AssetBalance {
 }
 
 model Account {
-  id             String           @id @default(cuid())
-  householdId    String
-  memberUserId   String?
-  name           String
-  type           AccountType
-  growthRatePct  Float?
-  lastReviewedAt DateTime?
-  createdAt      DateTime         @default(now())
-  updatedAt      DateTime         @updatedAt
-  household      Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  balances       AccountBalance[]
+  id                  String           @id @default(cuid())
+  householdId         String
+  memberUserId        String?
+  name                String
+  type                AccountType
+  growthRatePct       Float?
+  monthlyContribution Float            @default(0)
+  lastReviewedAt      DateTime?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  household           Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  balances            AccountBalance[]
 
   @@index([householdId])
 }

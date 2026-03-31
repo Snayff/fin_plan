@@ -2,21 +2,27 @@ import { prisma } from "../config/database.js";
 import { waterfallService } from "./waterfall.service.js";
 import type { ForecastProjection, ForecastHorizon } from "@finplan/shared";
 
-function effectiveRate(
-  account: { growthRatePct: number | null; assetClass: string },
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+function accountEffectiveRate(
+  account: { growthRatePct: number | null; type: string },
   settings: { savingsRatePct: number; investmentRatePct: number; pensionRatePct: number }
 ): number {
   if (account.growthRatePct != null) return account.growthRatePct / 100;
-  switch (account.assetClass) {
-    case "savings":
+  switch (account.type) {
+    case "Savings":
       return settings.savingsRatePct / 100;
-    case "stocksAndShares":
+    case "StocksAndShares":
       return settings.investmentRatePct / 100;
-    case "pension":
+    case "Pension":
       return settings.pensionRatePct / 100;
     default:
       return 0;
   }
+}
+
+function assetEffectiveRate(asset: { growthRatePct: number | null }): number {
+  return asset.growthRatePct != null ? asset.growthRatePct / 100 : 0;
 }
 
 function projectBalanceSeries(
@@ -33,20 +39,39 @@ function projectBalanceSeries(
   return series;
 }
 
+type ProjectableAccount = {
+  balance: number;
+  monthlyContribution: number;
+  growthRatePct: number | null;
+  type: string;
+};
+
+type ProjectableAsset = {
+  balance: number;
+  growthRatePct: number | null;
+};
+
 function sumAccountSeries(
-  accounts: {
-    balance: number;
-    monthlyContribution: number | null;
-    growthRatePct: number | null;
-    assetClass: string;
-  }[],
+  accounts: ProjectableAccount[],
   settings: { savingsRatePct: number; investmentRatePct: number; pensionRatePct: number },
   years: number
 ): number[] {
   const sums = Array.from({ length: years + 1 }, () => 0);
   for (const acc of accounts) {
-    const rate = effectiveRate(acc, settings);
-    const series = projectBalanceSeries(acc.balance, acc.monthlyContribution ?? 0, rate, years);
+    const rate = accountEffectiveRate(acc, settings);
+    const series = projectBalanceSeries(acc.balance, acc.monthlyContribution, rate, years);
+    for (let y = 0; y <= years; y++) {
+      sums[y] = (sums[y] ?? 0) + (series[y] ?? 0);
+    }
+  }
+  return sums;
+}
+
+function sumAssetSeries(assets: ProjectableAsset[], years: number): number[] {
+  const sums = Array.from({ length: years + 1 }, () => 0);
+  for (const asset of assets) {
+    const rate = assetEffectiveRate(asset);
+    const series = projectBalanceSeries(asset.balance, 0, rate, years);
     for (let y = 0; y <= years; y++) {
       sums[y] = (sums[y] ?? 0) + (series[y] ?? 0);
     }
@@ -61,13 +86,18 @@ const DEFAULT_SETTINGS = {
   inflationRatePct: 2.5,
 };
 
+// ─── Service ─────────────────────────────────────────────────────────────────
+
 export const forecastService = {
   async getProjections(
     householdId: string,
     horizonYears: ForecastHorizon
   ): Promise<ForecastProjection> {
-    const [accounts, settingsRow, members, waterfallSummary] = await Promise.all([
-      (prisma as any).wealthAccount.findMany({ where: { householdId } }),
+    const balanceInclude = { balances: { orderBy: { date: "desc" as const }, take: 1 } };
+
+    const [accounts, assets, settingsRow, members, waterfallSummary] = await Promise.all([
+      prisma.account.findMany({ where: { householdId }, include: balanceInclude }),
+      prisma.asset.findMany({ where: { householdId }, include: balanceInclude }),
       prisma.householdSettings.findUnique({ where: { householdId } }),
       prisma.householdMember.findMany({
         where: { householdId },
@@ -76,20 +106,41 @@ export const forecastService = {
       waterfallService.getWaterfallSummary(householdId),
     ]);
 
-    const settings = settingsRow ?? DEFAULT_SETTINGS;
+    const settings = {
+      savingsRatePct: settingsRow?.savingsRatePct ?? DEFAULT_SETTINGS.savingsRatePct,
+      investmentRatePct: settingsRow?.investmentRatePct ?? DEFAULT_SETTINGS.investmentRatePct,
+      pensionRatePct: settingsRow?.pensionRatePct ?? DEFAULT_SETTINGS.pensionRatePct,
+      inflationRatePct: settingsRow?.inflationRatePct ?? DEFAULT_SETTINGS.inflationRatePct,
+    };
     const currentYear = new Date().getFullYear();
 
-    // ── Net worth (non-pension accounts) ─────────────────────────────────────
-    const netWorthAccounts = (accounts as any[]).filter((a) => a.assetClass !== "pension");
-    const netWorthSums = sumAccountSeries(netWorthAccounts, settings as any, horizonYears);
+    // Normalise to projectable shapes
+    const toProjectableAccount = (acc: (typeof accounts)[number]): ProjectableAccount => ({
+      balance: acc.balances[0]?.value ?? 0,
+      monthlyContribution: acc.monthlyContribution,
+      growthRatePct: acc.growthRatePct,
+      type: acc.type,
+    });
+
+    const toProjectableAsset = (a: (typeof assets)[number]): ProjectableAsset => ({
+      balance: a.balances[0]?.value ?? 0,
+      growthRatePct: a.growthRatePct,
+    });
+
+    // ── Net worth (non-pension accounts + all assets) ─────────────────────────
+    const netWorthAccounts = accounts.filter((a) => a.type !== "Pension").map(toProjectableAccount);
+    const allAssets = assets.map(toProjectableAsset);
+
+    const accountSums = sumAccountSeries(netWorthAccounts, settings, horizonYears);
+    const assetSums = sumAssetSeries(allAssets, horizonYears);
 
     const netWorth = Array.from({ length: horizonYears + 1 }, (_, y) => {
-      const nominal = Math.round(netWorthSums[y] ?? 0);
-      const real = Math.round(nominal / Math.pow(1 + (settings as any).inflationRatePct / 100, y));
+      const nominal = Math.round((accountSums[y] ?? 0) + (assetSums[y] ?? 0));
+      const real = Math.round(nominal / Math.pow(1 + settings.inflationRatePct / 100, y));
       return { year: currentYear + y, nominal, real };
     });
 
-    // ── Surplus accumulation (constant monthly surplus, no growth) ────────────
+    // ── Surplus accumulation ──────────────────────────────────────────────────
     const monthlySurplus = waterfallSummary.surplus.amount;
     const surplus = Array.from({ length: horizonYears + 1 }, (_, y) => ({
       year: currentYear + y,
@@ -97,17 +148,19 @@ export const forecastService = {
     }));
 
     // ── Retirement (per member: own pensions + shared savings + shared S&S) ──
-    const savingsAccounts = (accounts as any[]).filter((a) => a.assetClass === "savings");
-    const ssAccounts = (accounts as any[]).filter((a) => a.assetClass === "stocksAndShares");
+    const savingsAccounts = accounts.filter((a) => a.type === "Savings").map(toProjectableAccount);
+    const ssAccounts = accounts
+      .filter((a) => a.type === "StocksAndShares")
+      .map(toProjectableAccount);
 
-    const savingsSums = sumAccountSeries(savingsAccounts, settings as any, horizonYears);
-    const ssSums = sumAccountSeries(ssAccounts, settings as any, horizonYears);
+    const savingsSums = sumAccountSeries(savingsAccounts, settings, horizonYears);
+    const ssSums = sumAccountSeries(ssAccounts, settings, horizonYears);
 
-    const retirement = (members as any[]).map((member) => {
-      const pensionAccounts = (accounts as any[]).filter(
-        (a) => a.assetClass === "pension" && a.memberId === member.userId
-      );
-      const pensionSums = sumAccountSeries(pensionAccounts, settings as any, horizonYears);
+    const retirement = members.map((member) => {
+      const pensionAccounts = accounts
+        .filter((a) => a.type === "Pension" && a.memberUserId === member.userId)
+        .map(toProjectableAccount);
+      const pensionSums = sumAccountSeries(pensionAccounts, settings, horizonYears);
 
       const series = Array.from({ length: horizonYears + 1 }, (_, y) => ({
         year: currentYear + y,
