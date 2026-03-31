@@ -1235,10 +1235,8 @@ import {
   Tooltip,
   ReferenceLine,
   ResponsiveContainer,
-  defs,
-  linearGradient,
-  stop,
 } from "recharts";
+// Note: <defs>, <linearGradient>, <stop> are native SVG elements — no import needed
 import { formatCurrency } from "@/utils/format";
 import { usePrefersReducedMotion } from "@/utils/motion";
 import type { NetWorthPoint } from "@finplan/shared";
