@@ -1,11 +1,35 @@
 import { useId } from "react";
-import { AreaChart, Area, ResponsiveContainer, YAxis } from "recharts";
+import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from "recharts";
+import type { TooltipProps } from "recharts";
+import { format, isValid, parseISO } from "date-fns";
+import { formatCurrency } from "@/utils/format";
 
 interface SummarySparklineProps {
   data: Array<{ date: string; value: number }>;
   color: string;
   currentValue?: number;
   paddingX?: number;
+}
+
+function SparklineTooltip({
+  active,
+  payload,
+  color,
+}: TooltipProps<number, string> & { color: string }) {
+  if (!active || !payload?.length) return null;
+  const value = payload[0]?.value;
+  if (value === undefined) return null;
+
+  const dateStr: unknown = payload[0]?.payload?.date;
+  const parsed = typeof dateStr === "string" ? parseISO(dateStr) : null;
+  const dateLabel = parsed && isValid(parsed) ? format(parsed, "MMM yyyy") : null;
+
+  return (
+    <div className="bg-[#0d1021] border border-white/10 rounded px-2 py-1 text-xs leading-snug">
+      {dateLabel && <div className="text-white/50">{dateLabel}</div>}
+      <div style={{ color }}>{formatCurrency(value)}</div>
+    </div>
+  );
 }
 
 export function SummarySparkline({
@@ -33,7 +57,7 @@ export function SummarySparkline({
   const yMax = max + range * 0.15;
 
   return (
-    <div aria-hidden="true" style={{ marginLeft: paddingX, marginRight: paddingX }}>
+    <div style={{ marginLeft: paddingX, marginRight: paddingX }}>
       <ResponsiveContainer width="100%" height={40}>
         <AreaChart data={chartData} margin={{ top: 0, right: 0, bottom: 0, left: 0 }}>
           <defs>
@@ -43,6 +67,10 @@ export function SummarySparkline({
             </linearGradient>
           </defs>
           <YAxis domain={[yMin, yMax]} hide />
+          <Tooltip
+            content={<SparklineTooltip color={color} />}
+            cursor={{ stroke: color, strokeWidth: 1, strokeOpacity: 0.4 }}
+          />
           <Area
             type="monotone"
             dataKey="value"
