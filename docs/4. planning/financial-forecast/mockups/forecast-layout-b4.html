@@ -1,0 +1,197 @@
+<h2>Forecast — Layout B · gradient areas + full-width charts</h2>
+<p class="subtitle">All charts have gradient fills · charts run edge-to-edge</p>
+
+<div class="mockup">
+  <div class="mockup-header">Forecast Page</div>
+  <div class="mockup-body" style="background:#080a14;padding:20px;font-family:'Inter',sans-serif;display:flex;flex-direction:column;gap:12px;">
+
+    <!-- Time horizon -->
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="color:rgba(238,242,255,0.4);font-size:11px;letter-spacing:0.08em;text-transform:uppercase;">Horizon</span>
+      <div style="display:flex;gap:4px;">
+        <div style="background:#0d1120;border:1px solid #1a1f35;border-radius:4px;padding:4px 10px;color:rgba(238,242,255,0.4);font-size:11px;">1y</div>
+        <div style="background:#0d1120;border:1px solid #1a1f35;border-radius:4px;padding:4px 10px;color:rgba(238,242,255,0.4);font-size:11px;">3y</div>
+        <div style="background:#1e1b4b;border:1px solid #4338ca;border-radius:4px;padding:4px 10px;color:rgba(238,242,255,0.92);font-size:11px;">10y</div>
+        <div style="background:#0d1120;border:1px solid #1a1f35;border-radius:4px;padding:4px 10px;color:rgba(238,242,255,0.4);font-size:11px;">20y</div>
+        <div style="background:#0d1120;border:1px solid #1a1f35;border-radius:4px;padding:4px 10px;color:rgba(238,242,255,0.4);font-size:11px;">30y</div>
+      </div>
+    </div>
+
+    <!-- Net Worth — top, full width -->
+    <div style="background:#0d1120;border:1px solid #1a1f35;border-radius:10px;overflow:hidden;">
+      <!-- Header -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:16px 16px 12px;">
+        <div>
+          <div style="color:#818cf8;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Net Worth</div>
+          <div style="color:rgba(238,242,255,0.4);font-size:10px;">Savings · Investments · Property · excludes pensions</div>
+        </div>
+        <div style="display:flex;gap:14px;align-items:center;">
+          <div style="display:flex;align-items:center;gap:5px;">
+            <svg width="20" height="8"><line x1="0" y1="4" x2="20" y2="4" stroke="#818cf8" stroke-width="2"/></svg>
+            <span style="color:rgba(238,242,255,0.4);font-size:10px;">nominal</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:5px;">
+            <svg width="20" height="8"><line x1="0" y1="4" x2="20" y2="4" stroke="#818cf8" stroke-width="1.5" stroke-dasharray="4,3" opacity="0.45"/></svg>
+            <span style="color:rgba(238,242,255,0.4);font-size:10px;">real</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart — full width, no horizontal padding -->
+      <svg width="100%" height="110" viewBox="0 0 600 110" preserveAspectRatio="none" style="display:block;">
+        <defs>
+          <linearGradient id="gradNetWorthNominal" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#818cf8" stop-opacity="0.25"/>
+            <stop offset="100%" stop-color="#818cf8" stop-opacity="0.02"/>
+          </linearGradient>
+          <linearGradient id="gradNetWorthReal" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="#818cf8" stop-opacity="0.10"/>
+            <stop offset="100%" stop-color="#818cf8" stop-opacity="0.01"/>
+          </linearGradient>
+        </defs>
+
+        <!-- Nominal area fill -->
+        <polygon points="0,95 80,80 160,62 240,46 320,31 400,19 480,10 560,5 600,4 600,110 0,110" fill="url(#gradNetWorthNominal)"/>
+        <!-- Real area fill -->
+        <polygon points="0,95 80,84 160,70 240,57 320,46 400,36 480,29 560,24 600,23 600,110 0,110" fill="url(#gradNetWorthReal)"/>
+
+        <!-- Real line (behind nominal) -->
+        <polyline points="0,95 80,84 160,70 240,57 320,46 400,36 480,29 560,24 600,23" fill="none" stroke="#818cf8" stroke-width="1.5" stroke-dasharray="5,3" opacity="0.45"/>
+        <!-- Nominal line -->
+        <polyline points="0,95 80,80 160,62 240,46 320,31 400,19 480,10 560,5 600,4" fill="none" stroke="#818cf8" stroke-width="2"/>
+
+        <!-- Retirement marker G -->
+        <line x1="384" y1="0" x2="384" y2="110" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="4,3"/>
+        <text x="387" y="14" fill="#8b5cf6" font-size="9" font-family="Inter, sans-serif">Gabriel · 2041</text>
+
+        <!-- Retirement marker Partner -->
+        <line x1="470" y1="0" x2="470" y2="110" stroke="#8b5cf6" stroke-width="1" stroke-dasharray="4,3" opacity="0.55"/>
+        <text x="473" y="26" fill="#8b5cf6" font-size="9" font-family="Inter, sans-serif" opacity="0.6">Partner · 2045</text>
+      </svg>
+
+      <!-- Values below -->
+      <div style="display:flex;justify-content:space-between;padding:12px 16px 16px;border-top:1px solid #1a1f35;">
+        <div>
+          <div style="color:rgba(238,242,255,0.4);font-size:10px;margin-bottom:2px;">Today</div>
+          <div style="color:rgba(238,242,255,0.92);font-size:13px;font-family:'JetBrains Mono',monospace;">£180,000</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="color:rgba(238,242,255,0.4);font-size:10px;margin-bottom:2px;">Nominal · 10y</div>
+          <div style="color:rgba(238,242,255,0.92);font-size:13px;font-family:'JetBrains Mono',monospace;">£510,000</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="color:rgba(238,242,255,0.4);font-size:10px;margin-bottom:2px;">Real · 10y</div>
+          <div style="color:rgba(238,242,255,0.92);font-size:13px;font-family:'JetBrains Mono',monospace;">£390,000</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom row -->
+    <div style="display:flex;gap:12px;">
+
+      <!-- Surplus — bottom left -->
+      <div style="background:#0d1120;border:1px solid #1a1f35;border-radius:10px;overflow:hidden;flex:1;">
+        <!-- Header -->
+        <div style="padding:16px 16px 12px;">
+          <div style="color:#4adcd0;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">Surplus Accumulation</div>
+          <div style="color:rgba(238,242,255,0.4);font-size:10px;">Unallocated · no interest applied</div>
+        </div>
+
+        <!-- Chart — full width -->
+        <svg width="100%" height="80" viewBox="0 0 300 80" preserveAspectRatio="none" style="display:block;">
+          <defs>
+            <linearGradient id="gradSurplus" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#4adcd0" stop-opacity="0.25"/>
+              <stop offset="100%" stop-color="#4adcd0" stop-opacity="0.02"/>
+            </linearGradient>
+          </defs>
+          <!-- Area fill -->
+          <polygon points="0,74 60,60 120,45 180,31 240,19 300,9 300,80 0,80" fill="url(#gradSurplus)"/>
+          <!-- Line -->
+          <polyline points="0,74 60,60 120,45 180,31 240,19 300,9" fill="none" stroke="#4adcd0" stroke-width="2"/>
+        </svg>
+
+        <!-- Values -->
+        <div style="display:flex;justify-content:space-between;padding:12px 16px 16px;border-top:1px solid #1a1f35;">
+          <div>
+            <div style="color:rgba(238,242,255,0.4);font-size:10px;margin-bottom:2px;">Today</div>
+            <div style="color:rgba(238,242,255,0.92);font-size:13px;font-family:'JetBrains Mono',monospace;">£0</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="color:rgba(238,242,255,0.4);font-size:10px;margin-bottom:2px;">At 10y</div>
+            <div style="color:rgba(238,242,255,0.92);font-size:13px;font-family:'JetBrains Mono',monospace;">£38,400</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Retirement — bottom right -->
+      <div style="background:#0d1120;border:1px solid #1a1f35;border-radius:10px;overflow:hidden;flex:1;">
+        <!-- Header -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;padding:16px 16px 12px;">
+          <div>
+            <div style="color:#8b5cf6;font-size:11px;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:2px;">At Retirement</div>
+            <div style="color:rgba(238,242,255,0.4);font-size:10px;">Pension · Savings · Stocks &amp; Shares</div>
+          </div>
+          <div style="display:flex;gap:4px;">
+            <div style="background:#1e1b4b;border:1px solid #6d28d9;border-radius:4px;padding:3px 8px;color:#a78bfa;font-size:10px;">Gabriel</div>
+            <div style="background:#0d1120;border:1px solid #1a1f35;border-radius:4px;padding:3px 8px;color:rgba(238,242,255,0.4);font-size:10px;">Partner</div>
+          </div>
+        </div>
+
+        <!-- Stacked area chart — full width -->
+        <svg width="100%" height="80" viewBox="0 0 300 80" preserveAspectRatio="none" style="display:block;">
+          <defs>
+            <linearGradient id="gPension2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#60a5fa" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#60a5fa" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="gSavings2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#5eead4" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#5eead4" stop-opacity="0.05"/>
+            </linearGradient>
+            <linearGradient id="gStocks2" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#c4b5fd" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#c4b5fd" stop-opacity="0.05"/>
+            </linearGradient>
+          </defs>
+
+          <!-- Pension (bottom) -->
+          <polygon points="0,72 60,63 120,53 180,42 240,30 300,18 300,80 0,80" fill="url(#gPension2)"/>
+          <polyline points="0,72 60,63 120,53 180,42 240,30 300,18" fill="none" stroke="#60a5fa" stroke-width="1.5"/>
+
+          <!-- Savings (middle) -->
+          <polygon points="0,72 60,63 120,53 180,42 240,30 300,18 300,10 240,19 180,30 120,40 60,50 0,58" fill="url(#gSavings2)"/>
+          <polyline points="0,58 60,50 120,40 180,30 240,19 300,10" fill="none" stroke="#5eead4" stroke-width="1.5"/>
+
+          <!-- Stocks (top) -->
+          <polygon points="0,58 60,50 120,40 180,30 240,19 300,10 300,4 240,10 180,18 120,27 60,36 0,40" fill="url(#gStocks2)"/>
+          <polyline points="0,40 60,36 120,27 180,18 240,10 300,4" fill="none" stroke="#c4b5fd" stroke-width="1.5"/>
+        </svg>
+
+        <!-- Legend + values -->
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px 16px;border-top:1px solid #1a1f35;gap:8px;">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div style="width:8px;height:8px;border-radius:2px;background:#60a5fa;opacity:0.8;flex-shrink:0;"></div>
+            <span style="color:rgba(238,242,255,0.4);font-size:10px;">Pension</span>
+            <span style="color:rgba(238,242,255,0.92);font-size:11px;font-family:'JetBrains Mono',monospace;margin-left:3px;">£182k</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div style="width:8px;height:8px;border-radius:2px;background:#5eead4;opacity:0.8;flex-shrink:0;"></div>
+            <span style="color:rgba(238,242,255,0.4);font-size:10px;">Savings</span>
+            <span style="color:rgba(238,242,255,0.92);font-size:11px;font-family:'JetBrains Mono',monospace;margin-left:3px;">£44k</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <div style="width:8px;height:8px;border-radius:2px;background:#c4b5fd;opacity:0.8;flex-shrink:0;"></div>
+            <span style="color:rgba(238,242,255,0.4);font-size:10px;">S&amp;S</span>
+            <span style="color:rgba(238,242,255,0.92);font-size:11px;font-family:'JetBrains Mono',monospace;margin-left:3px;">£68k</span>
+          </div>
+          <div style="border-left:1px solid #1a1f35;padding-left:10px;flex-shrink:0;">
+            <div style="color:rgba(238,242,255,0.4);font-size:10px;">Total</div>
+            <div style="color:rgba(238,242,255,0.92);font-size:12px;font-family:'JetBrains Mono',monospace;font-weight:600;">£294k</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
