@@ -1,4 +1,4 @@
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyRequest } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { waterfallService } from "../services/waterfall.service.js";
 import { actorCtx } from "../lib/actor-ctx.js";
@@ -18,7 +18,16 @@ import {
 } from "@finplan/shared";
 
 export async function waterfallRoutes(fastify: FastifyInstance) {
-  const pre = { preHandler: [authMiddleware] };
+  const pre = {
+    preHandler: [
+      authMiddleware,
+      async (request: FastifyRequest) => {
+        if (["POST", "PATCH", "DELETE"].includes(request.method) && request.householdId) {
+          await snapshotService.ensureBaselineSnapshot(request.householdId).catch(() => {});
+        }
+      },
+    ],
+  };
 
   fastify.addHook("onResponse", async (request, reply) => {
     if (
