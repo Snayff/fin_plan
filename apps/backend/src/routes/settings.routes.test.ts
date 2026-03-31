@@ -17,6 +17,16 @@ mock.module("../middleware/auth.middleware", () => ({
   authMiddleware: mock(() => {}),
 }));
 
+let mockHouseholdMember: { role: string } | null = { role: "owner" };
+
+mock.module("../config/database", () => ({
+  prisma: {
+    householdMember: {
+      findUnique: mock(async () => mockHouseholdMember),
+    },
+  },
+}));
+
 import { authMiddleware } from "../middleware/auth.middleware";
 import { settingsRoutes } from "./settings.routes";
 
@@ -49,6 +59,8 @@ beforeEach(() => {
   }
   settingsServiceMock.getSettings.mockResolvedValue(mockSettings as any);
   settingsServiceMock.updateSettings.mockResolvedValue(mockSettings as any);
+
+  mockHouseholdMember = { role: "owner" };
 
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
@@ -109,5 +121,61 @@ describe("PATCH /api/settings", () => {
       payload: { surplusBenchmarkPct: 200 },
     });
     expect(res.statusCode).toBe(400);
+  });
+});
+
+describe("PATCH /api/settings — growth rate role gate", () => {
+  it("allows owner to update growth rate fields", async () => {
+    mockHouseholdMember = { role: "owner" };
+    const updated = { ...mockSettings, savingsRatePct: 5 };
+    settingsServiceMock.updateSettings.mockResolvedValue(updated as any);
+
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/settings",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { savingsRatePct: 5 },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("allows admin to update growth rate fields", async () => {
+    mockHouseholdMember = { role: "admin" };
+    const updated = { ...mockSettings, investmentRatePct: 7 };
+    settingsServiceMock.updateSettings.mockResolvedValue(updated as any);
+
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/settings",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { investmentRatePct: 7 },
+    });
+    expect(res.statusCode).toBe(200);
+  });
+
+  it("rejects member role from setting growth rate fields", async () => {
+    mockHouseholdMember = { role: "member" };
+
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/settings",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { savingsRatePct: 5 },
+    });
+    expect(res.statusCode).toBe(403);
+  });
+
+  it("allows member to update non-growth-rate fields", async () => {
+    mockHouseholdMember = { role: "member" };
+    const updated = { ...mockSettings, surplusBenchmarkPct: 15 };
+    settingsServiceMock.updateSettings.mockResolvedValue(updated as any);
+
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/settings",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { surplusBenchmarkPct: 15 },
+    });
+    expect(res.statusCode).toBe(200);
   });
 });

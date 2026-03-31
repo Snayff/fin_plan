@@ -4,6 +4,17 @@ import { buildTestApp } from "../test/helpers/fastify";
 import { errorHandler } from "../middleware/errorHandler";
 import { AuthenticationError } from "../utils/errors";
 
+let mockCallerMember: { role: string } | null = { role: "owner" };
+const mockUpdatedMember = {
+  id: "membership-1",
+  householdId: "household-1",
+  userId: "user-2",
+  role: "member",
+  dateOfBirth: null,
+  retirementYear: 2055,
+  joinedAt: new Date("2025-01-01T00:00:00Z"),
+};
+
 mock.module("../services/household.service", () => ({
   householdService: {
     getUserHouseholds: mock(() => {}),
@@ -16,6 +27,48 @@ mock.module("../services/household.service", () => ({
     cancelInvite: mock(() => {}),
     leaveHousehold: mock(() => {}),
   },
+  assertOwnerOrAdmin: mock((role: string) => {
+    if (role !== "owner" && role !== "admin") {
+      throw Object.assign(new Error("Only household owners or admins can perform this action"), {
+        statusCode: 403,
+        code: "FORBIDDEN",
+      });
+    }
+  }),
+  updateMemberRole: mock(() => Promise.resolve({})),
+}));
+
+mock.module("../config/database", () => ({
+  prisma: {
+    householdMember: {
+      findUnique: mock(async () => mockCallerMember),
+      update: mock(async () => mockUpdatedMember),
+    },
+  },
+}));
+
+mock.module("../services/audit.service.js", () => ({
+  audited: mock(async ({ mutation }: any) => {
+    // Run the mutation with a mock tx
+    const mockTx = {
+      householdMember: {
+        findUnique: mock(async () => mockUpdatedMember),
+        update: mock(async () => mockUpdatedMember),
+      },
+      auditLog: { create: mock(async () => ({})) },
+    };
+    return mutation(mockTx);
+  }),
+}));
+
+mock.module("../lib/actor-ctx.js", () => ({
+  actorCtx: mock(() => ({
+    householdId: "household-1",
+    actorId: "user-1",
+    actorName: "Test User",
+    ipAddress: "127.0.0.1",
+    userAgent: "test",
+  })),
 }));
 
 mock.module("../middleware/auth.middleware", () => ({
@@ -94,6 +147,8 @@ beforeEach(() => {
   (householdService.removeMember as any).mockResolvedValue(undefined);
   (householdService.cancelInvite as any).mockResolvedValue(undefined);
   (householdService.leaveHousehold as any).mockResolvedValue(undefined);
+
+  mockCallerMember = { role: "owner" };
 
   // Re-apply auth middleware mock
   (authMiddleware as any).mockImplementation(async (request: any) => {
@@ -517,6 +572,67 @@ describe("DELETE /api/households/:id/leave", () => {
     const response = await app.inject({
       method: "DELETE",
       url: "/api/households/household-1/leave",
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("PATCH /api/households/:householdId/members/:userId/profile", () => {
+  it("allows member to update own profile fields", async () => {
+    // Caller is user-1 updating their own profile
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/households/household-1/members/user-1/profile",
+      headers: authHeaders,
+      payload: { retirementYear: 2055 },
+    });
+
+    expect(response.statusCode).toBe(200);
+  });
+
+  it("rejects member updating another member's profile", async () => {
+    mockCallerMember = { role: "member" };
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/households/household-1/members/user-2/profile",
+      headers: authHeaders,
+      payload: { retirementYear: 2060 },
+    });
+
+    expect(response.statusCode).toBe(403);
+  });
+
+  it("allows owner to update any member's profile", async () => {
+    mockCallerMember = { role: "owner" };
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/households/household-1/members/user-2/profile",
+      headers: authHeaders,
+      payload: { retirementYear: 2060 },
+    });
+
+    expect(response.statusCode).toBe(200);
+  });
+
+  it("rejects request when householdId does not match active household", async () => {
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/households/other-household/members/user-1/profile",
+      headers: authHeaders,
+      payload: { retirementYear: 2055 },
+    });
+
+    expect(response.statusCode).toBe(403);
+  });
+
+  it("returns 401 without auth", async () => {
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/households/household-1/members/user-1/profile",
+      payload: { retirementYear: 2055 },
     });
 
     expect(response.statusCode).toBe(401);

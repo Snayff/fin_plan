@@ -1,5 +1,9 @@
 import { FastifyInstance } from "fastify";
-import { householdService, updateMemberRole } from "../services/household.service";
+import {
+  householdService,
+  updateMemberRole,
+  assertOwnerOrAdmin,
+} from "../services/household.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { prisma } from "../config/database.js";
 import {
@@ -7,9 +11,11 @@ import {
   createHouseholdInviteSchema,
   renameHouseholdSchema,
   updateMemberRoleSchema,
+  updateMemberProfileSchema,
 } from "@finplan/shared";
 import { AuthorizationError, NotFoundError } from "../utils/errors.js";
 import { actorCtx } from "../lib/actor-ctx.js";
+import { audited } from "../services/audit.service.js";
 
 export async function householdRoutes(fastify: FastifyInstance) {
   // List all households the current user belongs to
@@ -120,6 +126,50 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const { id } = request.params as { id: string };
       await householdService.leaveHousehold(id, userId);
       return reply.send({ success: true });
+    }
+  );
+
+  // Update a member's profile (self, or owner/admin)
+  fastify.patch(
+    "/households/:householdId/members/:userId/profile",
+    { preHandler: [authMiddleware] },
+    async (req, reply) => {
+      const { householdId, userId } = req.params as { householdId: string; userId: string };
+      if (householdId !== req.householdId) {
+        throw new AuthorizationError("Forbidden");
+      }
+      const callerId = req.user!.userId;
+      const isSelf = userId === callerId;
+      if (!isSelf) {
+        const callerMember = await prisma.householdMember.findUnique({
+          where: { householdId_userId: { householdId, userId: callerId } },
+          select: { role: true },
+        });
+        assertOwnerOrAdmin(callerMember?.role ?? "member");
+      }
+      const data = updateMemberProfileSchema.parse(req.body);
+      const updated = await audited({
+        db: prisma,
+        ctx: actorCtx(req),
+        action: "UPDATE_MEMBER_PROFILE",
+        resource: "household-member",
+        resourceId: userId,
+        beforeFetch: async (tx) =>
+          tx.householdMember.findUnique({
+            where: { householdId_userId: { householdId, userId } },
+          }) as Promise<Record<string, unknown> | null>,
+        mutation: async (tx) =>
+          tx.householdMember.update({
+            where: { householdId_userId: { householdId, userId } },
+            data: {
+              ...(data.dateOfBirth !== undefined
+                ? { dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null }
+                : {}),
+              ...(data.retirementYear !== undefined ? { retirementYear: data.retirementYear } : {}),
+            },
+          }),
+      });
+      return reply.send(updated);
     }
   );
 
