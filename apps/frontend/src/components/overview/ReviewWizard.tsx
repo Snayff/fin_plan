@@ -20,10 +20,9 @@ import {
   useReviewSavings,
 } from "@/hooks/useReviewSession";
 import { useWaterfallSummary } from "@/hooks/useWaterfall";
-import { wealthService } from "@/services/wealth.service";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 
-const STEPS = ["Income", "Monthly Bills", "Yearly Bills", "Discretionary", "Wealth", "Summary"];
+const STEPS = ["Income", "Monthly Bills", "Yearly Bills", "Discretionary", "Summary"];
 
 interface ReviewWizardProps {
   onClose: () => void;
@@ -81,11 +80,7 @@ function ItemCard({
               ? `${formatCurrency(amount)}/yr · ${formatCurrency(amount / 12)}/mo`
               : formatCurrency(amount)}
           </p>
-          {stale && (
-            <p className="text-xs text-attention">
-              Stale
-            </p>
-          )}
+          {stale && <p className="text-xs text-attention">Stale</p>}
         </div>
         {isResolved ? (
           <span className="text-xs text-green-600 font-medium">✓ Done</span>
@@ -141,11 +136,6 @@ function useStepItems(step: number) {
   const { data: yearly = [] } = useReviewYearly();
   const { data: discretionary = [] } = useReviewDiscretionary();
   const { data: savings = [] } = useReviewSavings();
-  const { data: accountsRaw } = useQuery({
-    queryKey: ["wealth", "accounts"],
-    queryFn: wealthService.listAccounts,
-  });
-  const accounts = accountsRaw ?? [];
 
   switch (step) {
     case 0:
@@ -156,8 +146,6 @@ function useStepItems(step: number) {
       return yearly as any[];
     case 3:
       return [...(discretionary as any[]), ...(savings as any[])];
-    case 4:
-      return accounts as any[];
     default:
       return [];
   }
@@ -223,7 +211,6 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     yearly_bill: 12,
     discretionary_category: 12,
     savings_allocation: 12,
-    wealth_account: 3,
   };
 
   const TYPE_MAP: Record<number, string> = {
@@ -231,7 +218,6 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     1: "committed_bill",
     2: "yearly_bill",
     3: "discretionary_category",
-    4: "wealth_account",
   };
 
   const SERVICE_TYPE: Record<number, string> = {
@@ -239,7 +225,6 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     1: "committed",
     2: "yearly",
     3: "discretionary",
-    4: "wealth",
   };
 
   function getThreshold(step: number, item: any): number {
@@ -333,13 +318,9 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     if (unresolved.length === 0) return;
     try {
       const ids = unresolved.map((it: any) => it.id as string);
-      if (currentStep === 4) {
-        await wealthService.confirmBatch({ ids });
-      } else {
-        await waterfallService.confirmBatch({
-          items: ids.map((id) => ({ type: TYPE_MAP[currentStep] ?? "", id })),
-        } as any);
-      }
+      await waterfallService.confirmBatch({
+        items: ids.map((id) => ({ type: TYPE_MAP[currentStep] ?? "", id })),
+      } as any);
 
       const svcType = getServiceType(currentStep, freshItems[0]);
       const typeKey = TYPE_MAP[currentStep] ?? svcType;
@@ -441,127 +422,127 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
             exit="exit"
             className="max-w-2xl mx-auto p-6 space-y-4"
           >
-          {currentStep < 5 ? (
-            <>
-              <h2 className="text-lg font-semibold">{STEPS[currentStep]}</h2>
-              <p className="text-sm text-muted-foreground">
-                {staleItems.length} stale · {freshItems.length} up to date
-              </p>
+            {currentStep < 4 ? (
+              <>
+                <h2 className="text-lg font-semibold">{STEPS[currentStep]}</h2>
+                <p className="text-sm text-muted-foreground">
+                  {staleItems.length} stale · {freshItems.length} up to date
+                </p>
 
-              {/* Stale items first */}
-              {staleItems.map((item) => (
-                <ItemCard
-                  key={item.id as string}
-                  id={item.id as string}
-                  name={item.name as string}
-                  amount={getItemAmount(item)}
-                  amountField="amount"
-                  type={getServiceType(currentStep, item)}
-                  lastReviewedAt={item.lastReviewedAt ?? new Date(0).toISOString()}
-                  thresholdMonths={getThreshold(currentStep, item)}
-                  isResolved={isResolved(item.id as string)}
-                  onConfirm={() => handleConfirm(item)}
-                  onUpdate={(v) => handleUpdate(item, v)}
-                />
-              ))}
+                {/* Stale items first */}
+                {staleItems.map((item) => (
+                  <ItemCard
+                    key={item.id as string}
+                    id={item.id as string}
+                    name={item.name as string}
+                    amount={getItemAmount(item)}
+                    amountField="amount"
+                    type={getServiceType(currentStep, item)}
+                    lastReviewedAt={item.lastReviewedAt ?? new Date(0).toISOString()}
+                    thresholdMonths={getThreshold(currentStep, item)}
+                    isResolved={isResolved(item.id as string)}
+                    onConfirm={() => handleConfirm(item)}
+                    onUpdate={(v) => handleUpdate(item, v)}
+                  />
+                ))}
 
-              {/* Fresh items */}
-              {freshItems.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                      Up to date ({freshItems.length})
-                    </p>
-                    {unresolvedFresh.length > 0 && (
-                      <button
-                        type="button"
-                        className="text-xs text-primary hover:underline"
-                        onClick={handleConfirmAll}
-                      >
-                        Confirm all remaining ({unresolvedFresh.length})
-                      </button>
-                    )}
-                  </div>
-                  {freshItems.map((item) => (
-                    <ItemCard
-                      key={item.id as string}
-                      id={item.id as string}
-                      name={item.name as string}
-                      amount={getItemAmount(item)}
-                      amountField="amount"
-                      type={getServiceType(currentStep, item)}
-                      lastReviewedAt={item.lastReviewedAt ?? new Date(0).toISOString()}
-                      thresholdMonths={getThreshold(currentStep, item)}
-                      isResolved={isResolved(item.id as string)}
-                      onConfirm={() => handleConfirm(item)}
-                      onUpdate={(v) => handleUpdate(item, v)}
-                    />
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            /* Summary step */
-            <div className="space-y-6">
-              <h2 className="text-lg font-semibold">Summary</h2>
-
-              <div className="rounded-lg border p-4 space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Items reviewed</span>
-                  <span className="font-medium">
-                    {Object.keys(updatedItems).length +
-                      Object.values(confirmedItems).reduce((s, a) => s + a.length, 0)}
-                  </span>
-                </div>
-                {(() => {
-                  const resolvedIds = new Set([
-                    ...Object.values(confirmedItems).flat(),
-                    ...Object.keys(updatedItems),
-                  ]);
-                  const stillStale = [...allStaleIds].filter((id) => !resolvedIds.has(id)).length;
-                  return stillStale > 0 ? (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Still stale</span>
-                      <span className="font-medium text-attention">{stillStale}</span>
+                {/* Fresh items */}
+                {freshItems.length > 0 && (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
+                        Up to date ({freshItems.length})
+                      </p>
+                      {unresolvedFresh.length > 0 && (
+                        <button
+                          type="button"
+                          className="text-xs text-primary hover:underline"
+                          onClick={handleConfirmAll}
+                        >
+                          Confirm all remaining ({unresolvedFresh.length})
+                        </button>
+                      )}
                     </div>
-                  ) : null;
-                })()}
-                {summary && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Current surplus</span>
-                    <span className="font-medium">{formatCurrency(summary.surplus.amount)}</span>
+                    {freshItems.map((item) => (
+                      <ItemCard
+                        key={item.id as string}
+                        id={item.id as string}
+                        name={item.name as string}
+                        amount={getItemAmount(item)}
+                        amountField="amount"
+                        type={getServiceType(currentStep, item)}
+                        lastReviewedAt={item.lastReviewedAt ?? new Date(0).toISOString()}
+                        thresholdMonths={getThreshold(currentStep, item)}
+                        isResolved={isResolved(item.id as string)}
+                        onConfirm={() => handleConfirm(item)}
+                        onUpdate={(v) => handleUpdate(item, v)}
+                      />
+                    ))}
                   </div>
                 )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Reviewed at</span>
-                  <span className="font-medium">{format(reviewedAt, "d MMM yyyy, HH:mm")}</span>
-                </div>
-              </div>
+              </>
+            ) : (
+              /* Summary step */
+              <div className="space-y-6">
+                <h2 className="text-lg font-semibold">Summary</h2>
 
-              {Object.keys(updatedItems).length > 0 && (
-                <div className="space-y-2">
-                  <p className="text-sm font-medium">Changes made</p>
-                  {Object.entries(updatedItems).map(([id, change]) => (
-                    <div key={id} className="flex justify-between text-sm text-muted-foreground">
-                      <span>{change.name}</span>
-                      <span>
-                        {formatCurrency(change.from)} → {formatCurrency(change.to)}
-                      </span>
+                <div className="rounded-lg border p-4 space-y-3">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Items reviewed</span>
+                    <span className="font-medium">
+                      {Object.keys(updatedItems).length +
+                        Object.values(confirmedItems).reduce((s, a) => s + a.length, 0)}
+                    </span>
+                  </div>
+                  {(() => {
+                    const resolvedIds = new Set([
+                      ...Object.values(confirmedItems).flat(),
+                      ...Object.keys(updatedItems),
+                    ]);
+                    const stillStale = [...allStaleIds].filter((id) => !resolvedIds.has(id)).length;
+                    return stillStale > 0 ? (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Still stale</span>
+                        <span className="font-medium text-attention">{stillStale}</span>
+                      </div>
+                    ) : null;
+                  })()}
+                  {summary && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Current surplus</span>
+                      <span className="font-medium">{formatCurrency(summary.surplus.amount)}</span>
                     </div>
-                  ))}
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Reviewed at</span>
+                    <span className="font-medium">{format(reviewedAt, "d MMM yyyy, HH:mm")}</span>
+                  </div>
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Snapshot name</label>
-                <input
-                  className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
-                  value={snapshotName}
-                  onChange={(e) => setSnapshotName(e.target.value)}
-                />
+                {Object.keys(updatedItems).length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Changes made</p>
+                    {Object.entries(updatedItems).map(([id, change]) => (
+                      <div key={id} className="flex justify-between text-sm text-muted-foreground">
+                        <span>{change.name}</span>
+                        <span>
+                          {formatCurrency(change.from)} → {formatCurrency(change.to)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Snapshot name</label>
+                  <input
+                    className="w-full rounded border px-3 py-1.5 text-sm bg-background focus:outline-none focus:border-primary"
+                    value={snapshotName}
+                    onChange={(e) => setSnapshotName(e.target.value)}
+                  />
+                </div>
               </div>
-            </div>
-          )}
+            )}
           </motion.div>
         </AnimatePresence>
       </div>
