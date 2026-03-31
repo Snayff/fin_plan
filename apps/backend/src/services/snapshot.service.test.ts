@@ -104,6 +104,43 @@ describe("snapshotService.deleteSnapshot", () => {
   });
 });
 
+describe("snapshotService.ensureBaselineSnapshot", () => {
+  it("creates auto:init snapshot when no auto-snapshots exist", async () => {
+    prismaMock.snapshot.count.mockResolvedValue(0);
+    prismaMock.snapshot.upsert.mockResolvedValue({ id: "snap-init", name: "auto:init" } as any);
+
+    await snapshotService.ensureBaselineSnapshot("hh-1");
+
+    expect(prismaMock.snapshot.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { householdId_name: { householdId: "hh-1", name: "auto:init" } },
+        create: expect.objectContaining({ householdId: "hh-1", name: "auto:init", isAuto: true }),
+      })
+    );
+  });
+
+  it("does nothing when auto-snapshots already exist", async () => {
+    prismaMock.snapshot.count.mockResolvedValue(2);
+
+    await snapshotService.ensureBaselineSnapshot("hh-1");
+
+    expect(prismaMock.snapshot.upsert).not.toHaveBeenCalled();
+  });
+
+  it("is idempotent — second call with existing row is a no-op upsert", async () => {
+    prismaMock.snapshot.count.mockResolvedValue(0);
+    prismaMock.snapshot.upsert.mockResolvedValue({ id: "snap-init", name: "auto:init" } as any);
+
+    await snapshotService.ensureBaselineSnapshot("hh-1");
+    await snapshotService.ensureBaselineSnapshot("hh-1");
+
+    // upsert called twice but update: {} means second call changes nothing
+    expect(prismaMock.snapshot.upsert).toHaveBeenCalledTimes(2);
+    const call = prismaMock.snapshot.upsert.mock.calls[0][0];
+    expect(call.update).toEqual({});
+  });
+});
+
 describe("snapshotService.ensureJan1Snapshot", () => {
   it("creates auto snapshot when now is Jan 1", async () => {
     const jan1 = new Date("2026-01-01T10:00:00Z");
