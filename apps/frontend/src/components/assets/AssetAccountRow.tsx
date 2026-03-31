@@ -53,6 +53,7 @@ export function AssetAccountRow({
       {/* Collapsed header — always shown */}
       <button
         onClick={onToggle}
+        aria-expanded={isExpanded}
         className="w-full flex justify-between items-center py-3.5 bg-transparent border-none cursor-pointer text-left"
       >
         <div>

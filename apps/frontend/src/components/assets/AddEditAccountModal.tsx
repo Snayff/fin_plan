@@ -96,10 +96,14 @@ export function AddEditAccountModal({ type, item, onClose }: Props) {
         </h2>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]">
+          <label
+            htmlFor="aeac-name"
+            className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]"
+          >
             Name
           </label>
           <input
+            id="aeac-name"
             type="text"
             required
             value={name}
@@ -110,10 +114,14 @@ export function AddEditAccountModal({ type, item, onClose }: Props) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]">
+          <label
+            htmlFor="aeac-member"
+            className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]"
+          >
             Assigned to
           </label>
           <select
+            id="aeac-member"
             value={memberUserId ?? ""}
             onChange={(e) => setMemberUserId(e.target.value || null)}
             className="bg-[rgba(238,242,255,0.04)] border border-[#1a1f35] rounded-md px-3 py-2 text-sm text-[rgba(238,242,255,0.92)] focus:outline-none focus:border-[#8b5cf6]"
@@ -129,10 +137,14 @@ export function AddEditAccountModal({ type, item, onClose }: Props) {
 
         {settingKey && (
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]">
+            <label
+              htmlFor="aeac-growth"
+              className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]"
+            >
               Growth rate override (%)
             </label>
             <input
+              id="aeac-growth"
               type="number"
               step="0.1"
               min="0"

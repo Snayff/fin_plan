@@ -47,9 +47,13 @@ export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType 
       {/* List */}
       <div className="flex-1">
         {/* Assets group */}
-        <div className="px-5 py-1.5 text-[rgba(238,242,255,0.25)] text-[10px] tracking-[0.1em] uppercase">
+        <p
+          role="group"
+          aria-label="Assets"
+          className="px-5 py-1.5 text-[rgba(238,242,255,0.25)] text-[10px] tracking-[0.1em] uppercase"
+        >
           Assets
-        </div>
+        </p>
         {ASSET_TYPES.map((type) => {
           const isSelected = selected === type;
           const total = summary?.assetTotals[type] ?? 0;
@@ -58,6 +62,7 @@ export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType 
             <button
               key={type}
               onClick={() => onSelect(type)}
+              aria-current={isSelected ? "true" : undefined}
               className={`w-full flex justify-between items-center px-5 py-2.5 text-left bg-transparent border-none cursor-pointer ${
                 isSelected ? "border-l-2 border-[#8b5cf6] pl-[18px]" : ""
               }`}
@@ -82,9 +87,13 @@ export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType 
         })}
 
         {/* Accounts group */}
-        <div className="px-5 pt-3.5 pb-1.5 text-[rgba(238,242,255,0.25)] text-[10px] tracking-[0.1em] uppercase">
+        <p
+          role="group"
+          aria-label="Accounts"
+          className="px-5 pt-3.5 pb-1.5 text-[rgba(238,242,255,0.25)] text-[10px] tracking-[0.1em] uppercase"
+        >
           Accounts
-        </div>
+        </p>
         {ACCOUNT_TYPES.map((type) => {
           const isSelected = selected === type;
           const total = summary?.accountTotals[type] ?? 0;
@@ -93,6 +102,7 @@ export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType 
             <button
               key={type}
               onClick={() => onSelect(type)}
+              aria-current={isSelected ? "true" : undefined}
               className={`w-full flex justify-between items-center px-5 py-2.5 text-left bg-transparent border-none cursor-pointer ${
                 isSelected ? "border-l-2 border-[#8b5cf6] pl-[18px]" : ""
               }`}

@@ -75,10 +75,14 @@ export function AddEditAssetModal({ type, item, onClose }: Props) {
         </h2>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]">
+          <label
+            htmlFor="aea-name"
+            className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]"
+          >
             Name
           </label>
           <input
+            id="aea-name"
             type="text"
             required
             value={name}
@@ -89,10 +93,14 @@ export function AddEditAssetModal({ type, item, onClose }: Props) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]">
+          <label
+            htmlFor="aea-member"
+            className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]"
+          >
             Assigned to
           </label>
           <select
+            id="aea-member"
             value={memberUserId ?? ""}
             onChange={(e) => setMemberUserId(e.target.value || null)}
             className="bg-[rgba(238,242,255,0.04)] border border-[#1a1f35] rounded-md px-3 py-2 text-sm text-[rgba(238,242,255,0.92)] focus:outline-none focus:border-[#8b5cf6]"

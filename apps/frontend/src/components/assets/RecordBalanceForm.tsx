@@ -65,10 +65,14 @@ export function RecordBalanceForm({ itemId, itemKind, onClose }: Props) {
         <h2 className="text-base font-semibold text-[rgba(238,242,255,0.92)]">Record Balance</h2>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]">
+          <label
+            htmlFor="rbf-value"
+            className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]"
+          >
             Value (£)
           </label>
           <input
+            id="rbf-value"
             type="number"
             step="0.01"
             min="0.01"
@@ -81,10 +85,14 @@ export function RecordBalanceForm({ itemId, itemKind, onClose }: Props) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]">
+          <label
+            htmlFor="rbf-date"
+            className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]"
+          >
             Date
           </label>
           <input
+            id="rbf-date"
             type="date"
             required
             max={todayISO()}
@@ -95,10 +103,14 @@ export function RecordBalanceForm({ itemId, itemKind, onClose }: Props) {
         </div>
 
         <div className="flex flex-col gap-1.5">
-          <label className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]">
+          <label
+            htmlFor="rbf-note"
+            className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]"
+          >
             Note (optional)
           </label>
           <input
+            id="rbf-note"
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
