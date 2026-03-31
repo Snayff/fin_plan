@@ -18,16 +18,6 @@ mock.module("@/hooks/useSettings", () => ({
   useRemoveMember: () => ({ mutate: () => {}, isPending: false }),
 }));
 
-mock.module("@/hooks/useWealth", () => ({
-  useIsaAllowance: () => ({ data: undefined }),
-  useWealthSummary: () => ({ data: undefined, isLoading: false, isError: false }),
-  useWealthAccounts: () => ({ data: undefined, isLoading: false }),
-  useAccountHistory: () => ({ data: undefined, isLoading: false, isError: false }),
-  useUpdateValuation: () => ({ mutate: () => {}, isPending: false }),
-  useConfirmAccount: () => ({ mutate: () => {}, isPending: false }),
-  useUpdateAccount: () => ({ mutate: () => {}, isPending: false }),
-}));
-
 mock.module("@/hooks/useWaterfall", () => ({
   useWaterfallSummary: () => ({ data: undefined, isLoading: false, isError: false }),
   useCashflow: () => ({ data: undefined, isLoading: false, isError: false }),

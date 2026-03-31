@@ -7,31 +7,6 @@ import type { CreateSnapshotInput, RenameSnapshotInput, FinancialSummary } from 
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-async function buildNetWorthSeries(
-  accountIds: string[]
-): Promise<Array<{ date: string; value: number }>> {
-  if (accountIds.length === 0) return [];
-  const history = await prisma.wealthAccountHistory.findMany({
-    where: { wealthAccountId: { in: accountIds } },
-    orderBy: { valuationDate: "asc" },
-    select: { wealthAccountId: true, balance: true, valuationDate: true },
-  });
-
-  const accountBalances = new Map<string, number>();
-  const dateMap = new Map<string, number>();
-
-  for (const entry of history) {
-    accountBalances.set(entry.wealthAccountId, entry.balance);
-    const dateKey = entry.valuationDate.toISOString().slice(0, 10);
-    const total = Array.from(accountBalances.values()).reduce((s, v) => s + v, 0);
-    dateMap.set(dateKey, total);
-  }
-
-  return Array.from(dateMap.entries())
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, value]) => ({ date, value }));
-}
-
 function buildTierSeries(snapshots: Array<{ data: unknown; createdAt: Date }>) {
   type Point = { date: string; value: number };
   const income: Point[] = [];
@@ -140,6 +115,17 @@ export const snapshotService = {
     }
   },
 
+  async ensureBaselineSnapshot(householdId: string) {
+    const count = await prisma.snapshot.count({ where: { householdId, isAuto: true } });
+    if (count > 0) return;
+    const data = await waterfallService.getWaterfallSummary(householdId);
+    await prisma.snapshot.upsert({
+      where: { householdId_name: { householdId, name: "auto:init" } },
+      create: { householdId, name: "auto:init", isAuto: true, data: data as object },
+      update: {},
+    });
+  },
+
   async ensureTodayAutoSnapshot(householdId: string, now: Date = new Date()) {
     const dateKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
     const name = `auto:${dateKey}`;
@@ -152,27 +138,17 @@ export const snapshotService = {
   },
 
   async getFinancialSummary(householdId: string): Promise<FinancialSummary> {
-    const [summary, autoSnapshots, wealthAccountCount] = await Promise.all([
+    const [summary, autoSnapshots] = await Promise.all([
       waterfallService.getWaterfallSummary(householdId),
       prisma.snapshot.findMany({
         where: { householdId, isAuto: true },
         orderBy: { createdAt: "asc" },
         select: { data: true, createdAt: true },
       }),
-      prisma.wealthAccount.count({ where: { householdId, isTrust: false } }),
     ]);
 
-    let netWorth: number | null = null;
-    let netWorthSeries: Array<{ date: string; value: number }> = [];
-
-    if (wealthAccountCount > 0) {
-      const accounts = await prisma.wealthAccount.findMany({
-        where: { householdId, isTrust: false },
-        select: { id: true, balance: true },
-      });
-      netWorth = toGBP(accounts.reduce((s, a) => s + a.balance, 0));
-      netWorthSeries = await buildNetWorthSeries(accounts.map((a) => a.id));
-    }
+    const netWorth: number | null = null;
+    const netWorthSeries: Array<{ date: string; value: number }> = [];
 
     const tierSeries = buildTierSeries(autoSnapshots);
 

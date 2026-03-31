@@ -58,13 +58,6 @@ async function validateMemberOwnership(householdId: string, memberId: string) {
   if (!member) throw new NotFoundError("Household member not found");
 }
 
-async function validateWealthAccountOwnership(householdId: string, wealthAccountId: string) {
-  const account = await prisma.wealthAccount.findFirst({
-    where: { id: wealthAccountId, householdId },
-  });
-  if (!account) throw new NotFoundError("Wealth account not found");
-}
-
 // ─── Subcategory totals helper ────────────────────────────────────────────────
 
 function buildSubcategoryTotals(
@@ -871,7 +864,7 @@ export const waterfallService = {
     });
   },
 
-  // ─── Savings (DiscretionaryItem with wealthAccountId) ───────────────────────
+  // ─── Savings (DiscretionaryItem in Savings subcategory) ─────────────────────
 
   async listSavings(householdId: string) {
     const savingsSubcategory = await prisma.subcategory.findFirst({
@@ -886,9 +879,6 @@ export const waterfallService = {
 
   async createSavings(householdId: string, data: CreateDiscretionaryItemInput, ctx?: ActorCtx) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
-    if (data.wealthAccountId) {
-      await validateWealthAccountOwnership(householdId, data.wealthAccountId);
-    }
     if (ctx) {
       return audited({
         db: prisma,
@@ -933,9 +923,6 @@ export const waterfallService = {
     assertOwned(existing, householdId, "Savings allocation");
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
-    }
-    if (data.wealthAccountId) {
-      await validateWealthAccountOwnership(householdId, data.wealthAccountId);
     }
 
     if (ctx) {

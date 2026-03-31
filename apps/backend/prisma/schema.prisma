@@ -40,17 +40,21 @@ model Household {
   invites        HouseholdInvite[]
   activeForUsers User[]            @relation("UserActiveHousehold")
   auditLogs      AuditLog[]
+  assets         Asset[]
+  accounts       Account[]
 
   @@map("households")
 }
 
 model HouseholdMember {
-  householdId String        @map("household_id")
-  userId      String        @map("user_id")
-  role        HouseholdRole @default(member)
-  joinedAt    DateTime      @default(now()) @map("joined_at")
-  household   Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  householdId    String        @map("household_id")
+  userId         String        @map("user_id")
+  role           HouseholdRole @default(member)
+  joinedAt       DateTime      @default(now()) @map("joined_at")
+  dateOfBirth    DateTime?
+  retirementYear Int?
+  household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@id([householdId, userId])
   @@index([userId])
@@ -155,7 +159,11 @@ model HouseholdSettings {
   isaAnnualLimit      Float    @default(20000)
   isaYearStartMonth   Int      @default(4)
   isaYearStartDay     Int      @default(6)
-  stalenessThresholds Json     @default("{\"income_source\":12,\"committed_item\":6,\"discretionary_item\":12,\"wealth_account\":3}")
+  stalenessThresholds Json     @default("{\"income_source\":12,\"committed_item\":6,\"discretionary_item\":12,\"asset_item\":12,\"account_item\":3}")
+  savingsRatePct      Float?
+  investmentRatePct   Float?
+  pensionRatePct      Float?
+  inflationRatePct    Float    @default(2.5)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
@@ -244,19 +252,18 @@ model CommittedItem {
 }
 
 model DiscretionaryItem {
-  id              String      @id @default(cuid())
-  householdId     String
-  subcategoryId   String
-  name            String
-  amount          Float
-  spendType       SpendType   @default(monthly)
-  notes           String?
-  wealthAccountId String?
-  sortOrder       Int         @default(0)
-  lastReviewedAt  DateTime    @default(now())
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
+  id             String      @id @default(cuid())
+  householdId    String
+  subcategoryId  String
+  name           String
+  amount         Float
+  spendType      SpendType   @default(monthly)
+  notes          String?
+  sortOrder      Int         @default(0)
+  lastReviewedAt DateTime    @default(now())
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
 }
 
 enum WaterfallItemType {
@@ -276,45 +283,74 @@ model WaterfallHistory {
   @@index([itemType, itemId, recordedAt])
 }
 
-// ─── Wealth ───────────────────────────────────────────────────────────────────
+// ─── Assets & Accounts ────────────────────────────────────────────────────────
 
-enum AssetClass {
-  savings
-  pensions
-  investments
-  property
-  vehicles
-  other
+model Asset {
+  id             String         @id @default(cuid())
+  householdId    String
+  memberUserId   String?
+  name           String
+  type           AssetType
+  lastReviewedAt DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  household      Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  balances       AssetBalance[]
+
+  @@index([householdId])
 }
 
-model WealthAccount {
-  id                   String   @id @default(cuid())
-  householdId          String
-  assetClass           AssetClass
-  name                 String
-  provider             String?
-  notes                String?
-  balance              Float    @default(0)
-  interestRate         Float?
-  isISA                Boolean  @default(false)
-  isaYearContribution  Float?
-  ownerId              String?
-  isTrust              Boolean  @default(false)
-  trustBeneficiaryName String?
-  valuationDate        DateTime @default(now())
-  lastReviewedAt       DateTime @default(now())
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+model AssetBalance {
+  id        String   @id @default(cuid())
+  assetId   String
+  value     Float
+  date      DateTime @db.Date
+  note      String?
+  createdAt DateTime @default(now())
+  asset     Asset    @relation(fields: [assetId], references: [id], onDelete: Cascade)
+
+  @@index([assetId])
 }
 
-model WealthAccountHistory {
-  id              String   @id @default(cuid())
-  wealthAccountId String
-  balance         Float
-  valuationDate   DateTime
-  createdAt       DateTime @default(now())
+model Account {
+  id             String           @id @default(cuid())
+  householdId    String
+  memberUserId   String?
+  name           String
+  type           AccountType
+  growthRatePct  Float?
+  lastReviewedAt DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  household      Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  balances       AccountBalance[]
 
-  @@index([wealthAccountId, valuationDate])
+  @@index([householdId])
+}
+
+model AccountBalance {
+  id        String   @id @default(cuid())
+  accountId String
+  value     Float
+  date      DateTime @db.Date
+  note      String?
+  createdAt DateTime @default(now())
+  account   Account  @relation(fields: [accountId], references: [id], onDelete: Cascade)
+
+  @@index([accountId])
+}
+
+enum AssetType {
+  Property
+  Vehicle
+  Other
+}
+
+enum AccountType {
+  Savings
+  Pension
+  StocksAndShares
+  Other
 }
 
 // ─── Planner ──────────────────────────────────────────────────────────────────

@@ -66,12 +66,11 @@ describe("createCommittedItemSchema", () => {
 });
 
 describe("createDiscretionaryItemSchema", () => {
-  it("accepts valid discretionary item with optional wealthAccountId", () => {
+  it("accepts valid discretionary item", () => {
     const result = createDiscretionaryItemSchema.safeParse({
       name: "Emergency Fund",
       amount: 200,
       subcategoryId: "sub-2",
-      wealthAccountId: "wa-1",
     });
     expect(result.success).toBe(true);
   });

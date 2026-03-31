@@ -93,7 +93,6 @@ export const createDiscretionaryItemSchema = z.object({
   subcategoryId: z.string().min(1),
   spendType: SpendTypeEnum.default("monthly"),
   notes: z.string().max(500).nullable().optional(),
-  wealthAccountId: z.string().optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -103,7 +102,6 @@ export const updateDiscretionaryItemSchema = z.object({
   subcategoryId: z.string().min(1).optional(),
   spendType: SpendTypeEnum.optional(),
   notes: z.string().max(500).nullable().optional(),
-  wealthAccountId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -204,14 +202,12 @@ export type UpdateDiscretionaryCategoryInput = z.infer<typeof updateDiscretionar
 export const createSavingsAllocationSchema = z.object({
   name: z.string().min(1),
   monthlyAmount: z.number().positive(),
-  wealthAccountId: z.string().optional(),
   sortOrder: z.number().int().optional(),
 });
 
 export const updateSavingsAllocationSchema = z.object({
   name: z.string().min(1).optional(),
   monthlyAmount: z.number().positive().optional(),
-  wealthAccountId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -338,7 +334,6 @@ export interface SavingsAllocationRow {
   name: string;
   monthlyAmount: number;
   sortOrder: number;
-  wealthAccountId: string | null;
   lastReviewedAt: Date;
   createdAt: Date;
   updatedAt: Date;

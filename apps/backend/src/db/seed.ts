@@ -187,28 +187,6 @@ async function main() {
     }
   }
 
-  // ─── Wealth Account ────────────────────────────────────────────────────────
-
-  const accountData = [
-    {
-      name: "Cash ISA",
-      assetClass: "savings" as const,
-      balance: 15000,
-      isISA: true,
-      isaYearContribution: 4000,
-      ownerId: user.id,
-    },
-  ];
-
-  for (const acc of accountData) {
-    const existing = await prisma.wealthAccount.findFirst({
-      where: { householdId: hId, name: acc.name },
-    });
-    if (!existing) {
-      await prisma.wealthAccount.create({ data: { householdId: hId, ...acc } });
-    }
-  }
-
   console.log(`Seed complete: user=${email}, household=${household.name} (${hId})`);
 }
 
