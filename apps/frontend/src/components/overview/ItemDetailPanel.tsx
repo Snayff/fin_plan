@@ -13,9 +13,7 @@ import { NudgeCard } from "@/components/common/NudgeCard";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
 import { useYearlyBillNudge, useSavingsNudge } from "@/hooks/useNudge";
-import { Link } from "react-router-dom";
 import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
-import { useWealthAccount } from "@/hooks/useWealth";
 
 interface SelectedItem {
   id: string;
@@ -62,7 +60,6 @@ export function ItemDetailPanel({
   const isReadOnly = !!isReadOnlyProp || snapshotDate != null;
   const { nudge: yearlyBillNudge } = useYearlyBillNudge(item.type, isReadOnly);
   const savingsNudge = useSavingsNudge(item.id, item.type, isReadOnly);
-  const { data: linkedAccount } = useWealthAccount(item.wealthAccountId ?? "");
 
   if (historyLoading && !historyRaw) return <SkeletonLoader variant="right-panel" />;
   if (historyError && !historyRaw)
@@ -188,15 +185,6 @@ export function ItemDetailPanel({
       </div>
 
       <HistoryChart data={history} snapshotDate={snapshotDate} />
-
-      {item.type === "savings_allocation" && linkedAccount && (
-        <div className="text-sm text-muted-foreground">
-          Allocated to:{" "}
-          <Link to="/wealth" className="text-primary hover:underline">
-            {linkedAccount.name}
-          </Link>
-        </div>
-      )}
 
       {!isReadOnly && (
         <>

@@ -1,8 +1,7 @@
 import { format } from "date-fns";
 import { formatCurrency } from "@/utils/format";
-import { useCashflow, useWaterfallSummary } from "@/hooks/useWaterfall";
-import { useWealthAccounts, useIsaAllowance } from "@/hooks/useWealth";
-import type { CashflowMonth, SavingsAllocationRow } from "@finplan/shared";
+import { useCashflow } from "@/hooks/useWaterfall";
+import type { CashflowMonth } from "@finplan/shared";
 
 interface NudgeContent {
   message: string;
@@ -66,105 +65,19 @@ export function useYearlyBillNudge(
 // ─── Hook 2: Savings allocation nudge ────────────────────────────────────────
 
 export function useSavingsNudge(
-  itemId: string,
+  _itemId: string,
   itemType: string,
   isReadOnly: boolean
 ): NudgeContent | null {
-  const { data: summary } = useWaterfallSummary();
-  const { data: accounts } = useWealthAccounts();
+  if (itemType !== "savings_allocation" || isReadOnly) return null;
 
-  if (itemType !== "savings_allocation" || isReadOnly || !summary || !accounts) return null;
-
-  const allocations: SavingsAllocationRow[] = summary.discretionary.savings.allocations;
-  const thisAllocation = allocations.find((a) => a.id === itemId);
-
-  if (!thisAllocation?.wealthAccountId) return null;
-
-  const thisAccount = (accounts as any[]).find((a) => a.id === thisAllocation.wealthAccountId);
-  if (!thisAccount || thisAccount.interestRate == null) return null;
-
-  const thisRate: number = thisAccount.interestRate;
-
-  // Find the other allocation with the highest monthly amount going to a lower-rate account
-  let bestCandidate: { amount: number; rate: number } | null = null;
-  for (const alloc of allocations) {
-    if (alloc.id === itemId || !alloc.wealthAccountId) continue;
-    const linked = (accounts as any[]).find((a) => a.id === alloc.wealthAccountId);
-    if (!linked || linked.interestRate == null) continue;
-    const rate: number = linked.interestRate;
-    if (rate >= thisRate) continue;
-    if (!bestCandidate || alloc.monthlyAmount > bestCandidate.amount) {
-      bestCandidate = { amount: alloc.monthlyAmount, rate };
-    }
-  }
-
-  if (!bestCandidate) return null;
-
-  const gain = Math.round(((bestCandidate.amount * (thisRate - bestCandidate.rate)) / 100) * 12);
-  if (gain <= 0) return null;
-
-  return {
-    message: `Redirecting ${formatCurrency(bestCandidate.amount)}/mo to this account could earn ~${formatCurrency(gain)} more per year`,
-  };
+  // Account-level rate nudges will be re-implemented against the new Assets system in Task 8
+  return null;
 }
 
-// ─── Hook 3: Wealth account nudge ────────────────────────────────────────────
+// ─── Hook 3: Account nudge ────────────────────────────────────────────────────
 
-export function useWealthAccountNudge(account: any): NudgeContent | null {
-  const { data: isaData } = useIsaAllowance();
-  const { data: allAccounts } = useWealthAccounts();
-  const { data: summary } = useWaterfallSummary();
-
-  if (account?.assetClass !== "savings") return null;
-
-  // ── ISA nudges (priority) ──────────────────────────────────────────────────
-  if (account.isISA && isaData) {
-    const personEntry = account.ownerId
-      ? isaData.byPerson.find((p: any) => p.ownerId === account.ownerId)
-      : null;
-    const remaining: number =
-      personEntry?.remaining ??
-      isaData.byPerson.reduce((s: number, p: any) => s + (p.remaining as number), 0);
-
-    if (remaining <= 0) {
-      return { message: "Your ISA allowance is fully used for this tax year" };
-    }
-    if (remaining <= 2000) {
-      const now = new Date();
-      const deadlineYear = now.getMonth() < 3 ? now.getFullYear() : now.getFullYear() + 1;
-      return {
-        message: `${formatCurrency(remaining)} remaining in your ISA allowance — deadline: 5 April ${deadlineYear}`,
-      };
-    }
-    return {
-      message: `${formatCurrency(remaining)} ISA allowance remaining this tax year`,
-    };
-  }
-
-  // ── Higher-rate arbitrage ──────────────────────────────────────────────────
-  if (!allAccounts || !summary || account.interestRate == null) return null;
-
-  const thisRate: number = account.interestRate;
-  const allocations: SavingsAllocationRow[] = summary.discretionary.savings.allocations;
-
-  let bestCandidate: { amount: number; rate: number } | null = null;
-  for (const alloc of allocations) {
-    if (!alloc.wealthAccountId || alloc.wealthAccountId === account.id) continue;
-    const linked = (allAccounts as any[]).find((a) => a.id === alloc.wealthAccountId);
-    if (!linked || linked.interestRate == null) continue;
-    const rate: number = linked.interestRate;
-    if (rate >= thisRate) continue;
-    if (!bestCandidate || alloc.monthlyAmount > bestCandidate.amount) {
-      bestCandidate = { amount: alloc.monthlyAmount, rate };
-    }
-  }
-
-  if (!bestCandidate) return null;
-
-  const gain = Math.round(((bestCandidate.amount * (thisRate - bestCandidate.rate)) / 100) * 12);
-  if (gain <= 0) return null;
-
-  return {
-    message: `Redirecting ${formatCurrency(bestCandidate.amount)}/mo to this account could earn ~${formatCurrency(gain)} more per year`,
-  };
+// Placeholder — will be re-implemented against the new Assets system in Task 8
+export function useWealthAccountNudge(_account: any): NudgeContent | null {
+  return null;
 }

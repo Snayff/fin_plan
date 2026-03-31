@@ -10,7 +10,6 @@ import { authRoutes } from "./routes/auth.routes";
 import { householdRoutes } from "./routes/households";
 import { inviteRoutes } from "./routes/invite";
 import { waterfallRoutes } from "./routes/waterfall.routes";
-import { wealthRoutes } from "./routes/wealth.routes";
 import { plannerRoutes } from "./routes/planner.routes";
 import { settingsRoutes } from "./routes/settings.routes";
 import { snapshotRoutes } from "./routes/snapshots.routes";
@@ -83,7 +82,6 @@ async function start() {
     server.register(householdRoutes, { prefix: "/api" });
     server.register(inviteRoutes, { prefix: "/api/auth" });
     server.register(waterfallRoutes, { prefix: "/api/waterfall" });
-    server.register(wealthRoutes, { prefix: "/api/wealth" });
     server.register(plannerRoutes, { prefix: "/api/planner" });
     server.register(settingsRoutes, { prefix: "/api/settings" });
     server.register(snapshotRoutes, { prefix: "/api/snapshots" });

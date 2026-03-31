@@ -53,13 +53,6 @@ describe("App protected route handling", () => {
     );
   });
 
-  it("redirects /wealth to /overview", async () => {
-    renderWithProviders(<ProtectedAppRoutes />, { initialEntries: ["/wealth"] });
-    await waitFor(() => {
-      expect(screen.getByTestId("overview-page")).toBeTruthy();
-    });
-  });
-
   it("redirects /planner to /overview", async () => {
     renderWithProviders(<ProtectedAppRoutes />, { initialEntries: ["/planner"] });
     await waitFor(() => {
