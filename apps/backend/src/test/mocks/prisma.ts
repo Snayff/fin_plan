@@ -67,6 +67,7 @@ export const prismaMock = {
   giftEvent: buildModelMock(),
   giftYearRecord: buildModelMock(),
   subcategory: buildModelMock(),
+  wealthAccount: buildModelMock(),
   snapshot: buildModelMock(),
   reviewSession: buildModelMock(),
   waterfallSetupSession: buildModelMock(),
