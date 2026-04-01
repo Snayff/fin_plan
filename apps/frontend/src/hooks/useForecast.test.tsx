@@ -4,9 +4,10 @@ import { screen, waitFor } from "@testing-library/react";
 import { http, HttpResponse } from "msw";
 import { server } from "@/test/msw/server";
 import { useForecast } from "./useForecast";
+import type { ForecastHorizon } from "@finplan/shared";
 
-function ForecastConsumer({ horizonYears }: { horizonYears: number }) {
-  const { data, isLoading, isError } = useForecast(horizonYears as any);
+function ForecastConsumer({ horizonYears }: { horizonYears: ForecastHorizon }) {
+  const { data, isLoading, isError } = useForecast(horizonYears);
   if (isLoading) return <div>loading</div>;
   if (isError) return <div>error</div>;
   return <div data-testid="result">{data ? "loaded" : "empty"}</div>;
