@@ -33,13 +33,13 @@ describe("SurplusAccumulationChart", () => {
     renderWithProviders(<SurplusAccumulationChart data={zeroData} />, {
       initialEntries: ["/forecast"],
     });
-    expect(screen.getByText(/add assets/i)).toBeTruthy();
+    expect(screen.getByText(/complete your waterfall plan/i)).toBeTruthy();
   });
 
   it("shows empty-assets note when fewer than 2 data points", () => {
     renderWithProviders(<SurplusAccumulationChart data={[{ year: 2026, cumulative: 5000 }]} />, {
       initialEntries: ["/forecast"],
     });
-    expect(screen.getByText(/add assets/i)).toBeTruthy();
+    expect(screen.getByText(/complete your waterfall plan/i)).toBeTruthy();
   });
 });

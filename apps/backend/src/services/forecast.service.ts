@@ -148,6 +148,8 @@ export const forecastService = {
     }));
 
     // ── Retirement (per member: own pensions + shared savings + shared S&S) ──
+    // Savings and S&S are household-shared — both members see the full household
+    // amount, representing their joint pool (intentional, not a double-count).
     const savingsAccounts = accounts.filter((a) => a.type === "Savings").map(toProjectableAccount);
     const ssAccounts = accounts
       .filter((a) => a.type === "StocksAndShares")

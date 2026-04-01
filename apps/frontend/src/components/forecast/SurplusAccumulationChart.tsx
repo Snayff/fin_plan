@@ -23,7 +23,7 @@ export function SurplusAccumulationChart({ data }: SurplusAccumulationChartProps
       {isEmpty ? (
         <div className="h-40 flex items-center justify-center px-6">
           <p className="text-sm text-text-tertiary text-center">
-            Add assets in the Assets section to see your projection
+            Complete your waterfall plan with a monthly surplus to see your accumulation projection
           </p>
         </div>
       ) : (
