@@ -10,8 +10,9 @@ COPY tsconfig.json ./
 # Copy shared package
 COPY packages/shared ./packages/shared/
 
-# Copy backend package.json
+# Copy workspace package.json files so bun can resolve all workspaces (apps/*)
 COPY apps/backend/package.json ./apps/backend/
+COPY apps/frontend/package.json ./apps/frontend/
 
 # Copy prisma schema BEFORE bun install
 # The postinstall hook runs `prisma generate`, which needs the schema
