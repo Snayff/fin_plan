@@ -1,145 +1,159 @@
-# FinPlan: Run Locally with Docker in 10 Minutes
+<div align="center">
 
-## What You'll Do
+<!-- Add logo: docs/assets/logo.png -->
 
-- Open the FinPlan frontend at `http://localhost:3000`
-- Reach the backend API at `http://localhost:3001`
-- Run the full local stack: frontend + backend + Postgres + Redis
+# finplan
 
-## Prerequisites
+**See where your money goes. Feel confident it adds up.**
 
+A household financial planning tool built around the waterfall model — income flows down through committed spend, discretionary spend, and into surplus. No bank connection required. No advice given. Just clear arithmetic and a calm interface for planning with intention.
+
+[![Version](https://img.shields.io/badge/version-0.1.0-indigo)](#)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-blue)](#)
+[![License: GPL v3](https://img.shields.io/badge/license-GPLv3-teal)](#license)
+
+</div>
+
+---
+
+## About
+
+Most budgeting tools track what you've spent. finplan is different — it tracks what you _plan_ to spend. You reconcile actual transactions with your bank separately; finplan holds the model of your financial life so you always know where you stand.
+
+The app is built around a single mental model: the **waterfall**. Income flows in at the top. Committed spending — rent, subscriptions, utilities — comes off first. Then discretionary spending: gifts, purchases, experiences. What remains is your surplus, the money building toward your future. Every number on screen is a position in that cascade.
+
+finplan is designed for UK households managing finances together. It's a desktop-first, dark-mode application with a deliberately calm aesthetic — no red/green scoring of financial choices, no anxiety-inducing alerts, no gamification. Just your plan, laid out clearly.
+
+---
+
+## Screenshots
+
+<!-- Add screenshot: waterfall overview showing income → committed → discretionary → surplus cascade -->
+
+<!-- Add screenshot: snapshot timeline showing financial history over time -->
+
+---
+
+## Features
+
+### Overview
+
+- Full waterfall cascade — income through committed, discretionary, and surplus tiers
+- Review wizard for periodic plan updates
+- Point-in-time snapshot history with timeline visualisation
+- Financial summary panel with trend sparklines
+
+### Spend Planning
+
+- (Coming soon) Bills calendar with virtual pot accounting (yearly totals divided across months)
+- (Coming soon) Gift planner — track upcoming gifts by person and occasion
+- (Coming soon) Purchase planner — plan larger one-off purchases
+
+### Surplus & Wealth
+
+- Wealth accounts — net worth tracking by asset class
+- ISA tracker
+- (Coming soon) Trust savings tracker
+
+### Household
+
+- Multi-member household support
+- Settings and profile management
+- Audit log
+
+---
+
+## Self-Hosting
+
+### Prerequisites
+
+- [Docker Desktop](https://docs.docker.com/get-docker/) (installed and running)
+- [Bun](https://bun.sh/) v1.0+
 - Git
-- Docker Desktop (installed and running)
-- Bun (optional, only for script shortcuts like `bun run start`)
 
-## 1) Clone the Repo
-
-### Bun Script Path (Recommended)
+### Quick Start
 
 ```bash
+# 1. Clone the repository
 git clone https://github.com/Snayff/fin_plan.git
 cd fin_plan
-```
 
-### Docker Compose Fallback
+# 2. Configure environment variables
+cp apps/backend/.env.example apps/backend/.env
+# Edit apps/backend/.env — replace the JWT, cookie, and CSRF secrets at minimum
+# Generate secrets with: openssl rand -base64 64
 
-```bash
-git clone https://github.com/Snayff/fin_plan.git
-cd fin_plan
-```
-
-## 2) Build Docker Images
-
-### Bun Script Path (Recommended)
-
-```bash
+# 3. Build and start all services (Postgres, Redis, backend, frontend)
 bun run docker:build
-```
-
-### Docker Compose Fallback
-
-```bash
-docker compose -f docker-compose.dev.yml build
-```
-
-If `docker compose` is unavailable on your machine, use `docker-compose` instead.
-
-## 3) Start the Stack
-
-### Bun Script Path (Recommended)
-
-```bash
 bun run start
-```
 
-### Docker Compose Fallback
-
-```bash
-docker compose -f docker-compose.dev.yml up -d
-```
-
-## 4) Initialize the Database (Required)
-
-### Bun Script Path (Recommended)
-
-```bash
+# 4. Initialise the database (first run only)
 bun run db:migrate
 bun run db:seed
+
+# 5. Open the app
+# http://localhost:3000
 ```
 
-### Docker Compose Fallback
+To verify the backend is running: `http://localhost:3001/health` should return `{"status":"ok"}`.
+
+To stop all services:
 
 ```bash
-docker compose -f docker-compose.dev.yml exec backend bun run db:migrate
-docker compose -f docker-compose.dev.yml exec backend bun run db:seed
+bun run stop
 ```
 
-## 5) Verify It's Running
+---
 
-1. Open `http://localhost:3000` in your browser.
-2. Open `http://localhost:3001/health`.
-3. You should see JSON that includes `"status":"ok"` (with timestamp/uptime fields).
+## Developer Reference
 
-## Daily Commands
+For full development context — architecture decisions, testing approach, conventions, and CI/CD — see [CLAUDE.md](.claude/CLAUDE.md).
 
-| Task | Bun command (primary) | Docker Compose fallback |
-| --- | --- | --- |
-| Start | `bun run start` | `docker compose -f docker-compose.dev.yml up -d` |
-| Stop | `bun run stop` | `docker compose -f docker-compose.dev.yml down` |
-| Restart | `bun run restart` | `docker compose -f docker-compose.dev.yml restart` |
-| Logs | `bun run docker:logs` | `docker compose -f docker-compose.dev.yml logs -f` |
-| Rebuild images | `bun run docker:build` | `docker compose -f docker-compose.dev.yml build` |
-| Clean/reset (removes volumes and local DB data) | `bun run docker:clean` | `docker compose -f docker-compose.dev.yml down -v` |
-| Run migrations | `bun run db:migrate` | `docker compose -f docker-compose.dev.yml exec backend bun run db:migrate` |
-| Seed database | `bun run db:seed` | `docker compose -f docker-compose.dev.yml exec backend bun run db:seed` |
+### Key Commands
 
-## Troubleshooting
+| Command                | Description                                     |
+| ---------------------- | ----------------------------------------------- |
+| `bun run start`        | Start all services via Docker Compose           |
+| `bun run stop`         | Stop all services                               |
+| `bun run restart`      | Stop and restart                                |
+| `bun run docker:build` | Rebuild Docker images                           |
+| `bun run docker:logs`  | Follow all service logs                         |
+| `bun run docker:clean` | Remove containers and volumes (resets local DB) |
+| `bun run dev`          | Run all apps in watch mode (outside Docker)     |
+| `bun run test`         | Run all test suites                             |
+| `bun run lint`         | ESLint — zero warnings required                 |
+| `bun run type-check`   | TypeScript strict check across all packages     |
+| `bun run db:migrate`   | Run interactive Prisma migration                |
+| `bun run db:seed`      | Seed the database                               |
 
-### 1) Docker daemon not running
+### Architecture
 
-Start Docker Desktop, wait until it's fully up, then retry `bun run start` (or the compose `up` command).
+Full-stack TypeScript monorepo with a Fastify + Prisma + tRPC backend, React 18 + Vite + TanStack Query frontend, and shared Zod schemas in a `packages/shared` layer consumed by both apps. The Docker Compose environment provides Postgres and Redis; the backend runs on port 3001, the frontend on 3000.
 
-### 2) Port already in use
-
-Another process is using `3000`, `3001`, `5432`, or `6379`. Stop conflicting processes, then restart the stack.
-
-### 3) DB schema errors
-
-Run database setup again in order:
-
-```bash
-bun run db:migrate
-bun run db:seed
+```
+apps/
+  backend/    # Fastify · Prisma · tRPC · Redis · JWT auth
+  frontend/   # React 18 · Vite · Tailwind · TanStack Query · Zustand · RxDB
+packages/
+  shared/     # Zod schemas and TypeScript types
 ```
 
-### 4) Hot reload not updating
+---
 
-Restart containers:
+## Tech Stack
 
-```bash
-bun run docker:restart
-```
+TypeScript · React 18 · Vite · Tailwind CSS · Fastify · Prisma · tRPC · Bun · PostgreSQL · Redis · Docker
 
-Or restart services with Docker Compose.
+---
 
-## About @finplan/shared (for contributors)
+## License
 
-`@finplan/shared` is the monorepo package that centralizes Zod schemas and shared TypeScript types used by both backend and frontend so validation stays consistent across the stack.
+Distributed under the GNU General Public License v3.0. See [license.txt](license.txt) for details.
 
-```typescript
-import { createTransactionSchema, type CreateTransactionInput } from '@finplan/shared';
-```
+---
 
-Schemas live in `packages/shared/src/schemas`.
+## Acknowledgements
 
-When you change shared schemas, rebuild this package:
-
-```bash
-cd packages/shared && bun run build
-```
-
-## More Docs
-
-- [Quick Start](../../QUICK_START.md)
-- [Docker Setup](../../docs/4.%20build/DOCKER_SETUP.md)
-- [Prisma Docker Guide](../../docs/4.%20build/PRISMA_DOCKER_GUIDE.md)
+- [Best-README-Template](https://github.com/othneildrew/Best-README-Template) — structural inspiration
+- [Shadcn/ui](https://ui.shadcn.com/) — component primitives
+- [TanStack](https://tanstack.com/) — Query and Router
