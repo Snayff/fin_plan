@@ -1,9 +1,36 @@
 import { useState } from "react";
 import type { ForecastHorizon } from "@finplan/shared";
 import { TimeHorizonSelector } from "@/components/forecast/TimeHorizonSelector";
+import { NetWorthChart } from "@/components/forecast/NetWorthChart";
+import { SurplusAccumulationChart } from "@/components/forecast/SurplusAccumulationChart";
+import { RetirementChart } from "@/components/forecast/RetirementChart";
+import { useForecast } from "@/hooks/useForecast";
+
+const CHART_SKELETON = (
+  <div className="bg-surface border border-surface-elevated rounded-xl h-48 animate-pulse" />
+);
+
+const CHART_ERROR = (
+  <div className="bg-surface border border-surface-elevated rounded-xl h-48 flex items-center justify-center">
+    <p className="text-sm text-text-tertiary">Could not load forecast — try refreshing</p>
+  </div>
+);
 
 export default function ForecastPage() {
   const [horizon, setHorizon] = useState<ForecastHorizon>(10);
+  const { data, isLoading, isError } = useForecast(horizon);
+
+  const currentYear = new Date().getFullYear();
+  const horizonEndYear = currentYear + horizon;
+
+  const retirementMarkers = (data?.retirement ?? [])
+    .filter(
+      (m) =>
+        m.retirementYear != null &&
+        m.retirementYear >= currentYear &&
+        m.retirementYear <= horizonEndYear
+    )
+    .map((m) => ({ year: m.retirementYear!, name: m.memberName }));
 
   return (
     <div className="h-full flex flex-col overflow-hidden" data-page="forecast">
@@ -13,8 +40,38 @@ export default function ForecastPage() {
         </h1>
         <TimeHorizonSelector value={horizon} onChange={setHorizon} />
       </div>
+
       <div className="flex-1 min-h-0 overflow-auto px-6 pb-6">
-        {/* Chart panels wired in Task 10 */}
+        <div className="flex flex-col gap-4">
+          {/* Net worth — full width */}
+          {isLoading ? (
+            CHART_SKELETON
+          ) : isError ? (
+            CHART_ERROR
+          ) : (
+            <NetWorthChart data={data?.netWorth ?? []} retirementMarkers={retirementMarkers} />
+          )}
+
+          {/* Bottom row: surplus left, retirement right */}
+          <div className="grid grid-cols-2 gap-4">
+            {isLoading ? (
+              <>
+                {CHART_SKELETON}
+                {CHART_SKELETON}
+              </>
+            ) : isError ? (
+              <>
+                {CHART_ERROR}
+                {CHART_ERROR}
+              </>
+            ) : (
+              <>
+                <SurplusAccumulationChart data={data?.surplus ?? []} />
+                <RetirementChart members={data?.retirement ?? []} horizonEndYear={horizonEndYear} />
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
