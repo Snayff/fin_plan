@@ -8,7 +8,7 @@ import { getEmptyStateCopy } from "./emptyStateCopy";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useCreateItem, useDeleteItem, type TierItemRow } from "@/hooks/useWaterfall";
 import { toGBP } from "@finplan/shared";
-import { formatCurrency } from "@/utils/format";
+import { AnimatedCurrency } from "@/components/common/AnimatedCurrency";
 import type { TierConfig, TierKey } from "./tierConfig";
 
 interface SubcategoryOption {
@@ -84,7 +84,7 @@ export default function ItemArea({
             {items.length} {items.length === 1 ? "item" : "items"}
           </span>
           <span className={`font-numeric text-sm ${config.textClass}`}>
-            {formatCurrency(toGBP(total))}
+            <AnimatedCurrency value={toGBP(total)} />
           </span>
         </div>
         {!subcategory.isLocked && (

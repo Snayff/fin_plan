@@ -1,5 +1,5 @@
 import { toGBP } from "@finplan/shared";
-import { formatCurrency } from "@/utils/format";
+import { AnimatedCurrency } from "@/components/common/AnimatedCurrency";
 
 interface PageHeaderProps {
   title: string;
@@ -22,7 +22,7 @@ export function PageHeader({
         </h1>
         {total != null && (
           <span className={`font-numeric text-lg font-semibold ${totalColorClass ?? colorClass}`}>
-            {formatCurrency(toGBP(total))}
+            <AnimatedCurrency value={toGBP(total)} />
           </span>
         )}
       </div>

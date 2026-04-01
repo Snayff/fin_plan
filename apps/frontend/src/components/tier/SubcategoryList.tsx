@@ -1,7 +1,7 @@
 import { motion, LayoutGroup } from "framer-motion";
 import { toGBP } from "@finplan/shared";
-import { formatCurrency } from "@/utils/format";
 import { usePrefersReducedMotion } from "@/utils/motion";
+import { AnimatedCurrency } from "@/components/common/AnimatedCurrency";
 import { isStale } from "./formatAmount";
 import type { TierConfig, TierKey } from "./tierConfig";
 import type { TierItemRow } from "@/hooks/useWaterfall";
@@ -124,7 +124,7 @@ export default function SubcategoryList({
                 </span>
                 <span className="relative z-10 flex-1">{sub.name}</span>
                 <span className="relative z-10 font-numeric text-xs text-foreground/50">
-                  {summary ? formatCurrency(toGBP(summary.total)) : "£0"}
+                  <AnimatedCurrency value={summary ? toGBP(summary.total) : 0} />
                 </span>
               </motion.button>
             );
@@ -138,7 +138,7 @@ export default function SubcategoryList({
       >
         <span className="text-foreground/50">Total</span>
         <span className={`font-numeric font-semibold ${config.textClass}`}>
-          {formatCurrency(toGBP(tierTotal))}
+          <AnimatedCurrency value={toGBP(tierTotal)} />
         </span>
       </div>
     </div>
