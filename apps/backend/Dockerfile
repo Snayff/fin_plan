@@ -14,17 +14,19 @@ COPY packages/shared ./packages/shared/
 COPY apps/backend/package.json ./apps/backend/
 COPY apps/frontend/package.json ./apps/frontend/
 
-# Copy prisma schema BEFORE bun install
-# The postinstall hook runs `prisma generate`, which needs the schema
+# Copy prisma schema and config before bun install; the postinstall hook
+# (prisma generate) needs both the schema and prisma.config.ts
 COPY apps/backend/prisma ./apps/backend/prisma/
+COPY apps/backend/prisma.config.ts ./apps/backend/
 
-# Install all deps; postinstall runs `prisma generate` automatically
+# Install all deps; skip lifecycle scripts so prisma generate runs as a
+# separate step (clearer errors, no DATABASE_URL needed at install time).
 # Override NODE_ENV so devDeps (prisma CLI) are installed even if
 # Coolify injects NODE_ENV=production at build time.
-# DATABASE_URL must be declared as ARG so the postinstall hook (prisma generate)
-# can see it as an env var — prisma 7 validates the schema url during generate.
-ARG DATABASE_URL
-RUN NODE_ENV=development DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@localhost/placeholder} bun install
+RUN NODE_ENV=development bun install --ignore-scripts
+
+# Generate Prisma client explicitly after deps are installed
+RUN cd /workspace/apps/backend && bunx prisma generate
 
 # Build shared package so @finplan/shared resolves at runtime
 # (packages/shared/dist/ is gitignored and won't be in the build context)
