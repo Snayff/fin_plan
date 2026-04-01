@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Empty Cards — Final</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #080a14;
+    color: rgba(238,242,255,0.92);
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    font-size: 13px;
+    padding: 24px;
+    min-height: 100vh;
+  }
+  h2 { font-family: 'Outfit', system-ui, sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+  .subtitle { color: rgba(238,242,255,0.5); font-size: 12px; margin-bottom: 24px; line-height: 1.5; }
+  hr { border: none; border-top: 1px solid rgba(238,242,255,0.06); margin: 28px 0; }
+  .section-label {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: rgba(238,242,255,0.4); margin-bottom: 10px;
+  }
+
+  /* ─── LANGUAGE RULE ─── */
+  .rule-box {
+    background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px;
+    padding: 16px 20px; margin-bottom: 28px;
+  }
+  .rule-title {
+    font-family: 'Outfit', system-ui, sans-serif; font-size: 13px; font-weight: 700;
+    margin-bottom: 8px; color: rgba(238,242,255,0.85);
+  }
+  .rule-pattern {
+    font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    color: #8b5cf6; background: rgba(124,58,237,0.08);
+    border: 1px solid rgba(124,58,237,0.15); border-radius: 5px;
+    padding: 8px 12px; margin-bottom: 10px; line-height: 1.6;
+  }
+  .rule-pattern .placeholder { color: #4adcd0; }
+  .rule-list { list-style: none; padding: 0; }
+  .rule-list li {
+    font-size: 11px; color: rgba(238,242,255,0.55); line-height: 1.6;
+    padding: 2px 0; padding-left: 14px; position: relative;
+  }
+  .rule-list li::before {
+    content: '•'; position: absolute; left: 0; color: rgba(238,242,255,0.25);
+  }
+  .rule-list li strong { color: rgba(238,242,255,0.8); }
+
+  /* ─── CARD GRID ─── */
+  .card-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+  .card-wrap-label { font-size: 10px; color: rgba(238,242,255,0.4); margin-bottom: 6px; font-weight: 600; }
+  .card-bg {
+    background: #080a14; border: 1px solid #1a1f35; border-radius: 8px;
+    padding: 28px 20px; display: flex; align-items: center; justify-content: center;
+  }
+
+  .empty-card {
+    background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(168,85,247,0.04) 100%);
+    border: 1px solid rgba(99,102,241,0.1);
+    border-radius: 10px;
+    padding: 22px 26px;
+    text-align: center;
+    display: flex; flex-direction: column; align-items: center;
+    max-width: 260px;
+  }
+  .empty-card-header {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 14px; font-weight: 800;
+    margin-bottom: 6px;
+    background: linear-gradient(135deg, #0ea5e9, #a855f7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .empty-card-text {
+    font-size: 11px; color: rgba(238,242,255,0.45); line-height: 1.5;
+    margin-bottom: 14px;
+  }
+  .empty-card-btn {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 6px 14px; border-radius: 5px; cursor: pointer;
+    font-family: 'Outfit', system-ui, sans-serif; font-size: 10px; font-weight: 700;
+    color: white; border: none; background: #7c3aed;
+    transition: opacity 0.15s ease;
+  }
+  .empty-card-btn:hover { opacity: 0.88; }
+
+  /* ─── COPY TABLE ─── */
+  .copy-table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  .copy-table th {
+    font-family: 'Outfit', system-ui, sans-serif; font-size: 10px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.06em;
+    color: rgba(238,242,255,0.35); text-align: left;
+    padding: 6px 10px; border-bottom: 1px solid rgba(238,242,255,0.06);
+  }
+  .copy-table td {
+    font-size: 11px; color: rgba(238,242,255,0.65); padding: 6px 10px;
+    border-bottom: 1px solid rgba(238,242,255,0.03); vertical-align: top;
+  }
+  .copy-table td:first-child { color: rgba(238,242,255,0.4); font-size: 10px; white-space: nowrap; }
+  .copy-table .header-col { font-family: 'Outfit', system-ui, sans-serif; font-weight: 700; color: rgba(238,242,255,0.8); }
+  .copy-table .body-col { color: rgba(238,242,255,0.55); }
+</style>
+</head>
+<body>
+
+<h2>Empty State Copy — Pattern & Examples</h2>
+<p class="subtitle">Defining the language rule so every empty state reads consistently.</p>
+
+<!-- LANGUAGE RULE -->
+<div class="rule-box">
+  <div class="rule-title">Empty state copy pattern</div>
+  <div class="rule-pattern">
+    Header: <span class="placeholder">Add your [context]</span><br>
+    Body: &ensp;<span class="placeholder">[examples of what belongs here]</span>
+  </div>
+  <ul class="rule-list">
+    <li><strong>Header</strong> — starts with an action verb. Names the context (subcategory or page). Short — one line max.</li>
+    <li><strong>Body</strong> — provides 2–4 concrete examples separated by commas. Helps the user understand what goes in this subcategory. No full sentences — just a list of nouns.</li>
+    <li><strong>Tone</strong> — direct and helpful, never instructional. "Add your housing costs" not "You should add your housing costs". No exclamation marks.</li>
+    <li><strong>Button</strong> — always <strong>"+ Add item"</strong> for subcategories. <strong>"Get started"</strong> for Overview (launches build wizard).</li>
+    <li><strong>No "first"</strong> — avoid "Add your first item". The word "first" implies a sequence that may not exist. Just "Add your [context]".</li>
+  </ul>
+</div>
+
+<hr>
+
+<!-- EXAMPLES IN CONTEXT -->
+<div class="section-label">Applied to every subcategory</div>
+
+<div class="card-grid">
+  <!-- Income: Salary -->
+  <div>
+    <div class="card-wrap-label">Income › Salary</div>
+    <div class="card-bg">
+      <div class="empty-card">
+        <div class="empty-card-header">Add your salary</div>
+        <div class="empty-card-text">Employment income, take-home pay</div>
+        <button class="empty-card-btn">+ Add item</button>
+      </div>
+    </div>
+  </div>
+  <!-- Income: Dividends -->
+  <div>
+    <div class="card-wrap-label">Income › Dividends</div>
+    <div class="card-bg">
+      <div class="empty-card">
+        <div class="empty-card-header">Add your dividends</div>
+        <div class="empty-card-text">Investment income, shareholder dividends</div>
+        <button class="empty-card-btn">+ Add item</button>
+      </div>
+    </div>
+  </div>
+  <!-- Committed: Housing -->
+  <div>
+    <div class="card-wrap-label">Committed › Housing</div>
+    <div class="card-bg">
+      <div class="empty-card">
+        <div class="empty-card-header">Add your housing costs</div>
+        <div class="empty-card-text">Rent, mortgage, council tax, insurance</div>
+        <button class="empty-card-btn">+ Add item</button>
+      </div>
+    </div>
+  </div>
+  <!-- Committed: Utilities -->
+  <div>
+    <div class="card-wrap-label">Committed › Utilities</div>
+    <div class="card-bg">
+      <div class="empty-card">
+        <div class="empty-card-header">Add your utilities</div>
+        <div class="empty-card-text">Gas, electric, water, internet, phone</div>
+        <button class="empty-card-btn">+ Add item</button>
+      </div>
+    </div>
+  </div>
+  <!-- Committed: Services -->
+  <div>
+    <div class="card-wrap-label">Committed › Services</div>
+    <div class="card-bg">
+      <div class="empty-card">
+        <div class="empty-card-header">Add your services</div>
+        <div class="empty-card-text">Streaming, TV, gym, subscriptions</div>
+        <button class="empty-card-btn">+ Add item</button>
+      </div>
+    </div>
+  </div>
+  <!-- Discretionary: Food -->
+  <div>
+    <div class="card-wrap-label">Discretionary › Food</div>
+    <div class="card-bg">
+      <div class="empty-card">
+        <div class="empty-card-header">Add your food budget</div>
+        <div class="empty-card-text">Groceries, meal kits, work lunches</div>
+        <button class="empty-card-btn">+ Add item</button>
+      </div>
+    </div>
+  </div>
+  <!-- Discretionary: Fun -->
+  <div>
+    <div class="card-wrap-label">Discretionary › Fun</div>
+    <div class="card-bg">
+      <div class="empty-card">
+        <div class="empty-card-header">Add your fun spending</div>
+        <div class="empty-card-text">Eating out, takeaways, cinema, hobbies</div>
+        <button class="empty-card-btn">+ Add item</button>
+      </div>
+    </div>
+  </div>
+  <!-- Surplus: Savings -->
+  <div>
+    <div class="card-wrap-label">Surplus › Savings</div>
+    <div class="card-bg">
+      <div class="empty-card">
+        <div class="empty-card-header">Add your savings</div>
+        <div class="empty-card-text">Emergency fund, ISA, pension top-up</div>
+        <button class="empty-card-btn">+ Add item</button>
+      </div>
+    </div>
+  </div>
+  <!-- Overview: Build -->
+  <div>
+    <div class="card-wrap-label">Overview (empty household)</div>
+    <div class="card-bg">
+      <div class="empty-card">
+        <div class="empty-card-header">Build your waterfall</div>
+        <div class="empty-card-text">Add your income, committed spend, and discretionary spend to see your surplus</div>
+        <button class="empty-card-btn">Get started</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr>
+
+<!-- FULL COPY TABLE -->
+<div class="section-label">Full copy reference</div>
+<table class="copy-table">
+  <thead>
+    <tr><th>Context</th><th>Header</th><th>Body (examples)</th><th>Button</th></tr>
+  </thead>
+  <tbody>
+    <tr><td>Income › Salary</td><td class="header-col">Add your salary</td><td class="body-col">Employment income, take-home pay</td><td>+ Add item</td></tr>
+    <tr><td>Income › Dividends</td><td class="header-col">Add your dividends</td><td class="body-col">Investment income, shareholder dividends</td><td>+ Add item</td></tr>
+    <tr><td>Income › Other</td><td class="header-col">Add your income</td><td class="body-col">Rental income, freelance, side projects</td><td>+ Add item</td></tr>
+    <tr><td>Committed › Housing</td><td class="header-col">Add your housing costs</td><td class="body-col">Rent, mortgage, council tax, insurance</td><td>+ Add item</td></tr>
+    <tr><td>Committed › Utilities</td><td class="header-col">Add your utilities</td><td class="body-col">Gas, electric, water, internet, phone</td><td>+ Add item</td></tr>
+    <tr><td>Committed › Services</td><td class="header-col">Add your services</td><td class="body-col">Streaming, TV, gym, subscriptions</td><td>+ Add item</td></tr>
+    <tr><td>Committed › Other</td><td class="header-col">Add your committed costs</td><td class="body-col">Any regular obligation not covered above</td><td>+ Add item</td></tr>
+    <tr><td>Discret. › Food</td><td class="header-col">Add your food budget</td><td class="body-col">Groceries, meal kits, work lunches</td><td>+ Add item</td></tr>
+    <tr><td>Discret. › Fun</td><td class="header-col">Add your fun spending</td><td class="body-col">Eating out, takeaways, cinema, hobbies</td><td>+ Add item</td></tr>
+    <tr><td>Discret. › Clothes</td><td class="header-col">Add your clothes budget</td><td class="body-col">Clothing, shoes, accessories</td><td>+ Add item</td></tr>
+    <tr><td>Discret. › Gifts</td><td class="header-col">Add your gift budget</td><td class="body-col">Configured from the Gifts page</td><td>+ Add item</td></tr>
+    <tr><td>Discret. › Other</td><td class="header-col">Add your spending</td><td class="body-col">Anything not covered in the categories above</td><td>+ Add item</td></tr>
+    <tr><td>Surplus › Savings</td><td class="header-col">Add your savings</td><td class="body-col">Emergency fund, ISA, pension top-up</td><td>+ Add item</td></tr>
+    <tr><td>Surplus › Other</td><td class="header-col">Add your surplus plans</td><td class="body-col">Anything else you do with your surplus</td><td>+ Add item</td></tr>
+    <tr><td>Overview (empty)</td><td class="header-col">Build your waterfall</td><td class="body-col">Add your income, committed spend, and discretionary spend to see your surplus</td><td>Get started</td></tr>
+  </tbody>
+</table>
+
+</body>
+</html>

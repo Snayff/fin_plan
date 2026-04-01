@@ -1,0 +1,100 @@
+import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
+import { PageHeader } from "@/components/common/PageHeader";
+import { useWaterfallSummary } from "@/hooks/useWaterfall";
+import { useSettings } from "@/hooks/useSettings";
+import { toGBP } from "@finplan/shared";
+import { formatCurrency } from "@/utils/format";
+
+export default function SurplusPage() {
+  const { data, isLoading } = useWaterfallSummary();
+  const { data: settings } = useSettings();
+  const benchmarkPct = settings?.surplusBenchmarkPct ?? 10;
+
+  const income = data?.income.total ?? 0;
+  const committed = (data?.committed.monthlyTotal ?? 0) + (data?.committed.monthlyAvg12 ?? 0);
+  const discretionary = (data?.discretionary.total ?? 0) + (data?.discretionary.savings.total ?? 0);
+  const surplus = data?.surplus.amount ?? income - committed - discretionary;
+  const surplusPct = data?.surplus.percentOfIncome ?? (income > 0 ? (surplus / income) * 100 : 0);
+  const showBenchmarkWarning = !isLoading && income > 0 && surplusPct < benchmarkPct;
+
+  return (
+    <div data-page="surplus" data-testid="surplus-page" className="h-full">
+      <TwoPanelLayout
+        left={
+          <div className="flex flex-col h-full">
+            <PageHeader
+              title="Surplus"
+              colorClass="text-tier-surplus"
+              total={!isLoading ? surplus : null}
+              totalColorClass="text-tier-surplus"
+            />
+            <div className="flex-1 overflow-y-auto">
+              <div className="flex flex-col gap-6 px-6 pb-6">
+                {!isLoading && (
+                  <>
+                    <div className="flex flex-col gap-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-foreground/60">Income</span>
+                        <span className="font-numeric text-tier-income">
+                          {formatCurrency(toGBP(income))}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-foreground/60">Committed</span>
+                        <span className="font-numeric text-tier-committed">
+                          − {formatCurrency(toGBP(committed))}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-foreground/60">Discretionary</span>
+                        <span className="font-numeric text-tier-discretionary">
+                          − {formatCurrency(toGBP(discretionary))}
+                        </span>
+                      </div>
+                      <div className="mt-2 border-t border-foreground/10 pt-2 flex justify-between font-semibold">
+                        <span className="text-foreground">Surplus</span>
+                        <span className="font-numeric text-tier-surplus text-lg">
+                          {formatCurrency(toGBP(surplus))}
+                        </span>
+                      </div>
+                    </div>
+                    {showBenchmarkWarning && (
+                      <div
+                        data-testid="surplus-benchmark-warning"
+                        className="flex items-start gap-2 rounded-lg border border-attention/20 bg-attention/5 p-3 text-xs text-attention"
+                      >
+                        <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-attention" />
+                        <span>
+                          Your surplus is below your {benchmarkPct}% benchmark. A monthly surplus of
+                          around {benchmarkPct}% of income is a common planning benchmark.
+                        </span>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        }
+        right={
+          <div className="flex h-full flex-col items-center justify-center gap-4 p-8 text-center">
+            {!isLoading && (
+              <>
+                <p className="text-sm text-foreground/50">
+                  At the end of each month, you should have
+                </p>
+                <p className="font-numeric text-4xl font-bold text-tier-surplus">
+                  {formatCurrency(toGBP(surplus))}
+                </p>
+                <p className="text-sm text-foreground/50">left over.</p>
+                <p className="mt-1 text-xs text-foreground/30">
+                  {surplusPct.toFixed(1)}% surplus rate
+                </p>
+              </>
+            )}
+          </div>
+        }
+      />
+    </div>
+  );
+}

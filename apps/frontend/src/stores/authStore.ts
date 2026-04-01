@@ -1,8 +1,13 @@
-import { create } from 'zustand';
-import { authService, type User, type LoginData, type RegisterData } from '../services/auth.service';
-import type { ApiError } from '../lib/api';
+import { create } from "zustand";
+import {
+  authService,
+  type User,
+  type LoginData,
+  type RegisterData,
+} from "../services/auth.service";
+import type { ApiError } from "../lib/api";
 
-export type AuthStatus = 'initializing' | 'authenticated' | 'unauthenticated';
+export type AuthStatus = "initializing" | "authenticated" | "unauthenticated";
 
 interface AuthState {
   user: User | null;
@@ -28,7 +33,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
   isAuthenticated: false,
-  authStatus: 'initializing',
+  authStatus: "initializing",
   isLoading: false,
   error: null,
 
@@ -37,7 +42,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user,
       accessToken,
       isAuthenticated: true,
-      authStatus: 'authenticated',
+      authStatus: "authenticated",
       error: null,
     }),
 
@@ -46,13 +51,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       user: null,
       accessToken: null,
       isAuthenticated: false,
-      authStatus: 'unauthenticated',
+      authStatus: "unauthenticated",
       isLoading: false,
       error: null,
     }),
 
   initializeAuth: async () => {
-    if (get().authStatus !== 'initializing') {
+    if (get().authStatus !== "initializing") {
       return;
     }
 
@@ -68,11 +73,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           user,
           accessToken,
           isAuthenticated: true,
-          authStatus: 'authenticated',
+          authStatus: "authenticated",
           isLoading: false,
           error: null,
         });
-      } catch {
+      } catch (error) {
+        const apiError = error as ApiError;
+        // 400 MISSING_REFRESH_TOKEN is expected when no session exists — treat silently
+        if (apiError.statusCode !== 400) {
+          console.warn("[auth] Unexpected error during token refresh:", error);
+        }
         get().setUnauthenticated();
       } finally {
         initializationPromise = null;
@@ -90,7 +100,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: response.user,
         accessToken: response.accessToken,
         isAuthenticated: true,
-        authStatus: 'authenticated',
+        authStatus: "authenticated",
         isLoading: false,
         error: null,
       });
@@ -98,7 +108,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const apiError = error as ApiError;
       set({
         isLoading: false,
-        error: apiError.message || 'Registration failed',
+        error: apiError.message || "Registration failed",
       });
       throw error;
     }
@@ -112,7 +122,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         user: response.user,
         accessToken: response.accessToken,
         isAuthenticated: true,
-        authStatus: 'authenticated',
+        authStatus: "authenticated",
         isLoading: false,
         error: null,
       });
@@ -120,7 +130,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const apiError = error as ApiError;
       set({
         isLoading: false,
-        error: apiError.message || 'Login failed',
+        error: apiError.message || "Login failed",
       });
       throw error;
     }
@@ -132,7 +142,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         await authService.logout(accessToken);
       } catch (error) {
-        console.error('Logout error:', error);
+        console.error("Logout error:", error);
       }
     }
 

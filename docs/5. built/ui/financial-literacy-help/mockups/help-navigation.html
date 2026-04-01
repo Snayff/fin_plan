@@ -1,0 +1,233 @@
+<h2>How do users reach the Help page?</h2>
+<p class="subtitle">Two options for navigation entry points</p>
+
+<style>
+  .demo-app {
+    background: #080a14;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+  }
+  .demo-nav {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.02);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    padding: 0 20px;
+    height: 48px;
+    gap: 24px;
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 13px;
+  }
+  .demo-nav .logo {
+    font-weight: 700;
+    color: rgba(139,134,255,0.9);
+    margin-right: 12px;
+    font-size: 15px;
+  }
+  .demo-nav .nav-item {
+    color: rgba(255,255,255,0.45);
+    padding: 14px 0;
+    cursor: default;
+  }
+  .demo-nav .nav-item.active {
+    color: rgba(255,255,255,0.9);
+    border-bottom: 2px solid rgba(139,134,255,0.7);
+  }
+  .demo-nav .nav-item.help-item {
+    color: rgba(255,255,255,0.9);
+    border-bottom: 2px solid rgba(139,134,255,0.7);
+  }
+  .demo-nav .nav-right {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .demo-page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+  }
+  .demo-page-title {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.95);
+  }
+  .help-icon-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.12);
+    background: rgba(255,255,255,0.04);
+    color: rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: default;
+  }
+  .help-tooltip {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    background: #1a1d2e;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.6);
+    white-space: nowrap;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .demo-content {
+    padding: 0 24px 24px;
+    min-height: 200px;
+  }
+  .demo-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .demo-panel {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 16px 20px;
+    min-height: 120px;
+  }
+  .panel-heading {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.5);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 12px;
+  }
+  .panel-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.03);
+    color: rgba(255,255,255,0.6);
+    font-size: 13px;
+  }
+  .panel-row .mono {
+    font-family: 'JetBrains Mono', monospace;
+    color: rgba(255,255,255,0.8);
+  }
+  .annotation {
+    position: absolute;
+    background: rgba(139,134,255,0.15);
+    border: 1px solid rgba(139,134,255,0.4);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    color: rgba(179,176,255,0.9);
+    white-space: nowrap;
+  }
+  .annotation-arrow {
+    position: absolute;
+    color: rgba(139,134,255,0.5);
+    font-size: 18px;
+  }
+</style>
+
+<div class="cards">
+  <!-- Option A: Nav bar link only -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>A — Nav bar link only</h3>
+      <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 16px; padding: 0 16px;">Simple, clean. Help is a top-level page like any other.</p>
+      <div class="demo-app">
+        <div class="demo-nav" style="position: relative;">
+          <span class="logo">finplan</span>
+          <span class="nav-item active">Overview</span>
+          <span class="nav-item">Planner</span>
+          <span class="nav-item">Wealth</span>
+          <span class="nav-item">Settings</span>
+          <span class="nav-item help-item" style="border-bottom-color: rgba(139,134,255,0.7);">Help</span>
+          <span class="nav-right">
+            <span style="color:rgba(255,255,255,0.3); font-size:12px;">The Smiths</span>
+          </span>
+          <!-- Annotation -->
+          <div class="annotation" style="top: calc(100% + 10px); right: 80px;">
+            ← Help lives here as a nav item
+          </div>
+        </div>
+        <div class="demo-page-header" style="margin-top: 20px;">
+          <div class="demo-page-title">Overview</div>
+        </div>
+        <div class="demo-content">
+          <div class="demo-panels">
+            <div class="demo-panel">
+              <div class="panel-heading">Income</div>
+              <div class="panel-row"><span>Salary (Gabriel)</span><span class="mono">£2,800</span></div>
+              <div class="panel-row"><span>Salary (Partner)</span><span class="mono">£1,400</span></div>
+            </div>
+            <div class="demo-panel">
+              <div class="panel-heading">Committed Spend</div>
+              <div class="panel-row"><span>Mortgage</span><span class="mono">£1,200</span></div>
+              <div class="panel-row"><span>Bills (÷12)</span><span class="mono">£380</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Nav bar link + contextual ? icon -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>B — Nav bar link + contextual "?" icon</h3>
+      <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 16px; padding: 0 16px;">Help in the nav bar for browsing, plus a small "?" per page that deep-links to relevant help content.</p>
+      <div class="demo-app">
+        <div class="demo-nav">
+          <span class="logo">finplan</span>
+          <span class="nav-item active">Overview</span>
+          <span class="nav-item">Planner</span>
+          <span class="nav-item">Wealth</span>
+          <span class="nav-item">Settings</span>
+          <span class="nav-item" style="color: rgba(255,255,255,0.45);">Help</span>
+          <span class="nav-right">
+            <span style="color:rgba(255,255,255,0.3); font-size:12px;">The Smiths</span>
+          </span>
+        </div>
+        <div class="demo-page-header" style="position: relative;">
+          <div class="demo-page-title">Overview</div>
+          <div style="position: relative;">
+            <div class="help-icon-btn">?</div>
+            <!-- Tooltip showing on hover -->
+            <div class="help-tooltip">
+              Help with the Overview page →
+            </div>
+            <div class="annotation" style="top: -8px; right: calc(100% + 12px);">
+              Contextual "?" links to relevant help →
+            </div>
+          </div>
+        </div>
+        <div class="demo-content">
+          <div class="demo-panels">
+            <div class="demo-panel">
+              <div class="panel-heading">Income</div>
+              <div class="panel-row"><span>Salary (Gabriel)</span><span class="mono">£2,800</span></div>
+              <div class="panel-row"><span>Salary (Partner)</span><span class="mono">£1,400</span></div>
+            </div>
+            <div class="demo-panel">
+              <div class="panel-heading">Committed Spend</div>
+              <div class="panel-row"><span>Mortgage</span><span class="mono">£1,200</span></div>
+              <div class="panel-row"><span>Bills (÷12)</span><span class="mono">£380</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

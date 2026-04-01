@@ -1,5 +1,5 @@
-/* Import Inter font for high x-height and excellent accessibility */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+/* Three-font system: Outfit (headings), Nunito Sans (body), JetBrains Mono (numbers) */
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=Nunito+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap");
 
 @tailwind base;
 @tailwind components;
@@ -7,81 +7,103 @@
 
 @layer base {
   :root {
-    /* Dark mode only - our primary theme */
-    --background: 230 31% 15%;           /* #191D32 - Background */
-    --foreground: 230 29% 96%;           /* #F2F3F7 - Primary Text */
-    
-    /* Cards & Surfaces */
-    --card: 230 27% 19%;                 /* #22263D - Surface */
-    --card-foreground: 230 29% 96%;      /* #F2F3F7 - Primary Text */
-    
-    /* Popovers & Overlays */
-    --popover: 230 27% 19%;              /* #22263D - Surface */
-    --popover-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
-    
-    /* Primary Action (Orange - Focus & Momentum) */
-    --primary: 25 100% 55%;              /* #FF7A18 - Primary Action */
-    --primary-foreground: 230 29% 96%;   /* #F2F3F7 - Text on primary */
-    --primary-hover: 25 88% 49%;         /* #E66D15 - Hover state */
-    --primary-subtle: 25 32% 17%;        /* #3B2A1E - Subtle background */
-    
+    /* =====================================================================
+       Renew design system — dark theme only
+       Source of truth: docs/renew-finplan/design/design-system.md
+       ===================================================================== */
+
+    /* Background & Depth */
+    --background: 221 49% 5%; /* #080a14 — deep navy, almost black with blue undertone */
+    --foreground: 230 100% 97% / 0.92; /* rgba(238,242,255,0.92) — blue-white tint */
+
+    /* Surfaces — three elevation levels with wide steps */
+    --card: 226 45% 9%; /* #0d1120 — cards, panels, sidebars */
+    --card-foreground: 230 100% 97% / 0.92;
+    --surface-elevated: 223 40% 13%; /* #141b2e — modals, popovers, selected rows */
+    --surface-elevated-border: 221 35% 20%; /* #222c45 */
+    --surface-overlay: 224 40% 18%; /* #1c2540 — dropdowns, tooltips, top-layer */
+    --surface-overlay-border: 223 38% 25%; /* #2a3558 */
+
+    /* Popovers & Overlays — use surface-elevated */
+    --popover: 224 36% 13%;
+    --popover-foreground: 230 100% 97% / 0.92;
+
+    /* Text Hierarchy — blue-white tint at varying opacities */
+    --text-secondary: 230 100% 97% / 0.65; /* Item names, descriptions, body text */
+    --text-tertiary: 230 100% 97% / 0.4; /* Metadata, helper text, timestamps */
+    --text-muted: 230 100% 97% / 0.25; /* Placeholders, disabled text, divider labels */
+
+    /* Action — electric violet */
+    --primary: 263 84% 52%; /* #7c3aed — buttons, focus rings, CTAs */
+    --primary-foreground: 0 0% 100%; /* white text on action */
+    --primary-hover: 263 84% 45%; /* ~#6928d4 */
+    --primary-subtle: 263 40% 15%; /* subtle violet background */
+
+    /* Page Accent — soft violet for non-tier pages */
+    --page-accent: 258 90% 66%; /* #8b5cf6 — breadcrumbs, section headers, nav indicators */
+
     /* Secondary Actions (Muted) */
-    --secondary: 230 27% 26%;            /* #2F3452 - Border/Muted */
-    --secondary-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
-    
+    --secondary: 225 32% 16%;
+    --secondary-foreground: 230 100% 97% / 0.92;
+
     /* Muted/Disabled */
-    --muted: 230 27% 26%;                /* #2F3452 - Border */
-    --muted-foreground: 230 20% 67%;     /* #9DA1B8 - Tertiary Text */
-    
-    /* Accent (Brand - Purple/Rose) */
-    --accent: 320 23% 62%;               /* #B38BA3 - Brand Primary */
-    --accent-foreground: 230 29% 96%;    /* #F2F3F7 - Primary Text */
-    --accent-subtle: 270 20% 22%;        /* #3A2F44 - Brand Subtle */
-    
-    /* Progress/Success (Teal - Calm Positive) */
-    --success: 177 95% 39%;              /* #07BEB8 - Progress */
-    --success-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
-    --success-hover: 177 95% 35%;        /* #06A9A3 - Hover */
-    --success-subtle: 190 38% 20%;       /* #1F3F46 - Subtle background */
-    
-    /* Highlight (Magenta - Supportive Emphasis) */
-    --highlight: 306 44% 40%;            /* #8F3985 - Highlight */
-    --highlight-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
-    --highlight-subtle: 277 28% 17%;     /* #2F2038 - Subtle background */
-    
-    /* Expense (Dark Slate - Discrete, Harmonious) */
-    --expense: 215 25% 35%;              /* Dark slate grey */
-    --expense-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
-    --expense-subtle: 215 25% 20%;       /* Very dark slate grey */
-    
-    /* Attention/Warning (Magenta - Supportive Emphasis) */
-    --warning: 306 44% 40%;              /* #8F3985 - Magenta */
-    --warning-foreground: 230 29% 96%;   /* #F2F3F7 - Primary Text */
-    --warning-subtle: 277 28% 17%;       /* #2F2038 - Subtle background */
-    
-    /* Destructive/Error (Red - Rare, Explicit Only) */
-    --destructive: 358 75% 59%;          /* #E5484D - Error */
-    --destructive-foreground: 230 29% 96%; /* #F2F3F7 - Primary Text */
-    --destructive-subtle: 350 33% 19%;   /* #402024 - Subtle background */
-    
+    --muted: 225 32% 16%;
+    --muted-foreground: 230 100% 97% / 0.4;
+
+    /* Accent (kept for shadcn compat — maps to page-accent) */
+    --accent: 258 90% 66%;
+    --accent-foreground: 230 100% 97% / 0.92;
+
+    /* Status — non-judgemental */
+    --success: 142 71% 45%; /* #22c55e — UI confirmations only (saved, synced) */
+    --success-foreground: 0 0% 100%;
+    --destructive: 0 84% 60%; /* #ef4444 — app errors only (validation, system failures) */
+    --destructive-foreground: 0 0% 100%;
+    --destructive-subtle: 0 40% 15%;
+
+    /* Attention — amber, the only "noteworthy" signal */
+    --attention: 38 92% 50%; /* #f59e0b — staleness, cashflow attention, nudge dots */
+    --attention-bg: 38 92% 50% / 0.04; /* nudge card background tint */
+    --attention-border: 38 92% 50% / 0.08; /* nudge card border */
+
+    /* Waterfall tier colours — semantically protected */
+    --tier-income: 199 86% 49%; /* #0ea5e9 — energetic electric blue */
+    --tier-committed: 239 84% 67%; /* #6366f1 — settled indigo */
+    --tier-committed-subtle: 239 40% 18%;
+    --tier-discretionary: 271 91% 65%; /* #a855f7 — expressive purple */
+    --tier-discretionary-subtle: 271 40% 18%;
+    --tier-surplus: 175 72% 57%; /* #4adcd0 — rewarding teal-mint */
+
+    /* Callout gradients — engagement and special highlights */
+    --callout-primary-from: 199 86% 49%; /* #0ea5e9 (blue) */
+    --callout-primary-to: 271 91% 65%; /* #a855f7 (purple) */
+    --callout-secondary-from: 271 91% 65%; /* #a855f7 (purple) */
+    --callout-secondary-to: 175 72% 57%; /* #4adcd0 (teal) */
+
     /* Borders & Inputs */
-    --border: 230 27% 26%;               /* #2F3452 - Border */
-    --input: 230 27% 26%;                /* #2F3452 - Input border */
-    --ring: 25 100% 55%;                 /* #FF7A18 - Focus ring (orange) */
-    
+    --border: 224 38% 15%; /* #1a1f35 */
+    --input: 225 32% 16%;
+    --ring: 263 84% 52%; /* action violet — focus ring */
+
     /* Border Radius */
-    --radius: 0.5rem;                    /* 8px - default */
-    
-    /* Chart Colors (for Recharts) */
-    --chart-1: 177 95% 39%;              /* #07BEB8 - Teal (Income) */
-    --chart-2: 215 25% 35%;              /* Dark Slate Grey (Expenses) */
-    --chart-3: 320 23% 62%;              /* #B38BA3 - Purple/Rose (Brand) */
-    --chart-4: 306 44% 40%;              /* #8F3985 - Magenta (Highlight) */
-    --chart-5: 25 100% 55%;              /* #FF7A18 - Orange (for CTAs in charts) */
-    
-    /* Text Hierarchy - Additional tokens */
-    --text-secondary: 230 23% 82%;       /* #C7CAD9 - Secondary Text */
-    --text-tertiary: 230 20% 67%;        /* #9DA1B8 - Tertiary Text */
+    --radius: 0.5rem; /* 8px */
+
+    /* Chart Colors (updated for new palette) */
+    --chart-1: 199 86% 49%; /* tier-income blue */
+    --chart-2: 239 84% 67%; /* tier-committed indigo */
+    --chart-3: 271 91% 65%; /* tier-discretionary purple */
+    --chart-4: 175 72% 57%; /* tier-surplus teal-mint */
+    --chart-5: 263 84% 52%; /* action violet */
+
+    /* Z-Index Scale (10-point increments) */
+    --z-base: 0;
+    --z-sticky: 10;
+    --z-banner: 20;
+    --z-dropdown: 30;
+    --z-modal-overlay: 40;
+    --z-modal: 50;
+    --z-toast: 60;
+    --z-tooltip: 70;
   }
 }
 
@@ -89,35 +111,69 @@
   * {
     @apply border-border;
   }
-  
+
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-feature-settings: "rlig" 1, "calt" 1;
-    font-size: 16px; /* Larger base for accessibility */
+    font-family:
+      "Nunito Sans",
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      Roboto,
+      sans-serif;
+    font-feature-settings:
+      "rlig" 1,
+      "calt" 1;
+    font-size: 16px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  
+
   /* High contrast focus indicators for accessibility */
   *:focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
-  
-  /* Heading styles with proper hierarchy */
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-semibold text-foreground;
-    line-height: 1.25;
+
+  /* Input fields use border recolor instead of ring */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply ring-0 ring-offset-0 border-ring;
   }
-  
-  h1 { @apply text-3xl; }
-  h2 { @apply text-2xl; }
-  h3 { @apply text-xl; }
-  h4 { @apply text-lg; }
-  h5 { @apply text-base; }
-  h6 { @apply text-sm; }
-  
+
+  /* Heading styles — Outfit, tighter tracking */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-heading font-bold text-foreground;
+    letter-spacing: -0.025em;
+    line-height: 1.15;
+  }
+
+  h1 {
+    @apply text-3xl;
+  }
+  h2 {
+    @apply text-2xl;
+  }
+  h3 {
+    @apply text-xl;
+  }
+  h4 {
+    @apply text-lg;
+  }
+  h5 {
+    @apply text-base;
+  }
+  h6 {
+    @apply text-sm;
+  }
+
   /* Respect reduced motion preferences */
   @media (prefers-reduced-motion: reduce) {
     *,
@@ -128,6 +184,26 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+  /* Custom scrollbars — design-system.md §1.6 */
+  ::-webkit-scrollbar {
+    width: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(238, 242, 255, 0.1);
+    border-radius: 9999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(238, 242, 255, 0.18);
+  }
+  /* Firefox fallback */
+  * {
+    scrollbar-color: rgba(238, 242, 255, 0.1) transparent;
+    scrollbar-width: thin;
+  }
 }
 
 @layer utilities {
@@ -135,63 +211,30 @@
   .text-secondary {
     color: hsl(var(--text-secondary));
   }
-  
+
   .text-tertiary {
     color: hsl(var(--text-tertiary));
   }
-  
+
   /* Success utilities */
   .bg-success {
     background-color: hsl(var(--success));
   }
-  
+
   .text-success {
     color: hsl(var(--success));
   }
-  
-  .bg-success-subtle {
-    background-color: hsl(var(--success-subtle));
+
+  /* Shimmer animation for skeleton loaders */
+  @keyframes shimmer {
+    0% {
+      transform: translateX(-100%);
+    }
+    100% {
+      transform: translateX(100%);
+    }
   }
-  
-  /* Highlight utilities */
-  .bg-highlight {
-    background-color: hsl(var(--highlight));
-  }
-  
-  .text-highlight {
-    color: hsl(var(--highlight));
-  }
-  
-  .bg-highlight-subtle {
-    background-color: hsl(var(--highlight-subtle));
-  }
-  
-  /* Warning utilities */
-  .bg-warning {
-    background-color: hsl(var(--warning));
-  }
-  
-  .text-warning {
-    color: hsl(var(--warning));
-  }
-  
-  .bg-warning-subtle {
-    background-color: hsl(var(--warning-subtle));
-  }
-  
-  /* Expense utilities */
-  .bg-expense {
-    background-color: hsl(var(--expense));
-  }
-  
-  .text-expense {
-    color: hsl(var(--expense));
-  }
-  
-  .bg-expense-subtle {
-    background-color: hsl(var(--expense-subtle));
-  }
-  
+
   /* Achievement animation */
   @keyframes achievement {
     0% {
@@ -206,25 +249,26 @@
       opacity: 1;
     }
   }
-  
+
   .animate-achievement {
-    animation: achievement 600ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    animation: achievement 500ms cubic-bezier(0.22, 1, 0.36, 1);
   }
-  
+
   /* Pulse animation for attention */
   @keyframes pulse-subtle {
-    0%, 100% {
+    0%,
+    100% {
       opacity: 1;
     }
     50% {
       opacity: 0.8;
     }
   }
-  
+
   .animate-pulse-subtle {
     animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
-  
+
   /* Slide in from bottom (for toasts/notifications) */
   @keyframes slide-in-bottom {
     from {
@@ -236,8 +280,147 @@
       opacity: 1;
     }
   }
-  
+
   .animate-slide-in-bottom {
     animation: slide-in-bottom 250ms cubic-bezier(0.4, 0, 0.2, 1);
   }
+
+  /* Toast animations — fade-up entrance, fade-out exit (spec: 150ms) */
+  @keyframes toast-fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes toast-fade-out {
+    from {
+      opacity: 1;
+    }
+    to {
+      opacity: 0;
+    }
+  }
+
+  /* Confetti fall animation (welcome page) */
+  @keyframes confetti-fall {
+    0% {
+      transform: translateY(0) rotate(0deg);
+      opacity: 1;
+    }
+    100% {
+      transform: translateY(100vh) rotate(720deg);
+      opacity: 0;
+    }
+  }
+
+  .animate-confetti-fall {
+    animation: confetti-fall 2s ease-in forwards;
+  }
+}
+
+/* ===== Number input spinner buttons ===== */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  background-color: hsl(var(--input));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14'%3E%3Cpath d='M5 2 L9 6 L1 6 Z' fill='rgba(238,242,255,0.45)'/%3E%3Cpath d='M5 12 L9 8 L1 8 Z' fill='rgba(238,242,255,0.45)'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  border-left: 1px solid hsl(var(--border));
+  border-radius: 0 0.375rem 0.375rem 0;
+  cursor: pointer;
+  opacity: 1;
+  transition: background-color 150ms ease;
+}
+
+input[type="number"]::-webkit-inner-spin-button:hover,
+input[type="number"]::-webkit-outer-spin-button:hover {
+  background-color: hsl(var(--surface-elevated));
+}
+
+input[type="number"]:focus-visible::-webkit-inner-spin-button,
+input[type="number"]:focus-visible::-webkit-outer-spin-button {
+  border-left-color: hsl(var(--ring) / 0.5);
+}
+
+/* Firefox */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* ===== Toast (Sonner) Animation Overrides ===== */
+/* Entrance: fade-up 150ms ease-out; Exit: fade-out 150ms ease-in */
+[data-sonner-toast][data-mounted="true"] {
+  animation: toast-fade-up 150ms ease-out forwards;
+}
+[data-sonner-toast][data-removed="true"] {
+  animation: toast-fade-out 150ms ease-in forwards;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-sonner-toast][data-mounted="true"],
+  [data-sonner-toast][data-removed="true"] {
+    animation: none;
+  }
+}
+
+/* ===== Page Ambient Glows ===== */
+[data-page]::before,
+[data-page]::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Overview: indigo top-right + violet bottom-left */
+[data-page="overview"]::before {
+  background: radial-gradient(ellipse at 100% 0%, rgba(99, 102, 241, 0.09) 0%, transparent 25%);
+}
+[data-page="overview"]::after {
+  background: radial-gradient(ellipse at 0% 100%, rgba(139, 92, 246, 0.05) 0%, transparent 25%);
+}
+
+/* Income: blue top-right + indigo bottom-left */
+[data-page="income"]::before {
+  background: radial-gradient(ellipse at 100% 0%, rgba(14, 165, 233, 0.09) 0%, transparent 25%);
+}
+[data-page="income"]::after {
+  background: radial-gradient(ellipse at 0% 100%, rgba(99, 102, 241, 0.05) 0%, transparent 25%);
+}
+
+/* Committed: indigo top-right + purple bottom-left */
+[data-page="committed"]::before {
+  background: radial-gradient(ellipse at 100% 0%, rgba(99, 102, 241, 0.09) 0%, transparent 25%);
+}
+[data-page="committed"]::after {
+  background: radial-gradient(ellipse at 0% 100%, rgba(168, 85, 247, 0.05) 0%, transparent 25%);
+}
+
+/* Discretionary: purple top-right + teal bottom-left */
+[data-page="discretionary"]::before {
+  background: radial-gradient(ellipse at 100% 0%, rgba(168, 85, 247, 0.09) 0%, transparent 25%);
+}
+[data-page="discretionary"]::after {
+  background: radial-gradient(ellipse at 0% 100%, rgba(74, 220, 208, 0.05) 0%, transparent 25%);
+}
+
+/* Surplus: teal top-right + indigo bottom-left */
+[data-page="surplus"]::before {
+  background: radial-gradient(ellipse at 100% 0%, rgba(74, 220, 208, 0.09) 0%, transparent 25%);
+}
+[data-page="surplus"]::after {
+  background: radial-gradient(ellipse at 0% 100%, rgba(99, 102, 241, 0.05) 0%, transparent 25%);
+}
+
+/* Settings: neutral top-right only, no secondary */
+[data-page="settings"]::before {
+  background: radial-gradient(ellipse at 100% 0%, rgba(238, 242, 255, 0.04) 0%, transparent 25%);
 }

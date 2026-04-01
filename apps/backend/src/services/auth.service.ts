@@ -1,10 +1,21 @@
-import { prisma } from '../config/database';
-import { hashPassword, verifyPassword } from '../utils/password';
-import { generateAccessToken, generateRefreshToken, hashToken, generateTokenFamily, verifyRefreshToken } from '../utils/jwt';
-import { AuthenticationError, ConflictError, NotFoundError, ValidationError } from '../utils/errors';
-import { Prisma } from '@prisma/client';
-import { householdService } from './household.service.js';
-import type { User } from '@prisma/client';
+import { prisma } from "../config/database";
+import { hashPassword, verifyPassword } from "../utils/password";
+import {
+  generateAccessToken,
+  generateRefreshToken,
+  hashToken,
+  generateTokenFamily,
+  verifyRefreshToken,
+} from "../utils/jwt";
+import {
+  AuthenticationError,
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from "../utils/errors";
+import { Prisma } from "@prisma/client";
+
+import type { User } from "@prisma/client";
 
 export interface RegisterInput {
   email: string;
@@ -19,7 +30,7 @@ export interface LoginInput {
 }
 
 export interface AuthResponse {
-  user: Omit<User, 'passwordHash'>;
+  user: Omit<User, "passwordHash">;
   accessToken: string;
   refreshToken: string;
 }
@@ -48,18 +59,18 @@ export const authService = {
 
     // Validate input
     if (!email || !password || !name) {
-      throw new ValidationError('Email, password, and name are required');
+      throw new ValidationError("Email, password, and name are required");
     }
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      throw new ValidationError('Invalid email format');
+      throw new ValidationError("Invalid email format");
     }
 
     // Validate password strength (minimum 12 characters)
     if (password.length < 12) {
-      throw new ValidationError('Password must be at least 12 characters long');
+      throw new ValidationError("Password must be at least 12 characters long");
     }
 
     // Check if user already exists
@@ -68,7 +79,7 @@ export const authService = {
     });
 
     if (existingUser) {
-      throw new ConflictError('User with this email already exists');
+      throw new ConflictError("User with this email already exists");
     }
 
     // Hash password
@@ -81,24 +92,17 @@ export const authService = {
         passwordHash,
         name,
         preferences: {
-          currency: 'GBP',
-          dateFormat: 'DD/MM/YYYY',
-          theme: 'dark',
+          currency: "GBP",
+          dateFormat: "DD/MM/YYYY",
+          theme: "dark",
           defaultInflationRate: 2.5,
         },
       },
     });
 
-    // Create personal household and set as active
-    const household = await householdService.createHousehold(user.id, `${name}'s Household`);
-    const updatedUser = await prisma.user.update({
-      where: { id: user.id },
-      data: { activeHouseholdId: household.id },
-    });
-
-    // Generate tokens
-    const accessToken = generateAccessToken({ userId: updatedUser.id, email: updatedUser.email });
-    const refreshToken = generateRefreshToken({ userId: updatedUser.id });
+    // Generate tokens — user starts with no household (created via WelcomePage)
+    const accessToken = generateAccessToken({ userId: user.id, email: user.email });
+    const refreshToken = generateRefreshToken({ userId: user.id });
 
     // Store refresh token with family tracking
     const now = new Date();
@@ -106,7 +110,7 @@ export const authService = {
     const familyId = generateTokenFamily();
     await prisma.refreshToken.create({
       data: {
-        userId: updatedUser.id,
+        userId: user.id,
         tokenHash: hashToken(refreshToken),
         familyId,
         expiresAt,
@@ -116,7 +120,7 @@ export const authService = {
     });
 
     // Remove password hash from response
-    const { passwordHash: _, ...userWithoutPassword } = updatedUser;
+    const { passwordHash: _, ...userWithoutPassword } = user;
 
     return {
       user: userWithoutPassword,
@@ -128,12 +132,14 @@ export const authService = {
   /**
    * Login user
    */
-  async login(input: LoginInput & { ipAddress?: string; userAgent?: string }): Promise<AuthResponse> {
+  async login(
+    input: LoginInput & { ipAddress?: string; userAgent?: string }
+  ): Promise<AuthResponse> {
     const { email, password, rememberMe = false, ipAddress, userAgent } = input;
 
     // Validate input
     if (!email || !password) {
-      throw new ValidationError('Email and password are required');
+      throw new ValidationError("Email and password are required");
     }
 
     // Find user
@@ -142,14 +148,14 @@ export const authService = {
     });
 
     if (!user) {
-      throw new AuthenticationError('Invalid email or password');
+      throw new AuthenticationError("Invalid email or password");
     }
 
     // Verify password
     const isPasswordValid = await verifyPassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      throw new AuthenticationError('Invalid email or password');
+      throw new AuthenticationError("Invalid email or password");
     }
 
     // Generate tokens
@@ -186,7 +192,7 @@ export const authService = {
   /**
    * Find user by ID
    */
-  async findUserById(userId: string): Promise<Omit<User, 'passwordHash'> | null> {
+  async findUserById(userId: string): Promise<Omit<User, "passwordHash"> | null> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -211,7 +217,7 @@ export const authService = {
   /**
    * Update user display name
    */
-  async updateUserName(userId: string, name: string): Promise<Omit<User, 'passwordHash'>> {
+  async updateUserName(userId: string, name: string): Promise<Omit<User, "passwordHash">> {
     try {
       const user = await prisma.user.update({
         where: { id: userId },
@@ -220,8 +226,8 @@ export const authService = {
       const { passwordHash: _, ...userWithoutPassword } = user;
       return userWithoutPassword;
     } catch (error) {
-      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2025') {
-        throw new NotFoundError('User not found');
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        throw new NotFoundError("User not found");
       }
       throw error;
     }
@@ -244,7 +250,7 @@ export const authService = {
     sessionExpiresAt: Date;
   }> {
     if (!refreshToken) {
-      throw new AuthenticationError('Refresh token is required');
+      throw new AuthenticationError("Refresh token is required");
     }
 
     try {
@@ -258,7 +264,7 @@ export const authService = {
       });
 
       if (!storedToken) {
-        throw new AuthenticationError('Invalid refresh token');
+        throw new AuthenticationError("Invalid refresh token");
       }
 
       // Reuse detection: if this token was already revoked, an attacker
@@ -268,19 +274,21 @@ export const authService = {
           where: { familyId: storedToken.familyId },
           data: { isRevoked: true },
         });
-        throw new AuthenticationError('Refresh token reuse detected — all sessions in this family have been revoked');
+        throw new AuthenticationError(
+          "Refresh token reuse detected — all sessions in this family have been revoked"
+        );
       }
 
       const now = new Date();
 
       // Check idle expiry (belt-and-suspenders with JWT expiry)
       if (storedToken.expiresAt < now) {
-        throw new AuthenticationError('Refresh token expired');
+        throw new AuthenticationError("Refresh token expired");
       }
 
       // Check absolute session cap.
       if (storedToken.sessionExpiresAt < now) {
-        throw new AuthenticationError('Session expired - please login again');
+        throw new AuthenticationError("Session expired - please login again");
       }
 
       // Revoke the current token (it's been used)
@@ -298,13 +306,16 @@ export const authService = {
       });
 
       if (!user) {
-        throw new AuthenticationError('User not found');
+        throw new AuthenticationError("User not found");
       }
 
       // Generate new token pair
       const newAccessToken = generateAccessToken({ userId: user.id, email: user.email });
       const newRefreshToken = generateRefreshToken({ userId: user.id });
-      const { expiresAt, sessionExpiresAt } = calculateSessionExpiries(now, storedToken.sessionExpiresAt);
+      const { expiresAt, sessionExpiresAt } = calculateSessionExpiries(
+        now,
+        storedToken.sessionExpiresAt
+      );
 
       // Store new refresh token in the same family
       await prisma.refreshToken.create({
@@ -332,7 +343,7 @@ export const authService = {
       if (error instanceof AuthenticationError) {
         throw error;
       }
-      throw new AuthenticationError('Invalid or expired refresh token');
+      throw new AuthenticationError("Invalid or expired refresh token");
     }
   },
 
@@ -363,7 +374,7 @@ export const authService = {
     // Get the latest non-revoked token per family to represent each session
     const tokens = await prisma.refreshToken.findMany({
       where: { userId, isRevoked: false, expiresAt: { gt: new Date() } },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: {
         id: true,
         familyId: true,
@@ -376,7 +387,7 @@ export const authService = {
 
     // Deduplicate by familyId (keep the most recent per family)
     const seen = new Set<string>();
-    return tokens.filter((t: typeof tokens[number]) => {
+    return tokens.filter((t: (typeof tokens)[number]) => {
       if (seen.has(t.familyId)) return false;
       seen.add(t.familyId);
       return true;

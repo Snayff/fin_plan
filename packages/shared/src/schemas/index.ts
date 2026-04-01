@@ -1,117 +1,6 @@
 /**
  * Shared validation schemas and types
- * 
- * This package provides a single source of truth for validation logic
- * that can be used across both frontend and backend applications.
  */
-
-// Transaction schemas and types
-export {
-  createTransactionSchema,
-  updateTransactionSchema,
-  TransactionTypeEnum,
-  RecurrenceTypeEnum,
-  type TransactionType,
-  type RecurrenceType,
-  type CreateTransactionInput,
-  type UpdateTransactionInput,
-} from './transaction.schemas';
-
-// Recurring transaction schemas and types
-export {
-  createRecurringRuleSchema,
-  updateRecurringRuleSchema,
-  previewOccurrencesSchema,
-  templateTransactionSchema,
-  RecurringFrequencyEnum,
-  UpdateScopeEnum,
-  type RecurringFrequency,
-  type UpdateScope,
-  type TemplateTransaction,
-  type CreateRecurringRuleInput,
-  type UpdateRecurringRuleInput,
-  type PreviewOccurrencesInput,
-} from './recurring.schemas';
-
-// Account schemas and types
-export {
-  createAccountSchema,
-  updateAccountSchema,
-  AccountTypeEnum,
-  type AccountType,
-  type CreateAccountInput,
-  type UpdateAccountInput,
-} from './account.schemas';
-
-// Category schemas and types
-export {
-  createCategorySchema,
-  updateCategorySchema,
-  CategoryTypeEnum,
-  type CategoryType,
-  type CreateCategoryInput,
-  type UpdateCategoryInput,
-} from './category.schemas';
-
-// Asset schemas and types
-export {
-  createAssetSchema,
-  updateAssetSchema,
-  updateAssetValueSchema,
-  AssetTypeEnum,
-  LiquidityTypeEnum,
-  ValueSourceEnum,
-  type AssetType,
-  type LiquidityType,
-  type ValueSource,
-  type CreateAssetInput,
-  type UpdateAssetInput,
-  type UpdateAssetValueInput,
-} from './asset.schemas';
-
-// Liability schemas and types
-export {
-  createLiabilitySchema,
-  updateLiabilitySchema,
-  LiabilityTypeEnum,
-  InterestTypeEnum,
-  type LiabilityType,
-  type InterestType,
-  type CreateLiabilityInput,
-  type UpdateLiabilityInput,
-} from './liability.schemas';
-
-// Goal schemas and types
-export {
-  createGoalSchema,
-  updateGoalSchema,
-  createGoalContributionSchema,
-  linkTransactionToGoalSchema,
-  GoalTypeEnum,
-  PriorityEnum,
-  GoalStatusEnum,
-  type GoalType,
-  type Priority,
-  type GoalStatus,
-  type CreateGoalInput,
-  type UpdateGoalInput,
-  type CreateGoalContributionInput,
-  type LinkTransactionToGoalInput,
-} from './goal.schemas';
-
-// Budget schemas and types
-export {
-  createBudgetSchema,
-  updateBudgetSchema,
-  addBudgetItemSchema,
-  updateBudgetItemSchema,
-  BudgetPeriodEnum,
-  type BudgetPeriod,
-  type CreateBudgetInput,
-  type UpdateBudgetInput,
-  type AddBudgetItemInput,
-  type UpdateBudgetItemInput,
-} from './budget.schemas';
 
 // Household schemas and types
 export {
@@ -119,8 +8,151 @@ export {
   renameHouseholdSchema,
   createHouseholdInviteSchema,
   acceptInviteSchema,
+  updateMemberRoleSchema,
   type CreateHouseholdInput,
   type RenameHouseholdInput,
   type CreateHouseholdInviteInput,
   type AcceptInviteInput,
-} from './household.schemas';
+  type UpdateMemberRoleInput,
+} from "./household.schemas";
+
+// Waterfall schemas and types
+export {
+  IncomeFrequencyEnum,
+  IncomeTypeEnum,
+  WaterfallItemTypeEnum,
+  createIncomeSourceSchema,
+  updateIncomeSourceSchema,
+  endIncomeSourceSchema,
+  createCommittedBillSchema,
+  updateCommittedBillSchema,
+  createYearlyBillSchema,
+  updateYearlyBillSchema,
+  createDiscretionaryCategorySchema,
+  updateDiscretionaryCategorySchema,
+  createSavingsAllocationSchema,
+  updateSavingsAllocationSchema,
+  confirmBatchSchema,
+  deleteAllWaterfallSchema,
+  SpendTypeEnum,
+  WaterfallTierEnum,
+  createCommittedItemSchema,
+  updateCommittedItemSchema,
+  createDiscretionaryItemSchema,
+  updateDiscretionaryItemSchema,
+  type IncomeFrequency,
+  type IncomeType,
+  type WaterfallItemType,
+  type CreateIncomeSourceInput,
+  type UpdateIncomeSourceInput,
+  type EndIncomeSourceInput,
+  type CreateCommittedBillInput,
+  type UpdateCommittedBillInput,
+  type CreateYearlyBillInput,
+  type UpdateYearlyBillInput,
+  type CreateDiscretionaryCategoryInput,
+  type UpdateDiscretionaryCategoryInput,
+  type CreateSavingsAllocationInput,
+  type UpdateSavingsAllocationInput,
+  type ConfirmBatchInput,
+  type DeleteAllWaterfallInput,
+  type SpendType,
+  type WaterfallTier,
+  type SubcategoryRow,
+  type SubcategoryTotal,
+  type CreateCommittedItemInput,
+  type UpdateCommittedItemInput,
+  type CreateDiscretionaryItemInput,
+  type UpdateDiscretionaryItemInput,
+  type WaterfallSummary,
+  type IncomeByType,
+  type IncomeSourceRow,
+  type CommittedBillRow,
+  type YearlyBillRow,
+  type DiscretionaryCategoryRow,
+  type SavingsAllocationRow,
+  type CashflowMonth,
+} from "./waterfall.schemas";
+
+// Settings schemas and types
+export {
+  stalenessThresholdsSchema,
+  updateSettingsSchema,
+  type StalenessThresholds,
+  type UpdateSettingsInput,
+} from "./settings.schemas";
+
+// Snapshot schemas and types
+export {
+  createSnapshotSchema,
+  renameSnapshotSchema,
+  FinancialSummarySchema,
+  SparklinePointSchema,
+  type CreateSnapshotInput,
+  type RenameSnapshotInput,
+  type FinancialSummary,
+  type SparklinePoint,
+} from "./snapshot.schemas";
+
+// Review session schemas and types
+export {
+  confirmedItemsSchema,
+  updatedItemsSchema,
+  updateReviewSessionSchema,
+  type UpdateReviewSessionInput,
+} from "./review-session.schemas";
+
+// Setup session schemas and types
+export { updateSetupSessionSchema, type UpdateSetupSessionInput } from "./setup-session.schemas";
+
+// Assets schemas and types
+export * from "./assets.schemas.js";
+
+// Audit schemas and types
+export * from "./audit.schemas";
+
+// Planner schemas and types
+export {
+  PurchasePriorityEnum,
+  PurchaseStatusEnum,
+  GiftEventTypeEnum,
+  GiftRecurrenceEnum,
+  createPurchaseSchema,
+  updatePurchaseSchema,
+  upsertYearBudgetSchema,
+  createGiftPersonSchema,
+  updateGiftPersonSchema,
+  createGiftEventSchema,
+  updateGiftEventSchema,
+  upsertGiftYearRecordSchema,
+  type PurchasePriority,
+  type PurchaseStatus,
+  type GiftEventType,
+  type GiftRecurrence,
+  type CreatePurchaseInput,
+  type UpdatePurchaseInput,
+  type UpsertYearBudgetInput,
+  type CreateGiftPersonInput,
+  type UpdateGiftPersonInput,
+  type CreateGiftEventInput,
+  type UpdateGiftEventInput,
+  type UpsertGiftYearRecordInput,
+} from "./planner.schemas";
+
+// Forecast schemas and types
+export {
+  ForecastHorizonSchema,
+  ForecastQuerySchema,
+  NetWorthPointSchema,
+  SurplusPointSchema,
+  RetirementPointSchema,
+  RetirementMemberProjectionSchema,
+  ForecastProjectionSchema,
+  type ForecastHorizon,
+  type ForecastQuery,
+  type NetWorthPoint,
+  type SurplusPoint,
+  type RetirementPoint,
+  type RetirementMemberProjection,
+  type ForecastProjection,
+} from "./forecast.schemas";

@@ -1,0 +1,163 @@
+<h2>How should glossary terms be marked?</h2>
+<p class="subtitle">These terms appear inline throughout the app. Pick the treatment that balances discoverability with calm.</p>
+
+<style>
+  .demo-panel {
+    background: #0c0e1a;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 24px 28px;
+    margin-bottom: 12px;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    color: rgba(255,255,255,0.85);
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  .demo-panel .heading {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(255,255,255,0.4);
+    margin-bottom: 12px;
+  }
+  .demo-panel .mono {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 14px;
+  }
+
+  /* Style A: dotted underline only */
+  .term-a {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: rgba(255,255,255,0.3);
+    text-underline-offset: 3px;
+    cursor: help;
+  }
+
+  /* Style B: dotted underline + muted colour shift */
+  .term-b {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: rgba(139,134,255,0.4);
+    text-underline-offset: 3px;
+    color: rgba(179,176,255,0.9);
+    cursor: help;
+  }
+
+  /* Style C: no marker at all */
+  .term-c {
+    cursor: help;
+  }
+
+  /* Style D: very subtle background tint */
+  .term-d {
+    background: rgba(139,134,255,0.08);
+    border-radius: 3px;
+    padding: 1px 4px;
+    margin: 0 -2px;
+    cursor: help;
+  }
+
+  /* Tooltip mockup */
+  .tooltip-mock {
+    position: relative;
+    display: inline-block;
+  }
+  .tooltip-bubble {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #1a1d2e;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 12px 16px;
+    width: 280px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(255,255,255,0.75);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    pointer-events: none;
+  }
+  .tooltip-bubble::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 6px solid transparent;
+    border-top-color: #1a1d2e;
+  }
+  .tooltip-bubble .tooltip-link {
+    color: rgba(139,134,255,0.9);
+    text-decoration: none;
+  }
+  .tooltip-title {
+    font-weight: 600;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 4px;
+  }
+</style>
+
+<div class="cards">
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>A — Dotted underline only</h3>
+      <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 16px;">Subtle, no colour change. Discoverable on inspection.</p>
+      <div class="demo-panel">
+        <div class="heading">Committed Spend</div>
+        Your <span class="term-a">committed spend</span> covers everything you've contracted to pay — your <span class="term-a">mortgage</span>, phone bills, and insurance. These are deducted from your income first in the <span class="term-a">waterfall</span>, before any <span class="term-a">discretionary spend</span>.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>B — Dotted underline + colour shift</h3>
+      <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 16px;">More discoverable, but terms stand out from surrounding text.</p>
+      <div class="demo-panel">
+        <div class="heading">Committed Spend</div>
+        Your <span class="term-b">committed spend</span> covers everything you've contracted to pay — your <span class="term-b">mortgage</span>, phone bills, and insurance. These are deducted from your income first in the <span class="term-b">waterfall</span>, before any <span class="term-b">discretionary spend</span>.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>C — No visual marker</h3>
+      <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 16px;">Cleanest look. Users discover tooltips by hovering. Zero visual noise.</p>
+      <div class="demo-panel">
+        <div class="heading">Committed Spend</div>
+        Your <span class="term-c">committed spend</span> covers everything you've contracted to pay — your <span class="term-c">mortgage</span>, phone bills, and insurance. These are deducted from your income first in the <span class="term-c">waterfall</span>, before any <span class="term-c">discretionary spend</span>.
+      </div>
+    </div>
+  </div>
+
+  <div class="card" data-choice="d" onclick="toggleSelect(this)">
+    <div class="card-body">
+      <h3>D — Subtle background tint</h3>
+      <p style="color: rgba(255,255,255,0.5); font-size: 13px; margin-bottom: 16px;">Gentle highlight without underline. Discoverable without feeling like links.</p>
+      <div class="demo-panel">
+        <div class="heading">Committed Spend</div>
+        Your <span class="term-d">committed spend</span> covers everything you've contracted to pay — your <span class="term-d">mortgage</span>, phone bills, and insurance. These are deducted from your income first in the <span class="term-d">waterfall</span>, before any <span class="term-d">discretionary spend</span>.
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="margin-top: 24px;">
+  <h3>Tooltip preview (non-interactive — just showing the style)</h3>
+  <p class="subtitle">Whichever marker you pick, the tooltip itself would look like this:</p>
+  <div class="demo-panel" style="padding-top: 80px; padding-bottom: 32px;">
+    <div style="position: relative; display: inline-block;">
+      <div class="tooltip-bubble" style="pointer-events: auto;">
+        <div class="tooltip-title">Committed Spend</div>
+        Money you've contracted or obligated yourself to pay — outgoings you can't immediately choose to stop, such as your mortgage, phone contract, or annual insurance.
+        <div style="margin-top: 8px;"><span class="tooltip-link">→ Learn more about the Waterfall</span></div>
+      </div>
+      <span class="term-a">committed spend</span>
+    </div>
+  </div>
+</div>

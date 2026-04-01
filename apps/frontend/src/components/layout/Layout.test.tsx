@@ -1,86 +1,72 @@
-import { beforeEach, describe, expect, it } from 'bun:test';
-import { screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { http, HttpResponse } from 'msw';
-import { useLocation } from 'react-router-dom';
-import { renderWithProviders } from '../../test/helpers/render';
-import { mockUser, setAuthenticated } from '../../test/helpers/auth';
-import { server } from '../../test/msw/server';
-import Layout from './Layout';
+import { describe, it, expect, mock } from "bun:test";
+import { render, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
+import Layout from "./Layout";
+import { useAuthStore } from "@/stores/authStore";
 
-const baseUser = {
-  ...mockUser,
-  activeHouseholdId: 'household-1',
-} as any;
+mock.module("@/hooks/useStaleDataBanner", () => ({
+  useStaleDataBanner: () => ({ showBanner: false, lastSyncedAt: null }),
+}));
 
-function mockHouseholds() {
-  server.use(
-    http.get('/api/households', () =>
-      HttpResponse.json({
-        households: [
-          {
-            householdId: 'household-1',
-            userId: baseUser.id,
-            role: 'owner',
-            joinedAt: '2025-01-01T00:00:00Z',
-            household: {
-              id: 'household-1',
-              name: 'Home Base',
-              createdAt: '2025-01-01T00:00:00Z',
-              updatedAt: '2025-01-01T00:00:00Z',
-              _count: { members: 2 },
-            },
-          },
-        ],
-      })
-    )
+function renderLayout(path = "/overview") {
+  useAuthStore.setState({
+    user: { id: "1", name: "Test", email: "t@test.com" } as any,
+    accessToken: "tok",
+    isAuthenticated: true,
+    authStatus: "authenticated",
+  } as any);
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <QueryClientProvider client={qc}>
+      <MemoryRouter initialEntries={[path]}>
+        <Layout>
+          <div>content</div>
+        </Layout>
+      </MemoryRouter>
+    </QueryClientProvider>
   );
 }
 
-function PathProbe() {
-  const location = useLocation();
-  return <div data-testid="path">{location.pathname}</div>;
-}
-
-describe('Layout', () => {
-  beforeEach(() => {
-    setAuthenticated(baseUser, 'mock-access-token');
-    mockHouseholds();
+describe("TopNav", () => {
+  it("renders all 8 nav items", () => {
+    renderLayout();
+    expect(screen.getByRole("link", { name: /overview/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /income/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /committed/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /discretionary/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /surplus/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /goals/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /gifts/i })).toBeTruthy();
+    expect(screen.getByRole("link", { name: /settings/i })).toBeTruthy();
   });
 
-  it('opens user menu and navigates to /profile from View Profile', async () => {
-    const user = userEvent.setup();
-
-    renderWithProviders(
-      <Layout>
-        <PathProbe />
-      </Layout>,
-      { initialEntries: ['/dashboard'] }
-    );
-
-    await user.click(await screen.findByRole('button', { name: /test user/i }));
-    await user.click(await screen.findByRole('button', { name: /view profile/i }));
-
-    await waitFor(() => {
-      expect(screen.getByTestId('path').textContent).toBe('/profile');
-    });
+  it("marks the active route with aria-current", () => {
+    renderLayout("/income");
+    const incomeLink = screen.getByRole("link", { name: /income/i });
+    expect(incomeLink.getAttribute("aria-current")).toBe("page");
+    const overviewLink = screen.getByRole("link", { name: /overview/i });
+    expect(overviewLink.getAttribute("aria-current")).toBeNull();
   });
 
-  it('shows Create household action and no Household settings action in switcher', async () => {
-    const user = userEvent.setup();
+  it("renders two separators between nav groups", () => {
+    renderLayout();
+    const separators = screen.getAllByRole("separator");
+    expect(separators).toHaveLength(2);
+  });
 
-    renderWithProviders(
-      <Layout>
-        <PathProbe />
-      </Layout>,
-      { initialEntries: ['/dashboard'] }
-    );
+  it("shows StaleDataBanner when showBanner is true", () => {
+    mock.module("@/hooks/useStaleDataBanner", () => ({
+      useStaleDataBanner: () => ({ showBanner: true, lastSyncedAt: new Date() }),
+    }));
+    renderLayout();
+    expect(screen.getByText(/couldn't sync/i)).toBeTruthy();
+  });
 
-    await user.click(await screen.findByRole('button', { name: /home base/i }));
-
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /create household/i })).toBeTruthy();
-      expect(screen.queryByRole('button', { name: /household settings/i })).toBeNull();
-    });
+  it("renders a Help nav link pointing to /help", () => {
+    renderLayout();
+    const helpLink = screen.getByRole("link", { name: "Help" });
+    expect(helpLink).toBeTruthy();
+    expect(helpLink.getAttribute("href")).toContain("/help");
   });
 });

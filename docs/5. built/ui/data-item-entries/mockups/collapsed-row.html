@@ -1,0 +1,123 @@
+<h2>Data Item Row — Consistent Colouring</h2>
+<p class="subtitle">Monthly always top and bright. Yearly always bottom and muted. No colour flipping.</p>
+
+<style>
+  .fp-mock {
+    background: #0d1120;
+    border: 1px solid #1a1f35;
+    border-radius: 8px;
+    overflow: hidden;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  .fp-mock * { box-sizing: border-box; }
+
+  .fp-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 10px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s ease-out;
+    gap: 8px;
+  }
+  .fp-row:hover { background: rgba(99, 102, 241, 0.05); }
+  .fp-row + .fp-row { border-top: 1px solid rgba(238, 242, 255, 0.05); }
+
+  .fp-dot { width: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 5px; }
+  .fp-dot-amber { width: 5px; height: 5px; border-radius: 50%; background: #f59e0b; }
+
+  .fp-left { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+  .fp-name { color: rgba(238, 242, 255, 0.65); font-family: 'Nunito Sans', system-ui, sans-serif; font-size: 13px; }
+  .fp-meta { font-size: 11px; color: rgba(238, 242, 255, 0.3); }
+
+  .fp-right { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+  .fp-amount-top { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(238, 242, 255, 0.7); white-space: nowrap; }
+  .fp-amount-bottom { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(238, 242, 255, 0.3); white-space: nowrap; }
+
+  .mock-label {
+    padding: 8px 16px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: rgba(238, 242, 255, 0.3);
+    font-weight: 600;
+    border-bottom: 1px solid rgba(238, 242, 255, 0.05);
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+</style>
+
+<div class="mockup" style="max-width: 620px; margin: 0 auto;">
+  <div class="mockup-header">Consistent — Monthly Bright, Yearly Muted, Always</div>
+  <div class="mockup-body" style="padding: 0;">
+    <div class="fp-mock">
+
+      <div class="mock-label">Monthly items</div>
+
+      <div class="fp-row">
+        <span class="fp-dot"><span class="fp-dot-amber"></span></span>
+        <span class="fp-left">
+          <span class="fp-name">Netflix</span>
+          <span class="fp-meta">Monthly · Entertainment</span>
+        </span>
+        <span class="fp-right">
+          <span class="fp-amount-top">£15.99/mo</span>
+          <span class="fp-amount-bottom">£191.88/yr</span>
+        </span>
+      </div>
+
+      <div class="fp-row">
+        <span class="fp-dot"></span>
+        <span class="fp-left">
+          <span class="fp-name">Council Tax</span>
+          <span class="fp-meta">Monthly · Housing</span>
+        </span>
+        <span class="fp-right">
+          <span class="fp-amount-top">£185.00/mo</span>
+          <span class="fp-amount-bottom">£2,220.00/yr</span>
+        </span>
+      </div>
+
+      <div class="mock-label" style="margin-top: 0;">Yearly items</div>
+
+      <div class="fp-row">
+        <span class="fp-dot"><span class="fp-dot-amber"></span></span>
+        <span class="fp-left">
+          <span class="fp-name">Home Insurance</span>
+          <span class="fp-meta">Yearly · Insurance</span>
+        </span>
+        <span class="fp-right">
+          <span class="fp-amount-top">£40.00/mo</span>
+          <span class="fp-amount-bottom">£480.00/yr</span>
+        </span>
+      </div>
+
+      <div class="fp-row">
+        <span class="fp-dot"></span>
+        <span class="fp-left">
+          <span class="fp-name">Car Tax</span>
+          <span class="fp-meta">Yearly · Transport</span>
+        </span>
+        <span class="fp-right">
+          <span class="fp-amount-top">£15.83/mo</span>
+          <span class="fp-amount-bottom">£190.00/yr</span>
+        </span>
+      </div>
+
+      <div class="mock-label" style="margin-top: 0;">One-off items</div>
+
+      <div class="fp-row">
+        <span class="fp-dot"></span>
+        <span class="fp-left">
+          <span class="fp-name">New Boiler</span>
+          <span class="fp-meta">One-off · Home Improvement</span>
+        </span>
+        <span class="fp-right">
+          <span class="fp-amount-top">£3,200.00</span>
+        </span>
+      </div>
+
+    </div>
+  </div>
+</div>

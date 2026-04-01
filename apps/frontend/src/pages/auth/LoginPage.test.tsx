@@ -16,7 +16,7 @@ describe("LoginPage", () => {
 
     expect(screen.getByLabelText(/email/i)).toBeTruthy();
     expect(screen.getByLabelText(/password/i)).toBeTruthy();
-    expect(screen.getByLabelText(/remember me on this device/i)).toBeTruthy();
+    expect(screen.getByRole("checkbox", { name: /remember me on this device/i })).toBeTruthy();
   });
 
   it("renders sign in button", () => {
@@ -58,7 +58,7 @@ describe("LoginPage", () => {
 
     await user.type(screen.getByLabelText(/email/i), "test@test.com");
     await user.type(screen.getByLabelText(/password/i), "password123456");
-    await user.click(screen.getByLabelText(/remember me on this device/i));
+    await user.click(screen.getByRole("checkbox", { name: /remember me on this device/i }));
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
     await waitFor(() => {
@@ -74,7 +74,10 @@ describe("LoginPage", () => {
     const user = userEvent.setup();
     let resolveLogin: any;
     const loginMock = mock(
-      () => new Promise((resolve) => { resolveLogin = resolve; })
+      () =>
+        new Promise((resolve) => {
+          resolveLogin = resolve;
+        })
     );
     useAuthStore.setState({ login: loginMock } as any);
 
@@ -84,7 +87,9 @@ describe("LoginPage", () => {
     await user.type(screen.getByLabelText(/password/i), "password123456");
     await user.click(screen.getByRole("button", { name: /sign in/i }));
 
-    expect((screen.getByRole("button", { name: /signing in/i }) as HTMLButtonElement).disabled).toBe(true);
+    expect(
+      (screen.getByRole("button", { name: /signing in/i }) as HTMLButtonElement).disabled
+    ).toBe(true);
 
     resolveLogin();
   });

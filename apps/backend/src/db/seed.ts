@@ -1,112 +1,198 @@
-import { prisma } from '../config/database';
-import type { CategoryType } from '@prisma/client';
+import { prisma } from "../config/database";
+import { hashPassword } from "../utils/password";
+import { subcategoryService } from "../services/subcategory.service";
 
-const logger = {
-  info: console.log,
-  error: console.error,
-};
+if (process.env.NODE_ENV === "production") {
+  console.log("Seed skipped in production");
+  process.exit(0);
+}
 
-/**
- * Seed default categories
- */
-async function seedCategories() {
-  logger.info('Seeding default categories...');
+async function main() {
+  const email = "owner@finplan.test";
+  const password = "BrowserTest123!";
 
-  // Define the exact categories we want - FLAT LIST ONLY (no subcategories)
-  const desiredCategories = [
-    // Income categories
-    { name: 'Salary', type: 'income' as CategoryType, color: '#10b981', icon: '💰', isSystemCategory: true, sortOrder: 1 },
-    { name: 'Dividends', type: 'income' as CategoryType, color: '#3b82f6', icon: '📈', isSystemCategory: true, sortOrder: 2 },
-    { name: 'Gifts', type: 'income' as CategoryType, color: '#8b5cf6', icon: '🎁', isSystemCategory: true, sortOrder: 3 },
-    { name: 'Refunds', type: 'income' as CategoryType, color: '#06b6d4', icon: '💵', isSystemCategory: true, sortOrder: 4 },
-    { name: 'Other Income', type: 'income' as CategoryType, color: '#6b7280', icon: '💸', isSystemCategory: true, sortOrder: 5 },
+  // ─── User & Household ──────────────────────────────────────────────────────
 
-    // Expense categories
-    { name: 'Housing', type: 'expense' as CategoryType, color: '#ef4444', icon: '🏠', isSystemCategory: true, sortOrder: 10 },
-    { name: 'Transportation', type: 'expense' as CategoryType, color: '#f59e0b', icon: '🚗', isSystemCategory: true, sortOrder: 11 },
-    { name: 'Food', type: 'expense' as CategoryType, color: '#84cc16', icon: '🍔', isSystemCategory: true, sortOrder: 12 },
-    { name: 'Utilities', type: 'expense' as CategoryType, color: '#06b6d4', icon: '⚡', isSystemCategory: true, sortOrder: 13 },
-    { name: 'Healthcare', type: 'expense' as CategoryType, color: '#ec4899', icon: '🏥', isSystemCategory: true, sortOrder: 14 },
-    { name: 'Entertainment', type: 'expense' as CategoryType, color: '#8b5cf6', icon: '🎮', isSystemCategory: true, sortOrder: 15 },
-    { name: 'Insurance', type: 'expense' as CategoryType, color: '#3b82f6', icon: '🛡️', isSystemCategory: true, sortOrder: 16 },
-    { name: 'Debt Payments', type: 'expense' as CategoryType, color: '#dc2626', icon: '💳', isSystemCategory: true, sortOrder: 17 },
-    { name: 'Savings', type: 'expense' as CategoryType, color: '#10b981', icon: '💰', isSystemCategory: true, sortOrder: 18 },
-    { name: 'Other Expense', type: 'expense' as CategoryType, color: '#6b7280', icon: '📦', isSystemCategory: true, sortOrder: 19 },
-  ];
+  const passwordHash = await hashPassword(password);
 
-  // Get all existing system categories
-  const existingCategories = await prisma.category.findMany({
-    where: { householdId: null, parentCategoryId: null },
+  const user = await prisma.user.upsert({
+    where: { email },
+    create: {
+      email,
+      passwordHash,
+      name: "Test Owner",
+    },
+    update: { passwordHash, name: "Test Owner" },
   });
 
-  const desiredCategoryNames = desiredCategories.map(c => c.name);
+  const household = await prisma.household.upsert({
+    where: { id: user.activeHouseholdId ?? "seed-household" },
+    create: {
+      name: "Test Household",
+      members: {
+        create: { userId: user.id, role: "owner" },
+      },
+    },
+    update: {},
+  });
 
-  // Delete old system categories that are not in our desired list
-  for (const existing of existingCategories) {
-    if (!desiredCategoryNames.includes(existing.name)) {
-      logger.info(`Removing old category: ${existing.name}`);
-      // Delete subcategories first
-      await prisma.category.deleteMany({
-        where: { parentCategoryId: existing.id },
-      });
-      // Delete the category
-      await prisma.category.delete({
-        where: { id: existing.id },
-      });
-    }
+  // Update active household
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { activeHouseholdId: household.id },
+  });
+
+  const hId = household.id;
+
+  // ─── Household Settings ────────────────────────────────────────────────────
+
+  await prisma.householdSettings.upsert({
+    where: { householdId: hId },
+    create: { householdId: hId },
+    update: {},
+  });
+
+  // ─── Subcategories ─────────────────────────────────────────────────────────
+
+  await subcategoryService.seedDefaults(hId);
+
+  const incomeSalaryId = await subcategoryService.getSubcategoryIdByName(hId, "income", "Salary");
+  const committedOtherId = await subcategoryService.getSubcategoryIdByName(
+    hId,
+    "committed",
+    "Other"
+  );
+  const discretionaryFoodId = await subcategoryService.getSubcategoryIdByName(
+    hId,
+    "discretionary",
+    "Food"
+  );
+  const discretionarySavingsId = await subcategoryService.getSubcategoryIdByName(
+    hId,
+    "discretionary",
+    "Savings"
+  );
+
+  if (!incomeSalaryId || !committedOtherId || !discretionaryFoodId || !discretionarySavingsId) {
+    throw new Error("Failed to resolve subcategory IDs for seeding");
   }
 
-  // Create or update categories
-  for (const category of desiredCategories) {
-    const existing = await prisma.category.findFirst({
-      where: { name: category.name, householdId: null, parentCategoryId: null },
+  // ─── Income Sources ────────────────────────────────────────────────────────
+
+  const incomeData = [
+    {
+      name: "Alice Salary",
+      amount: 3500,
+      frequency: "monthly" as const,
+      incomeType: "salary" as const,
+      subcategoryId: incomeSalaryId,
+      ownerId: user.id,
+      sortOrder: 0,
+    },
+    {
+      name: "Bob Salary",
+      amount: 2800,
+      frequency: "monthly" as const,
+      incomeType: "salary" as const,
+      subcategoryId: incomeSalaryId,
+      sortOrder: 1,
+    },
+  ];
+
+  for (const income of incomeData) {
+    const existing = await prisma.incomeSource.findFirst({
+      where: { householdId: hId, name: income.name },
     });
-
-    if (existing) {
-      // Update existing category to ensure it matches our spec
-      await prisma.category.update({
-        where: { id: existing.id },
-        data: {
-          type: category.type,
-          color: category.color,
-          icon: category.icon,
-          sortOrder: category.sortOrder,
-          isSystemCategory: true,
-        },
-      });
-      logger.info(`Updated category: ${category.name}`);
-    } else {
-      // Create new category
-      await prisma.category.create({
-        data: {
-          ...category,
-          householdId: null, // System categories
-        },
-      });
-      logger.info(`Created category: ${category.name}`);
+    if (!existing) {
+      await prisma.incomeSource.create({ data: { householdId: hId, ...income } });
     }
   }
 
-  logger.info('✓ Default categories seeded successfully (flat list, no subcategories)');
-}
+  // ─── Committed Items (monthly) ─────────────────────────────────────────────
 
-/**
- * Main seed function
- */
-async function main() {
-  try {
-    await seedCategories();
-    logger.info('\n✓ Database seeding completed successfully');
-  } catch (error) {
-    logger.error({ err: error }, 'Error seeding database');
-    throw error;
+  const committedData = [
+    { name: "Rent", amount: 1200, spendType: "monthly" as const, sortOrder: 0 },
+    { name: "Internet", amount: 45, spendType: "monthly" as const, sortOrder: 1 },
+    { name: "Phone", amount: 25, spendType: "monthly" as const, sortOrder: 2 },
+  ];
+
+  for (const item of committedData) {
+    const existing = await prisma.committedItem.findFirst({
+      where: { householdId: hId, name: item.name },
+    });
+    if (!existing) {
+      await prisma.committedItem.create({
+        data: { householdId: hId, subcategoryId: committedOtherId, ...item },
+      });
+    }
   }
+
+  // ─── Committed Items (yearly) ──────────────────────────────────────────────
+
+  const yearlyData = [
+    {
+      name: "Home Insurance",
+      amount: 600,
+      spendType: "yearly" as const,
+      dueMonth: 9,
+      sortOrder: 0,
+    },
+    { name: "Car Tax", amount: 180, spendType: "yearly" as const, dueMonth: 3, sortOrder: 1 },
+  ];
+
+  for (const item of yearlyData) {
+    const existing = await prisma.committedItem.findFirst({
+      where: { householdId: hId, name: item.name },
+    });
+    if (!existing) {
+      await prisma.committedItem.create({
+        data: { householdId: hId, subcategoryId: committedOtherId, ...item },
+      });
+    }
+  }
+
+  // ─── Discretionary Items ───────────────────────────────────────────────────
+
+  const discretionaryData = [
+    { name: "Groceries", amount: 500, spendType: "monthly" as const, sortOrder: 0 },
+    { name: "Dining Out", amount: 150, spendType: "monthly" as const, sortOrder: 1 },
+    { name: "Entertainment", amount: 80, spendType: "monthly" as const, sortOrder: 2 },
+  ];
+
+  for (const item of discretionaryData) {
+    const existing = await prisma.discretionaryItem.findFirst({
+      where: { householdId: hId, name: item.name },
+    });
+    if (!existing) {
+      await prisma.discretionaryItem.create({
+        data: { householdId: hId, subcategoryId: discretionaryFoodId, ...item },
+      });
+    }
+  }
+
+  // ─── Savings Allocations ───────────────────────────────────────────────────
+
+  const savingsData = [
+    { name: "Emergency Fund", amount: 200, spendType: "monthly" as const, sortOrder: 0 },
+  ];
+
+  for (const item of savingsData) {
+    const existing = await prisma.discretionaryItem.findFirst({
+      where: { householdId: hId, name: item.name },
+    });
+    if (!existing) {
+      await prisma.discretionaryItem.create({
+        data: { householdId: hId, subcategoryId: discretionarySavingsId, ...item },
+      });
+    }
+  }
+
+  console.log(`Seed complete: user=${email}, household=${household.name} (${hId})`);
 }
 
-// Run seed
 main()
-  .catch((error) => {
-    logger.error({ err: error }, 'Database seeding failed');
+  .catch((e) => {
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {

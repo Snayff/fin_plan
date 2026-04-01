@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || '';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "";
 
 export interface ApiError {
   message: string;
@@ -29,32 +29,32 @@ export class ApiClient {
 
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       const response = await fetch(`${this.baseUrl}/api/auth/csrf-token`, {
-        credentials: 'include',
+        credentials: "include",
       });
 
       if (response.ok) {
         const data = await response.json();
-        const token: string = data.csrfToken || '';
+        const token: string = data.csrfToken || "";
         this.csrfToken = token;
         return token;
       }
 
       // Retry on 5xx (e.g. backend restarting due to hot-reload)
       if (response.status >= 500 && attempt < MAX_RETRIES) {
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
         continue;
       }
 
       throw {
-        message: 'Failed to fetch CSRF token',
-        code: 'CSRF_FETCH_ERROR',
+        message: "Failed to fetch CSRF token",
+        code: "CSRF_FETCH_ERROR",
         statusCode: response.status,
       } as ApiError;
     }
 
     throw {
-      message: 'Failed to fetch CSRF token after retries',
-      code: 'CSRF_FETCH_ERROR',
+      message: "Failed to fetch CSRF token after retries",
+      code: "CSRF_FETCH_ERROR",
       statusCode: 500,
     } as ApiError;
   }
@@ -62,16 +62,16 @@ export class ApiClient {
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
-    isRetry = false,
+    isRetry = false
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
 
     // Automatically include auth token from store if not explicitly provided and not auth endpoint
     let authHeaders = {};
-    const isAuthEndpoint = endpoint.startsWith('/api/auth');
+    const isAuthEndpoint = endpoint.startsWith("/api/auth");
     if (!isAuthEndpoint) {
       try {
-        const { useAuthStore } = await import('../stores/authStore');
+        const { useAuthStore } = await import("../stores/authStore");
         const token = useAuthStore.getState().accessToken;
         if (token) {
           authHeaders = { Authorization: `Bearer ${token}` };
@@ -84,33 +84,41 @@ export class ApiClient {
     try {
       // Get CSRF token for all state-changing requests (including auth endpoints)
       let csrfToken: string | undefined;
-      if (['POST', 'PUT', 'DELETE'].includes(options.method || 'GET')) {
+      if (["POST", "PUT", "DELETE"].includes(options.method || "GET")) {
         csrfToken = await this.fetchCsrfToken();
       }
 
       const config: RequestInit = {
         ...options,
-        credentials: 'include', // CRITICAL: Send cookies
+        credentials: "include", // CRITICAL: Send cookies
         headers: {
-          ...(options.body !== undefined && { 'Content-Type': 'application/json' }),
-          ...(csrfToken && { 'X-CSRF-Token': csrfToken }),
+          ...(options.body !== undefined && { "Content-Type": "application/json" }),
+          ...(csrfToken && { "X-CSRF-Token": csrfToken }),
           ...authHeaders,
           ...options.headers, // Allow explicit override
         },
       };
 
       const response = await fetch(url, config);
-      const data = await response.json();
+      const data =
+        response.status === 204 || response.headers.get("content-length") === "0"
+          ? undefined
+          : await response.json();
 
       if (!response.ok) {
         const apiError: ApiError = {
-          message: data.error?.message || 'Request failed',
+          message: data.error?.message || "Request failed",
           code: data.error?.code,
           statusCode: response.status,
         };
 
         // Handle 401 errors - attempt to refresh token
-        if (response.status === 401 && !isRetry && endpoint !== '/api/auth/refresh' && endpoint !== '/api/auth/login') {
+        if (
+          response.status === 401 &&
+          !isRetry &&
+          endpoint !== "/api/auth/refresh" &&
+          endpoint !== "/api/auth/login"
+        ) {
           const newAccessToken = await this.handleTokenRefresh();
 
           if (newAccessToken) {
@@ -127,7 +135,7 @@ export class ApiClient {
         }
 
         // Handle CSRF token errors
-        if (response.status === 403 && data.error?.code === 'FST_CSRF_INVALID_TOKEN') {
+        if (response.status === 403 && data.error?.code === "FST_CSRF_INVALID_TOKEN") {
           // Clear cached CSRF token and retry
           this.csrfToken = null;
           if (!isRetry) {
@@ -143,18 +151,18 @@ export class ApiClient {
       if ((error as ApiError).statusCode) {
         throw error;
       }
-      
+
       // Log the actual error in development for easier debugging
       if (import.meta.env.DEV) {
-        console.error('Network request failed:', {
+        console.error("Network request failed:", {
           url,
           error,
-          message: error instanceof Error ? error.message : 'Unknown error',
+          message: error instanceof Error ? error.message : "Unknown error",
         });
       }
-      
+
       throw {
-        message: 'Network error',
+        message: "Network error",
         statusCode: 0,
       } as ApiError;
     }
@@ -171,11 +179,11 @@ export class ApiClient {
     this.refreshPromise = (async () => {
       try {
         // Get auth store dynamically to avoid circular dependency
-        const { useAuthStore } = await import('../stores/authStore');
+        const { useAuthStore } = await import("../stores/authStore");
         const authStore = useAuthStore.getState();
 
         // Call refresh endpoint - refreshToken is in httpOnly cookie
-        const { authService } = await import('../services/auth.service');
+        const { authService } = await import("../services/auth.service");
         const { accessToken } = await authService.refreshToken();
 
         if (authStore.user) {
@@ -189,12 +197,12 @@ export class ApiClient {
         return accessToken;
       } catch (error) {
         // Refresh failed - clear client auth state and force login.
-        console.error('Token refresh failed:', error);
-        const { useAuthStore } = await import('../stores/authStore');
+        console.error("Token refresh failed:", error);
+        const { useAuthStore } = await import("../stores/authStore");
         useAuthStore.getState().setUnauthenticated();
 
         // Redirect to login
-        window.location.href = '/login';
+        window.location.href = "/login";
         return null;
       } finally {
         this.isRefreshing = false;
@@ -207,14 +215,14 @@ export class ApiClient {
 
   async get<T>(endpoint: string, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'GET',
+      method: "GET",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     });
   }
 
   async post<T>(endpoint: string, data?: any, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'POST',
+      method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -222,7 +230,7 @@ export class ApiClient {
 
   async put<T>(endpoint: string, data?: any, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'PUT',
+      method: "PUT",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: data ? JSON.stringify(data) : undefined,
     });
@@ -230,16 +238,17 @@ export class ApiClient {
 
   async patch<T>(endpoint: string, data?: any, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: data ? JSON.stringify(data) : undefined,
     });
   }
 
-  async delete<T>(endpoint: string, token?: string): Promise<T> {
+  async delete<T>(endpoint: string, data?: any, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
+      body: data ? JSON.stringify(data) : undefined,
     });
   }
 }

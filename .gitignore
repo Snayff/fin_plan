@@ -53,6 +53,17 @@ Thumbs.db
 # Docker
 docker-compose.override.yml
 
+# superpowers
+.superpowers/
+docs/scratch/
+
+# claude
+.claude/screenshots/
+
+# WIP
+docs/mockups/
+
+
 # Misc
 .cache/
 temp/

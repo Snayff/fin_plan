@@ -1,226 +1,214 @@
-import { ReactNode, useState } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useAuthStore } from "../../stores/authStore";
-import { householdService } from "../../services/household.service";
-import { authService } from "../../services/auth.service";
-import { Sheet, SheetContent, SheetTrigger } from "../ui/sheet";
-import { Button } from "../ui/button";
-import { MenuIcon, ChevronDownIcon, HomeIcon, PlusIcon } from "lucide-react";
+import { type ReactNode, useState, useCallback } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
+import { Menu } from "lucide-react";
+import { Toaster } from "@/components/common/Toast";
+import { useQueryClient } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/authStore";
+import { HouseholdSwitcher } from "./HouseholdSwitcher";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useStaleDataBanner } from "@/hooks/useStaleDataBanner";
+import { StaleDataBanner } from "@/components/common/StaleDataBanner";
+import { cn } from "@/lib/utils";
+import { GlossaryPopoverProvider } from "@/components/help/GlossaryPopoverContext";
 
-function HouseholdSwitcher() {
+const NAV_ITEMS_GROUP1 = [
+  { to: "/overview", label: "Overview", colorClass: "text-page-accent" },
+] as const;
+
+const NAV_ITEMS_GROUP2 = [
+  { to: "/income", label: "Income", colorClass: "text-tier-income" },
+  { to: "/committed", label: "Committed", colorClass: "text-tier-committed" },
+  { to: "/discretionary", label: "Discretionary", colorClass: "text-tier-discretionary" },
+  { to: "/surplus", label: "Surplus", colorClass: "text-tier-surplus" },
+] as const;
+
+const NAV_ITEMS_GROUP3 = [
+  { to: "/forecast", label: "Forecast", colorClass: "text-page-accent" },
+  { to: "/assets", label: "Assets", colorClass: "text-foreground" },
+  { to: "/goals", label: "Goals", colorClass: "text-foreground" },
+  { to: "/gifts", label: "Gifts", colorClass: "text-foreground" },
+  { to: "/help", label: "Help", colorClass: "text-foreground" },
+] as const;
+
+const SETTINGS_ITEM = { to: "/settings", label: "Settings", colorClass: "text-foreground" };
+
+export default function Layout({ children }: { children: ReactNode }) {
+  const logout = useAuthStore((s) => s.logout);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
-  const { user, setUser, accessToken } = useAuthStore();
-  const [open, setOpen] = useState(false);
-  const [isSwitching, setIsSwitching] = useState(false);
+  const [navOpen, setNavOpen] = useState(false);
 
-  const { data } = useQuery({
-    queryKey: ["households"],
-    queryFn: () => householdService.getHouseholds(),
-    enabled: !!user,
-  });
+  const handleSignOut = useCallback(async () => {
+    await logout();
+    navigate("/login");
+  }, [logout, navigate]);
 
-  const households = data?.households ?? [];
-  const current = households.find((m) => m.household.id === user?.activeHouseholdId);
+  const { showBanner, lastSyncedAt } = useStaleDataBanner();
+  const qc = useQueryClient();
 
-  const handleSwitch = async (id: string) => {
-    if (id === user?.activeHouseholdId || isSwitching) return;
-    setIsSwitching(true);
-    setOpen(false);
-    try {
-      await householdService.switchHousehold(id);
-      const { user: updatedUser } = await authService.getCurrentUser(accessToken!);
-      setUser(updatedUser, accessToken!);
-      queryClient.invalidateQueries();
-      navigate("/dashboard");
-    } finally {
-      setIsSwitching(false);
-    }
-  };
+  const handleBannerRetry = useCallback(() => {
+    qc.getQueryCache()
+      .getAll()
+      .forEach((query) => {
+        if (query.state.status === "error") {
+          void qc.refetchQueries({ queryKey: query.queryKey });
+        }
+      });
+  }, [qc]);
 
   return (
-    <div className="relative">
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors"
-        disabled={isSwitching}
+    <div className="flex flex-col h-screen bg-background text-foreground">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-card focus:text-foreground focus:rounded-md focus:ring-2 focus:ring-ring"
       >
-        <HomeIcon className="h-4 w-4 shrink-0" />
-        <span className="max-w-[140px] truncate">{current?.household.name ?? "My Household"}</span>
-        <ChevronDownIcon className="h-3 w-3 shrink-0" />
-      </button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute left-0 top-full mt-1 z-20 w-56 rounded-md border border-border bg-card shadow-lg">
-            <div className="py-1">
-              {households.map((m) => (
-                <button
-                  key={m.household.id}
-                  onClick={() => handleSwitch(m.household.id)}
-                  className={`w-full text-left flex items-center gap-2 px-3 py-2 text-sm transition-colors ${
-                    m.household.id === user?.activeHouseholdId
-                      ? "text-primary font-medium"
-                      : "text-foreground hover:bg-muted"
-                  }`}
-                >
-                  <HomeIcon className="h-4 w-4 shrink-0 text-muted-foreground" />
-                  <span className="truncate">{m.household.name}</span>
-                  {m.household.id === user?.activeHouseholdId && (
-                    <span className="ml-auto text-xs text-primary">active</span>
-                  )}
-                </button>
-              ))}
-              <div className="border-t border-border mt-1 pt-1">
-                <button
-                  onClick={() => { setOpen(false); navigate("/profile"); }}
-                  className="w-full text-left flex items-center gap-2 px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                >
-                  <PlusIcon className="h-4 w-4" />
-                  Create household
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
-
-interface LayoutProps {
-  children: ReactNode;
-}
-
-export default function Layout({ children }: LayoutProps) {
-  const location = useLocation();
-  const { user, logout } = useAuthStore();
-  const navigate = useNavigate();
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Accounts", href: "/accounts" },
-    { name: "Transactions", href: "/transactions" },
-    { name: "Assets", href: "/assets" },
-    { name: "Liabilities", href: "/liabilities" },
-    { name: "Budget", href: "/budget" },
-    { name: "Goals", href: "/goals" },
-  ];
-
-  return (
-    <div className="min-h-screen bg-background">
-      {/* Navigation */}
-      <nav className="bg-card border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              {/* Mobile hamburger */}
-              <div className="flex sm:hidden mr-2">
-                <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="Open menu">
-                      <MenuIcon className="h-5 w-5" />
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent side="left" className="w-64 pt-12">
-                    <nav className="flex flex-col gap-1 mt-2">
-                      {navigation.map((item) => (
-                        <Link
-                          key={item.name}
-                          to={item.href}
-                          className={`px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                            location.pathname === item.href
-                              ? "bg-primary text-primary-foreground"
-                              : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                          }`}
-                        >
-                          {item.name}
-                        </Link>
-                      ))}
-                    </nav>
-                    <div className="border-t border-border mt-4 pt-4 flex flex-col gap-1">
-                      <Link
-                        to="/profile"
-                        className="px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      >
-                        View Profile
-                      </Link>
-                      <button
-                        onClick={logout}
-                        className="text-left px-3 py-2 rounded-md text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      >
-                        Sign Out
-                      </button>
-                    </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
-
-              <div className="flex-shrink-0 flex items-center">
-                <span className="text-2xl font-bold text-primary">FinPlan</span>
-              </div>
-
-              {/* Desktop nav links */}
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-                {navigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      location.pathname === item.href
-                        ? "border-primary text-foreground"
-                        : "border-transparent text-muted-foreground hover:border-border hover:text-foreground"
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
-              <HouseholdSwitcher />
-              <div className="relative hidden sm:block">
-                <button
-                  onClick={() => setUserMenuOpen((v) => !v)}
-                  className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground px-2 py-1 rounded-md hover:bg-muted transition-colors"
-                >
-                  {user?.name}
-                  <ChevronDownIcon className="h-3 w-3 shrink-0" />
-                </button>
-                {userMenuOpen && (
-                  <>
-                    <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-                    <div className="absolute right-0 top-full mt-1 z-20 w-44 rounded-md border border-border bg-card shadow-lg">
-                      <div className="py-1">
-                        <button
-                          onClick={() => { setUserMenuOpen(false); navigate('/profile'); }}
-                          className="w-full text-left px-3 py-2 text-sm text-foreground hover:bg-muted transition-colors"
-                        >
-                          View Profile
-                        </button>
-                        <div className="border-t border-border my-1" />
-                        <button
-                          onClick={() => { setUserMenuOpen(false); logout(); }}
-                          className="w-full text-left px-3 py-2 text-sm text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                        >
-                          Sign Out
-                        </button>
-                      </div>
-                    </div>
-                  </>
+        Skip to content
+      </a>
+      {/* Top bar */}
+      <header className="h-12 shrink-0 border-b flex items-center px-4 gap-4">
+        {/* Left: wordmark + switcher */}
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Mobile hamburger */}
+          <Sheet open={navOpen} onOpenChange={setNavOpen}>
+            <SheetTrigger asChild>
+              <button
+                type="button"
+                className="md:hidden p-1 text-muted-foreground hover:text-foreground transition-colors"
+                aria-label="Open navigation"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-64 p-0">
+              <nav className="flex flex-col gap-1 p-4 pt-8">
+                {[...NAV_ITEMS_GROUP1, ...NAV_ITEMS_GROUP2, ...NAV_ITEMS_GROUP3, SETTINGS_ITEM].map(
+                  (item) => (
+                    <NavLink
+                      key={item.to}
+                      to={item.to}
+                      onClick={() => setNavOpen(false)}
+                      className={({ isActive }) =>
+                        cn(
+                          "px-3 py-2 rounded text-sm font-medium transition-colors",
+                          item.colorClass,
+                          isActive
+                            ? "opacity-100 bg-accent/10"
+                            : "opacity-70 hover:opacity-90 hover:bg-accent/5"
+                        )
+                      }
+                    >
+                      {item.label}
+                    </NavLink>
+                  )
                 )}
-              </div>
-            </div>
-          </div>
+                <div className="border-t mt-4 pt-4 space-y-2">
+                  <button
+                    onClick={() => {
+                      setNavOpen(false);
+                      void handleSignOut();
+                    }}
+                    className="px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full text-left"
+                    type="button"
+                  >
+                    Sign out
+                  </button>
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
+          <span className="font-heading font-bold text-lg tracking-tight text-foreground">
+            finplan
+          </span>
+          <HouseholdSwitcher />
         </div>
-      </nav>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">{children}</main>
+        {/* Centre: nav (desktop) */}
+        <nav className="hidden md:flex items-center gap-3 flex-1">
+          {NAV_ITEMS_GROUP1.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  "relative pb-0.5 text-sm font-medium transition-colors duration-150",
+                  item.colorClass,
+                  isActive
+                    ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
+                    : "opacity-70 hover:opacity-90"
+                )
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="h-4 w-px bg-foreground/[0.12] mx-1"
+          />
+          {NAV_ITEMS_GROUP2.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  "relative pb-0.5 text-sm font-medium transition-colors duration-150",
+                  item.colorClass,
+                  isActive
+                    ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
+                    : "opacity-70 hover:opacity-90"
+                )
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+          <div
+            role="separator"
+            aria-orientation="vertical"
+            className="h-4 w-px bg-foreground/[0.12] mx-1"
+          />
+          {NAV_ITEMS_GROUP3.map((item) => (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              className={({ isActive }) =>
+                cn(
+                  "relative pb-0.5 text-sm font-medium transition-colors duration-150",
+                  item.colorClass,
+                  isActive
+                    ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
+                    : "opacity-70 hover:opacity-90"
+                )
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+          <NavLink
+            to={SETTINGS_ITEM.to}
+            className={({ isActive }) =>
+              cn(
+                "relative pb-0.5 text-sm font-medium transition-colors duration-150 ml-auto",
+                SETTINGS_ITEM.colorClass,
+                isActive
+                  ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
+                  : "opacity-70 hover:opacity-90"
+              )
+            }
+          >
+            {SETTINGS_ITEM.label}
+          </NavLink>
+        </nav>
+      </header>
+
+      {showBanner && <StaleDataBanner lastSyncedAt={lastSyncedAt} onRetry={handleBannerRetry} />}
+
+      {/* Page content */}
+      <main id="main-content" className="flex-1 min-h-0 overflow-hidden">
+        <GlossaryPopoverProvider>{children}</GlossaryPopoverProvider>
+      </main>
+
+      <Toaster />
     </div>
   );
 }

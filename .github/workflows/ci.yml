@@ -111,7 +111,7 @@ jobs:
         run: cd apps/backend && bunx prisma generate
 
       - name: Push schema to test database
-        run: cd apps/backend && bunx prisma db push --skip-generate
+        run: cd apps/backend && bunx prisma db push
 
       - name: Run tests
         run: bun run test
@@ -135,6 +135,10 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run security audit
+        # continue-on-error suppresses the 1 known moderate: ajv ReDoS (GHSA-2g4f-4pwh-qvx6)
+        # via ESLint's internal ajv v6 dependency. ESLint uses ajv v6-only APIs that are
+        # incompatible with v8 — forcing v8 crashes the linter at runtime. Suppressed until
+        # ESLint migrates to ajv v8 internally: https://github.com/eslint/eslint/issues/18084
         run: bun audit
         continue-on-error: true
 

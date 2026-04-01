@@ -1,0 +1,232 @@
+<h2>Expanded Item — Aligned, No Divider</h2>
+<p class="subtitle">Accordion content left-aligns with the item name. No divider between notes and staleness.</p>
+
+<style>
+  .fp-mock {
+    background: #0d1120;
+    border: 1px solid #1a1f35;
+    border-radius: 8px;
+    overflow: hidden;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    max-width: 620px;
+    margin: 0 auto;
+  }
+  .fp-mock * { box-sizing: border-box; }
+
+  .fp-row {
+    display: flex;
+    align-items: flex-start;
+    padding: 10px 16px;
+    font-size: 13px;
+    cursor: pointer;
+    transition: background 0.15s ease-out;
+    gap: 8px;
+  }
+  .fp-row:hover { background: rgba(99, 102, 241, 0.05); }
+  .fp-row + .fp-row { border-top: 1px solid rgba(238, 242, 255, 0.05); }
+
+  .fp-row-selected {
+    background: rgba(99, 102, 241, 0.08);
+    border-left: 2px solid #6366f1;
+    padding-left: 14px;
+  }
+
+  .fp-dot { width: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; margin-top: 5px; }
+  .fp-dot-amber { width: 5px; height: 5px; border-radius: 50%; background: #f59e0b; }
+
+  .fp-left { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+  .fp-name { color: rgba(238, 242, 255, 0.65); font-size: 13px; }
+  .fp-meta { font-size: 11px; color: rgba(238, 242, 255, 0.3); }
+
+  .fp-right { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; }
+  .fp-amount-top { font-family: 'JetBrains Mono', monospace; font-size: 13px; color: rgba(238, 242, 255, 0.7); white-space: nowrap; }
+  .fp-amount-bottom { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: rgba(238, 242, 255, 0.3); white-space: nowrap; }
+
+  .fp-accordion {
+    border-top: 1px solid rgba(238, 242, 255, 0.05);
+    background: rgba(238, 242, 255, 0.02);
+    border-left: 2px solid #6366f1;
+    /* 14px padding-left + 8px dot + 8px gap = 30px to align with item name */
+    padding: 10px 16px 10px 30px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .fp-acc-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .fp-acc-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: rgba(238, 242, 255, 0.3);
+    margin-bottom: 2px;
+  }
+  .fp-acc-value {
+    color: rgba(238, 242, 255, 0.5);
+    font-size: 12px;
+    font-style: italic;
+  }
+  .fp-acc-empty {
+    color: rgba(238, 242, 255, 0.2);
+    font-size: 12px;
+  }
+  .fp-acc-stale {
+    color: #f59e0b;
+    font-size: 12px;
+  }
+
+  .fp-stale-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .fp-stale-dot {
+    width: 5px; height: 5px; border-radius: 50%; background: #f59e0b; flex-shrink: 0;
+  }
+
+  .fp-btn {
+    border: 1px solid rgba(238, 242, 255, 0.1);
+    background: transparent;
+    color: rgba(238, 242, 255, 0.6);
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    white-space: nowrap;
+    flex-shrink: 0;
+    align-self: flex-start;
+  }
+
+  .mock-label {
+    padding: 8px 16px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: rgba(238, 242, 255, 0.3);
+    font-weight: 600;
+    border-bottom: 1px solid rgba(238, 242, 255, 0.05);
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+</style>
+
+<div class="split">
+  <div class="mockup" style="max-width: 620px;">
+    <div class="mockup-header">Stale Item — With Notes</div>
+    <div class="mockup-body" style="padding: 0;">
+      <div class="fp-mock">
+        <div class="fp-row">
+          <span class="fp-dot"></span>
+          <span class="fp-left">
+            <span class="fp-name">Council Tax</span>
+            <span class="fp-meta">Monthly · Housing</span>
+          </span>
+          <span class="fp-right">
+            <span class="fp-amount-top">£185.00/mo</span>
+            <span class="fp-amount-bottom">£2,220.00/yr</span>
+          </span>
+        </div>
+
+        <div class="fp-row fp-row-selected">
+          <span class="fp-dot"><span class="fp-dot-amber"></span></span>
+          <span class="fp-left">
+            <span class="fp-name">Netflix</span>
+            <span class="fp-meta">Monthly · Entertainment</span>
+          </span>
+          <span class="fp-right">
+            <span class="fp-amount-top">£15.99/mo</span>
+            <span class="fp-amount-bottom">£191.88/yr</span>
+          </span>
+        </div>
+
+        <div class="fp-accordion">
+          <div class="fp-acc-content">
+            <div>
+              <div class="fp-acc-label">Notes</div>
+              <div class="fp-acc-value">Price went up from £13.99 in December</div>
+            </div>
+            <div>
+              <div class="fp-acc-label">Last Reviewed</div>
+              <div class="fp-stale-row">
+                <span class="fp-stale-dot"></span>
+                <span class="fp-acc-stale">Jan 2025 · 14 months ago</span>
+              </div>
+            </div>
+          </div>
+          <button class="fp-btn">Edit</button>
+        </div>
+
+        <div class="fp-row">
+          <span class="fp-dot"></span>
+          <span class="fp-left">
+            <span class="fp-name">Gym Membership</span>
+            <span class="fp-meta">Monthly · Health &amp; Fitness</span>
+          </span>
+          <span class="fp-right">
+            <span class="fp-amount-top">£39.99/mo</span>
+            <span class="fp-amount-bottom">£479.88/yr</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup" style="max-width: 620px;">
+    <div class="mockup-header">Current Item — No Staleness</div>
+    <div class="mockup-body" style="padding: 0;">
+      <div class="fp-mock">
+        <div class="fp-row">
+          <span class="fp-dot"></span>
+          <span class="fp-left">
+            <span class="fp-name">Council Tax</span>
+            <span class="fp-meta">Monthly · Housing</span>
+          </span>
+          <span class="fp-right">
+            <span class="fp-amount-top">£185.00/mo</span>
+            <span class="fp-amount-bottom">£2,220.00/yr</span>
+          </span>
+        </div>
+
+        <div class="fp-row fp-row-selected">
+          <span class="fp-dot"></span>
+          <span class="fp-left">
+            <span class="fp-name">Gym Membership</span>
+            <span class="fp-meta">Monthly · Health &amp; Fitness</span>
+          </span>
+          <span class="fp-right">
+            <span class="fp-amount-top">£39.99/mo</span>
+            <span class="fp-amount-bottom">£479.88/yr</span>
+          </span>
+        </div>
+
+        <div class="fp-accordion">
+          <div class="fp-acc-content">
+            <div>
+              <div class="fp-acc-label">Notes</div>
+              <div class="fp-acc-empty">No notes</div>
+            </div>
+          </div>
+          <button class="fp-btn">Edit</button>
+        </div>
+
+        <div class="fp-row">
+          <span class="fp-dot"><span class="fp-dot-amber"></span></span>
+          <span class="fp-left">
+            <span class="fp-name">Netflix</span>
+            <span class="fp-meta">Monthly · Entertainment</span>
+          </span>
+          <span class="fp-right">
+            <span class="fp-amount-top">£15.99/mo</span>
+            <span class="fp-amount-bottom">£191.88/yr</span>
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,245 @@
+<h2>Concept detail view — sidebar divider</h2>
+<p class="subtitle">Added a subtle horizontal line between Glossary and Concepts sections in the sidebar</p>
+
+<style>
+  .demo-page {
+    background: #080a14;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    color: rgba(255,255,255,0.85);
+    font-size: 13px;
+  }
+  .demo-sidebar {
+    width: 180px;
+    min-width: 180px;
+    background: rgba(255,255,255,0.02);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 16px;
+  }
+  .demo-search {
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 14px;
+  }
+  .section-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.3);
+    letter-spacing: 0.05em;
+    margin: 10px 0 6px;
+    padding: 0 10px;
+  }
+  .sidebar-divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin: 12px 0;
+  }
+  .demo-sidebar-item {
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+    margin-bottom: 2px;
+  }
+  .demo-sidebar-item.active {
+    background: rgba(139,134,255,0.12);
+    color: rgba(255,255,255,0.9);
+  }
+  .demo-main {
+    flex: 1;
+    padding: 28px 32px;
+    overflow-y: auto;
+  }
+  .concept-title {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.95);
+    margin-bottom: 4px;
+  }
+  .concept-type {
+    font-size: 12px;
+    color: rgba(139,134,255,0.7);
+    margin-bottom: 20px;
+  }
+  .concept-summary {
+    font-size: 15px;
+    line-height: 1.75;
+    color: rgba(255,255,255,0.75);
+    margin-bottom: 28px;
+  }
+  .concept-summary .term {
+    text-decoration: underline;
+    text-decoration-style: dotted;
+    text-decoration-color: rgba(255,255,255,0.3);
+    text-underline-offset: 3px;
+    cursor: help;
+  }
+  .concept-summary .example {
+    display: block;
+    margin-top: 10px;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.03);
+    border-left: 3px solid rgba(139,134,255,0.3);
+    border-radius: 0 6px 6px 0;
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+  }
+  .section-heading {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: rgba(255,255,255,0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 14px;
+  }
+  .visual-explainer {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 28px;
+  }
+  .waterfall {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  .waterfall-tier {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+  }
+  .waterfall-tier .tier-label {
+    flex: 1;
+    font-weight: 600;
+  }
+  .waterfall-tier .tier-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+  }
+  .tier-income {
+    background: rgba(99,182,255,0.1);
+    border-left: 3px solid rgba(99,182,255,0.6);
+    color: rgba(99,182,255,0.9);
+  }
+  .tier-committed {
+    background: rgba(255,140,90,0.1);
+    border-left: 3px solid rgba(255,140,90,0.6);
+    color: rgba(255,140,90,0.9);
+  }
+  .tier-discretionary {
+    background: rgba(200,140,255,0.1);
+    border-left: 3px solid rgba(200,140,255,0.6);
+    color: rgba(200,140,255,0.9);
+  }
+  .tier-surplus {
+    background: rgba(100,220,180,0.1);
+    border-left: 3px solid rgba(100,220,180,0.6);
+    color: rgba(100,220,180,0.9);
+  }
+  .waterfall-operator {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(255,255,255,0.3);
+    text-align: center;
+    padding: 0;
+  }
+  .finplan-section {
+    background: rgba(139,134,255,0.05);
+    border: 1px solid rgba(139,134,255,0.1);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 14px;
+    line-height: 1.7;
+    color: rgba(255,255,255,0.65);
+  }
+  .finplan-section strong {
+    color: rgba(255,255,255,0.85);
+  }
+</style>
+
+<div class="demo-page">
+  <div style="display: flex; min-height: 520px;">
+    <div class="demo-sidebar">
+      <div class="demo-search">🔍 Search...</div>
+      <div class="section-label" style="margin-top: 0;">Glossary</div>
+      <div class="demo-sidebar-item">Amortised (÷12)</div>
+      <div class="demo-sidebar-item">Committed Spend</div>
+      <div class="demo-sidebar-item">Discretionary Spend</div>
+      <div class="demo-sidebar-item">Equity Value</div>
+      <div class="demo-sidebar-item">ISA</div>
+      <div class="demo-sidebar-item">ISA Allowance</div>
+      <div class="demo-sidebar-item">Liquidity</div>
+      <div class="demo-sidebar-item">Net Income</div>
+      <div class="demo-sidebar-item">Net Worth</div>
+      <div class="demo-sidebar-item">Snapshot</div>
+      <div class="demo-sidebar-item">Staleness</div>
+      <div class="demo-sidebar-item">Surplus</div>
+      <hr class="sidebar-divider">
+      <div class="section-label">Concepts</div>
+      <div class="demo-sidebar-item active">The Waterfall</div>
+      <div class="demo-sidebar-item">Amortisation</div>
+      <div class="demo-sidebar-item">Compound Interest</div>
+      <div class="demo-sidebar-item">Savings & ISAs</div>
+      <hr class="sidebar-divider">
+      <div class="section-label" style="opacity: 0.4;">User Manual</div>
+      <div class="demo-sidebar-item" style="opacity: 0.4; font-style: italic;">Coming soon</div>
+    </div>
+    <div class="demo-main">
+      <div class="concept-title">The Waterfall</div>
+      <div class="concept-type">Concept</div>
+
+      <div class="concept-summary">
+        The waterfall is the way finplan structures your household finances. All your <span class="term">net income</span> flows in at the top. First, your <span class="term">committed spend</span> is deducted — the bills and contracts you can't easily stop. Then your <span class="term">discretionary spend</span> — the choices you make each month. Whatever remains is your <span class="term">surplus</span>.
+        <span class="example">
+          <strong>Example:</strong> If your household takes home £4,200/month, commits £2,100 to mortgage, bills and contracts, and budgets £1,400 for food, transport, and subscriptions — your surplus is £700.
+        </span>
+      </div>
+
+      <div class="section-heading">Visual Explainer</div>
+      <div class="visual-explainer">
+        <div class="waterfall">
+          <div class="waterfall-tier tier-income">
+            <span class="tier-label">Income</span>
+            <span class="tier-value">£4,200</span>
+          </div>
+          <div class="waterfall-operator">minus ↓</div>
+          <div class="waterfall-tier tier-committed">
+            <span class="tier-label">Committed Spend</span>
+            <span class="tier-value">£2,100</span>
+          </div>
+          <div class="waterfall-operator">minus ↓</div>
+          <div class="waterfall-tier tier-discretionary">
+            <span class="tier-label">Discretionary Spend</span>
+            <span class="tier-value">£1,400</span>
+          </div>
+          <div class="waterfall-operator">equals ↓</div>
+          <div class="waterfall-tier tier-surplus">
+            <span class="tier-label">Surplus</span>
+            <span class="tier-value">£700</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-heading">Why it matters in finplan</div>
+      <div class="finplan-section">
+        The waterfall isn't just a concept — it's the <strong>structure of the entire app</strong>. The Overview page shows your waterfall as a live summary. When you add an income source, a bill, or a discretionary budget, you're building this cascade. The surplus at the bottom updates automatically, giving you an always-current picture of what's left to save or invest.
+      </div>
+    </div>
+  </div>
+</div>

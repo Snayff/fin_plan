@@ -1,0 +1,200 @@
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@500;600&family=Nunito+Sans:wght@400;500&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  .panel-demo {
+    background: #0e1120;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+
+  .panel-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .tier-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #a78bfa;
+    flex-shrink: 0;
+  }
+
+  .panel-header h4 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: #a78bfa;
+    margin: 0;
+    letter-spacing: 0.02em;
+  }
+
+  .item-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+
+  .item-name {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 13px;
+    color: rgba(255,255,255,0.85);
+  }
+
+  .item-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: rgba(255,255,255,0.5);
+  }
+
+  .add-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    color: rgba(255,255,255,0.3);
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 12px;
+  }
+
+  .add-icon {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    border: 1px dashed rgba(255,255,255,0.25);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px;
+    line-height: 1;
+    color: rgba(255,255,255,0.3);
+    flex-shrink: 0;
+  }
+
+  /* Shared stagger keyframe */
+  @keyframes slide-row-in {
+    from { transform: translateX(-22px); opacity: 0; }
+    to   { transform: translateX(0);     opacity: 1; }
+  }
+
+  /* Option A — add row staggers in last */
+  .opt-a .item-row,
+  .opt-a .add-row {
+    opacity: 0;
+    animation: slide-row-in 200ms cubic-bezier(0.25,1,0.5,1) forwards;
+  }
+  .opt-a .item-row:nth-child(1) { animation-delay: 0ms; }
+  .opt-a .item-row:nth-child(2) { animation-delay: 60ms; }
+  .opt-a .item-row:nth-child(3) { animation-delay: 120ms; }
+  .opt-a .item-row:nth-child(4) { animation-delay: 180ms; }
+  .opt-a .item-row:nth-child(5) { animation-delay: 240ms; }
+  .opt-a .add-row               { animation-delay: 300ms; }
+
+  /* Option B — add row appears immediately, no animation */
+  .opt-b .item-row {
+    opacity: 0;
+    animation: slide-row-in 200ms cubic-bezier(0.25,1,0.5,1) forwards;
+  }
+  .opt-b .item-row:nth-child(1) { animation-delay: 0ms; }
+  .opt-b .item-row:nth-child(2) { animation-delay: 60ms; }
+  .opt-b .item-row:nth-child(3) { animation-delay: 120ms; }
+  .opt-b .item-row:nth-child(4) { animation-delay: 180ms; }
+  .opt-b .item-row:nth-child(5) { animation-delay: 240ms; }
+  .opt-b .add-row               { /* no animation — immediate */ }
+
+  .demo-label {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 11px;
+    color: rgba(255,255,255,0.35);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 10px;
+  }
+
+  .replay-btn {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 5px 14px;
+    background: rgba(167,139,250,0.12);
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 6px;
+    color: #a78bfa;
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 12px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .replay-btn:hover { background: rgba(167,139,250,0.22); }
+</style>
+
+<h2>"Add item" row — animate or not?</h2>
+<p class="subtitle">Does the "Add item" row join the stagger, or sit outside it?</p>
+
+<div style="display:flex; gap:32px; flex-wrap:wrap; margin-top:24px;">
+
+  <!-- Option A -->
+  <div style="flex:1; min-width:280px;">
+    <p class="demo-label">Option A — Stagger includes add row</p>
+    <div class="option" data-choice="a" onclick="toggleSelect(this)" style="padding:0; border-radius:12px; overflow:hidden;">
+      <div class="panel-demo opt-a" id="demo-a">
+        <div class="panel-header">
+          <div class="tier-dot"></div>
+          <h4>Committed Spend</h4>
+        </div>
+        <div class="rows-a">
+          <div class="item-row"><span class="item-name">Rent / Mortgage</span><span class="item-value">£1,250</span></div>
+          <div class="item-row"><span class="item-name">Council Tax</span><span class="item-value">£180</span></div>
+          <div class="item-row"><span class="item-name">Electricity</span><span class="item-value">£95</span></div>
+          <div class="item-row"><span class="item-name">Internet</span><span class="item-value">£42</span></div>
+          <div class="item-row"><span class="item-name">Car Insurance</span><span class="item-value">£68</span></div>
+          <div class="add-row"><div class="add-icon">+</div> Add item</div>
+        </div>
+      </div>
+      <div style="padding:12px 16px;">
+        <h3 style="margin:0 0 2px; font-size:14px;">Part of the sequence</h3>
+        <p style="margin:0; font-size:12px;">List feels complete and unified. Slightly longer until it's fully settled.</p>
+      </div>
+    </div>
+    <span class="replay-btn" onclick="replay('a')">↺ Replay</span>
+  </div>
+
+  <!-- Option B -->
+  <div style="flex:1; min-width:280px;">
+    <p class="demo-label">Option B — Add row outside stagger</p>
+    <div class="option" data-choice="b" onclick="toggleSelect(this)" style="padding:0; border-radius:12px; overflow:hidden;">
+      <div class="panel-demo opt-b" id="demo-b">
+        <div class="panel-header">
+          <div class="tier-dot"></div>
+          <h4>Committed Spend</h4>
+        </div>
+        <div class="rows-b">
+          <div class="item-row"><span class="item-name">Rent / Mortgage</span><span class="item-value">£1,250</span></div>
+          <div class="item-row"><span class="item-name">Council Tax</span><span class="item-value">£180</span></div>
+          <div class="item-row"><span class="item-name">Electricity</span><span class="item-value">£95</span></div>
+          <div class="item-row"><span class="item-name">Internet</span><span class="item-value">£42</span></div>
+          <div class="item-row"><span class="item-name">Car Insurance</span><span class="item-value">£68</span></div>
+          <div class="add-row"><div class="add-icon">+</div> Add item</div>
+        </div>
+      </div>
+      <div style="padding:12px 16px;">
+        <h3 style="margin:0 0 2px; font-size:14px;">Immediately visible</h3>
+        <p style="margin:0; font-size:12px;">Action available instantly. Subtle distinction: data rows animate, chrome doesn't.</p>
+      </div>
+    </div>
+    <span class="replay-btn" onclick="replay('b')">↺ Replay</span>
+  </div>
+
+</div>
+
+<script>
+function replay(id) {
+  const el = document.getElementById('demo-' + id);
+  const cls = 'opt-' + id;
+  // Re-clone children to reset animation state
+  el.classList.remove(cls);
+  void el.offsetWidth;
+  el.classList.add(cls);
+}
+</script>

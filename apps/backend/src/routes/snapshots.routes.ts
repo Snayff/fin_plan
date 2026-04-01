@@ -1,0 +1,38 @@
+import type { FastifyInstance } from "fastify";
+import { authMiddleware } from "../middleware/auth.middleware.js";
+import { snapshotService } from "../services/snapshot.service.js";
+import { createSnapshotSchema, renameSnapshotSchema } from "@finplan/shared";
+
+export async function snapshotRoutes(fastify: FastifyInstance) {
+  const pre = { preHandler: [authMiddleware] };
+
+  fastify.get("/", pre, async (req, reply) => {
+    const snapshots = await snapshotService.listSnapshots(req.householdId!);
+    return reply.send(snapshots);
+  });
+
+  fastify.get("/:id", pre, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const snapshot = await snapshotService.getSnapshot(req.householdId!, id);
+    return reply.send(snapshot);
+  });
+
+  fastify.post("/", pre, async (req, reply) => {
+    const data = createSnapshotSchema.parse(req.body);
+    const snapshot = await snapshotService.createSnapshot(req.householdId!, data);
+    return reply.status(201).send(snapshot);
+  });
+
+  fastify.patch("/:id", pre, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const data = renameSnapshotSchema.parse(req.body);
+    const snapshot = await snapshotService.renameSnapshot(req.householdId!, id, data);
+    return reply.send(snapshot);
+  });
+
+  fastify.delete("/:id", pre, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    await snapshotService.deleteSnapshot(req.householdId!, id);
+    return reply.status(204).send();
+  });
+}

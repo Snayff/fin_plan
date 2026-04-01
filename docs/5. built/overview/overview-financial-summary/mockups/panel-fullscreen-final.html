@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Overview — Financial Summary</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=Nunito+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #080a14;
+    color: rgba(238,242,255,0.92);
+    font-family: 'Nunito Sans', sans-serif;
+    height: 100vh; overflow: hidden; position: relative;
+  }
+  body::before {
+    content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(ellipse at 100% 0%, rgba(99,102,241,0.09) 0%, transparent 25%),
+      radial-gradient(ellipse at 0% 100%, rgba(139,92,246,0.05) 0%, transparent 25%);
+  }
+
+  .nav {
+    position: relative; z-index: 10;
+    display: flex; align-items: center;
+    padding: 0 20px; height: 40px;
+    border-bottom: 1px solid #1a1f35;
+    background: rgba(13,17,32,0.98);
+    font-family: 'Outfit', sans-serif;
+  }
+  .nav-brand { font-size: 13px; font-weight: 800; color: rgba(238,242,255,0.92); margin-right: 16px; }
+  .nav-household { font-size: 11px; font-weight: 500; color: rgba(238,242,255,0.35); margin-right: 24px; font-family: 'Nunito Sans', sans-serif; }
+  .nav-link { padding: 0 12px; height: 40px; display: flex; align-items: center; font-size: 12px; font-weight: 700; color: rgba(238,242,255,0.38); letter-spacing: 0.01em; border-bottom: 2px solid transparent; }
+  .nav-link.active { color: rgba(238,242,255,0.92); border-bottom-color: #7c3aed; }
+  .nav-link.ic { color: #0ea5e9; } .nav-link.co { color: #6366f1; } .nav-link.di { color: #a855f7; } .nav-link.su { color: #4adcd0; }
+  .nav-right { margin-left: auto; font-size: 12px; color: rgba(238,242,255,0.32); font-family: 'Nunito Sans', sans-serif; }
+
+  .page { display: flex; height: calc(100vh - 40px); position: relative; z-index: 1; }
+
+  .left-panel {
+    width: 280px; flex-shrink: 0;
+    border-right: 1px solid #1a1f35;
+    background: #0d1120;
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+  }
+  .snapshot-strip { padding: 8px 16px; border-bottom: 1px solid #1a1f35; display: flex; align-items: center; gap: 8px; font-size: 11px; color: rgba(238,242,255,0.28); flex-shrink: 0; }
+  .snap-dot { width: 7px; height: 7px; border-radius: 50%; background: rgba(238,242,255,0.10); border: 1px solid rgba(255,255,255,0.08); }
+  .snap-dot.now { background: #7c3aed; border-color: #7c3aed; box-shadow: 0 0 5px rgba(124,58,237,0.5); }
+  .left-header { padding: 18px 20px 14px; font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; flex-shrink: 0; }
+  .tier-heading { display: flex; align-items: baseline; justify-content: space-between; padding: 8px 20px 4px; font-family: 'Outfit', sans-serif; font-size: 11px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+  .tier-heading .total { font-family: 'JetBrains Mono', monospace; font-size: 13px; font-weight: 600; }
+  .item-row { display: flex; align-items: center; justify-content: space-between; padding: 5px 20px; font-size: 12px; color: rgba(238,242,255,0.50); }
+  .item-row .amt { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(203,213,225,0.72); }
+  .item-row.dim { color: rgba(238,242,255,0.20); } .item-row.dim .amt { color: rgba(238,242,255,0.20); }
+  .connector { display: flex; align-items: center; gap: 8px; padding: 8px 20px; font-family: 'JetBrains Mono', monospace; font-size: 9.5px; color: rgba(238,242,255,0.17); letter-spacing: 0.06em; }
+  .connector-line { flex: 1; height: 1px; background: rgba(255,255,255,0.05); }
+  .ic { color: #0ea5e9; } .co { color: #6366f1; } .di { color: #a855f7; } .su { color: #4adcd0; }
+
+  /* Right panel — centred column */
+  .right-panel {
+    flex: 1;
+    padding: 28px 32px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .summary-card {
+    width: 62%;
+    background: #0d1120;
+    border: 1px solid #1a1f35;
+    border-radius: 10px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .nw-inner {
+    padding: 20px 24px 0;
+    background: linear-gradient(135deg, rgba(99,102,241,0.07) 0%, rgba(168,85,247,0.04) 100%);
+    text-align: center;
+  }
+  .nw-label { font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase; color: rgba(238,242,255,0.28); }
+  .nw-value { font-family: 'JetBrains Mono', monospace; font-size: 32px; font-weight: 600; margin: 7px 0 4px; line-height: 1; }
+  .nw-delta { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: rgba(238,242,255,0.30); margin-bottom: 14px; }
+
+  .tier-inner { padding: 13px 20px 0; text-align: center; }
+  .tier-name { font-family: 'Outfit', sans-serif; font-size: 9px; font-weight: 800; letter-spacing: 0.09em; text-transform: uppercase; }
+  .tier-amount { font-family: 'JetBrains Mono', monospace; font-size: 19px; font-weight: 600; margin: 5px 0 11px; color: rgba(238,242,255,0.88); }
+  .spark-wrap { padding: 0 14px; }
+  .spark-wrap svg { display: block; width: 100%; overflow: visible; }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <span class="nav-brand">finplan</span>
+  <span class="nav-household">Snaith Household</span>
+  <a class="nav-link active">Overview</a>
+  <a class="nav-link ic">Income</a>
+  <a class="nav-link co">Committed</a>
+  <a class="nav-link di">Discretionary</a>
+  <a class="nav-link su">Surplus</a>
+  <div style="width:1px;height:16px;background:#1a1f35;margin:0 10px;"></div>
+  <a class="nav-link">Goals</a>
+  <a class="nav-link">Gifts</a>
+  <a class="nav-link">Help</a>
+  <div class="nav-right">Settings</div>
+</nav>
+
+<div class="page">
+  <aside class="left-panel">
+    <div class="snapshot-strip">
+      <span>Snapshots</span>
+      <span style="color:rgba(238,242,255,0.12)">·</span>
+      <div class="snap-dot"></div><div class="snap-dot"></div><div class="snap-dot now"></div>
+      <span style="margin-left:auto;font-size:10px;color:rgba(238,242,255,0.20)">Review ▸</span>
+    </div>
+    <div class="left-header">Overview</div>
+    <div>
+      <div class="tier-heading ic"><span>Income</span><span class="total">£3,000</span></div>
+      <div class="item-row"><span>Salary</span><span class="amt">£3,000</span></div>
+      <div class="item-row dim"><span>Dividends</span><span class="amt">£0</span></div>
+      <div class="item-row dim"><span>Other</span><span class="amt">£0</span></div>
+      <div class="connector"><div class="connector-line"></div><span>minus committed</span><div class="connector-line"></div></div>
+      <div class="tier-heading co"><span>Committed</span><span class="total">£1,500</span></div>
+      <div class="item-row"><span>Housing</span><span class="amt">£1,500</span></div>
+      <div class="item-row dim"><span>Utilities</span><span class="amt">£0</span></div>
+      <div class="item-row dim"><span>Services</span><span class="amt">£0</span></div>
+      <div class="connector"><div class="connector-line"></div><span>minus discretionary</span><div class="connector-line"></div></div>
+      <div class="tier-heading di"><span>Discretionary</span><span class="total">£800</span></div>
+      <div class="item-row"><span>Food</span><span class="amt">£400</span></div>
+      <div class="item-row"><span>Fun</span><span class="amt">£200</span></div>
+      <div class="item-row"><span>Savings</span><span class="amt">£200</span></div>
+      <div class="item-row dim"><span>Clothes</span><span class="amt">£0</span></div>
+      <div class="connector"><div class="connector-line"></div><span>equals</span><div class="connector-line"></div></div>
+      <div class="tier-heading su"><span>Surplus</span><span class="total">£700</span></div>
+    </div>
+  </aside>
+
+  <main class="right-panel">
+
+    <div class="summary-card">
+      <div class="nw-inner">
+        <div class="nw-label">Net worth</div>
+        <div class="nw-value">£84,200</div>
+        <div class="nw-delta">+£3,400 this year</div>
+      </div>
+      <svg viewBox="0 0 1000 52" preserveAspectRatio="none" height="52" width="100%" fill="none">
+        <defs><linearGradient id="g-nw" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(99,102,241,0.38)"/><stop offset="100%" stop-color="rgba(99,102,241,0)"/></linearGradient></defs>
+        <path d="M0,44 C150,38 300,30 450,22 C600,14 750,9 980,4" stroke="rgba(99,102,241,0.85)" stroke-width="1.5" fill="none"/>
+        <path d="M0,44 C150,38 300,30 450,22 C600,14 750,9 980,4 L980,52 L0,52 Z" fill="url(#g-nw)"/>
+        <circle cx="980" cy="4" r="4" fill="#6366f1"/>
+      </svg>
+    </div>
+
+    <div class="summary-card">
+      <div class="tier-inner"><div class="tier-name ic">Income</div><div class="tier-amount">£3,000</div></div>
+      <div class="spark-wrap">
+        <svg viewBox="0 0 1000 40" preserveAspectRatio="none" height="40" fill="none">
+          <defs><linearGradient id="g-inc" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(14,165,233,0.34)"/><stop offset="100%" stop-color="rgba(14,165,233,0)"/></linearGradient></defs>
+          <path d="M0,28 L230,28 L310,17 L980,17" stroke="#0ea5e9" stroke-width="1.5" fill="none" opacity="0.9"/>
+          <path d="M0,28 L230,28 L310,17 L980,17 L980,40 L0,40 Z" fill="url(#g-inc)"/>
+          <circle cx="980" cy="17" r="4" fill="#0ea5e9"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="tier-inner"><div class="tier-name co">Committed</div><div class="tier-amount">£1,500</div></div>
+      <div class="spark-wrap">
+        <svg viewBox="0 0 1000 40" preserveAspectRatio="none" height="40" fill="none">
+          <defs><linearGradient id="g-com" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(99,102,241,0.34)"/><stop offset="100%" stop-color="rgba(99,102,241,0)"/></linearGradient></defs>
+          <path d="M0,30 C250,25 500,19 750,14 L980,11" stroke="#6366f1" stroke-width="1.5" fill="none" opacity="0.9"/>
+          <path d="M0,30 C250,25 500,19 750,14 L980,11 L980,40 L0,40 Z" fill="url(#g-com)"/>
+          <circle cx="980" cy="11" r="4" fill="#6366f1"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="tier-inner"><div class="tier-name di">Discretionary</div><div class="tier-amount">£800</div></div>
+      <div class="spark-wrap">
+        <svg viewBox="0 0 1000 40" preserveAspectRatio="none" height="40" fill="none">
+          <defs><linearGradient id="g-dis" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(168,85,247,0.34)"/><stop offset="100%" stop-color="rgba(168,85,247,0)"/></linearGradient></defs>
+          <path d="M0,20 L160,27 L320,14 L480,30 L640,18 L980,22" stroke="#a855f7" stroke-width="1.5" fill="none" opacity="0.9"/>
+          <path d="M0,20 L160,27 L320,14 L480,30 L640,18 L980,22 L980,40 L0,40 Z" fill="url(#g-dis)"/>
+          <circle cx="980" cy="22" r="4" fill="#a855f7"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="summary-card">
+      <div class="tier-inner"><div class="tier-name su">Surplus</div><div class="tier-amount">£700</div></div>
+      <div class="spark-wrap">
+        <svg viewBox="0 0 1000 40" preserveAspectRatio="none" height="40" fill="none">
+          <defs><linearGradient id="g-sur" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="rgba(74,220,208,0.34)"/><stop offset="100%" stop-color="rgba(74,220,208,0)"/></linearGradient></defs>
+          <path d="M0,13 C250,17 500,23 750,27 L980,30" stroke="#4adcd0" stroke-width="1.5" fill="none" opacity="0.9"/>
+          <path d="M0,13 C250,17 500,23 750,27 L980,30 L980,40 L0,40 Z" fill="url(#g-sur)"/>
+          <circle cx="980" cy="30" r="4" fill="#4adcd0"/>
+        </svg>
+      </div>
+    </div>
+
+  </main>
+</div>
+</body>
+</html>

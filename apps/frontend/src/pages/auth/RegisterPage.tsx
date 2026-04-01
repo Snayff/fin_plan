@@ -2,14 +2,17 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuthStore } from "../../stores/authStore";
 import type { ApiError } from "../../lib/api";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { showError } from "../../lib/toast";
 
 function getPasswordStrength(pwd: string): { level: number; label: string; color: string } {
   if (pwd.length === 0) return { level: 0, label: "", color: "" };
-  if (pwd.length < 8)   return { level: 1, label: "Too short", color: "bg-destructive" };
-  if (pwd.length < 12)  return { level: 2, label: "Weak — needs 12+ characters", color: "bg-warning" };
-  if (!/[^a-zA-Z0-9]/.test(pwd)) return { level: 3, label: "Fair — add a symbol to strengthen", color: "bg-warning" };
+  if (pwd.length < 8) return { level: 1, label: "Too short", color: "bg-destructive" };
+  if (pwd.length < 12)
+    return { level: 2, label: "Weak — needs 12+ characters", color: "bg-attention" };
+  if (!/[^a-zA-Z0-9]/.test(pwd))
+    return { level: 3, label: "Fair — add a symbol to strengthen", color: "bg-attention" };
   return { level: 4, label: "Strong", color: "bg-success" };
 }
 
@@ -143,18 +146,14 @@ export default function RegisterPage() {
             />
           </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
+          <Button type="submit" disabled={isLoading} className="w-full">
             {isLoading ? "Creating account..." : "Create Account"}
-          </button>
+          </Button>
         </form>
 
         <div className="text-center text-sm">
           <span className="text-muted-foreground">Already have an account? </span>
-          <Link to="/login" className="text-primary hover:underline">
+          <Link to="/login" className="text-page-accent hover:underline">
             Sign in
           </Link>
         </div>
