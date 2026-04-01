@@ -39,8 +39,9 @@ export default function SettingsPage() {
       .filter((e) => e.isIntersecting)
       .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
 
-    if (visible.length > 0) {
-      const id = visible[0].target.getAttribute("data-section-id");
+    const [first] = visible;
+    if (first) {
+      const id = first.target.getAttribute("data-section-id");
       if (id) setActiveSection(id);
     }
   }, []);

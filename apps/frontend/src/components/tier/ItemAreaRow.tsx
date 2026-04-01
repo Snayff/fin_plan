@@ -104,7 +104,7 @@ export default function ItemAreaRow({
               isStale={stale}
               onSave={async (data) => {
                 try {
-                  await updateItem.mutateAsync(data as Record<string, unknown>);
+                  await updateItem.mutateAsync(data as unknown as Record<string, unknown>);
                   onCancelEdit();
                   onToggleExpand(item.id);
                 } catch {

@@ -78,7 +78,7 @@ export function HouseholdSection() {
           toast.success("Invite created");
         },
         onError: (error) => {
-          toast.error((error as ApiError).message ?? "Failed to create invite");
+          toast.error((error as unknown as ApiError).message ?? "Failed to create invite");
         },
       }
     );

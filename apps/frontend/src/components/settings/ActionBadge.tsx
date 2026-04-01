@@ -1,10 +1,10 @@
-import { Plus, Pencil, Trash2, UserPlus } from "lucide-react";
+import { Plus, Pencil, Trash2, UserPlus, type LucideIcon } from "lucide-react";
 
 type Props = { action: string };
 
 function getVerb(action: string): {
   label: string;
-  Icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
+  Icon: LucideIcon;
 } {
   if (action.startsWith("CREATE_")) return { label: "created", Icon: Plus };
   if (action.startsWith("UPDATE_")) return { label: "updated", Icon: Pencil };

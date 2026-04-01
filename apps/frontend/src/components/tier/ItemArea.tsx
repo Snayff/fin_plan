@@ -112,7 +112,11 @@ export default function ItemArea({
                 opacity: 1,
                 transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] },
               }}
-              exit={{ height: 0, opacity: 0, transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] } }}
+              exit={{
+                height: 0,
+                opacity: 0,
+                transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] },
+              }}
               style={{ overflow: "hidden" }}
             >
               <ItemForm
@@ -123,7 +127,7 @@ export default function ItemArea({
                 isSaving={createItem.isPending}
                 onSave={async (data) => {
                   try {
-                    await createItem.mutateAsync(data as Record<string, unknown>);
+                    await createItem.mutateAsync(data as unknown as Record<string, unknown>);
                     setIsAddingItem(false);
                   } catch {
                     // error handled by useCreateItem onError (toast)
@@ -175,7 +179,11 @@ export default function ItemArea({
           setExpandedItemId(null);
         }}
         title={deletingItem ? `Remove ${deletingItem.name}?` : "Remove item?"}
-        message={deletingItem ? `${deletingItem.name} will be permanently removed from your plan.` : "This item will be permanently removed from your plan."}
+        message={
+          deletingItem
+            ? `${deletingItem.name} will be permanently removed from your plan.`
+            : "This item will be permanently removed from your plan."
+        }
         confirmText="Remove"
         variant="danger"
         isLoading={deleteItem.isPending}

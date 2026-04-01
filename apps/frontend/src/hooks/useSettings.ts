@@ -177,7 +177,7 @@ export function useAuditLog(filters: Omit<AuditLogQuery, "cursor" | "limit">) {
         limit: 50,
       }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
-    initialPageParam: undefined,
+    initialPageParam: undefined as string | undefined,
   });
 }
 
