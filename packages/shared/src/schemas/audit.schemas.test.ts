@@ -44,8 +44,8 @@ describe("AuditLogQuerySchema", () => {
     const result = AuditLogQuerySchema.parse({
       actorId: "user_1",
       resource: "income-source",
-      dateFrom: "2026-01-01",
-      dateTo: "2026-03-01",
+      dateFrom: "2026-01-01T00:00:00.000Z",
+      dateTo: "2026-03-01T00:00:00.000Z",
       cursor: "abc123",
       limit: 20,
     });
