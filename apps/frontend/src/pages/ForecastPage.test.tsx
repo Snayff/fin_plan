@@ -11,8 +11,8 @@ describe("ForecastPage", () => {
 
   it("renders the time horizon selector with all five options", () => {
     renderWithProviders(<ForecastPage />, { initialEntries: ["/forecast"] });
-    expect(screen.getByRole("button", { name: "10y" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "1y" })).toBeTruthy();
-    expect(screen.getByRole("button", { name: "30y" })).toBeTruthy();
+    for (const label of ["1y", "3y", "10y", "20y", "30y"]) {
+      expect(screen.getByRole("button", { name: label })).toBeTruthy();
+    }
   });
 });
