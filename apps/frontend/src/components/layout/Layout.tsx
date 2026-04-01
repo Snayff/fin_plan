@@ -23,6 +23,7 @@ const NAV_ITEMS_GROUP2 = [
 ] as const;
 
 const NAV_ITEMS_GROUP3 = [
+  { to: "/forecast", label: "Forecast", colorClass: "text-page-accent" },
   { to: "/assets", label: "Assets", colorClass: "text-foreground" },
   { to: "/goals", label: "Goals", colorClass: "text-foreground" },
   { to: "/gifts", label: "Gifts", colorClass: "text-foreground" },

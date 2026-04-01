@@ -25,6 +25,7 @@ const GoalsPage = lazy(() => import("./pages/GoalsPage"));
 const GiftsPage = lazy(() => import("./pages/GiftsPage"));
 const HelpPage = lazy(() => import("./pages/HelpPage"));
 const AssetsPage = lazy(() => import("./pages/AssetsPage"));
+const ForecastPage = lazy(() => import("./pages/ForecastPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
@@ -67,6 +68,7 @@ export function ProtectedAppRoutes() {
                     <Route path="/committed" element={<CommittedPage />} />
                     <Route path="/discretionary" element={<DiscretionaryPage />} />
                     <Route path="/surplus" element={<SurplusPage />} />
+                    <Route path="/forecast" element={<ForecastPage />} />
                     <Route path="/assets" element={<AssetsPage />} />
                     <Route path="/goals" element={<GoalsPage />} />
                     <Route path="/gifts" element={<GiftsPage />} />
