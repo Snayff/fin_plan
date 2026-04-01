@@ -1,5 +1,5 @@
 # -- Stage 1: Build ------------------------------------------------------------
-FROM oven/bun:1-alpine AS builder
+FROM oven/bun:1.3.9-alpine AS builder
 
 WORKDIR /workspace
 
@@ -11,8 +11,9 @@ COPY tsconfig.json ./
 # Copy shared package (used by frontend via @finplan/shared alias)
 COPY packages/shared ./packages/shared/
 
-# Copy frontend package.json so bun install resolves its deps
+# Copy workspace package.json files so bun can resolve all workspaces (apps/*)
 COPY apps/frontend/package.json ./apps/frontend/
+COPY apps/backend/package.json ./apps/backend/
 
 # Install all workspace dependencies; override NODE_ENV so devDeps are always
 # installed even if Coolify injects NODE_ENV=production at build time

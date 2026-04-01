@@ -1,4 +1,4 @@
-FROM oven/bun:1-alpine
+FROM oven/bun:1.3.9-alpine
 
 WORKDIR /workspace
 
@@ -20,8 +20,11 @@ COPY apps/backend/prisma ./apps/backend/prisma/
 
 # Install all deps; postinstall runs `prisma generate` automatically
 # Override NODE_ENV so devDeps (prisma CLI) are installed even if
-# Coolify injects NODE_ENV=production at build time
-RUN NODE_ENV=development bun install
+# Coolify injects NODE_ENV=production at build time.
+# DATABASE_URL must be declared as ARG so the postinstall hook (prisma generate)
+# can see it as an env var — prisma 7 validates the schema url during generate.
+ARG DATABASE_URL
+RUN NODE_ENV=development DATABASE_URL=${DATABASE_URL:-postgresql://placeholder:placeholder@localhost/placeholder} bun install
 
 # Build shared package so @finplan/shared resolves at runtime
 # (packages/shared/dist/ is gitignored and won't be in the build context)
