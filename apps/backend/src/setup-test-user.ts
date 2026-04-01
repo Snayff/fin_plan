@@ -1,5 +1,4 @@
 import { prisma } from "./config/database";
-import * as bcrypt from "bcrypt";
 
 async function main() {
   const existing = await prisma.user.findUnique({ where: { email: "owner@finplan.test" } });
@@ -9,14 +8,23 @@ async function main() {
     await prisma.household.deleteMany({ where: { name: "Browser Test Household" } });
     await prisma.user.delete({ where: { id: existing.id } });
   }
-  
-  const hash = await bcrypt.hash("BrowserTest123!", 12);
+
+  const hash = await Bun.password.hash("BrowserTest123!", { algorithm: "bcrypt", cost: 12 });
   const household = await prisma.household.create({ data: { name: "Browser Test Household" } });
   const user = await prisma.user.create({
-    data: { email: "owner@finplan.test", name: "Test Owner", passwordHash: hash, activeHouseholdId: household.id }
+    data: {
+      email: "owner@finplan.test",
+      name: "Test Owner",
+      passwordHash: hash,
+      activeHouseholdId: household.id,
+    },
   });
-  await prisma.householdMember.create({ data: { householdId: household.id, userId: user.id, role: "owner" } });
+  await prisma.householdMember.create({
+    data: { householdId: household.id, userId: user.id, role: "owner" },
+  });
   console.log("Setup complete:", user.email, "| household:", household.id);
 }
 
-main().catch(console.error).finally(() => prisma.$disconnect());
+main()
+  .catch(console.error)
+  .finally(() => prisma.$disconnect());
