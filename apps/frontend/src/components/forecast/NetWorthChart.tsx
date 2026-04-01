@@ -14,6 +14,7 @@ import type { NetWorthPoint } from "@finplan/shared";
 interface RetirementMarker {
   year: number;
   name: string;
+  beyondHorizon?: boolean;
 }
 
 interface NetWorthChartProps {
@@ -82,12 +83,17 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
               />
               {retirementMarkers.map((m) => (
                 <ReferenceLine
-                  key={m.year}
+                  key={`${m.year}-${m.name}`}
                   x={m.year}
                   stroke="#8b5cf6"
                   strokeDasharray="4 4"
                   strokeWidth={1.5}
-                  label={{ value: m.name, position: "top", fontSize: 11, fill: "#8b5cf6" }}
+                  label={{
+                    value: m.beyondHorizon ? `${m.name} →` : m.name,
+                    position: "top",
+                    fontSize: 11,
+                    fill: "#8b5cf6",
+                  }}
                 />
               ))}
               <Area

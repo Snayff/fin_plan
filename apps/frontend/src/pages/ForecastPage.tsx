@@ -24,13 +24,12 @@ export default function ForecastPage() {
   const horizonEndYear = currentYear + horizon;
 
   const retirementMarkers = (data?.retirement ?? [])
-    .filter(
-      (m) =>
-        m.retirementYear != null &&
-        m.retirementYear >= currentYear &&
-        m.retirementYear <= horizonEndYear
-    )
-    .map((m) => ({ year: m.retirementYear!, name: m.memberName }));
+    .filter((m) => m.retirementYear != null && m.retirementYear >= currentYear)
+    .map((m) => ({
+      year: Math.min(m.retirementYear!, horizonEndYear),
+      name: m.memberName,
+      beyondHorizon: m.retirementYear! > horizonEndYear,
+    }));
 
   return (
     <div className="h-full flex flex-col overflow-hidden" data-page="forecast">
