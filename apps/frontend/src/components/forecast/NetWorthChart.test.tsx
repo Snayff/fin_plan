@@ -21,10 +21,11 @@ describe("NetWorthChart", () => {
     expect(screen.getByText(/today/i)).toBeTruthy();
   });
 
-  it("renders without crashing when data is empty", () => {
+  it("shows the empty-assets note when data is empty", () => {
     renderWithProviders(<NetWorthChart data={[]} retirementMarkers={[]} />, {
       initialEntries: ["/forecast"],
     });
+    expect(screen.getByText(/add assets/i)).toBeTruthy();
   });
 
   it("shows the empty-assets note when all nominal values are zero", () => {

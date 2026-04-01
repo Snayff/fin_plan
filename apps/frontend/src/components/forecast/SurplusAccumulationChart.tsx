@@ -77,7 +77,9 @@ export function SurplusAccumulationChart({ data }: SurplusAccumulationChartProps
         <div className="px-5 py-3 border-t border-surface-elevated flex items-center gap-6">
           <div>
             <span className="text-xs text-text-tertiary">Today</span>
-            <p className="font-numeric text-sm text-text-primary tabular-nums">£0</p>
+            <p className="font-numeric text-sm text-text-primary tabular-nums">
+              {formatCurrency(0)}
+            </p>
           </div>
           <div>
             <span className="text-xs text-text-tertiary">Accumulated ({last.year})</span>
