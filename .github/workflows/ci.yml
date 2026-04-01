@@ -111,7 +111,7 @@ jobs:
         run: cd apps/backend && bunx prisma generate
 
       - name: Push schema to test database
-        run: cd apps/backend && bunx prisma db push --skip-generate
+        run: cd apps/backend && bunx prisma db push
 
       - name: Run tests
         run: bun run test
