@@ -15,9 +15,11 @@ COPY packages/shared ./packages/shared/
 COPY apps/frontend/package.json ./apps/frontend/
 COPY apps/backend/package.json ./apps/backend/
 
-# Install all workspace dependencies; override NODE_ENV so devDeps are always
-# installed even if Coolify injects NODE_ENV=production at build time
-RUN NODE_ENV=development bun install
+# Install all workspace dependencies; --ignore-scripts prevents the backend's
+# postinstall (prisma generate) from running here — prisma is not needed in
+# the frontend build. Override NODE_ENV so devDeps are always installed even
+# if Coolify injects NODE_ENV=production at build time.
+RUN NODE_ENV=development bun install --ignore-scripts
 
 # Copy frontend source and config files
 WORKDIR /workspace/apps/frontend
