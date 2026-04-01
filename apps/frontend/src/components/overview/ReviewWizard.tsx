@@ -194,7 +194,9 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
       // Resume
       setCurrentStep(session.currentStep);
       setConfirmedItems(session.confirmedItems ?? {});
-      setUpdatedItems(session.updatedItems ?? {});
+      setUpdatedItems(
+        (session.updatedItems ?? {}) as Record<string, { name: string; from: number; to: number }>
+      );
     } else {
       // Create fresh
       createSession.mutate(undefined, {
@@ -297,7 +299,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
       else if (svcType === "yearly")
         await waterfallService.updateYearly(item.id, { amount: newAmount });
       else if (svcType === "discretionary")
-        await waterfallService.updateDiscretionary(item.id, { monthlyBudget: newAmount });
+        await waterfallService.updateDiscretionary(item.id, { amount: newAmount });
       else if (svcType === "savings")
         await waterfallService.updateSavings(item.id, { monthlyAmount: newAmount });
 
