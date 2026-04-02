@@ -148,7 +148,7 @@ TypeScript · React 18 · Vite · Tailwind CSS · Fastify · Prisma · tRPC · B
 
 ## License
 
-Distributed under the GNU General Public License v3.0. See [license.txt](license.txt) for details.
+Distributed under the GNU General Public License v3.0. See [license.txt](LICENSE.txt) for details.
 
 ---
 
