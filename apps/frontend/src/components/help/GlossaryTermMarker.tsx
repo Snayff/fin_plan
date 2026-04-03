@@ -26,10 +26,24 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
   const updatePosition = useCallback(() => {
     if (!triggerRef.current) return;
     const rect = triggerRef.current.getBoundingClientRect();
+    const POPOVER_WIDTH = 288; // w-72 = 18rem = 288px
+    const POPOVER_EST_HEIGHT = 160; // conservative estimate
+    const OFFSET = 4;
+    const viewportH = window.innerHeight;
+    const viewportW = window.innerWidth;
+
+    const spaceBelow = viewportH - rect.bottom - OFFSET;
+    const top =
+      spaceBelow >= POPOVER_EST_HEIGHT
+        ? rect.bottom + OFFSET
+        : rect.top - POPOVER_EST_HEIGHT - OFFSET;
+
+    const left = Math.min(rect.left, viewportW - POPOVER_WIDTH - 8);
+
     setPopoverStyle({
       position: "fixed",
-      left: rect.left,
-      top: rect.bottom + 4,
+      left,
+      top,
     });
   }, []);
 
