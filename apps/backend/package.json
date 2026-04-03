@@ -32,7 +32,6 @@
     "@trpc/server": "^11.0.0",
     "date-fns": "^4.1.0",
     "fastify": "^5.8.4",
-    "ioredis": "^5.4.2",
     "jsonwebtoken": "^9.0.2",
     "pg": "^8.20.0",
     "rrule": "^2.8.1",

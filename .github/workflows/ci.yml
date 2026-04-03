@@ -187,5 +187,12 @@ jobs:
     environment: PROD
 
     steps:
+      - name: Set up SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          echo "${{ secrets.COOLIFY_HOST_KEY }}" >> ~/.ssh/known_hosts
+
       - name: Trigger Coolify deploy
-        run: curl --fail "${{ secrets.COOLIFY_WEBHOOK_URL }}"
+        run: ssh -i ~/.ssh/deploy_key -o ConnectTimeout=10 gabriel@95.146.81.51
