@@ -485,7 +485,7 @@ export const waterfallService = {
 
   async listCommitted(householdId: string) {
     return prisma.committedItem.findMany({
-      where: { householdId, spendType: "monthly" },
+      where: { householdId },
       orderBy: { sortOrder: "asc" },
     });
   },
