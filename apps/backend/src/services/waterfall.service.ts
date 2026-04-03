@@ -728,15 +728,8 @@ export const waterfallService = {
   // ─── Discretionary items ─────────────────────────────────────────────────────
 
   async listDiscretionary(householdId: string) {
-    // Exclude savings-subcategory items (those are returned by listSavings)
-    const savingsSubcategory = await prisma.subcategory.findFirst({
-      where: { householdId, tier: "discretionary", name: "Savings" },
-    });
     return prisma.discretionaryItem.findMany({
-      where: {
-        householdId,
-        ...(savingsSubcategory ? { subcategoryId: { not: savingsSubcategory.id } } : {}),
-      },
+      where: { householdId },
       orderBy: { sortOrder: "asc" },
     });
   },
