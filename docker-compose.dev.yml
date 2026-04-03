@@ -20,22 +20,6 @@ services:
     networks:
       - finplan-network
 
-  # Redis Cache
-  redis:
-    image: redis:7-alpine
-    container_name: finplan-redis-dev
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - finplan-network
-
   # Backend API
   backend:
     build:
@@ -47,8 +31,6 @@ services:
     environment:
       # Database
       DATABASE_URL: postgresql://finplan:finplan_dev_password@postgres:5432/finplan_dev
-      # Redis
-      REDIS_URL: redis://redis:6379
       # JWT Secrets (change these in production!)
       JWT_SECRET: your-super-secret-jwt-key-min-32-chars-long-dev
       JWT_REFRESH_SECRET: your-super-secret-refresh-key-min-32-chars-long-dev
@@ -71,8 +53,6 @@ services:
       - ./packages/shared/package.json:/workspace/packages/shared/package.json:ro
     depends_on:
       postgres:
-        condition: service_healthy
-      redis:
         condition: service_healthy
     networks:
       - finplan-network
@@ -119,7 +99,6 @@ services:
 
 volumes:
   postgres_data:
-  redis_data:
 
 networks:
   finplan-network:

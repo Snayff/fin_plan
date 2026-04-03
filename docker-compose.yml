@@ -1,11 +1,4 @@
 services:
-  redis:
-    image: redis:7-alpine
-    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru
-    restart: unless-stopped
-    networks:
-      - coolify
-
   # Backend API -- not exposed to host; Traefik proxies to frontend which proxies to it internally
   backend:
     build:
@@ -13,14 +6,11 @@ services:
       dockerfile: apps/backend/Dockerfile
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      REDIS_URL: ${REDIS_URL}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       COOKIE_SECRET: ${COOKIE_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN}
       NODE_ENV: production
-    depends_on:
-      - redis
     networks:
       - coolify
     restart: unless-stopped
