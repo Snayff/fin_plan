@@ -1,7 +1,11 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/helpers/render";
 import { PageHeader } from "./PageHeader";
+
+mock.module("@/hooks/useAnimatedValue", () => ({
+  useAnimatedValue: (target: number) => target,
+}));
 
 describe("PageHeader", () => {
   it("renders title in uppercase", () => {

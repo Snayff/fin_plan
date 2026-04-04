@@ -1,5 +1,6 @@
 import { describe, it, expect } from "bun:test";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
+import { renderWithProviders } from "@/test/helpers/render";
 import ItemRow from "./ItemRow";
 import { TIER_CONFIGS } from "./tierConfig";
 
@@ -17,7 +18,7 @@ const baseItem = {
 
 describe("ItemRow", () => {
   it("renders item name", () => {
-    render(
+    renderWithProviders(
       <ItemRow
         item={baseItem}
         config={TIER_CONFIGS.committed}
@@ -30,7 +31,7 @@ describe("ItemRow", () => {
   });
 
   it("shows monthly amount with /mo suffix", () => {
-    render(
+    renderWithProviders(
       <ItemRow
         item={{ ...baseItem, spendType: "monthly", amount: 350 }}
         config={TIER_CONFIGS.committed}
@@ -43,7 +44,7 @@ describe("ItemRow", () => {
   });
 
   it("shows yearly amount with /yr suffix", () => {
-    render(
+    renderWithProviders(
       <ItemRow
         item={{ ...baseItem, spendType: "monthly", amount: 350 }}
         config={TIER_CONFIGS.committed}
@@ -56,7 +57,7 @@ describe("ItemRow", () => {
   });
 
   it("shows type and category on second line", () => {
-    render(
+    renderWithProviders(
       <ItemRow
         item={baseItem}
         config={TIER_CONFIGS.committed}
@@ -70,7 +71,7 @@ describe("ItemRow", () => {
   });
 
   it("one-off item shows single amount without /mo suffix and no yearly", () => {
-    render(
+    renderWithProviders(
       <ItemRow
         item={{ ...baseItem, spendType: "one_off", amount: 3200 }}
         config={TIER_CONFIGS.committed}
@@ -84,7 +85,7 @@ describe("ItemRow", () => {
   });
 
   it("does not show staleness age text in collapsed row", () => {
-    render(
+    renderWithProviders(
       <ItemRow
         item={{ ...baseItem, lastReviewedAt: new Date("2024-06-01T00:00:00Z") }}
         config={TIER_CONFIGS.committed}
@@ -98,7 +99,7 @@ describe("ItemRow", () => {
   });
 
   it("shows stale dot when item is stale", () => {
-    render(
+    renderWithProviders(
       <ItemRow
         item={{ ...baseItem, lastReviewedAt: new Date("2024-06-01T00:00:00Z") }}
         config={TIER_CONFIGS.committed}
@@ -112,7 +113,7 @@ describe("ItemRow", () => {
   });
 
   it("does not show stale dot when item is fresh", () => {
-    render(
+    renderWithProviders(
       <ItemRow
         item={{ ...baseItem, lastReviewedAt: new Date("2025-12-01T00:00:00Z") }}
         config={TIER_CONFIGS.committed}
@@ -126,7 +127,7 @@ describe("ItemRow", () => {
   });
 
   it("applies selected highlight when expanded", () => {
-    const { container: _container } = render(
+    const { container: _container } = renderWithProviders(
       <ItemRow
         item={baseItem}
         config={TIER_CONFIGS.committed}
@@ -142,7 +143,7 @@ describe("ItemRow", () => {
 
   it("calls onToggle when clicked", () => {
     let called = false;
-    render(
+    renderWithProviders(
       <ItemRow
         item={baseItem}
         config={TIER_CONFIGS.committed}
