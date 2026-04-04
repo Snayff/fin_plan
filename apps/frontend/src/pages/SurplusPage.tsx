@@ -49,7 +49,7 @@ export default function SurplusPage() {
                           <span className="text-[10px] uppercase tracking-wider text-foreground/30">
                             Balance
                           </span>
-                          <span className="font-numeric text-[13px] font-semibold text-foreground/70">
+                          <span className="font-numeric text-[13px] font-semibold text-secondary">
                             {formatCurrency(toGBP(income))}
                           </span>
                         </div>
@@ -71,7 +71,7 @@ export default function SurplusPage() {
                           <span className="text-[10px] uppercase tracking-wider text-foreground/30">
                             Remaining
                           </span>
-                          <span className="font-numeric text-[13px] font-semibold text-foreground/70">
+                          <span className="font-numeric text-[13px] font-semibold text-secondary">
                             {formatCurrency(toGBP(income - committed))}
                           </span>
                         </div>
@@ -93,7 +93,7 @@ export default function SurplusPage() {
                           <span className="text-[10px] uppercase tracking-wider text-foreground/30">
                             Remaining
                           </span>
-                          <span className="font-numeric text-[13px] font-semibold text-foreground/70">
+                          <span className="font-numeric text-[13px] font-semibold text-secondary">
                             {formatCurrency(toGBP(surplus))}
                           </span>
                         </div>
