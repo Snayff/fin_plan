@@ -32,30 +32,88 @@ export default function SurplusPage() {
               <div className="flex flex-col gap-6 px-6 pb-6">
                 {!isLoading && (
                   <>
-                    <div className="flex flex-col gap-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-foreground/60">Income</span>
-                        <span className="font-numeric text-tier-income">
-                          {formatCurrency(toGBP(income))}
-                        </span>
+                    <div className="flex flex-col divide-y divide-foreground/[0.07]">
+                      <div className="flex flex-col gap-1 py-3">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-tier-income">
+                            Income
+                          </span>
+                          <span className="font-numeric text-[11px] font-medium text-tier-income">
+                            {formatCurrency(toGBP(income))}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-foreground/50">
+                          Total monthly income across all members
+                        </div>
+                        <div className="flex justify-between items-baseline mt-0.5">
+                          <span className="text-[10px] uppercase tracking-wider text-foreground/30">
+                            Balance
+                          </span>
+                          <span className="font-numeric text-[13px] font-semibold text-tier-income">
+                            {formatCurrency(toGBP(income))}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-foreground/60">Committed</span>
-                        <span className="font-numeric text-tier-committed">
-                          − {formatCurrency(toGBP(committed))}
-                        </span>
+
+                      <div className="flex flex-col gap-1 py-3">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-tier-committed">
+                            Committed
+                          </span>
+                          <span className="font-numeric text-[11px] font-medium text-tier-committed">
+                            − {formatCurrency(toGBP(committed))}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-foreground/50">
+                          Fixed obligations deducted from income
+                        </div>
+                        <div className="flex justify-between items-baseline mt-0.5">
+                          <span className="text-[10px] uppercase tracking-wider text-foreground/30">
+                            Remaining
+                          </span>
+                          <span className="font-numeric text-[13px] font-semibold text-foreground/50">
+                            {formatCurrency(toGBP(income - committed))}
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-foreground/60">Discretionary</span>
-                        <span className="font-numeric text-tier-discretionary">
-                          − {formatCurrency(toGBP(discretionary))}
-                        </span>
+
+                      <div className="flex flex-col gap-1 py-3">
+                        <div className="flex justify-between items-baseline">
+                          <span className="text-[11px] font-bold uppercase tracking-wider text-tier-discretionary">
+                            Discretionary
+                          </span>
+                          <span className="font-numeric text-[11px] font-medium text-tier-discretionary">
+                            − {formatCurrency(toGBP(discretionary))}
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-foreground/50">
+                          Planned variable spend deducted
+                        </div>
+                        <div className="flex justify-between items-baseline mt-0.5">
+                          <span className="text-[10px] uppercase tracking-wider text-foreground/30">
+                            Remaining
+                          </span>
+                          <span className="font-numeric text-[13px] font-semibold text-foreground/50">
+                            {formatCurrency(toGBP(surplus))}
+                          </span>
+                        </div>
                       </div>
-                      <div className="mt-2 border-t border-foreground/10 pt-2 flex justify-between font-semibold">
-                        <span className="text-foreground">Surplus</span>
-                        <span className="font-numeric text-tier-surplus text-lg">
-                          {formatCurrency(toGBP(surplus))}
+
+                      <div className="flex flex-col gap-1 py-3">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-tier-surplus">
+                          Surplus
                         </span>
+                        <div className="text-[11px] text-foreground/50">
+                          What remains at the end of each month
+                        </div>
+                        <div className="flex justify-between items-baseline mt-0.5">
+                          <span className="text-[10px] uppercase tracking-wider text-tier-surplus/60">
+                            Monthly
+                          </span>
+                          <span className="font-numeric text-base font-semibold text-tier-surplus">
+                            {formatCurrency(toGBP(surplus))}
+                          </span>
+                        </div>
                       </div>
                     </div>
                     {showBenchmarkWarning && (
