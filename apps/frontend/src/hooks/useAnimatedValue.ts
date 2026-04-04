@@ -8,17 +8,22 @@ function easeOut(t: number): number {
   return 1 - Math.pow(1 - t, POWER);
 }
 
+function roundTo(value: number, decimalPlaces: number): number {
+  const factor = Math.pow(10, decimalPlaces);
+  return Math.round(value * factor) / factor;
+}
+
 /**
  * Animates a numeric value with a snappy ease-out curve.
  * Races through most of the range quickly, then the last few
  * ticks crawl in — giving a satisfying "tick up" feel.
  *
- * Returns the current interpolated value (always an integer).
+ * Returns the current interpolated value, rounded to `decimalPlaces`.
  * Skips animation when `prefers-reduced-motion` is active.
  */
-export function useAnimatedValue(target: number): number {
+export function useAnimatedValue(target: number, decimalPlaces = 0): number {
   const prefersReduced = usePrefersReducedMotion();
-  const [display, setDisplay] = useState(target);
+  const [display, setDisplay] = useState(0);
   const rafRef = useRef<number | null>(null);
   const startRef = useRef({ value: target, time: 0 });
 
@@ -32,7 +37,8 @@ export function useAnimatedValue(target: number): number {
     const startValue = display;
     const delta = target - startValue;
 
-    if (Math.abs(delta) < 1) {
+    const threshold = decimalPlaces > 0 ? 0.005 : 1;
+    if (Math.abs(delta) < threshold) {
       setDisplay(target);
       return;
     }
@@ -52,7 +58,7 @@ export function useAnimatedValue(target: number): number {
       const current = startValue + delta * easedProgress;
 
       if (progress < 1) {
-        setDisplay(Math.round(current));
+        setDisplay(roundTo(current, decimalPlaces));
         rafRef.current = requestAnimationFrame(tick);
       } else {
         setDisplay(target);
@@ -69,7 +75,7 @@ export function useAnimatedValue(target: number): number {
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- animate from current display value to new target
-  }, [target, prefersReduced]);
+  }, [target, decimalPlaces, prefersReduced]);
 
   return display;
 }
