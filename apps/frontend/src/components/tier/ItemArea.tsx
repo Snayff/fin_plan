@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import GhostAddButton from "./GhostAddButton";
 import ItemAreaRow from "./ItemAreaRow";
@@ -33,6 +33,7 @@ interface Props {
   isLoading: boolean;
   now?: Date;
   stalenessMonths?: number;
+  onSubcategorySelect?: (id: string) => void;
 }
 
 export default function ItemArea({
@@ -44,14 +45,38 @@ export default function ItemArea({
   isLoading,
   now = new Date(),
   stalenessMonths = 12,
+  onSubcategorySelect,
 }: Props) {
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [isAddingItem, setIsAddingItem] = useState(false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
+  const [sortField, setSortField] = useState<"name" | "createdAt" | "monthlyValue">("name");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
+  const [recentlyAddedItemId, setRecentlyAddedItemId] = useState<string | null>(null);
 
   const createItem = useCreateItem(tier);
   const deleteItem = useDeleteItem(tier, deletingItemId ?? "");
+
+  const displayItems = useMemo(() => {
+    const sorted = [...items].sort((a, b) => {
+      let cmp: number;
+      if (sortField === "name") {
+        cmp = a.name.localeCompare(b.name);
+      } else if (sortField === "createdAt") {
+        cmp = a.createdAt.getTime() - b.createdAt.getTime();
+      } else {
+        const aMonthly = a.spendType === "monthly" ? a.amount : Math.round(a.amount / 12);
+        const bMonthly = b.spendType === "monthly" ? b.amount : Math.round(b.amount / 12);
+        cmp = aMonthly - bMonthly;
+      }
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+    if (!recentlyAddedItemId) return sorted;
+    const pinned = sorted.find((i) => i.id === recentlyAddedItemId);
+    if (!pinned) return sorted;
+    return [pinned, ...sorted.filter((i) => i.id !== recentlyAddedItemId)];
+  }, [items, sortField, sortDir, recentlyAddedItemId]);
 
   // Monthly-equivalent total
   const total = items.reduce((sum, item) => {
@@ -87,16 +112,44 @@ export default function ItemArea({
             <AnimatedCurrency value={toGBP(total)} />
           </span>
         </div>
-        {!subcategory.isLocked && (
-          <GhostAddButton
-            onClick={() => {
-              setIsAddingItem(true);
-              setExpandedItemId(null);
-              setEditingItemId(null);
-            }}
-            disabled={isAddingItem}
-          />
-        )}
+        <div className="flex items-center gap-1.5">
+          {items.length > 1 && (
+            <>
+              <select
+                value={sortField}
+                onChange={(e) => {
+                  setSortField(e.target.value as "name" | "createdAt" | "monthlyValue");
+                  setRecentlyAddedItemId(null);
+                }}
+                className="bg-transparent border border-foreground/10 rounded px-1.5 py-0.5 text-xs text-foreground/60 cursor-pointer focus:outline-none focus:border-foreground/20"
+              >
+                <option value="name">Name</option>
+                <option value="createdAt">Date added</option>
+                <option value="monthlyValue">Value / month</option>
+              </select>
+              <button
+                onClick={() => {
+                  setSortDir(sortDir === "asc" ? "desc" : "asc");
+                  setRecentlyAddedItemId(null);
+                }}
+                className="text-foreground/40 hover:text-foreground/70 transition-colors text-xs w-5 h-5 flex items-center justify-center"
+                title={sortDir === "asc" ? "Ascending" : "Descending"}
+              >
+                {sortDir === "asc" ? "↑" : "↓"}
+              </button>
+            </>
+          )}
+          {!subcategory.isLocked && (
+            <GhostAddButton
+              onClick={() => {
+                setIsAddingItem(true);
+                setExpandedItemId(null);
+                setEditingItemId(null);
+              }}
+              disabled={isAddingItem}
+            />
+          )}
+        </div>
       </div>
 
       {/* Content */}
@@ -127,8 +180,14 @@ export default function ItemArea({
                 isSaving={createItem.isPending}
                 onSave={async (data) => {
                   try {
-                    await createItem.mutateAsync(data as unknown as Record<string, unknown>);
+                    const created = await createItem.mutateAsync(
+                      data as unknown as Record<string, unknown>
+                    );
+                    setRecentlyAddedItemId((created as { id: string }).id);
                     setIsAddingItem(false);
+                    if (data.subcategoryId !== subcategory.id) {
+                      onSubcategorySelect?.(data.subcategoryId);
+                    }
                   } catch {
                     // error handled by useCreateItem onError (toast)
                   }
@@ -149,7 +208,7 @@ export default function ItemArea({
         )}
 
         {/* Item list */}
-        {items.map((item) => (
+        {displayItems.map((item) => (
           <ItemAreaRow
             key={item.id}
             tier={tier}

@@ -229,6 +229,7 @@ export interface TierItemRow {
   subcategoryId: string;
   notes: string | null;
   lastReviewedAt: Date;
+  createdAt: Date;
   sortOrder: number;
 }
 
@@ -251,6 +252,7 @@ async function fetchTierItems(
       subcategoryId: r.subcategoryId ?? "",
       notes: r.notes ?? null,
       lastReviewedAt: new Date(r.lastReviewedAt),
+      createdAt: new Date(r.createdAt),
       sortOrder: r.sortOrder ?? 0,
     }));
   }
@@ -264,6 +266,7 @@ async function fetchTierItems(
       subcategoryId: r.subcategoryId ?? "",
       notes: r.notes ?? null,
       lastReviewedAt: new Date(r.lastReviewedAt),
+      createdAt: new Date(r.createdAt),
       sortOrder: r.sortOrder ?? 0,
     }));
   }
@@ -277,6 +280,7 @@ async function fetchTierItems(
     subcategoryId: r.subcategoryId ?? "",
     notes: r.notes ?? null,
     lastReviewedAt: new Date(r.lastReviewedAt),
+    createdAt: new Date(r.createdAt),
     sortOrder: r.sortOrder ?? 0,
   }));
 }
