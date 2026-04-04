@@ -12,7 +12,7 @@ beforeEach(() => {
 
 describe("subcategoryService.seedDefaults", () => {
   it("creates default subcategories for all three tiers", async () => {
-    prismaMock.subcategory.createMany.mockResolvedValue({ count: 13 });
+    prismaMock.subcategory.createMany.mockResolvedValue({ count: 16 });
 
     await subcategoryService.seedDefaults("hh-1");
 
@@ -25,9 +25,9 @@ describe("subcategoryService.seedDefaults", () => {
     expect(incomeRows).toHaveLength(3);
     expect(incomeRows.map((r: any) => r.name)).toEqual(["Salary", "Dividends", "Other"]);
 
-    // Committed: Housing, Utilities, Services, Other = 4
+    // Committed: Housing, Utilities, Services, Charity, Childcare, Vehicles, Other = 7
     const committedRows = data.filter((r: any) => r.tier === "committed");
-    expect(committedRows).toHaveLength(4);
+    expect(committedRows).toHaveLength(7);
 
     // Discretionary: Food, Fun, Clothes, Gifts (locked), Savings, Other = 6
     const discRows = data.filter((r: any) => r.tier === "discretionary");
@@ -53,7 +53,7 @@ describe("subcategoryService.seedDefaults", () => {
 describe("subcategoryService.ensureSubcategories", () => {
   it("seeds defaults when no subcategories exist", async () => {
     prismaMock.subcategory.count.mockResolvedValue(0);
-    prismaMock.subcategory.createMany.mockResolvedValue({ count: 13 });
+    prismaMock.subcategory.createMany.mockResolvedValue({ count: 16 });
 
     await subcategoryService.ensureSubcategories("hh-1");
 

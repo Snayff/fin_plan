@@ -11,7 +11,10 @@ const DEFAULT_SUBCATEGORIES = {
     { name: "Housing", sortOrder: 0 },
     { name: "Utilities", sortOrder: 1 },
     { name: "Services", sortOrder: 2 },
-    { name: "Other", sortOrder: 3 },
+    { name: "Charity", sortOrder: 3 },
+    { name: "Childcare", sortOrder: 4 },
+    { name: "Vehicles", sortOrder: 5 },
+    { name: "Other", sortOrder: 6 },
   ],
   discretionary: [
     { name: "Food", sortOrder: 0 },
