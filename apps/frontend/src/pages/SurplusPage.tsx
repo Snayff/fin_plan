@@ -49,7 +49,7 @@ export default function SurplusPage() {
                           <span className="text-[10px] uppercase tracking-wider text-foreground/30">
                             Balance
                           </span>
-                          <span className="font-numeric text-[13px] font-semibold text-tier-income">
+                          <span className="font-numeric text-[13px] font-semibold text-foreground/70">
                             {formatCurrency(toGBP(income))}
                           </span>
                         </div>
@@ -71,7 +71,7 @@ export default function SurplusPage() {
                           <span className="text-[10px] uppercase tracking-wider text-foreground/30">
                             Remaining
                           </span>
-                          <span className="font-numeric text-[13px] font-semibold text-foreground/50">
+                          <span className="font-numeric text-[13px] font-semibold text-foreground/70">
                             {formatCurrency(toGBP(income - committed))}
                           </span>
                         </div>
@@ -93,7 +93,7 @@ export default function SurplusPage() {
                           <span className="text-[10px] uppercase tracking-wider text-foreground/30">
                             Remaining
                           </span>
-                          <span className="font-numeric text-[13px] font-semibold text-foreground/50">
+                          <span className="font-numeric text-[13px] font-semibold text-foreground/70">
                             {formatCurrency(toGBP(surplus))}
                           </span>
                         </div>
@@ -107,7 +107,7 @@ export default function SurplusPage() {
                           What remains at the end of each month
                         </div>
                         <div className="flex justify-between items-baseline mt-0.5">
-                          <span className="text-[10px] uppercase tracking-wider text-tier-surplus/60">
+                          <span className="text-[10px] uppercase tracking-wider text-foreground/30">
                             Monthly
                           </span>
                           <span className="font-numeric text-base font-semibold text-tier-surplus">
