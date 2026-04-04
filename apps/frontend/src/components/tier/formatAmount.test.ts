@@ -32,6 +32,27 @@ describe("formatTwoLineAmount", () => {
   });
 });
 
+describe("formatTwoLineAmount with showPence = true", () => {
+  it("monthly item: shows pence on both lines", () => {
+    const result = formatTwoLineAmount(350.5, "monthly", true);
+    expect(result.monthly.value).toBe("£350.50/mo");
+    expect(result.yearly!.value).toBe("£4,206.00/yr");
+  });
+
+  it("yearly item: preserves pence in monthly conversion instead of rounding", () => {
+    // 1000 / 12 = 83.333... → toGBP rounds to 83.33
+    const result = formatTwoLineAmount(1000, "yearly", true);
+    expect(result.monthly.value).toBe("£83.33/mo");
+    expect(result.yearly!.value).toBe("£1,000.00/yr");
+  });
+
+  it("one-off item: shows pence, no yearly line", () => {
+    const result = formatTwoLineAmount(3200.99, "one_off", true);
+    expect(result.monthly.value).toBe("£3,200.99");
+    expect(result.yearly).toBeNull();
+  });
+});
+
 describe("SPEND_TYPE_LABELS", () => {
   it("provides human-readable labels", () => {
     expect(SPEND_TYPE_LABELS.monthly).toBe("Monthly");

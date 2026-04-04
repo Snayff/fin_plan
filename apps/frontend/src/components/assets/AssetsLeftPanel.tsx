@@ -1,5 +1,7 @@
 import type { AssetType, AccountType } from "@finplan/shared";
 import type { AssetsSummary } from "../../services/assets.service.js";
+import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 
 const ASSET_TYPES: AssetType[] = ["Property", "Vehicle", "Other"];
 const ACCOUNT_TYPES: AccountType[] = ["Savings", "Pension", "StocksAndShares", "Other"];
@@ -13,15 +15,6 @@ const TYPE_LABELS: Record<AssetType | AccountType, string> = {
   StocksAndShares: "Stocks & Shares",
 };
 
-function formatGBP(value: number) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
-
 interface Props {
   summary: AssetsSummary | undefined;
   selected: AssetType | AccountType;
@@ -30,6 +23,8 @@ interface Props {
 }
 
 export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType = {} }: Props) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const grandTotal = summary?.grandTotal ?? 0;
 
   return (
@@ -40,7 +35,7 @@ export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType 
           Assets
         </div>
         <div className="text-[#8b5cf6] text-base font-semibold font-mono">
-          {formatGBP(grandTotal)}
+          {formatCurrency(grandTotal, showPence)}
         </div>
       </div>
 
@@ -80,7 +75,7 @@ export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType 
               <span
                 className={`text-[13px] font-mono ${isSelected ? "text-[#8b5cf6]" : "text-[rgba(238,242,255,0.5)]"}`}
               >
-                {formatGBP(total)}
+                {formatCurrency(total, showPence)}
               </span>
             </button>
           );
@@ -120,7 +115,7 @@ export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType 
               <span
                 className={`text-[13px] font-mono ${isSelected ? "text-[#8b5cf6]" : "text-[rgba(238,242,255,0.5)]"}`}
               >
-                {formatGBP(total)}
+                {formatCurrency(total, showPence)}
               </span>
             </button>
           );
@@ -131,7 +126,7 @@ export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType 
       <div className="border-t border-[#1a1f35] px-5 py-3.5 flex justify-between items-center">
         <span className="text-sm text-[rgba(238,242,255,0.65)]">Total</span>
         <span className="text-sm font-mono text-[rgba(238,242,255,0.92)]">
-          {formatGBP(grandTotal)}
+          {formatCurrency(grandTotal, showPence)}
         </span>
       </div>
     </div>

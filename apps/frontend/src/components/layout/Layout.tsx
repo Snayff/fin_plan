@@ -23,7 +23,7 @@ const NAV_ITEMS_GROUP2 = [
 ] as const;
 
 const NAV_ITEMS_GROUP3 = [
-  { to: "/forecast", label: "Forecast", colorClass: "text-page-accent" },
+  { to: "/forecast", label: "Forecast", colorClass: "text-foreground" },
   { to: "/assets", label: "Assets", colorClass: "text-foreground" },
   { to: "/goals", label: "Goals", colorClass: "text-foreground" },
   { to: "/gifts", label: "Gifts", colorClass: "text-foreground" },
@@ -118,7 +118,6 @@ export default function Layout({ children }: { children: ReactNode }) {
           <span className="font-heading font-bold text-lg tracking-tight text-foreground">
             finplan
           </span>
-          <HouseholdSwitcher />
         </div>
 
         {/* Centre: nav (desktop) */}
@@ -184,20 +183,23 @@ export default function Layout({ children }: { children: ReactNode }) {
               {item.label}
             </NavLink>
           ))}
-          <NavLink
-            to={SETTINGS_ITEM.to}
-            className={({ isActive }) =>
-              cn(
-                "relative pb-0.5 text-sm font-medium transition-colors duration-150 ml-auto",
-                SETTINGS_ITEM.colorClass,
-                isActive
-                  ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
-                  : "opacity-70 hover:opacity-90"
-              )
-            }
-          >
-            {SETTINGS_ITEM.label}
-          </NavLink>
+          <div className="flex items-center gap-3 ml-auto">
+            <HouseholdSwitcher />
+            <NavLink
+              to={SETTINGS_ITEM.to}
+              className={({ isActive }) =>
+                cn(
+                  "relative pb-0.5 text-sm font-medium transition-colors duration-150",
+                  SETTINGS_ITEM.colorClass,
+                  isActive
+                    ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
+                    : "opacity-70 hover:opacity-90"
+                )
+              }
+            >
+              {SETTINGS_ITEM.label}
+            </NavLink>
+          </div>
         </nav>
       </header>
 

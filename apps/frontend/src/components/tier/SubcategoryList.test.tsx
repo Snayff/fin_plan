@@ -1,13 +1,25 @@
 import React from "react";
 import { describe, it, expect, mock } from "bun:test";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { screen, fireEvent } from "@testing-library/react";
+import { renderWithProviders } from "@/test/helpers/render";
 import SubcategoryList from "./SubcategoryList";
 import { TIER_CONFIGS } from "./tierConfig";
 
+mock.module("@/hooks/useAnimatedValue", () => ({
+  useAnimatedValue: (target: number) => target,
+}));
+
 mock.module("framer-motion", () => ({
   motion: {
-    div: ({ children, variants: _v, initial: _i, animate: _a, layoutId, transition: _t, ...props }: any) =>
-      React.createElement("div", { "data-layout-id": layoutId, ...props }, children),
+    div: ({
+      children,
+      variants: _v,
+      initial: _i,
+      animate: _a,
+      layoutId,
+      transition: _t,
+      ...props
+    }: any) => React.createElement("div", { "data-layout-id": layoutId, ...props }, children),
     button: ({ children, variants: _v, initial: _i, animate: _a, ...props }: any) =>
       React.createElement("button", props, children),
   },
@@ -35,7 +47,7 @@ const subcategoryTotals = {
 };
 
 function renderList(selectedId = "sub-housing", onSelect = mock(() => {})) {
-  return render(
+  return renderWithProviders(
     <SubcategoryList
       tier="committed"
       config={TIER_CONFIGS.committed}
@@ -115,7 +127,7 @@ describe("SubcategoryList", () => {
         items: [],
       },
     };
-    render(
+    renderWithProviders(
       <SubcategoryList
         tier="committed"
         config={TIER_CONFIGS.committed}
@@ -147,7 +159,9 @@ describe("SubcategoryList", () => {
 
   it("does not render layoutId indicator for unselected subcategories", () => {
     const { container } = renderList("sub-housing");
-    const indicators = container.querySelectorAll('[data-layout-id="subcategory-indicator-committed"]');
+    const indicators = container.querySelectorAll(
+      '[data-layout-id="subcategory-indicator-committed"]'
+    );
     expect(indicators.length).toBe(1);
   });
 });

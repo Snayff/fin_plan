@@ -61,7 +61,7 @@ export interface SubcategoryTotal {
 // ─── Committed items (replaces CommittedBill + YearlyBill) ───────────────────
 
 export const createCommittedItemSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).trim(),
   amount: z.number().positive(),
   subcategoryId: z.string().min(1),
   spendType: SpendTypeEnum.default("monthly"),
@@ -72,7 +72,7 @@ export const createCommittedItemSchema = z.object({
 });
 
 export const updateCommittedItemSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).trim().optional(),
   amount: z.number().positive().optional(),
   subcategoryId: z.string().min(1).optional(),
   spendType: SpendTypeEnum.optional(),
@@ -88,7 +88,7 @@ export type UpdateCommittedItemInput = z.infer<typeof updateCommittedItemSchema>
 // ─── Discretionary items (replaces DiscretionaryCategory + SavingsAllocation) ─
 
 export const createDiscretionaryItemSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).trim(),
   amount: z.number().positive(),
   subcategoryId: z.string().min(1),
   spendType: SpendTypeEnum.default("monthly"),
@@ -97,7 +97,7 @@ export const createDiscretionaryItemSchema = z.object({
 });
 
 export const updateDiscretionaryItemSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).trim().optional(),
   amount: z.number().positive().optional(),
   subcategoryId: z.string().min(1).optional(),
   spendType: SpendTypeEnum.optional(),
@@ -111,7 +111,7 @@ export type UpdateDiscretionaryItemInput = z.infer<typeof updateDiscretionaryIte
 // ─── Income ──────────────────────────────────────────────────────────────────
 
 export const createIncomeSourceSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).trim(),
   amount: z.number().positive(),
   frequency: IncomeFrequencyEnum,
   incomeType: IncomeTypeEnum.default("other"),
@@ -123,7 +123,7 @@ export const createIncomeSourceSchema = z.object({
 });
 
 export const updateIncomeSourceSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).trim().optional(),
   amount: z.number().positive().optional(),
   frequency: IncomeFrequencyEnum.optional(),
   incomeType: IncomeTypeEnum.optional(),
@@ -145,14 +145,14 @@ export type EndIncomeSourceInput = z.infer<typeof endIncomeSourceSchema>;
 // ─── Committed Bills ──────────────────────────────────────────────────────────
 
 export const createCommittedBillSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).trim(),
   amount: z.number().positive(),
   ownerId: z.string().optional(),
   sortOrder: z.number().int().optional(),
 });
 
 export const updateCommittedBillSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).trim().optional(),
   amount: z.number().positive().optional(),
   ownerId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
@@ -164,14 +164,14 @@ export type UpdateCommittedBillInput = z.infer<typeof updateCommittedBillSchema>
 // ─── Yearly Bills ─────────────────────────────────────────────────────────────
 
 export const createYearlyBillSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).trim(),
   amount: z.number().positive(),
   dueMonth: z.number().int().min(1).max(12),
   sortOrder: z.number().int().optional(),
 });
 
 export const updateYearlyBillSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).trim().optional(),
   amount: z.number().positive().optional(),
   dueMonth: z.number().int().min(1).max(12).optional(),
   sortOrder: z.number().int().optional(),
@@ -183,13 +183,13 @@ export type UpdateYearlyBillInput = z.infer<typeof updateYearlyBillSchema>;
 // ─── Discretionary ────────────────────────────────────────────────────────────
 
 export const createDiscretionaryCategorySchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).trim(),
   monthlyBudget: z.number().positive(),
   sortOrder: z.number().int().optional(),
 });
 
 export const updateDiscretionaryCategorySchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).trim().optional(),
   monthlyBudget: z.number().positive().optional(),
   sortOrder: z.number().int().optional(),
 });
@@ -200,13 +200,13 @@ export type UpdateDiscretionaryCategoryInput = z.infer<typeof updateDiscretionar
 // ─── Savings ──────────────────────────────────────────────────────────────────
 
 export const createSavingsAllocationSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).trim(),
   monthlyAmount: z.number().positive(),
   sortOrder: z.number().int().optional(),
 });
 
 export const updateSavingsAllocationSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).trim().optional(),
   monthlyAmount: z.number().positive().optional(),
   sortOrder: z.number().int().optional(),
 });

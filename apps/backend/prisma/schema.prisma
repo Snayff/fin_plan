@@ -163,6 +163,7 @@ model HouseholdSettings {
   investmentRatePct   Float?
   pensionRatePct      Float?
   inflationRatePct    Float    @default(2.5)
+  showPence           Boolean  @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }

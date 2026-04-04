@@ -98,6 +98,7 @@ export default function TierPage({ tier }: TierPageProps) {
             subcategories={(subcategories ?? []).map((s) => ({ id: s.id, name: s.name }))}
             items={selectedSummary?.items ?? []}
             isLoading={itemsLoading}
+            onSubcategorySelect={setSelectedId}
           />
         }
       />

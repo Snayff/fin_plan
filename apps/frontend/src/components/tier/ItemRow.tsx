@@ -1,5 +1,6 @@
 import { formatTwoLineAmount, SPEND_TYPE_LABELS, isStale, type SpendType } from "./formatAmount";
 import type { TierConfig } from "./tierConfig";
+import { useSettings } from "@/hooks/useSettings";
 
 interface WaterfallItem {
   id: string;
@@ -32,7 +33,9 @@ export default function ItemRow({
   stalenessMonths = 12,
   children,
 }: Props) {
-  const amounts = formatTwoLineAmount(item.amount, item.spendType);
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
+  const amounts = formatTwoLineAmount(item.amount, item.spendType, showPence);
   const stale = isStale(item.lastReviewedAt, now, stalenessMonths);
 
   return (

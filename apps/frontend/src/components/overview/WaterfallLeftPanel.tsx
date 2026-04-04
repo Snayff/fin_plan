@@ -11,18 +11,8 @@ import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { useSettings } from "@/hooks/useSettings";
 import { WaterfallConnector } from "@/components/overview/WaterfallConnector";
 
-interface SelectedItem {
-  id: string;
-  type: string;
-  name: string;
-  amount: number;
-  lastReviewedAt: Date;
-  wealthAccountId?: string | null;
-}
-
 interface WaterfallLeftPanelProps {
   summary: WaterfallSummary;
-  onSelectItem: (item: SelectedItem) => void;
   onOpenCashflowCalendar: () => void;
   selectedItemId: string | null;
 }
@@ -97,7 +87,6 @@ function SectionHeader({
 
 export function WaterfallLeftPanel({
   summary,
-  onSelectItem,
   onOpenCashflowCalendar,
   selectedItemId: _selectedItemId,
 }: WaterfallLeftPanelProps) {
@@ -316,26 +305,6 @@ export function WaterfallLeftPanel({
             </div>
           )}
         </div>
-        {discretionary.savings.allocations.length > 0 && (
-          <button
-            type="button"
-            onClick={() => {
-              const first = discretionary.savings.allocations[0];
-              if (first) {
-                onSelectItem({
-                  id: first.id,
-                  type: "savings_allocation",
-                  name: first.name,
-                  amount: first.monthlyAmount,
-                  lastReviewedAt: new Date(first.lastReviewedAt),
-                });
-              }
-            }}
-            className="px-2 py-2 text-xs text-primary hover:underline min-h-[44px] flex items-center"
-          >
-            Increase savings ▸
-          </button>
-        )}
       </motion.div>
     </motion.div>
   );

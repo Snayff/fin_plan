@@ -126,6 +126,7 @@ export default function ItemForm({
             value={name}
             onChange={(e) => setName(e.target.value)}
             aria-label="Name"
+            autoFocus={mode === "add"}
             className={`${inputClass} col-span-2`}
           />
         </div>
