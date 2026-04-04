@@ -120,6 +120,7 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
             )}
             onMouseEnter={cancelClose}
             onMouseLeave={scheduleClose}
+            onClick={(e) => e.stopPropagation()}
           >
             <p className="font-heading text-xs font-semibold text-foreground mb-1 uppercase tracking-wide">
               {entry.term}
