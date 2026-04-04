@@ -53,11 +53,37 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
       throw new AuthenticationError("No active household — please contact support");
     }
 
+    // Zero Trust: verify user is still a member of the active household
+    const membership = await prisma.householdMember.findUnique({
+      where: {
+        householdId_userId: {
+          householdId: user.activeHouseholdId,
+          userId: resolvedUserId,
+        },
+      },
+      select: { role: true },
+    });
+
+    if (!membership) {
+      // Clear stale activeHouseholdId and reject
+      const fallback = await prisma.householdMember.findFirst({
+        where: { userId: resolvedUserId },
+        orderBy: { joinedAt: "asc" },
+        select: { householdId: true },
+      });
+      await prisma.user.update({
+        where: { id: resolvedUserId },
+        data: { activeHouseholdId: fallback?.householdId ?? null },
+      });
+      throw new AuthenticationError("No longer a member of this household");
+    }
+
     // Attach normalized user info + householdId to request
     (request as any).user = {
       userId: resolvedUserId,
       email: user.email,
       name: user.name ?? "",
+      role: membership.role,
     };
     (request as any).householdId = user.activeHouseholdId;
   } catch (error) {
@@ -77,6 +103,7 @@ declare module "fastify" {
       userId: string;
       email: string;
       name: string;
+      role: string;
     };
     householdId?: string;
   }
