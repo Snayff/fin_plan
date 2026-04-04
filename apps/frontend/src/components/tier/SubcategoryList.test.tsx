@@ -5,6 +5,10 @@ import { renderWithProviders } from "@/test/helpers/render";
 import SubcategoryList from "./SubcategoryList";
 import { TIER_CONFIGS } from "./tierConfig";
 
+mock.module("@/hooks/useAnimatedValue", () => ({
+  useAnimatedValue: (target: number) => target,
+}));
+
 mock.module("framer-motion", () => ({
   motion: {
     div: ({
