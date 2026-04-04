@@ -11,18 +11,8 @@ import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { useSettings } from "@/hooks/useSettings";
 import { WaterfallConnector } from "@/components/overview/WaterfallConnector";
 
-interface SelectedItem {
-  id: string;
-  type: string;
-  name: string;
-  amount: number;
-  lastReviewedAt: Date;
-  wealthAccountId?: string | null;
-}
-
 interface WaterfallLeftPanelProps {
   summary: WaterfallSummary;
-  onSelectItem: (item: SelectedItem) => void;
   onOpenCashflowCalendar: () => void;
   selectedItemId: string | null;
 }
@@ -97,7 +87,6 @@ function SectionHeader({
 
 export function WaterfallLeftPanel({
   summary,
-  onSelectItem,
   onOpenCashflowCalendar,
   selectedItemId: _selectedItemId,
 }: WaterfallLeftPanelProps) {
