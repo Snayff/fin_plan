@@ -61,14 +61,14 @@ describe("householdService.createHousehold — subcategory seeding", () => {
       name: "New Household",
     } as any);
     prismaMock.householdSettings.create.mockResolvedValue({} as any);
-    prismaMock.subcategory.createMany.mockResolvedValue({ count: 13 });
+    prismaMock.subcategory.createMany.mockResolvedValue({ count: 16 });
 
     await householdService.createHousehold("user-1", "New Household");
 
     expect(prismaMock.subcategory.createMany).toHaveBeenCalledTimes(1);
     const call = prismaMock.subcategory.createMany.mock.calls[0]![0] as any;
     const data = call.data as any[];
-    expect(data).toHaveLength(13); // 3 income + 4 committed + 6 discretionary
+    expect(data).toHaveLength(16); // 3 income + 7 committed + 6 discretionary
     expect(data.every((r: any) => r.householdId === "hh-new")).toBe(true);
   });
 });
