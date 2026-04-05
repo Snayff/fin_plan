@@ -87,4 +87,25 @@ export const subcategoryService = {
     });
     return sub?.id ?? null;
   },
+
+  async getItemCounts(householdId: string, tier: WaterfallTier): Promise<Record<string, number>> {
+    const model =
+      tier === "income"
+        ? prisma.incomeSource
+        : tier === "committed"
+          ? prisma.committedItem
+          : prisma.discretionaryItem;
+
+    const groups = await (model as any).groupBy({
+      by: ["subcategoryId"],
+      where: { householdId },
+      _count: { id: true },
+    });
+
+    const counts: Record<string, number> = {};
+    for (const g of groups) {
+      counts[g.subcategoryId] = g._count.id;
+    }
+    return counts;
+  },
 };

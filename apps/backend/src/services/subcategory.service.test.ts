@@ -107,3 +107,53 @@ describe("subcategoryService.getDefaultSubcategoryId", () => {
     );
   });
 });
+
+describe("subcategoryService.getItemCounts", () => {
+  it("returns item counts per subcategory for income tier", async () => {
+    prismaMock.incomeSource.groupBy.mockResolvedValue([
+      { subcategoryId: "sub-salary", _count: { id: 3 } },
+      { subcategoryId: "sub-other", _count: { id: 1 } },
+    ] as any);
+
+    const result = await subcategoryService.getItemCounts("hh-1", "income");
+
+    expect(prismaMock.incomeSource.groupBy).toHaveBeenCalledWith({
+      by: ["subcategoryId"],
+      where: { householdId: "hh-1" },
+      _count: { id: true },
+    });
+    expect(result).toEqual({
+      "sub-salary": 3,
+      "sub-other": 1,
+    });
+  });
+
+  it("returns item counts for committed tier", async () => {
+    prismaMock.committedItem.groupBy.mockResolvedValue([
+      { subcategoryId: "sub-housing", _count: { id: 2 } },
+    ] as any);
+
+    const result = await subcategoryService.getItemCounts("hh-1", "committed");
+
+    expect(prismaMock.committedItem.groupBy).toHaveBeenCalled();
+    expect(result).toEqual({ "sub-housing": 2 });
+  });
+
+  it("returns item counts for discretionary tier", async () => {
+    prismaMock.discretionaryItem.groupBy.mockResolvedValue([
+      { subcategoryId: "sub-food", _count: { id: 5 } },
+    ] as any);
+
+    const result = await subcategoryService.getItemCounts("hh-1", "discretionary");
+
+    expect(prismaMock.discretionaryItem.groupBy).toHaveBeenCalled();
+    expect(result).toEqual({ "sub-food": 5 });
+  });
+
+  it("returns empty object when no items exist", async () => {
+    prismaMock.incomeSource.groupBy.mockResolvedValue([] as any);
+
+    const result = await subcategoryService.getItemCounts("hh-1", "income");
+    expect(result).toEqual({});
+  });
+});
