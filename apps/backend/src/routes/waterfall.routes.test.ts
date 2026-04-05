@@ -804,4 +804,15 @@ describe("POST /api/waterfall/subcategories/reset", () => {
       reassignments: [{ fromSubcategoryId: "sub-custom", toSubcategoryId: "sub-other" }],
     });
   });
+
+  it("returns 400 for invalid payload", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/subcategories/reset",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { reassignments: "not-an-array" },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
 });
