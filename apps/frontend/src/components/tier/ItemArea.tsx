@@ -177,15 +177,13 @@ export default function ItemArea({
       </div>
 
       {/* Lifecycle filter */}
-      {(stateCounts.future > 0 || stateCounts.expired > 0) && (
-        <div className="px-4 py-2 border-b border-foreground/5">
-          <ItemStatusFilter
-            counts={stateCounts}
-            selected={selectedStates}
-            onChange={setSelectedStates}
-          />
-        </div>
-      )}
+      <div className="px-4 py-2 border-b border-foreground/5">
+        <ItemStatusFilter
+          counts={stateCounts}
+          selected={selectedStates}
+          onChange={setSelectedStates}
+        />
+      </div>
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
