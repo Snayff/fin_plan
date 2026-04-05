@@ -84,7 +84,8 @@
       "Bash(agent-browser screenshot:*)",
       "Bash(agent-browser click:*)",
       "Bash(grep -r \"AreaChart\\\\|LineChart\\\\|BarChart\\\\|PieChart\" /c/Users/Gabriel/Documents/Dev/fin_plan/apps/frontend/src/components/overview --include=*.tsx --include=*.ts)",
-      "WebFetch(domain:www.pocketsmith.com)"
+      "WebFetch(domain:www.pocketsmith.com)",
+      "Bash(echo \"---exit: $?\")"
     ]
   },
   "hooks": {
