@@ -526,10 +526,41 @@ describe("subcategoryService.resetToDefaults", () => {
         isDefault: true,
       },
     ];
+    // 3 calls for initial tier fetches + 1 call for post-reseed lookup
+    const newDefaults = [
+      {
+        id: "new-salary",
+        householdId: "hh-1",
+        tier: "income",
+        name: "Salary",
+        sortOrder: 0,
+        isLocked: false,
+        isDefault: true,
+      },
+      {
+        id: "new-div",
+        householdId: "hh-1",
+        tier: "income",
+        name: "Dividends",
+        sortOrder: 1,
+        isLocked: false,
+        isDefault: true,
+      },
+      {
+        id: "new-other-i",
+        householdId: "hh-1",
+        tier: "income",
+        name: "Other",
+        sortOrder: 2,
+        isLocked: false,
+        isDefault: true,
+      },
+    ];
     prismaMock.subcategory.findMany
       .mockResolvedValueOnce(existing as any)
       .mockResolvedValueOnce([] as any)
-      .mockResolvedValueOnce([] as any);
+      .mockResolvedValueOnce([] as any)
+      .mockResolvedValueOnce(newDefaults as any);
 
     prismaMock.incomeSource.updateMany.mockResolvedValue({ count: 1 } as any);
     prismaMock.subcategory.deleteMany.mockResolvedValue({ count: 2 } as any);
@@ -539,6 +570,7 @@ describe("subcategoryService.resetToDefaults", () => {
       reassignments: [{ fromSubcategoryId: "sub-custom", toSubcategoryId: "sub-other-i" }],
     });
 
+    // First reassign items from custom to old Other
     expect(prismaMock.incomeSource.updateMany).toHaveBeenCalledWith({
       where: { subcategoryId: "sub-custom", householdId: "hh-1" },
       data: { subcategoryId: "sub-other-i" },
@@ -546,6 +578,12 @@ describe("subcategoryService.resetToDefaults", () => {
 
     expect(prismaMock.subcategory.deleteMany).toHaveBeenCalled();
     expect(prismaMock.subcategory.createMany).toHaveBeenCalled();
+
+    // Then remap items from old Other ID to new Other ID
+    expect(prismaMock.incomeSource.updateMany).toHaveBeenCalledWith({
+      where: { subcategoryId: "sub-other-i", householdId: "hh-1" },
+      data: { subcategoryId: "new-other-i" },
+    });
   });
 
   it("validates reassignment source IDs exist in the household", async () => {

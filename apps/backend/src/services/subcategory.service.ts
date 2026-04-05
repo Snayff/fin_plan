@@ -255,6 +255,15 @@ export const subcategoryService = {
       }
     }
 
+    // Build a map of destination IDs → their tier + name (so we can remap after re-seed)
+    const destinationInfo = new Map<string, { tier: string; name: string }>();
+    for (const r of reassignments) {
+      const dest = allExisting.find((s) => s.id === r.toSubcategoryId) as any;
+      if (dest) {
+        destinationInfo.set(r.toSubcategoryId, { tier: dest.tier, name: dest.name });
+      }
+    }
+
     await prisma.$transaction(async (tx) => {
       // 1. Reassign items for each reassignment
       for (const r of reassignments) {
@@ -299,6 +308,27 @@ export const subcategoryService = {
         }
       }
       await tx.subcategory.createMany({ data: rows });
+
+      // 4. Remap items from old destination IDs to newly created defaults
+      if (destinationInfo.size > 0) {
+        const newSubs = await tx.subcategory.findMany({ where: { householdId } });
+        for (const [oldId, info] of destinationInfo) {
+          const newSub = newSubs.find((s) => s.tier === info.tier && s.name === info.name);
+          if (!newSub || newSub.id === oldId) continue;
+
+          const itemModel =
+            info.tier === "income"
+              ? tx.incomeSource
+              : info.tier === "committed"
+                ? tx.committedItem
+                : tx.discretionaryItem;
+
+          await (itemModel as any).updateMany({
+            where: { subcategoryId: oldId, householdId },
+            data: { subcategoryId: newSub.id },
+          });
+        }
+      }
     });
   },
 };

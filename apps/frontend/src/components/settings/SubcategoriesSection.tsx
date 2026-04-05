@@ -90,6 +90,14 @@ export function SubcategoriesSection() {
   };
 
   const countsQuery = useSubcategoryCounts(activeTier);
+  const incomeCountsQuery = useSubcategoryCounts("income");
+  const committedCountsQuery = useSubcategoryCounts("committed");
+  const discretionaryCountsQuery = useSubcategoryCounts("discretionary");
+  const allCounts: Record<TierKey, Record<string, number>> = {
+    income: incomeCountsQuery.data ?? {},
+    committed: committedCountsQuery.data ?? {},
+    discretionary: discretionaryCountsQuery.data ?? {},
+  };
   const saveMutation = useSaveSubcategories();
   const resetMutation = useResetSubcategories();
 
@@ -269,7 +277,7 @@ export function SubcategoriesSection() {
             id: sub.id,
             tier,
             name: sub.name,
-            itemCount: 0,
+            itemCount: allCounts[tier][sub.id] ?? 0,
           });
         }
       }
