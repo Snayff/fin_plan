@@ -5,7 +5,7 @@ import { formatCurrency } from "@/utils/format";
 import { Button } from "@/components/ui/button";
 import { ButtonPair } from "@/components/common/ButtonPair";
 import { HistoryChart } from "./HistoryChart";
-import { useItemHistory, useConfirmItem, useUpdateItem, useEndIncome } from "@/hooks/useWaterfall";
+import { useItemHistory, useConfirmItem, useUpdateItem } from "@/hooks/useWaterfall";
 import { isStale, stalenessLabel } from "@/utils/staleness";
 import { useSettings } from "@/hooks/useSettings";
 import { CreateSnapshotModal } from "./CreateSnapshotModal";
@@ -32,7 +32,7 @@ interface ItemDetailPanelProps {
   onViewCashflow?: () => void;
 }
 
-type InlineMode = "none" | "edit" | "end";
+type InlineMode = "none" | "edit";
 
 export function ItemDetailPanel({
   item,
@@ -43,7 +43,6 @@ export function ItemDetailPanel({
 }: ItemDetailPanelProps) {
   const [inlineMode, setInlineMode] = useState<InlineMode>("none");
   const [editAmount, setEditAmount] = useState(String(item.amount));
-  const [endDate, setEndDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [showSnapshotPrompt, setShowSnapshotPrompt] = useState(false);
   const [showSnapshotModal, setShowSnapshotModal] = useState(false);
 
@@ -55,7 +54,6 @@ export function ItemDetailPanel({
   } = useItemHistory(item.type, item.id);
   const confirmItem = useConfirmItem();
   const updateItem = useUpdateItem();
-  const endIncome = useEndIncome();
   const { data: settings } = useSettings();
   const isReadOnly = !!isReadOnlyProp || snapshotDate != null;
   const { nudge: yearlyBillNudge } = useYearlyBillNudge(item.type, isReadOnly);
@@ -125,31 +123,22 @@ export function ItemDetailPanel({
     const parsed = parseFloat(editAmount);
     if (isNaN(parsed)) return;
 
-    updateItem.mutate(
+    // Amount updates now go through the period system; confirm the item as reviewed
+    confirmItem.mutate(
       {
-        type: item.type as Parameters<typeof updateItem.mutate>[0]["type"],
+        type: item.type as Parameters<typeof confirmItem.mutate>[0]["type"],
         id: item.id,
-        data: { amount: parsed },
       },
       {
         onSuccess: () => {
           setInlineMode("none");
-          toast.success("Amount saved");
+          toast.success("Item confirmed — update amounts via the period editor");
         },
       }
     );
   }
 
-  function handleEndIncome() {
-    endIncome.mutate(
-      { id: item.id, endedAt: new Date(endDate) },
-      {
-        onSuccess: () => {
-          onBack();
-        },
-      }
-    );
-  }
+  // End income is now managed through the period system
 
   return (
     <div className="space-y-6">
@@ -229,39 +218,6 @@ export function ItemDetailPanel({
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleSaveEdit} disabled={updateItem.isPending}>
                   {updateItem.isPending ? "Saving…" : "Save"}
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setInlineMode("none")}>
-                  Cancel
-                </Button>
-              </div>
-            </div>
-          )}
-
-          {item.type === "income_source" && inlineMode !== "end" && (
-            <button
-              type="button"
-              onClick={() => setInlineMode("end")}
-              className="text-xs text-muted-foreground underline underline-offset-2 hover:text-foreground transition-colors"
-            >
-              End this income source
-            </button>
-          )}
-
-          {inlineMode === "end" && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="end-date">
-                When did this end?
-              </label>
-              <input
-                id="end-date"
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-ring"
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleEndIncome} disabled={endIncome.isPending}>
-                  {endIncome.isPending ? "Saving…" : "Confirm"}
                 </Button>
                 <Button variant="outline" size="sm" onClick={() => setInlineMode("none")}>
                   Cancel

@@ -23,9 +23,17 @@ interface ItemData {
   notes: string | null;
 }
 
+interface ItemPeriod {
+  id: string;
+  startDate: string | Date;
+  endDate?: string | Date | null;
+  amount: number;
+}
+
 interface EditItem extends ItemData {
   id: string;
   lastReviewedAt: Date;
+  periods?: ItemPeriod[];
 }
 
 type AddModeProps = {
@@ -51,6 +59,8 @@ type Props = (AddModeProps | EditModeProps) & {
   onSave: (data: ItemData) => void;
   onCancel: () => void;
   isSaving?: boolean;
+  onDeletePeriod?: (periodId: string) => void;
+  onAddPeriod?: () => void;
 };
 
 export default function ItemForm({
@@ -65,6 +75,8 @@ export default function ItemForm({
   onDelete,
   isSaving,
   isStale,
+  onDeletePeriod,
+  onAddPeriod,
 }: Props) {
   const [name, setName] = useState(item?.name ?? "");
   const [amount, setAmount] = useState(item?.amount?.toString() ?? "");
@@ -208,6 +220,67 @@ export default function ItemForm({
             className={`${inputClass} w-full resize-none`}
           />
         </div>
+
+        {/* Period editor — edit mode only */}
+        {mode === "edit" && item?.periods && item.periods.length > 0 && (
+          <div className="col-span-2 flex flex-col gap-1">
+            <label className={labelClass}>Value History</label>
+            <div className="flex flex-col gap-1">
+              {item.periods.map((period) => {
+                const now = new Date();
+                const startDate = new Date(period.startDate);
+                const endDate = period.endDate ? new Date(period.endDate) : null;
+                const isCurrent = startDate <= now && (endDate === null || endDate > now);
+                const isFuture = startDate > now;
+                return (
+                  <div
+                    key={period.id}
+                    className={[
+                      "flex items-center gap-3 px-3 py-2 rounded-md border",
+                      isCurrent
+                        ? "bg-surface-elevated border-surface-elevated-border"
+                        : "bg-surface border-surface-border",
+                    ].join(" ")}
+                  >
+                    <span className="font-numeric text-xs text-text-tertiary min-w-[80px]">
+                      {startDate.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}
+                    </span>
+                    <span className="font-numeric text-sm text-text-secondary min-w-[70px]">
+                      £{period.amount.toFixed(2)}
+                    </span>
+                    {isCurrent && (
+                      <span
+                        className={`text-[9px] font-semibold uppercase tracking-[0.06em] ${config?.textClass ?? "text-text-secondary"} opacity-70`}
+                      >
+                        Current
+                      </span>
+                    )}
+                    {isFuture && (
+                      <span className="text-[9px] font-semibold uppercase tracking-[0.06em] text-text-muted">
+                        Scheduled
+                      </span>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => onDeletePeriod?.(period.id)}
+                      aria-label={`Remove period from ${startDate.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`}
+                      className="ml-auto text-xs text-text-muted hover:text-red-400 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={onAddPeriod}
+              className="mt-1 rounded-md border border-dashed border-surface-border px-3.5 py-1.5 text-xs text-text-tertiary hover:text-text-secondary hover:border-surface-elevated-border transition-colors"
+            >
+              + Add period
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Actions: Cancel · [spacer] · Delete · Still correct · Save */}

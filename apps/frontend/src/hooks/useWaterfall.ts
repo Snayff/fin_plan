@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { waterfallService } from "@/services/waterfall.service";
 import { showError } from "@/lib/toast";
+import type { CreatePeriodInput, UpdatePeriodInput } from "@finplan/shared";
 
 export const WATERFALL_KEYS = {
   summary: ["waterfall", "summary"] as const,
@@ -97,7 +98,7 @@ export function useUpdateItem() {
     }: {
       type: WaterfallItemType;
       id: string;
-      data: { amount?: number; name?: string };
+      data: { name?: string };
     }) => {
       const segment = typeToUrlSegment(type);
       switch (segment) {
@@ -108,9 +109,9 @@ export function useUpdateItem() {
         case "yearly":
           return waterfallService.updateYearly(id, data);
         case "discretionary":
-          return waterfallService.updateDiscretionary(id, { amount: data.amount });
+          return waterfallService.updateDiscretionary(id, data);
         case "savings":
-          return waterfallService.updateSavings(id, { monthlyAmount: data.amount });
+          return waterfallService.updateSavings(id, data);
         default:
           return Promise.reject(new Error(`Unknown type: ${type}`));
       }
@@ -292,15 +293,51 @@ export function useTierItems(tier: "income" | "committed" | "discretionary") {
   });
 }
 
-export function useEndIncome() {
-  const queryClient = useQueryClient();
+// ─── Period hooks ─────────────────────────────────────────────────────────────
 
+export const PERIOD_KEYS = {
+  list: (itemType: string, itemId: string) => ["periods", itemType, itemId] as const,
+};
+
+export function usePeriods(itemType: string, itemId: string) {
+  return useQuery({
+    queryKey: PERIOD_KEYS.list(itemType, itemId),
+    queryFn: () => waterfallService.listPeriods(itemType, itemId),
+    enabled: !!itemId,
+  });
+}
+
+export function useCreatePeriod(itemType: string, itemId: string) {
+  const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, endedAt }: { id: string; endedAt: Date }) =>
-      waterfallService.endIncome(id, { endedAt }),
+    mutationFn: (data: Omit<CreatePeriodInput, "itemType" | "itemId">) =>
+      waterfallService.createPeriod({ ...data, itemType, itemId } as CreatePeriodInput),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
-      void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
+      void qc.invalidateQueries({ queryKey: PERIOD_KEYS.list(itemType, itemId) });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+    },
+  });
+}
+
+export function useUpdatePeriod(itemType: string, itemId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: UpdatePeriodInput }) =>
+      waterfallService.updatePeriod(id, data),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: PERIOD_KEYS.list(itemType, itemId) });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+    },
+  });
+}
+
+export function useDeletePeriod(itemType: string, itemId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (periodId: string) => waterfallService.deletePeriod(periodId),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: PERIOD_KEYS.list(itemType, itemId) });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
     },
   });
 }
