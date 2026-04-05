@@ -9,6 +9,7 @@ interface WaterfallSankeyProps {
 }
 
 const TIER_COLOURS = {
+  income: "#0ea5e9",
   committed: "#6366f1",
   discretionary: "#a855f7",
   surplus: "#4adcd0",
@@ -32,7 +33,7 @@ const BAND_BOTTOM = HEIGHT - 20;
 const BAND_HEIGHT = BAND_BOTTOM - BAND_TOP;
 
 interface Band {
-  key: string;
+  key: BandKey;
   colour: string;
   fraction: number;
   yStartLeft: number;
@@ -169,7 +170,7 @@ export function WaterfallSankey({
             width={16}
             height={BAND_HEIGHT}
             rx={4}
-            fill="#0ea5e9"
+            fill={TIER_COLOURS.income}
             opacity={0.8}
           />
         )}
@@ -181,7 +182,7 @@ export function WaterfallSankey({
             <path
               key={band.key}
               role="img"
-              aria-label={`${TIER_LABELS[band.key as BandKey]}: ${formatCurrency(amounts[band.key as BandKey])}`}
+              aria-label={`${TIER_LABELS[band.key]}: ${formatCurrency(amounts[band.key])}`}
               d={bandPath(
                 COL_LEFT + 8,
                 COL_MID - 8,
@@ -193,7 +194,7 @@ export function WaterfallSankey({
               fill={band.colour}
               opacity={hoveredBand === band.key ? 0.9 : 0.5}
               style={{ transition: "opacity 150ms ease-out", cursor: "default" }}
-              onMouseEnter={() => setHoveredBand(band.key as BandKey)}
+              onMouseEnter={() => setHoveredBand(band.key)}
               onMouseLeave={() => setHoveredBand(null)}
             />
           ))}
@@ -222,7 +223,7 @@ export function WaterfallSankey({
               <path
                 key={band.key}
                 role="img"
-                aria-label={`${TIER_LABELS[band.key as BandKey]}: ${formatCurrency(amounts[band.key as BandKey])}`}
+                aria-label={`${TIER_LABELS[band.key]}: ${formatCurrency(amounts[band.key])}`}
                 d={bandPath(
                   COL_MID + 8,
                   COL_RIGHT - 8,
@@ -234,7 +235,7 @@ export function WaterfallSankey({
                 fill={band.colour}
                 opacity={hoveredBand === band.key ? 0.9 : 0.5}
                 style={{ transition: "opacity 150ms ease-out", cursor: "default" }}
-                onMouseEnter={() => setHoveredBand(band.key as BandKey)}
+                onMouseEnter={() => setHoveredBand(band.key)}
                 onMouseLeave={() => setHoveredBand(null)}
               />
             );
