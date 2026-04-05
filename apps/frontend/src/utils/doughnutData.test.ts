@@ -128,4 +128,47 @@ describe("extractDrillItems", () => {
     expect(items.find((i) => i.name === "Dining Out")?.amount).toBe(500);
     expect(items.find((i) => i.name === "Emergency Fund")?.amount).toBe(500);
   });
+
+  it("returns empty array when committed has no bills or yearly bills", () => {
+    const summary = {
+      ...baseSummary,
+      committed: {
+        ...baseSummary.committed,
+        bills: [],
+        yearlyBills: [],
+      },
+    };
+    const items = extractDrillItems("committed", summary);
+    expect(items).toHaveLength(0);
+  });
+
+  it("returns empty array when discretionary has no categories or savings", () => {
+    const items = extractDrillItems("discretionary", baseSummary);
+    expect(items).toHaveLength(0);
+  });
+
+  it("falls back to empty string when subcategoryId is undefined", () => {
+    const summary = {
+      ...baseSummary,
+      committed: {
+        ...baseSummary.committed,
+        bills: [
+          {
+            id: "b2",
+            householdId: "h1",
+            name: "No SubCat Bill",
+            amount: 100,
+            ownerId: null,
+            sortOrder: 0,
+            lastReviewedAt: new Date(),
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          },
+        ],
+        yearlyBills: [],
+      },
+    };
+    const items = extractDrillItems("committed", summary);
+    expect(items[0]?.subcategoryId).toBe("");
+  });
 });
