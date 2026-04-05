@@ -137,32 +137,6 @@ export default function ItemArea({
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          {items.length > 1 && (
-            <>
-              <select
-                value={sortField}
-                onChange={(e) => {
-                  setSortField(e.target.value as "name" | "createdAt" | "monthlyValue");
-                  setRecentlyAddedItemId(null);
-                }}
-                className="bg-transparent border border-foreground/10 rounded px-1.5 py-0.5 text-xs text-foreground/60 cursor-pointer focus:outline-none focus:border-foreground/20"
-              >
-                <option value="name">Name</option>
-                <option value="createdAt">Date added</option>
-                <option value="monthlyValue">Value / month</option>
-              </select>
-              <button
-                onClick={() => {
-                  setSortDir(sortDir === "asc" ? "desc" : "asc");
-                  setRecentlyAddedItemId(null);
-                }}
-                className="text-foreground/40 hover:text-foreground/70 transition-colors text-xs w-5 h-5 flex items-center justify-center"
-                title={sortDir === "asc" ? "Ascending" : "Descending"}
-              >
-                {sortDir === "asc" ? "↑" : "↓"}
-              </button>
-            </>
-          )}
           {!subcategory.isLocked && (
             <GhostAddButton
               onClick={() => {
@@ -176,13 +150,39 @@ export default function ItemArea({
         </div>
       </div>
 
-      {/* Lifecycle filter */}
-      <div className="px-4 py-2 border-b border-foreground/5">
+      {/* Lifecycle filter + sort */}
+      <div className="flex items-center justify-between px-4 py-2 border-b border-foreground/5">
         <ItemStatusFilter
           counts={stateCounts}
           selected={selectedStates}
           onChange={setSelectedStates}
         />
+        {items.length > 1 && (
+          <div className="flex items-center gap-1.5">
+            <select
+              value={sortField}
+              onChange={(e) => {
+                setSortField(e.target.value as "name" | "createdAt" | "monthlyValue");
+                setRecentlyAddedItemId(null);
+              }}
+              className="bg-transparent border border-foreground/10 rounded px-1.5 py-0.5 text-xs text-foreground/60 cursor-pointer focus:outline-none focus:border-foreground/20"
+            >
+              <option value="name">Name</option>
+              <option value="createdAt">Date added</option>
+              <option value="monthlyValue">Value / month</option>
+            </select>
+            <button
+              onClick={() => {
+                setSortDir(sortDir === "asc" ? "desc" : "asc");
+                setRecentlyAddedItemId(null);
+              }}
+              className="text-foreground/40 hover:text-foreground/70 transition-colors text-xs w-5 h-5 flex items-center justify-center"
+              title={sortDir === "asc" ? "Ascending" : "Descending"}
+            >
+              {sortDir === "asc" ? "↑" : "↓"}
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Content */}
