@@ -1,0 +1,142 @@
+<h2>Subcategory editor layout</h2>
+<p class="subtitle">Inside Settings → Subcategories section, with tier tabs above. How should the editable list look?</p>
+
+<div class="cards">
+  <!-- Option A: Inline editable list -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: #0d1120; border-radius: 8px; padding: 20px; font-family: system-ui, sans-serif; max-width: 480px;">
+        <!-- Section heading -->
+        <div style="font-size: 16px; font-weight: 700; color: rgba(238,242,255,0.92); margin-bottom: 4px; font-family: 'Outfit', sans-serif;">Subcategories</div>
+        <div style="height: 1px; background: rgba(238,242,255,0.08); margin-bottom: 16px;"></div>
+
+        <!-- Tier tabs -->
+        <div style="display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid rgba(238,242,255,0.08);">
+          <div style="padding: 8px 16px; font-size: 12px; font-weight: 600; color: #6366f1; border-bottom: 2px solid #6366f1; cursor: pointer;">Committed</div>
+          <div style="padding: 8px 16px; font-size: 12px; font-weight: 500; color: rgba(238,242,255,0.4); cursor: pointer;">Income</div>
+          <div style="padding: 8px 16px; font-size: 12px; font-weight: 500; color: rgba(238,242,255,0.4); cursor: pointer;">Discretionary</div>
+        </div>
+
+        <!-- Capacity indicator -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <div style="font-size: 11px; color: rgba(238,242,255,0.35);">7 of 7 used</div>
+        </div>
+
+        <!-- Editable list -->
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+          <!-- Drag handle + editable name rows -->
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(238,242,255,0.03); border-radius: 6px; border: 1px solid rgba(238,242,255,0.06);">
+            <div style="color: rgba(238,242,255,0.2); cursor: grab; font-size: 14px;">⠿</div>
+            <input type="text" value="Housing" style="flex: 1; background: none; border: none; color: rgba(238,242,255,0.85); font-size: 13px; outline: none; font-family: 'Nunito Sans', sans-serif;" />
+            <div style="color: rgba(238,242,255,0.2); font-size: 11px; padding: 2px 6px; background: rgba(238,242,255,0.04); border-radius: 4px;">default</div>
+            <button style="background: none; border: none; color: rgba(239,68,68,0.5); cursor: pointer; font-size: 16px; padding: 2px 4px;">×</button>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(238,242,255,0.03); border-radius: 6px; border: 1px solid rgba(238,242,255,0.06);">
+            <div style="color: rgba(238,242,255,0.2); cursor: grab; font-size: 14px;">⠿</div>
+            <input type="text" value="Utilities" style="flex: 1; background: none; border: none; color: rgba(238,242,255,0.85); font-size: 13px; outline: none; font-family: 'Nunito Sans', sans-serif;" />
+            <div style="color: rgba(238,242,255,0.2); font-size: 11px; padding: 2px 6px; background: rgba(238,242,255,0.04); border-radius: 4px;">default</div>
+            <button style="background: none; border: none; color: rgba(239,68,68,0.5); cursor: pointer; font-size: 16px; padding: 2px 4px;">×</button>
+          </div>
+
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(238,242,255,0.03); border-radius: 6px; border: 1px solid rgba(238,242,255,0.06);">
+            <div style="color: rgba(238,242,255,0.2); cursor: grab; font-size: 14px;">⠿</div>
+            <input type="text" value="Services" style="flex: 1; background: none; border: none; color: rgba(238,242,255,0.85); font-size: 13px; outline: none; font-family: 'Nunito Sans', sans-serif;" />
+            <div style="color: rgba(238,242,255,0.2); font-size: 11px; padding: 2px 6px; background: rgba(238,242,255,0.04); border-radius: 4px;">default</div>
+            <button style="background: none; border: none; color: rgba(239,68,68,0.5); cursor: pointer; font-size: 16px; padding: 2px 4px;">×</button>
+          </div>
+
+          <!-- Mandatory row - locked -->
+          <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: rgba(238,242,255,0.02); border-radius: 6px; border: 1px solid rgba(238,242,255,0.04); opacity: 0.6;">
+            <div style="color: rgba(238,242,255,0.1); font-size: 14px;">⠿</div>
+            <span style="flex: 1; color: rgba(238,242,255,0.5); font-size: 13px; font-family: 'Nunito Sans', sans-serif;">Other</span>
+            <div style="color: rgba(238,242,255,0.15); font-size: 11px; padding: 2px 6px; background: rgba(238,242,255,0.03); border-radius: 4px;">mandatory</div>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgba(238,242,255,0.2)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+        </div>
+
+        <!-- Add button (disabled - at max) -->
+        <button style="margin-top: 10px; background: none; border: 1px dashed rgba(238,242,255,0.1); border-radius: 6px; color: rgba(238,242,255,0.2); font-size: 12px; padding: 8px; cursor: not-allowed; width: 100%; opacity: 0.5;">+ Add subcategory (max reached)</button>
+
+        <!-- Save -->
+        <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+          <button style="background: rgba(238,242,255,0.06); color: rgba(238,242,255,0.65); border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer;">Reset to defaults</button>
+          <button style="background: #7c3aed; color: rgba(238,242,255,0.92); border: none; border-radius: 6px; padding: 8px 16px; font-size: 12px; font-weight: 600; cursor: pointer;">Save</button>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Always-editable inline list</h3>
+      <p>All fields are live inputs. Drag handles for reorder. "default" and "mandatory" badges distinguish subcategory types. × to remove. Disabled add button when at max (7). "Reset to defaults" to undo all customisation.</p>
+    </div>
+  </div>
+
+  <!-- Option B: Read-first with edit toggle -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div style="background: #0d1120; border-radius: 8px; padding: 20px; font-family: system-ui, sans-serif; max-width: 480px;">
+        <!-- Section heading -->
+        <div style="font-size: 16px; font-weight: 700; color: rgba(238,242,255,0.92); margin-bottom: 4px; font-family: 'Outfit', sans-serif;">Subcategories</div>
+        <div style="height: 1px; background: rgba(238,242,255,0.08); margin-bottom: 16px;"></div>
+
+        <!-- Tier tabs -->
+        <div style="display: flex; gap: 0; margin-bottom: 20px; border-bottom: 1px solid rgba(238,242,255,0.08);">
+          <div style="padding: 8px 16px; font-size: 12px; font-weight: 600; color: #6366f1; border-bottom: 2px solid #6366f1; cursor: pointer;">Committed</div>
+          <div style="padding: 8px 16px; font-size: 12px; font-weight: 500; color: rgba(238,242,255,0.4); cursor: pointer;">Income</div>
+          <div style="padding: 8px 16px; font-size: 12px; font-weight: 500; color: rgba(238,242,255,0.4); cursor: pointer;">Discretionary</div>
+        </div>
+
+        <!-- Read-only list -->
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(238,242,255,0.3); margin-bottom: 10px;">READ VIEW</div>
+        <div style="display: flex; flex-direction: column; gap: 2px; margin-bottom: 12px;">
+          <div style="display: flex; align-items: center; gap: 8px; padding: 6px 10px;">
+            <span style="color: rgba(238,242,255,0.65); font-size: 13px;">1.</span>
+            <span style="color: rgba(238,242,255,0.85); font-size: 13px;">Housing</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 6px 10px;">
+            <span style="color: rgba(238,242,255,0.65); font-size: 13px;">2.</span>
+            <span style="color: rgba(238,242,255,0.85); font-size: 13px;">Utilities</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 6px 10px;">
+            <span style="color: rgba(238,242,255,0.65); font-size: 13px;">3.</span>
+            <span style="color: rgba(238,242,255,0.85); font-size: 13px;">Services</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; padding: 6px 10px;">
+            <span style="color: rgba(238,242,255,0.65); font-size: 13px;">4.</span>
+            <span style="color: rgba(238,242,255,0.85); font-size: 13px; opacity: 0.5;">Other</span>
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(238,242,255,0.2)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          </div>
+        </div>
+        <button style="background: rgba(238,242,255,0.06); color: rgba(238,242,255,0.65); border: 1px solid rgba(238,242,255,0.08); border-radius: 6px; padding: 8px 16px; font-size: 12px; cursor: pointer; width: 100%;">Customise</button>
+
+        <!-- Arrow -->
+        <div style="text-align: center; color: rgba(238,242,255,0.2); margin: 12px 0; font-size: 18px;">↓</div>
+
+        <!-- Edit view (what clicking Customise shows) -->
+        <div style="font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(238,242,255,0.3); margin-bottom: 10px;">EDIT VIEW (after clicking Customise)</div>
+        <div style="border: 1px solid rgba(124,58,237,0.2); border-radius: 8px; padding: 12px; background: rgba(124,58,237,0.03);">
+          <div style="display: flex; flex-direction: column; gap: 4px;">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: rgba(238,242,255,0.03); border-radius: 4px;">
+              <div style="color: rgba(238,242,255,0.2); cursor: grab; font-size: 14px;">⠿</div>
+              <input type="text" value="Housing" style="flex: 1; background: none; border: none; color: rgba(238,242,255,0.85); font-size: 13px; outline: none;" />
+              <button style="background: none; border: none; color: rgba(239,68,68,0.5); cursor: pointer; font-size: 16px;">×</button>
+            </div>
+            <div style="display: flex; align-items: center; gap: 8px; padding: 6px 8px; background: rgba(238,242,255,0.03); border-radius: 4px;">
+              <div style="color: rgba(238,242,255,0.2); cursor: grab; font-size: 14px;">⠿</div>
+              <input type="text" value="Utilities" style="flex: 1; background: none; border: none; color: rgba(238,242,255,0.85); font-size: 13px; outline: none;" />
+              <button style="background: none; border: none; color: rgba(239,68,68,0.5); cursor: pointer; font-size: 16px;">×</button>
+            </div>
+          </div>
+          <div style="margin-top: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+            <button style="background: rgba(238,242,255,0.06); color: rgba(238,242,255,0.65); border: none; border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer;">Cancel</button>
+            <button style="background: #7c3aed; color: rgba(238,242,255,0.92); border: none; border-radius: 6px; padding: 6px 14px; font-size: 12px; font-weight: 600; cursor: pointer;">Save</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Read-only list with "Customise" toggle</h3>
+      <p>Default view is a clean numbered list. "Customise" button reveals the editable state with drag handles, rename inputs, and remove buttons. Cancel/Save to exit. Two distinct modes.</p>
+    </div>
+  </div>
+</div>
