@@ -10,6 +10,12 @@ mock.module("@/hooks/useWaterfall", () => ({
     isError: true,
     refetch: () => {},
   }),
+  useFinancialSummary: () => ({
+    data: undefined,
+    isLoading: false,
+    isError: true,
+    refetch: () => {},
+  }),
   useItemHistory: () => ({ data: undefined, isLoading: false, isError: false }),
   useConfirmItem: () => ({ mutate: () => {}, isPending: false }),
   useUpdateItem: () => ({ mutate: () => {}, isPending: false }),

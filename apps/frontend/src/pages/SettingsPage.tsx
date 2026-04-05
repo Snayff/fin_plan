@@ -7,6 +7,7 @@ import { HouseholdSection } from "@/components/settings/HouseholdSection";
 import { AuditLogSection } from "@/components/settings/AuditLogSection";
 import { GrowthRatesSection } from "@/components/settings/GrowthRatesSection";
 import { DisplaySection } from "@/components/settings/DisplaySection";
+import { SubcategoriesSection } from "@/components/settings/SubcategoriesSection";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
 import { useSettings } from "@/hooks/useSettings";
@@ -16,6 +17,7 @@ import { useHouseholdDetails } from "@/hooks/useSettings";
 const SECTIONS = [
   { id: "profile", label: "Profile" },
   { id: "display", label: "Display" },
+  { id: "subcategories", label: "Subcategories" },
   { id: "staleness", label: "Staleness thresholds" },
   { id: "surplus", label: "Surplus benchmark" },
   { id: "isa", label: "ISA settings" },
@@ -112,6 +114,9 @@ export default function SettingsPage() {
             </div>
             <div ref={setRef("display")} data-section-id="display">
               <DisplaySection />
+            </div>
+            <div ref={setRef("subcategories")} data-section-id="subcategories">
+              <SubcategoriesSection />
             </div>
             <div ref={setRef("staleness")} data-section-id="staleness">
               <StalenessSection />
