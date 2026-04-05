@@ -121,7 +121,7 @@ export default function OverviewPage() {
       />
     );
   } else {
-    right = <FinancialSummaryPanel />;
+    right = <FinancialSummaryPanel waterfallSummary={summary} isSnapshot={isViewingSnapshot} />;
   }
 
   return (

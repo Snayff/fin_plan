@@ -1,0 +1,222 @@
+<h2>Right Panel: Split Layout v2</h2>
+<p class="subtitle">Net worth centred above the split (not full width). Sankey flows Income → Committed & Discretionary → Surplus. Doughnuts include keys.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Overview — Right Panel (default state)</div>
+  <div class="mockup-body" style="display: flex; gap: 0; min-height: 580px; background: #080a14;">
+    <!-- Left panel (waterfall) -->
+    <div style="width: 180px; background: #0d1120; padding: 16px; border-right: 1px solid #1a1f35; font-size: 11px; flex-shrink: 0;">
+      <div style="color: rgba(238,242,255,0.3); font-size: 9px; text-align: center; margin-bottom: 12px; letter-spacing: 0.05em;">SNAPSHOT DOTS</div>
+      <div style="border-top: 1px solid #1a1f35; padding-top: 12px;"></div>
+      <div style="color: #0ea5e9; font-weight: 700; font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between;">
+        <span>INCOME</span>
+        <span style="font-family: monospace; font-weight: 500;">£8,856</span>
+      </div>
+      <div style="color: rgba(238,242,255,0.15); font-size: 9px; margin: 8px 0; padding-left: 4px;">│<br>→ minus committed<br>│</div>
+      <div style="color: #6366f1; font-weight: 700; font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between;">
+        <span>COMMITTED</span>
+        <span style="font-family: monospace; font-weight: 500;">£4,817</span>
+      </div>
+      <div style="color: rgba(238,242,255,0.15); font-size: 9px; margin: 8px 0; padding-left: 4px;">│<br>→ minus discretionary<br>│</div>
+      <div style="color: #a855f7; font-weight: 700; font-size: 12px; margin-bottom: 4px; display: flex; justify-content: space-between;">
+        <span>DISCRETIONARY</span>
+        <span style="font-family: monospace; font-weight: 500;">£3,830</span>
+      </div>
+      <div style="color: rgba(238,242,255,0.15); font-size: 9px; margin: 8px 0; padding-left: 4px;">│<br>= equals<br>│</div>
+      <div style="color: #4adcd0; font-weight: 700; font-size: 12px; display: flex; justify-content: space-between;">
+        <span>SURPLUS</span>
+        <span style="font-family: monospace; font-weight: 500;">£209</span>
+      </div>
+    </div>
+
+    <!-- Right panel -->
+    <div style="flex: 1; padding: 20px; display: flex; flex-direction: column; gap: 16px;">
+
+      <!-- Net Worth — compact, centred -->
+      <div style="display: flex; justify-content: center;">
+        <div style="background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px; padding: 12px 32px; text-align: center;">
+          <div style="color: rgba(238,242,255,0.4); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 4px;">NET WORTH</div>
+          <div style="color: rgba(238,242,255,0.92); font-family: 'JetBrains Mono', monospace; font-size: 24px; font-weight: 700;">£42,300</div>
+          <svg width="160" height="24" viewBox="0 0 160 24" style="margin-top: 4px; opacity: 0.5;">
+            <polyline points="0,20 20,18 40,16 60,17 80,14 100,12 120,10 140,8 160,4" fill="none" stroke="#6366f1" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
+      </div>
+
+      <!-- Split area -->
+      <div style="display: flex; gap: 16px; flex: 1;">
+
+        <!-- LEFT: Sankey + Doughnuts -->
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 14px;">
+
+          <!-- Sankey: Income → Committed & Discretionary → Surplus -->
+          <div style="background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px; padding: 16px; flex-shrink: 0;">
+            <div style="color: rgba(238,242,255,0.4); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 12px;">WATERFALL FLOW</div>
+            <div style="position: relative; height: 140px;">
+              <!-- Column 1: Income -->
+              <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 32px; display: flex; align-items: center;">
+                <div style="background: rgba(14,165,233,0.15); border-left: 3px solid #0ea5e9; width: 100%; height: 90%; border-radius: 0 4px 4px 0; display: flex; align-items: center; justify-content: center;">
+                  <span style="color: #0ea5e9; font-size: 7px; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 0.05em; font-weight: 600;">INCOME</span>
+                </div>
+              </div>
+
+              <!-- Column 2: Committed + Discretionary (stacked) -->
+              <div style="position: absolute; left: 50%; transform: translateX(-50%); top: 0; bottom: 0; width: 40px; display: flex; flex-direction: column; justify-content: center; gap: 6px;">
+                <div style="background: rgba(99,102,241,0.15); border-left: 3px solid #6366f1; flex: 54; border-radius: 0 4px 4px 0; display: flex; align-items: center; justify-content: center; min-height: 0;">
+                  <span style="color: #6366f1; font-size: 6px; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 0.03em; font-weight: 600;">COMMITTED</span>
+                </div>
+                <div style="background: rgba(168,85,247,0.15); border-left: 3px solid #a855f7; flex: 43; border-radius: 0 4px 4px 0; display: flex; align-items: center; justify-content: center; min-height: 0;">
+                  <span style="color: #a855f7; font-size: 6px; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 0.03em; font-weight: 600;">DISCRET.</span>
+                </div>
+              </div>
+
+              <!-- Column 3: Surplus -->
+              <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 32px; display: flex; align-items: center;">
+                <div style="background: rgba(74,220,208,0.15); border-right: 3px solid #4adcd0; width: 100%; height: 18%; border-radius: 4px 0 0 4px; display: flex; align-items: center; justify-content: center; position: absolute; bottom: 10px;">
+                  <span style="color: #4adcd0; font-size: 7px; writing-mode: vertical-rl; transform: rotate(180deg); letter-spacing: 0.05em; font-weight: 600;">SURPLUS</span>
+                </div>
+              </div>
+
+              <!-- Flow paths SVG -->
+              <svg width="100%" height="140" viewBox="0 0 500 140" preserveAspectRatio="none" style="position: absolute; left: 0; top: 0;">
+                <!-- Income → Committed (top-heavy flow) -->
+                <path d="M 45,10 C 140,10 160,12 210,14 L 210,76 C 160,70 140,55 45,52 Z" fill="rgba(99,102,241,0.12)" stroke="rgba(99,102,241,0.2)" stroke-width="0.5"/>
+                <!-- Income → Discretionary (middle flow) -->
+                <path d="M 45,54 C 140,58 160,74 210,80 L 210,120 C 160,112 140,88 45,80 Z" fill="rgba(168,85,247,0.12)" stroke="rgba(168,85,247,0.2)" stroke-width="0.5"/>
+                <!-- Income → Surplus (thin bottom flow, bypasses middle) -->
+                <path d="M 45,82 C 100,90 140,100 210,122 L 210,128 C 140,108 100,96 45,90 Z" fill="rgba(74,220,208,0.1)" stroke="rgba(74,220,208,0.15)" stroke-width="0.5"/>
+
+                <!-- Committed + Discretionary → Surplus (thin exit flows from middle column to right) -->
+                <!-- The remaining surplus passes through -->
+                <path d="M 290,120 C 350,118 400,114 455,108 L 455,126 C 400,128 350,128 290,128 Z" fill="rgba(74,220,208,0.12)" stroke="rgba(74,220,208,0.2)" stroke-width="0.5"/>
+              </svg>
+
+              <!-- Amount labels -->
+              <div style="position: absolute; left: 44px; top: 4px; color: #0ea5e9; font-size: 8px; font-family: monospace;">£8,856</div>
+              <div style="position: absolute; left: 50%; transform: translateX(28px); top: 4px; color: #6366f1; font-size: 8px; font-family: monospace;">£4,817</div>
+              <div style="position: absolute; left: 50%; transform: translateX(28px); bottom: 18px; color: #a855f7; font-size: 8px; font-family: monospace;">£3,830</div>
+              <div style="position: absolute; right: 40px; bottom: 6px; color: #4adcd0; font-size: 8px; font-family: monospace;">£209</div>
+            </div>
+          </div>
+
+          <!-- Doughnuts side by side with keys -->
+          <div style="display: flex; gap: 12px;">
+            <!-- Committed doughnut -->
+            <div style="flex: 1; background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px; padding: 12px;">
+              <div style="color: #6366f1; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 8px; text-align: center;">COMMITTED</div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="80" height="80" viewBox="0 0 80 80" style="flex-shrink: 0;">
+                  <circle cx="40" cy="40" r="30" fill="none" stroke="#1a1f35" stroke-width="8"/>
+                  <!-- Rent: 50% -->
+                  <circle cx="40" cy="40" r="30" fill="none" stroke="#6366f1" stroke-width="8" stroke-dasharray="94 95" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
+                  <!-- Utilities: 22% -->
+                  <circle cx="40" cy="40" r="30" fill="none" stroke="#818cf8" stroke-width="8" stroke-dasharray="42 147" stroke-dashoffset="-94" transform="rotate(-90 40 40)"/>
+                  <!-- Insurance: 16% -->
+                  <circle cx="40" cy="40" r="30" fill="none" stroke="#4f46e5" stroke-width="8" stroke-dasharray="30 159" stroke-dashoffset="-136" transform="rotate(-90 40 40)"/>
+                  <!-- Other: 12% -->
+                  <circle cx="40" cy="40" r="30" fill="none" stroke="#312e81" stroke-width="8" stroke-dasharray="23 166" stroke-dashoffset="-166" transform="rotate(-90 40 40)"/>
+                  <text x="40" y="38" text-anchor="middle" fill="rgba(238,242,255,0.92)" font-family="JetBrains Mono, monospace" font-size="9" font-weight="600">£4,817</text>
+                  <text x="40" y="48" text-anchor="middle" fill="rgba(238,242,255,0.35)" font-family="Nunito Sans, sans-serif" font-size="6">/month</text>
+                </svg>
+                <!-- Key -->
+                <div style="display: flex; flex-direction: column; gap: 4px; font-size: 8px; min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="width: 6px; height: 6px; border-radius: 2px; background: #6366f1; flex-shrink: 0;"></div>
+                    <span style="color: rgba(238,242,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Rent / Mortgage</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="width: 6px; height: 6px; border-radius: 2px; background: #818cf8; flex-shrink: 0;"></div>
+                    <span style="color: rgba(238,242,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Utilities</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="width: 6px; height: 6px; border-radius: 2px; background: #4f46e5; flex-shrink: 0;"></div>
+                    <span style="color: rgba(238,242,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Insurance</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="width: 6px; height: 6px; border-radius: 2px; background: #312e81; flex-shrink: 0;"></div>
+                    <span style="color: rgba(238,242,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Other</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Discretionary doughnut -->
+            <div style="flex: 1; background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px; padding: 12px;">
+              <div style="color: #a855f7; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 8px; text-align: center;">DISCRETIONARY</div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <svg width="80" height="80" viewBox="0 0 80 80" style="flex-shrink: 0;">
+                  <circle cx="40" cy="40" r="30" fill="none" stroke="#1a1f35" stroke-width="8"/>
+                  <!-- Groceries: 40% -->
+                  <circle cx="40" cy="40" r="30" fill="none" stroke="#a855f7" stroke-width="8" stroke-dasharray="75 114" stroke-dashoffset="0" transform="rotate(-90 40 40)"/>
+                  <!-- Entertainment: 25% -->
+                  <circle cx="40" cy="40" r="30" fill="none" stroke="#c084fc" stroke-width="8" stroke-dasharray="47 142" stroke-dashoffset="-75" transform="rotate(-90 40 40)"/>
+                  <!-- Dining: 20% -->
+                  <circle cx="40" cy="40" r="30" fill="none" stroke="#7c3aed" stroke-width="8" stroke-dasharray="38 151" stroke-dashoffset="-122" transform="rotate(-90 40 40)"/>
+                  <!-- Personal: 15% -->
+                  <circle cx="40" cy="40" r="30" fill="none" stroke="#581c87" stroke-width="8" stroke-dasharray="29 160" stroke-dashoffset="-160" transform="rotate(-90 40 40)"/>
+                  <text x="40" y="38" text-anchor="middle" fill="rgba(238,242,255,0.92)" font-family="JetBrains Mono, monospace" font-size="9" font-weight="600">£3,830</text>
+                  <text x="40" y="48" text-anchor="middle" fill="rgba(238,242,255,0.35)" font-family="Nunito Sans, sans-serif" font-size="6">/month</text>
+                </svg>
+                <!-- Key -->
+                <div style="display: flex; flex-direction: column; gap: 4px; font-size: 8px; min-width: 0;">
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="width: 6px; height: 6px; border-radius: 2px; background: #a855f7; flex-shrink: 0;"></div>
+                    <span style="color: rgba(238,242,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Groceries</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="width: 6px; height: 6px; border-radius: 2px; background: #c084fc; flex-shrink: 0;"></div>
+                    <span style="color: rgba(238,242,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Entertainment</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="width: 6px; height: 6px; border-radius: 2px; background: #7c3aed; flex-shrink: 0;"></div>
+                    <span style="color: rgba(238,242,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Dining Out</span>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 5px;">
+                    <div style="width: 6px; height: 6px; border-radius: 2px; background: #581c87; flex-shrink: 0;"></div>
+                    <span style="color: rgba(238,242,255,0.65); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">Personal</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- RIGHT: Sparkline cards -->
+        <div style="width: 190px; display: flex; flex-direction: column; gap: 10px; flex-shrink: 0;">
+          <!-- Income sparkline -->
+          <div style="background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px; padding: 12px;">
+            <div style="color: #0ea5e9; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 4px;">INCOME</div>
+            <div style="color: rgba(238,242,255,0.92); font-family: monospace; font-size: 15px; font-weight: 600;">£8,856</div>
+            <svg width="100%" height="20" viewBox="0 0 160 20" style="margin-top: 4px; opacity: 0.5;">
+              <polyline points="0,16 20,14 40,12 60,10 80,10 100,8 120,8 140,6 160,4" fill="none" stroke="#0ea5e9" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <!-- Committed sparkline -->
+          <div style="background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px; padding: 12px;">
+            <div style="color: #6366f1; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 4px;">COMMITTED</div>
+            <div style="color: rgba(238,242,255,0.92); font-family: monospace; font-size: 15px; font-weight: 600;">£4,817</div>
+            <svg width="100%" height="20" viewBox="0 0 160 20" style="margin-top: 4px; opacity: 0.5;">
+              <polyline points="0,10 20,10 40,12 60,10 80,10 100,12 120,14 140,12 160,10" fill="none" stroke="#6366f1" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <!-- Discretionary sparkline -->
+          <div style="background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px; padding: 12px;">
+            <div style="color: #a855f7; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 4px;">DISCRETIONARY</div>
+            <div style="color: rgba(238,242,255,0.92); font-family: monospace; font-size: 15px; font-weight: 600;">£3,830</div>
+            <svg width="100%" height="20" viewBox="0 0 160 20" style="margin-top: 4px; opacity: 0.5;">
+              <polyline points="0,8 20,10 40,12 60,10 80,14 100,12 120,10 140,12 160,14" fill="none" stroke="#a855f7" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <!-- Surplus sparkline -->
+          <div style="background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px; padding: 12px;">
+            <div style="color: #4adcd0; font-size: 9px; font-weight: 600; letter-spacing: 0.08em; margin-bottom: 4px;">SURPLUS</div>
+            <div style="color: rgba(238,242,255,0.92); font-family: monospace; font-size: 15px; font-weight: 600;">£209</div>
+            <svg width="100%" height="20" viewBox="0 0 160 20" style="margin-top: 4px; opacity: 0.5;">
+              <polyline points="0,6 20,8 40,10 60,14 80,12 100,14 120,16 140,14 160,12" fill="none" stroke="#4adcd0" stroke-width="1.5"/>
+            </svg>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
