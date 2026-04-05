@@ -47,12 +47,6 @@ export function TierDoughnut({
 
   const colours = useMemo(() => generateTierColours(tier, sorted.length), [tier, sorted.length]);
 
-  const _colourMap = useMemo(() => {
-    const map = new Map<string, string>();
-    sorted.forEach((s, i) => map.set(s.id, colours[i]));
-    return map;
-  }, [sorted, colours]);
-
   const arc = d3
     .arc<d3.PieArcDatum<{ value: number }>>()
     .innerRadius(INNER_R)
