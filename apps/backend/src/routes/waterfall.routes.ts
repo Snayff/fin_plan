@@ -16,6 +16,8 @@ import {
   WaterfallTierEnum,
   createPeriodSchema,
   updatePeriodSchema,
+  batchSaveSubcategoriesSchema,
+  resetSubcategoriesSchema,
 } from "@finplan/shared";
 import { periodService } from "../services/period.service.js";
 import { prisma } from "../config/database.js";
@@ -359,6 +361,50 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     await subcategoryService.ensureSubcategories(householdId);
     const subcategories = await subcategoryService.listByTier(householdId, parsed.data);
     return reply.send(subcategories);
+  });
+
+  // ─── Subcategory mutations ──────────────────────────────────────────────────
+
+  fastify.get("/subcategories/:tier/counts", pre, async (req, reply) => {
+    const { tier } = req.params as { tier: string };
+    const parsed = WaterfallTierEnum.safeParse(tier);
+    if (!parsed.success) {
+      return reply.status(400).send({ error: "Invalid tier" });
+    }
+    const counts = await subcategoryService.getItemCounts(req.householdId!, parsed.data);
+    return reply.send(counts);
+  });
+
+  fastify.put("/subcategories/:tier", pre, async (req, reply) => {
+    const { tier } = req.params as { tier: string };
+    const tierParsed = WaterfallTierEnum.safeParse(tier);
+    if (!tierParsed.success) {
+      return reply.status(400).send({ error: "Invalid tier" });
+    }
+    const bodyParsed = batchSaveSubcategoriesSchema.safeParse(req.body);
+    if (!bodyParsed.success) {
+      return reply.status(400).send({ error: bodyParsed.error.message });
+    }
+    try {
+      await subcategoryService.batchSave(req.householdId!, tierParsed.data, bodyParsed.data);
+    } catch (err: any) {
+      return reply.status(400).send({ error: err.message });
+    }
+    const updated = await subcategoryService.listByTier(req.householdId!, tierParsed.data);
+    return reply.send(updated);
+  });
+
+  fastify.post("/subcategories/reset", pre, async (req, reply) => {
+    const bodyParsed = resetSubcategoriesSchema.safeParse(req.body);
+    if (!bodyParsed.success) {
+      return reply.status(400).send({ error: bodyParsed.error.message });
+    }
+    try {
+      await subcategoryService.resetToDefaults(req.householdId!, bodyParsed.data);
+    } catch (err: any) {
+      return reply.status(400).send({ error: err.message });
+    }
+    return reply.send({ success: true });
   });
 }
 
