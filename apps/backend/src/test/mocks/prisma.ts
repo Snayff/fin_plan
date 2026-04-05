@@ -31,6 +31,7 @@ export const prismaMock = {
   committedItem: buildModelMock(),
   discretionaryItem: buildModelMock(),
   waterfallHistory: buildModelMock(),
+  itemAmountPeriod: buildModelMock(),
   asset: buildModelMock(),
   assetBalance: buildModelMock(),
   account: buildModelMock(),

@@ -67,19 +67,6 @@ export default function OverviewPage() {
   ) : summary ? (
     <WaterfallLeftPanel
       summary={summary}
-      onSelectItem={(item) => {
-        if (item.type === "income_type") {
-          setView({
-            type: "income_type",
-            incomeType: item.id.replace("type:", "") as IncomeType,
-            label: item.name,
-          });
-        } else if (item.type === "committed_bills") {
-          setView({ type: "committed_bills" });
-        } else {
-          setView({ type: "item", item });
-        }
-      }}
       onOpenCashflowCalendar={() => setView({ type: "cashflow" })}
       selectedItemId={
         view.type === "item"

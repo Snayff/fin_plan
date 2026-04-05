@@ -4,7 +4,6 @@ import cookie from "@fastify/cookie";
 import csrf from "@fastify/csrf-protection";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
-import websocket from "@fastify/websocket";
 import { config } from "./config/env";
 import { authRoutes } from "./routes/auth.routes";
 import { householdRoutes } from "./routes/households";
@@ -67,9 +66,6 @@ async function start() {
       allowList: (req: { url: string }) => req.url === "/health",
     });
 
-    // Register WebSocket support
-    await server.register(websocket);
-
     // Health check endpoint
     server.get("/health", async () => {
       return {
@@ -92,21 +88,6 @@ async function start() {
     server.register(auditLogRoutes, { prefix: "/api" });
     server.register(assetsRoutes, { prefix: "/api/assets" });
     server.register(forecastRoutes, { prefix: "/api/forecast" });
-
-    // WebSocket route for sync (placeholder for Phase 1)
-    server.register(async (fastify) => {
-      fastify.get("/ws/sync", { websocket: true }, (socket, _req) => {
-        socket.on("message", (message: Buffer) => {
-          // Sync logic will be implemented here
-          server.log.info(`Received WebSocket message: ${message.toString()}`);
-          socket.send(JSON.stringify({ type: "ack", message: "Sync server ready" }));
-        });
-
-        socket.on("close", () => {
-          server.log.info("WebSocket connection closed");
-        });
-      });
-    });
 
     // Start server
     await server.listen({

@@ -126,6 +126,14 @@
 
 ---
 
+## Period
+
+**Appears in**: Value history sparkline (expanded row), edit mode period list, scheduled change indicator ("→ £9 from Oct")
+
+**Tooltip**: A span of time during which an item has a specific planned amount. An item's value history is a sequence of periods, each with an effective date and amount. The current period determines the item's active amount; past periods form the historical record; future periods represent scheduled changes.
+
+---
+
 ## Staleness
 
 **Appears in**: Staleness indicator (amber dot tooltip), Review Wizard card header, right panel detail view ("Last reviewed" label)

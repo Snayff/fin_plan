@@ -23,7 +23,7 @@ export type GiftRecurrence = z.infer<typeof GiftRecurrenceEnum>;
 // ─── Purchases ────────────────────────────────────────────────────────────────
 
 export const createPurchaseSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).trim(),
   estimatedCost: z.number().positive(),
   priority: PurchasePriorityEnum.optional(),
   scheduledThisYear: z.boolean().optional(),
@@ -35,7 +35,7 @@ export const createPurchaseSchema = z.object({
 });
 
 export const updatePurchaseSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).trim().optional(),
   estimatedCost: z.number().positive().optional(),
   priority: PurchasePriorityEnum.optional(),
   scheduledThisYear: z.boolean().optional(),
@@ -58,13 +58,13 @@ export type UpsertYearBudgetInput = z.infer<typeof upsertYearBudgetSchema>;
 // ─── Gift persons ─────────────────────────────────────────────────────────────
 
 export const createGiftPersonSchema = z.object({
-  name: z.string().min(1),
+  name: z.string().min(1).trim(),
   notes: z.string().optional(),
   sortOrder: z.number().int().optional(),
 });
 
 export const updateGiftPersonSchema = z.object({
-  name: z.string().min(1).optional(),
+  name: z.string().min(1).trim().optional(),
   notes: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
 });

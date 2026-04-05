@@ -40,7 +40,6 @@ A two-panel layout showing the waterfall from income through committed bills (mo
 ## Open Questions
 
 - [x] Is the 10% surplus benchmark threshold configurable in Settings, or hardcoded? **Configurable** via `HouseholdSettings.surplusBenchmarkPct` (default 10%).
-- [x] Does the "Increase savings" link in the surplus row navigate to the Savings row detail, or to the Wealth page? **Selects the Savings row within Discretionary** — does not navigate to the Wealth page.
 
 ---
 
@@ -179,7 +178,7 @@ DELETE /api/waterfall/all                    → delete all waterfall items (use
 
 ### Components
 
-- `WaterfallLeftPanel.tsx` — tier headings with totals only (no individual items in the left panel); each tier row includes an attention badge (amber dot + stale count, e.g. "● 3 stale") when ≥1 item in the tier is stale; surplus row shows "Increase savings ▸" link
+- `WaterfallLeftPanel.tsx` — tier headings with totals only (no individual items in the left panel); each tier row includes an attention badge (amber dot + stale count, e.g. "● 3 stale") when ≥1 item in the tier is stale
 - `TwoPanelLayout.tsx` — shared layout: fixed-width left `<aside className="w-[360px]">` + flexible `<main>`
 
 ### Notes
@@ -215,4 +214,3 @@ interface WaterfallSummary {
 - IncomeSource where `endedAt` is set and in the past is excluded from live summary
 - `DELETE /api/waterfall/all` is called by Settings → Waterfall → "Rebuild from scratch" confirm flow
 - Surplus benchmark indicator uses `HouseholdSettings.surplusBenchmarkPct`; uses amber `attention` token (dot + text); tooltip text: "A monthly surplus of around 10% of income is a common planning benchmark."
-- "Increase savings ▸" selects the Savings row within Discretionary (does NOT navigate to Wealth page)

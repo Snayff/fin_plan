@@ -5,7 +5,6 @@ import type {
   SubcategoryRow,
   CreateIncomeSourceInput,
   UpdateIncomeSourceInput,
-  EndIncomeSourceInput,
   CreateCommittedItemInput,
   UpdateCommittedBillInput,
   CreateYearlyBillInput,
@@ -17,6 +16,9 @@ import type {
   ConfirmBatchInput,
   UpsertYearBudgetInput,
   FinancialSummary,
+  PeriodRow,
+  CreatePeriodInput,
+  UpdatePeriodInput,
 } from "@finplan/shared";
 
 export const waterfallService = {
@@ -26,15 +28,11 @@ export const waterfallService = {
 
   // Income
   listIncome: () => apiClient.get<any[]>("/api/waterfall/income"),
-  listEndedIncome: () => apiClient.get<any[]>("/api/waterfall/income/ended"),
   createIncome: (data: CreateIncomeSourceInput) =>
     apiClient.post<any>("/api/waterfall/income", data),
   updateIncome: (id: string, data: UpdateIncomeSourceInput) =>
     apiClient.patch<any>(`/api/waterfall/income/${id}`, data),
   deleteIncome: (id: string) => apiClient.delete<void>(`/api/waterfall/income/${id}`),
-  endIncome: (id: string, data: EndIncomeSourceInput) =>
-    apiClient.post<any>(`/api/waterfall/income/${id}/end`, data),
-  reactivateIncome: (id: string) => apiClient.post<any>(`/api/waterfall/income/${id}/reactivate`),
   confirmIncome: (id: string) => apiClient.post<any>(`/api/waterfall/income/${id}/confirm`),
 
   // Committed bills
@@ -90,4 +88,14 @@ export const waterfallService = {
     apiClient.put<any>(`/api/planner/budget/${year}`, data),
 
   getFinancialSummary: () => apiClient.get<FinancialSummary>("/api/waterfall/financial-summary"),
+
+  // Periods
+  listPeriods: (itemType: string, itemId: string) =>
+    apiClient.get<PeriodRow[]>(`/api/waterfall/periods/${itemType}/${itemId}`),
+  createPeriod: (data: CreatePeriodInput) =>
+    apiClient.post<PeriodRow>("/api/waterfall/periods", data),
+  updatePeriod: (id: string, data: UpdatePeriodInput) =>
+    apiClient.patch<PeriodRow>(`/api/waterfall/periods/${id}`, data),
+  deletePeriod: (id: string) =>
+    apiClient.delete<void | { deleted: string; itemId: string }>(`/api/waterfall/periods/${id}`),
 };

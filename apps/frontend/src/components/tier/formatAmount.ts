@@ -6,28 +6,29 @@ export type SpendType = "monthly" | "yearly" | "one_off";
 
 export function formatItemAmount(
   amount: number,
-  spendType: SpendType
+  spendType: SpendType,
+  showPence = false
 ): {
   primary: string;
   secondary: string | null;
   label: string | null;
 } {
   if (spendType === "monthly") {
-    return { primary: formatCurrency(toGBP(amount)), secondary: null, label: null };
+    return { primary: formatCurrency(toGBP(amount), showPence), secondary: null, label: null };
   }
   if (spendType === "yearly") {
-    const monthly = Math.round(amount / 12);
+    const monthly = showPence ? amount / 12 : Math.round(amount / 12);
     return {
-      primary: formatCurrency(toGBP(amount)),
-      secondary: `${formatCurrency(toGBP(monthly))}/mo`,
+      primary: formatCurrency(toGBP(amount), showPence),
+      secondary: `${formatCurrency(toGBP(monthly), showPence)}/mo`,
       label: null,
     };
   }
   // one_off
-  const monthly = Math.round(amount / 12);
+  const monthly = showPence ? amount / 12 : Math.round(amount / 12);
   return {
-    primary: formatCurrency(toGBP(amount)),
-    secondary: `${formatCurrency(toGBP(monthly))}/mo`,
+    primary: formatCurrency(toGBP(amount), showPence),
+    secondary: `${formatCurrency(toGBP(monthly), showPence)}/mo`,
     label: "One-off",
   };
 }
@@ -58,25 +59,29 @@ export interface TwoLineAmount {
   yearly: AmountLine | null;
 }
 
-export function formatTwoLineAmount(amount: number, spendType: SpendType): TwoLineAmount {
+export function formatTwoLineAmount(
+  amount: number,
+  spendType: SpendType,
+  showPence = false
+): TwoLineAmount {
   if (spendType === "one_off") {
     return {
-      monthly: { value: formatCurrency(toGBP(amount)), bright: true },
+      monthly: { value: formatCurrency(toGBP(amount), showPence), bright: true },
       yearly: null,
     };
   }
 
   const isMonthly = spendType === "monthly";
-  const monthlyAmt = isMonthly ? amount : Math.round(amount / 12);
+  const monthlyAmt = isMonthly ? amount : showPence ? amount / 12 : Math.round(amount / 12);
   const yearlyAmt = isMonthly ? amount * 12 : amount;
 
   return {
     monthly: {
-      value: `${formatCurrency(toGBP(monthlyAmt))}/mo`,
+      value: `${formatCurrency(toGBP(monthlyAmt), showPence)}/mo`,
       bright: isMonthly,
     },
     yearly: {
-      value: `${formatCurrency(toGBP(yearlyAmt))}/yr`,
+      value: `${formatCurrency(toGBP(yearlyAmt), showPence)}/yr`,
       bright: !isMonthly,
     },
   };

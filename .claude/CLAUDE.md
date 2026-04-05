@@ -12,7 +12,7 @@ All commands use `bun run`. Never use npm or pnpm.
 
 ```bash
 # Docker dev environment (primary workflow)
-bun run start          # docker compose up -d (postgres:5432, redis, backend:3001, frontend:3000)
+bun run start          # docker compose up -d (postgres:5432, backend:3001, frontend:3000)
 bun run stop           # docker compose down
 bun run restart        # stop + start
 bun run docker:logs    # follow all service logs

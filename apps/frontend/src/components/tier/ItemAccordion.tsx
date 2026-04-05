@@ -1,5 +1,13 @@
 import { isStale, getMonthsAgo, type SpendType } from "./formatAmount";
+import ValueSparkline from "./ValueSparkline";
 import type { TierConfig } from "./tierConfig";
+
+interface ItemPeriod {
+  id: string;
+  startDate: string | Date;
+  endDate?: string | Date | null;
+  amount: number;
+}
 
 interface Item {
   id: string;
@@ -11,6 +19,7 @@ interface Item {
   notes: string | null;
   lastReviewedAt: Date;
   sortOrder: number;
+  periods?: ItemPeriod[];
 }
 
 interface Props {
@@ -75,6 +84,18 @@ export default function ItemAccordion({ item, config, onEdit, now, stalenessMont
           Edit
         </button>
       </div>
+
+      {/* Value history sparkline */}
+      {item.periods && (
+        <ValueSparkline
+          periods={item.periods.map((p) => ({
+            ...p,
+            startDate: new Date(p.startDate),
+            endDate: p.endDate ? new Date(p.endDate) : null,
+          }))}
+          color={config.color}
+        />
+      )}
     </div>
   );
 }

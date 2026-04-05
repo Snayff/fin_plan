@@ -1,0 +1,45 @@
+# CodeQL Analysis — advanced setup so we can exclude false-positive rules.
+# Replaces GitHub's "default setup" for code scanning.
+#
+# Why: @fastify/rate-limit registers a global rate limiter in server.ts, but
+# CodeQL's js/missing-rate-limiting rule can't detect plugin-based limiting
+# and flags every authenticated route as unprotected.
+
+name: "CodeQL"
+
+on:
+  push:
+    branches: [main, stage]
+  pull_request:
+    branches: [main, stage]
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          config-file: ./.github/codeql/codeql-config.yml
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"

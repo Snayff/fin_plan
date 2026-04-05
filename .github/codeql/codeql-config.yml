@@ -1,0 +1,13 @@
+# CodeQL configuration
+# Docs: https://docs.github.com/en/code-security/code-scanning/creating-an-advanced-setup-for-code-scanning/customizing-your-advanced-setup-for-code-scanning
+#
+# Exclude js/missing-rate-limiting: this repo uses @fastify/rate-limit registered
+# globally in server.ts (max: 100 req/min per IP). CodeQL can't detect Fastify's
+# plugin-based rate limiting and raises false positives on every authenticated route.
+
+queries:
+  - uses: security-and-quality
+
+query-filters:
+  - exclude:
+      id: js/missing-rate-limiting

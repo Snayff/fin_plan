@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 export const createHouseholdSchema = z.object({
-  name: z.string().min(1, "Household name is required"),
+  name: z.string().min(1, "Household name is required").trim(),
 });
 
 export const renameHouseholdSchema = z.object({
-  name: z.string().min(1, "Household name is required"),
+  name: z.string().min(1, "Household name is required").trim(),
 });
 
 export const createHouseholdInviteSchema = z.object({
@@ -14,7 +14,7 @@ export const createHouseholdInviteSchema = z.object({
 });
 
 export const acceptInviteSchema = z.object({
-  name: z.string().min(1, "Name is required"),
+  name: z.string().min(1, "Name is required").trim(),
   email: z.string().email("A valid email address is required"),
   password: z.string().min(12, "Password must be at least 12 characters long"),
 });

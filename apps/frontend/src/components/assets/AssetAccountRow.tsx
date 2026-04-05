@@ -1,26 +1,54 @@
+import { AnimatePresence, motion } from "framer-motion";
 import { useHouseholdMembers } from "../../hooks/useSettings.js";
-import { StalenessIndicator } from "@/components/common/StalenessIndicator";
+import { useSettings } from "@/hooks/useSettings";
+import { formatCurrency } from "@/utils/format";
+import { isStale, monthsElapsed } from "@/utils/staleness";
 import type { AssetItem, AccountItem } from "../../services/assets.service.js";
+import type { AccountType } from "@finplan/shared";
+import { AssetForm } from "./AssetForm.js";
+import { AccountForm } from "./AccountForm.js";
+import { RecordBalanceInlineForm } from "./RecordBalanceInlineForm.js";
 
 type Item = AssetItem | AccountItem;
 
-interface Props {
+interface BaseProps {
   item: Item;
+  itemKind: "asset" | "account";
   stalenessThresholdMonths: number;
-  onRecordBalance: (item: Item) => void;
-  onEdit: (item: Item) => void;
   isExpanded: boolean;
+  isEditing: boolean;
+  isRecording: boolean;
+  isSavingEdit: boolean;
+  isSavingRecord: boolean;
+  isSavingConfirm: boolean;
   onToggle: () => void;
+  onStartEdit: () => void;
+  onStartRecord: () => void;
+  onCancelEdit: () => void;
+  onCancelRecord: () => void;
+  onDeleteRequest: () => void;
+  onConfirm: () => void;
+  onSaveEdit: (data: {
+    name: string;
+    memberUserId: string | null;
+    growthRatePct?: number | null;
+  }) => void;
+  onSaveRecord: (data: { value: number; date: string; note: string | null }) => void;
 }
 
-function formatGBP(value: number) {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(value);
-}
+const rowVariants = {
+  initial: { height: 0, opacity: 0 },
+  animate: {
+    height: "auto",
+    opacity: 1,
+    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+  },
+  exit: {
+    height: 0,
+    opacity: 0,
+    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+  },
+};
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return "Never recorded";
@@ -31,98 +59,206 @@ function formatDate(dateStr: string | null) {
   });
 }
 
+function formatReviewDate(date: Date | string): string {
+  return new Date(date).toLocaleDateString("en-GB", { month: "short", year: "numeric" });
+}
+
 export function AssetAccountRow({
   item,
+  itemKind,
   stalenessThresholdMonths,
-  onRecordBalance,
-  onEdit,
   isExpanded,
+  isEditing,
+  isRecording,
+  isSavingEdit,
+  isSavingRecord,
+  isSavingConfirm,
   onToggle,
-}: Props) {
+  onStartEdit,
+  onStartRecord,
+  onCancelEdit,
+  onCancelRecord,
+  onDeleteRequest,
+  onConfirm,
+  onSaveEdit,
+  onSaveRecord,
+}: BaseProps) {
   const { data: members } = useHouseholdMembers();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
+
   const memberName = item.memberUserId
     ? (members?.find((m) => m.userId === item.memberUserId)?.firstName ?? item.memberUserId)
     : "Household";
 
   const typeLabel = "type" in item ? item.type : "";
 
+  const stale =
+    item.lastReviewedAt != null ? isStale(item.lastReviewedAt, stalenessThresholdMonths) : false;
+  const monthsAgo = stale && item.lastReviewedAt ? monthsElapsed(item.lastReviewedAt) : 0;
+
   return (
     <div
-      className={`border-b border-[rgba(26,31,53,0.8)] ${isExpanded ? "bg-[rgba(139,92,246,0.04)] border-l-2 border-[#8b5cf6] -mx-6 px-6" : ""}`}
+      className={`border-b border-foreground/5 ${isExpanded || isEditing ? "bg-page-accent/[0.04] border-l-2 border-page-accent -mx-6 px-6" : ""}`}
     >
       {/* Collapsed header — always shown */}
       <button
-        onClick={onToggle}
-        aria-expanded={isExpanded}
-        className="w-full flex justify-between items-center py-3.5 bg-transparent border-none cursor-pointer text-left"
+        onClick={() => {
+          if (isEditing) return;
+          onToggle();
+        }}
+        aria-expanded={isExpanded || isEditing}
+        className="w-full flex items-center gap-2 py-3 text-left bg-transparent border-none cursor-pointer"
       >
-        <div>
-          <div className="text-sm text-[rgba(238,242,255,0.92)]">{item.name}</div>
-          <div className="text-[11px] text-[rgba(238,242,255,0.4)] mt-0.5">
+        {/* Stale dot — fixed-width left column */}
+        <span className="w-2 shrink-0 flex items-center justify-center">
+          {stale && <span className="h-1.5 w-1.5 rounded-full bg-attention shrink-0" aria-hidden />}
+        </span>
+
+        {/* Left: name + metadata */}
+        <span className="flex-1 flex flex-col gap-px">
+          <span className="text-sm text-text-secondary">{item.name}</span>
+          <span className="text-[11px] text-text-tertiary">
             {typeLabel} · {memberName}
-            {item.lastReviewedAt && (
-              <span className="ml-2">
-                <StalenessIndicator
-                  lastReviewedAt={item.lastReviewedAt}
-                  thresholdMonths={stalenessThresholdMonths}
-                />
-              </span>
-            )}
-          </div>
-        </div>
-        <div className="text-right">
-          <div className="text-sm font-mono text-[rgba(238,242,255,0.92)]">
-            {formatGBP(item.currentBalance)}
-          </div>
-          <div className="text-[11px] text-[rgba(238,242,255,0.4)] mt-0.5">
+          </span>
+        </span>
+
+        {/* Right: balance + date */}
+        <span className="flex flex-col items-end gap-px">
+          <span className="text-sm font-numeric text-text-secondary">
+            {formatCurrency(item.currentBalance, showPence)}
+          </span>
+          <span className="text-[11px] text-text-tertiary">
             {formatDate(item.currentBalanceDate)}
-          </div>
-        </div>
+          </span>
+        </span>
       </button>
 
-      {/* Expanded detail */}
-      {isExpanded && (
-        <div className="flex flex-col gap-2.5 pb-3.5">
-          {/* Balance history */}
-          <div>
-            <div className="text-[10px] tracking-[0.08em] uppercase text-[rgba(238,242,255,0.25)] mb-1">
-              Balance History
-            </div>
-            {item.balances.length === 0 ? (
-              <div className="text-[12px] italic text-[rgba(238,242,255,0.4)]">
-                No balances recorded yet
-              </div>
+      <AnimatePresence initial={false}>
+        {/* Edit form — replaces accordion */}
+        {isEditing && (
+          <motion.div
+            key="edit-form"
+            variants={rowVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            style={{ overflow: "hidden" }}
+          >
+            {itemKind === "asset" ? (
+              <AssetForm
+                mode="edit"
+                initialName={item.name}
+                initialMemberUserId={item.memberUserId ?? null}
+                isSaving={isSavingEdit}
+                isSavingConfirm={isSavingConfirm}
+                isStale={stale}
+                onSave={onSaveEdit}
+                onCancel={onCancelEdit}
+                onDeleteRequest={onDeleteRequest}
+                onConfirm={onConfirm}
+              />
             ) : (
-              <div className="flex flex-col gap-1">
-                {item.balances.map((b) => (
-                  <div key={b.id} className="flex justify-between text-[12px]">
-                    <span className="text-[rgba(238,242,255,0.65)]">{formatDate(b.date)}</span>
-                    <span className="font-mono text-[rgba(238,242,255,0.92)]">
-                      {formatGBP(b.value)}
+              <AccountForm
+                mode="edit"
+                type={(item as AccountItem).type as AccountType}
+                initialName={item.name}
+                initialMemberUserId={item.memberUserId ?? null}
+                initialGrowthRatePct={(item as AccountItem).growthRatePct ?? null}
+                isSaving={isSavingEdit}
+                isSavingConfirm={isSavingConfirm}
+                isStale={stale}
+                onSave={onSaveEdit}
+                onCancel={onCancelEdit}
+                onDeleteRequest={onDeleteRequest}
+                onConfirm={onConfirm}
+              />
+            )}
+          </motion.div>
+        )}
+
+        {/* Accordion detail — shown when expanded but not editing */}
+        {isExpanded && !isEditing && (
+          <motion.div
+            key="accordion"
+            variants={rowVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            style={{ overflow: "hidden" }}
+          >
+            <div
+              className={[
+                "border-t border-foreground/5 bg-foreground/[0.02] py-2.5 pr-4",
+                "border-l-2 border-page-accent/40 pl-[30px]",
+              ].join(" ")}
+            >
+              <div className="flex flex-col gap-2.5">
+                {/* Balance history */}
+                <div>
+                  <span className="block text-text-muted uppercase tracking-[0.07em] text-[10px] mb-1">
+                    Balance History
+                  </span>
+                  {item.balances.length === 0 ? (
+                    <p className="text-xs italic text-text-muted">No balances recorded yet</p>
+                  ) : (
+                    <div className="flex flex-col gap-1">
+                      {item.balances.map((b) => (
+                        <div key={b.id} className="flex justify-between text-xs">
+                          <span className="text-text-tertiary">{formatDate(b.date)}</span>
+                          <span className="font-numeric text-text-secondary">
+                            {formatCurrency(b.value, showPence)}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Last reviewed — only when stale */}
+                {stale && item.lastReviewedAt && (
+                  <div>
+                    <span className="block text-text-muted uppercase tracking-[0.07em] text-[10px]">
+                      Last Reviewed
+                    </span>
+                    <span className="flex items-center gap-1.5 text-xs text-attention">
+                      <span
+                        className="h-[5px] w-[5px] rounded-full bg-attention shrink-0"
+                        aria-hidden
+                      />
+                      {formatReviewDate(item.lastReviewedAt)} · {monthsAgo} months ago
                     </span>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                )}
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2">
-            <button
-              onClick={() => onRecordBalance(item)}
-              className="bg-[rgba(139,92,246,0.1)] border border-[rgba(139,92,246,0.25)] rounded-md px-3.5 py-1.5 text-[#a78bfa] text-[12px] cursor-pointer hover:bg-[rgba(139,92,246,0.2)] transition-colors"
-            >
-              Record Balance
-            </button>
-            <button
-              onClick={() => onEdit(item)}
-              className="bg-[rgba(139,92,246,0.1)] border border-[rgba(139,92,246,0.25)] rounded-md px-3.5 py-1.5 text-[#a78bfa] text-[12px] cursor-pointer hover:bg-[rgba(139,92,246,0.2)] transition-colors"
-            >
-              Edit
-            </button>
-          </div>
-        </div>
-      )}
+                {/* Record balance form or actions */}
+                {isRecording ? (
+                  <RecordBalanceInlineForm
+                    isSaving={isSavingRecord}
+                    onSave={onSaveRecord}
+                    onCancel={onCancelRecord}
+                  />
+                ) : (
+                  <div className="flex justify-end gap-2 pb-1">
+                    <button
+                      onClick={onStartRecord}
+                      className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-text-tertiary hover:bg-foreground/5 transition-colors"
+                    >
+                      Record Balance
+                    </button>
+                    <button
+                      onClick={onStartEdit}
+                      className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-text-tertiary hover:bg-foreground/5 transition-colors"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

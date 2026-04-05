@@ -18,6 +18,7 @@ export const updateSettingsSchema = z.object({
   investmentRatePct: z.number().min(0).max(100).nullable().optional(),
   pensionRatePct: z.number().min(0).max(100).nullable().optional(),
   inflationRatePct: z.number().min(0).max(100).optional(),
+  showPence: z.boolean().optional(),
 });
 
 export type StalenessThresholds = z.infer<typeof stalenessThresholdsSchema>;

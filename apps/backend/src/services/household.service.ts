@@ -214,11 +214,28 @@ export const householdService = {
             where: { householdId_userId: { householdId, userId: targetUserId } },
           }),
       });
-      return;
+    } else {
+      await prisma.householdMember.delete({
+        where: { householdId_userId: { householdId, userId: targetUserId } },
+      });
     }
-    await prisma.householdMember.delete({
-      where: { householdId_userId: { householdId, userId: targetUserId } },
+
+    // Clear stale activeHouseholdId if it points to the household they were removed from
+    const user = await prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: { activeHouseholdId: true },
     });
+
+    if (user?.activeHouseholdId === householdId) {
+      const otherMembership = await prisma.householdMember.findFirst({
+        where: { userId: targetUserId },
+        orderBy: { joinedAt: "asc" },
+      });
+      await prisma.user.update({
+        where: { id: targetUserId },
+        data: { activeHouseholdId: otherMembership?.householdId ?? null },
+      });
+    }
   },
 
   async leaveHousehold(householdId: string, userId: string) {

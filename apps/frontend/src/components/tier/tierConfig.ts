@@ -4,6 +4,8 @@ export type TierKey = "income" | "committed" | "discretionary";
 export interface TierConfig {
   tier: TierKey;
   label: string;
+  /** Hex colour for the tier (for recharts / non-Tailwind contexts) */
+  color: string;
   /** Tailwind text colour class for the tier */
   textClass: string;
   /** Tailwind bg colour class at low opacity (for hover/selected states) */
@@ -18,6 +20,7 @@ export const TIER_CONFIGS: Record<TierKey, TierConfig> = {
   income: {
     tier: "income",
     label: "Income",
+    color: "#0ea5e9",
     textClass: "text-tier-income",
     bgClass: "bg-tier-income",
     borderClass: "border-tier-income",
@@ -26,6 +29,7 @@ export const TIER_CONFIGS: Record<TierKey, TierConfig> = {
   committed: {
     tier: "committed",
     label: "Committed",
+    color: "#6366f1",
     textClass: "text-tier-committed",
     bgClass: "bg-tier-committed",
     borderClass: "border-tier-committed",
@@ -34,6 +38,7 @@ export const TIER_CONFIGS: Record<TierKey, TierConfig> = {
   discretionary: {
     tier: "discretionary",
     label: "Discretionary",
+    color: "#a855f7",
     textClass: "text-tier-discretionary",
     bgClass: "bg-tier-discretionary",
     borderClass: "border-tier-discretionary",

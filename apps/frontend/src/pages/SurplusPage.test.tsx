@@ -34,14 +34,14 @@ describe("SurplusPage", () => {
 
   it("shows the waterfall breakdown line items", () => {
     renderWithProviders(<SurplusPage />, { initialEntries: ["/surplus"] });
-    expect(screen.getByText(/income/i)).toBeTruthy();
-    expect(screen.getByText(/committed/i)).toBeTruthy();
-    expect(screen.getByText(/discretionary/i)).toBeTruthy();
+    expect(screen.getAllByText(/income/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/committed/i).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/discretionary/i).length).toBeGreaterThan(0);
   });
 
   it("shows the right-panel message", () => {
     renderWithProviders(<SurplusPage />, { initialEntries: ["/surplus"] });
-    expect(screen.getByText(/at the end of each month/i)).toBeTruthy();
+    expect(screen.getAllByText(/at the end of each month/i).length).toBeGreaterThan(0);
   });
 
   it("does not show benchmark warning when surplus is above threshold", () => {

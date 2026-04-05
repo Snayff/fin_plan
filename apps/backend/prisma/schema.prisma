@@ -163,6 +163,7 @@ model HouseholdSettings {
   investmentRatePct   Float?
   pensionRatePct      Float?
   inflationRatePct    Float    @default(2.5)
+  showPence           Boolean  @default(false)
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 }
@@ -219,13 +220,11 @@ model IncomeSource {
   householdId    String
   subcategoryId  String
   name           String
-  amount         Float
   frequency      IncomeFrequency
   incomeType     IncomeType      @default(other)
   expectedMonth  Int?
   ownerId        String?
   sortOrder      Int             @default(0)
-  endedAt        DateTime?
   lastReviewedAt DateTime        @default(now())
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
@@ -238,7 +237,6 @@ model CommittedItem {
   householdId    String
   subcategoryId  String
   name           String
-  amount         Float
   spendType      SpendType   @default(monthly)
   notes          String?
   ownerId        String?
@@ -255,7 +253,6 @@ model DiscretionaryItem {
   householdId    String
   subcategoryId  String
   name           String
-  amount         Float
   spendType      SpendType   @default(monthly)
   notes          String?
   sortOrder      Int         @default(0)
@@ -280,6 +277,20 @@ model WaterfallHistory {
   createdAt  DateTime          @default(now())
 
   @@index([itemType, itemId, recordedAt])
+}
+
+model ItemAmountPeriod {
+  id        String            @id @default(cuid())
+  itemType  WaterfallItemType
+  itemId    String
+  startDate DateTime          @db.Date
+  endDate   DateTime?         @db.Date
+  amount    Float
+  createdAt DateTime          @default(now())
+
+  @@unique([itemType, itemId, startDate])
+  @@index([itemType, itemId])
+  @@map("item_amount_periods")
 }
 
 // ─── Assets & Accounts ────────────────────────────────────────────────────────

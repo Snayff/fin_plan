@@ -2,7 +2,6 @@ import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from "@tansta
 import { settingsService } from "@/services/settings.service";
 import { snapshotService } from "@/services/snapshot.service";
 import { householdService } from "@/services/household.service";
-import { waterfallService } from "@/services/waterfall.service";
 import { useAuthStore } from "@/stores/authStore";
 import { authService } from "@/services/auth.service";
 import type { UpdateSettingsInput, AuditLogQuery } from "@finplan/shared";
@@ -14,7 +13,6 @@ export const SETTINGS_KEYS = {
   snapshot: (id: string) => ["snapshots", id] as const,
   household: (id: string) => ["household", id] as const,
   members: (id: string) => ["household", id, "members"] as const,
-  endedIncome: ["waterfall", "income", "ended"] as const,
 };
 
 export function useSettings() {
@@ -145,24 +143,6 @@ export function useLeaveHousehold() {
       setUser(user, accessToken!);
       void queryClient.invalidateQueries({ queryKey: ["households"] });
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
-    },
-  });
-}
-
-export function useEndedIncome() {
-  return useQuery({
-    queryKey: SETTINGS_KEYS.endedIncome,
-    queryFn: waterfallService.listEndedIncome,
-  });
-}
-
-export function useReactivateIncome() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: (id: string) => waterfallService.reactivateIncome(id),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.endedIncome });
-      void queryClient.invalidateQueries({ queryKey: ["waterfall", "summary"] });
     },
   });
 }

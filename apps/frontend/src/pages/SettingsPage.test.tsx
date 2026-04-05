@@ -3,7 +3,7 @@ import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/helpers/render";
 import SettingsPage from "./SettingsPage";
 
-mock.module("@/hooks/useSettings", () => ({
+const mockUseSettings = {
   useSettings: () => ({
     data: undefined,
     isLoading: false,
@@ -13,10 +13,13 @@ mock.module("@/hooks/useSettings", () => ({
   useUpdateSettings: () => ({ mutate: () => {}, isPending: false }),
   useUpdateProfile: () => ({ mutate: () => {}, isPending: false }),
   useHousehold: () => ({ data: undefined, isLoading: false }),
+  useHouseholdDetails: () => ({ data: undefined, isLoading: false }),
   useHouseholdMembers: () => ({ data: undefined, isLoading: false }),
   useInviteMember: () => ({ mutate: () => {}, isPending: false }),
   useRemoveMember: () => ({ mutate: () => {}, isPending: false }),
-}));
+};
+
+mock.module("@/hooks/useSettings", () => mockUseSettings);
 
 mock.module("@/hooks/useWaterfall", () => ({
   useWaterfallSummary: () => ({ data: undefined, isLoading: false, isError: false }),
@@ -33,5 +36,24 @@ describe("SettingsPage error state", () => {
   it("shows PanelError in content area when settings query fails", () => {
     renderWithProviders(<SettingsPage />);
     expect(screen.getByText("Failed to load")).toBeTruthy();
+  });
+});
+
+describe("SettingsPage loaded state", () => {
+  it("renders Display nav item and Show pence toggle", () => {
+    mock.module("@/hooks/useSettings", () => ({
+      ...mockUseSettings,
+      useSettings: () => ({
+        data: { showPence: false },
+        isLoading: false,
+        isError: false,
+        refetch: () => {},
+      }),
+    }));
+
+    renderWithProviders(<SettingsPage />);
+    // "Display" appears in both the nav sidebar and the section heading
+    expect(screen.getAllByText("Display").length).toBeGreaterThanOrEqual(2);
+    expect(screen.getByText("Show pence")).toBeTruthy();
   });
 });
