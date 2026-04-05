@@ -86,14 +86,14 @@ export default function ItemAccordion({ item, config, onEdit, now, stalenessMont
       </div>
 
       {/* Value history sparkline */}
-      {item.periods && item.periods.length > 1 && (
+      {item.periods && (
         <ValueSparkline
           periods={item.periods.map((p) => ({
             ...p,
             startDate: new Date(p.startDate),
             endDate: p.endDate ? new Date(p.endDate) : null,
           }))}
-          tierColorClass={config.textClass}
+          color={config.color}
         />
       )}
     </div>
