@@ -136,7 +136,7 @@ export function TierDoughnut({
           <button
             type="button"
             onClick={() => setView({ mode: "subcategory" })}
-            className="text-xs mt-1 self-start"
+            className="text-xs mt-1 self-start rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
             style={{ color: "rgba(238,242,255,0.5)" }}
           >
             Back
