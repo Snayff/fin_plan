@@ -23,7 +23,6 @@ export {
   WaterfallItemTypeEnum,
   createIncomeSourceSchema,
   updateIncomeSourceSchema,
-  endIncomeSourceSchema,
   createCommittedBillSchema,
   updateCommittedBillSchema,
   createYearlyBillSchema,
@@ -45,7 +44,6 @@ export {
   type WaterfallItemType,
   type CreateIncomeSourceInput,
   type UpdateIncomeSourceInput,
-  type EndIncomeSourceInput,
   type CreateCommittedBillInput,
   type UpdateCommittedBillInput,
   type CreateYearlyBillInput,
@@ -72,6 +70,15 @@ export {
   type DiscretionaryCategoryRow,
   type SavingsAllocationRow,
   type CashflowMonth,
+  ItemLifecycleStateEnum,
+  type ItemLifecycleState,
+  PeriodItemTypeEnum,
+  type PeriodItemType,
+  createPeriodSchema,
+  updatePeriodSchema,
+  type CreatePeriodInput,
+  type UpdatePeriodInput,
+  type PeriodRow,
 } from "./waterfall.schemas";
 
 // Settings schemas and types
