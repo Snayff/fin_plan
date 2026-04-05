@@ -30,4 +30,9 @@ describe("generateTierColours", () => {
     const colours = generateTierColours("committed", 0);
     expect(colours).toHaveLength(0);
   });
+
+  it("returns empty array for negative count", () => {
+    const colours = generateTierColours("committed", -1);
+    expect(colours).toHaveLength(0);
+  });
 });

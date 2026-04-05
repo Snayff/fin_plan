@@ -19,7 +19,7 @@ const PURPLE_SCALE = [
   "#3b0764", // purple-950
 ] as const;
 
-const TIER_SCALES: Record<string, readonly string[]> = {
+const TIER_SCALES: Record<"committed" | "discretionary", readonly string[]> = {
   committed: INDIGO_SCALE,
   discretionary: PURPLE_SCALE,
 };
