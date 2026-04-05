@@ -85,6 +85,18 @@ const subcategoryServiceMock = {
   seedDefaults: mock(() => Promise.resolve()),
   getDefaultSubcategoryId: mock(() => Promise.resolve("sub-other")),
   getSubcategoryIdByName: mock(() => Promise.resolve(null)),
+  batchSave: mock(() => Promise.resolve()),
+  getItemCounts: mock(() => Promise.resolve({})),
+  resetToDefaults: mock(() => Promise.resolve()),
+  getDefaults: mock(() => ({
+    income: [
+      { name: "Salary", sortOrder: 0 },
+      { name: "Dividends", sortOrder: 1 },
+      { name: "Other", sortOrder: 2 },
+    ],
+    committed: [],
+    discretionary: [],
+  })),
 };
 
 mock.module("../services/snapshot.service", () => ({
@@ -689,5 +701,118 @@ describe("POST /api/waterfall/income — baseline snapshot pre-handler", () => {
       payload: { name: "Salary", amount: 5000, frequency: "monthly", subcategoryId: "sub-1" },
     });
     expect(snapshotServiceMock.ensureBaselineSnapshot.mock.calls.length).toBeGreaterThan(0);
+  });
+});
+
+describe("PUT /api/waterfall/subcategories/:tier", () => {
+  it("saves subcategories for a valid tier", async () => {
+    subcategoryServiceMock.batchSave.mockResolvedValue(undefined as any);
+    subcategoryServiceMock.listByTier.mockResolvedValue([
+      { id: "sub-1", name: "Salary", sortOrder: 0 },
+      { id: "sub-2", name: "Other", sortOrder: 1 },
+    ] as any);
+
+    const res = await app.inject({
+      method: "PUT",
+      url: "/api/waterfall/subcategories/income",
+      headers: { authorization: "Bearer valid-token" },
+      payload: {
+        subcategories: [
+          { id: "sub-1", name: "Employment", sortOrder: 0 },
+          { id: "sub-2", name: "Other", sortOrder: 1 },
+        ],
+        reassignments: [],
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(subcategoryServiceMock.batchSave).toHaveBeenCalledWith("hh-1", "income", {
+      subcategories: [
+        { id: "sub-1", name: "Employment", sortOrder: 0 },
+        { id: "sub-2", name: "Other", sortOrder: 1 },
+      ],
+      reassignments: [],
+    });
+  });
+
+  it("returns 400 for invalid tier", async () => {
+    const res = await app.inject({
+      method: "PUT",
+      url: "/api/waterfall/subcategories/surplus",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { subcategories: [], reassignments: [] },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("returns 400 for invalid payload", async () => {
+    const res = await app.inject({
+      method: "PUT",
+      url: "/api/waterfall/subcategories/income",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { subcategories: "not-an-array" },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+});
+
+describe("GET /api/waterfall/subcategories/:tier/counts", () => {
+  it("returns item counts for a tier", async () => {
+    subcategoryServiceMock.getItemCounts.mockResolvedValue({
+      "sub-1": 3,
+      "sub-2": 1,
+    } as any);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/waterfall/subcategories/income/counts",
+      headers: { authorization: "Bearer valid-token" },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ "sub-1": 3, "sub-2": 1 });
+  });
+
+  it("returns 400 for invalid tier", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/waterfall/subcategories/surplus/counts",
+      headers: { authorization: "Bearer valid-token" },
+    });
+
+    expect(res.statusCode).toBe(400);
+  });
+});
+
+describe("POST /api/waterfall/subcategories/reset", () => {
+  it("resets subcategories to defaults", async () => {
+    subcategoryServiceMock.resetToDefaults.mockResolvedValue(undefined as any);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/subcategories/reset",
+      headers: { authorization: "Bearer valid-token" },
+      payload: {
+        reassignments: [{ fromSubcategoryId: "sub-custom", toSubcategoryId: "sub-other" }],
+      },
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(subcategoryServiceMock.resetToDefaults).toHaveBeenCalledWith("hh-1", {
+      reassignments: [{ fromSubcategoryId: "sub-custom", toSubcategoryId: "sub-other" }],
+    });
+  });
+
+  it("returns 400 for invalid payload", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/subcategories/reset",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { reassignments: "not-an-array" },
+    });
+
+    expect(res.statusCode).toBe(400);
   });
 });

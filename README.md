@@ -157,3 +157,5 @@ Distributed under the GNU General Public License v3.0. See [license.txt](LICENSE
 - [Best-README-Template](https://github.com/othneildrew/Best-README-Template) — structural inspiration
 - [Shadcn/ui](https://ui.shadcn.com/) — component primitives
 - [TanStack](https://tanstack.com/) — Query and Router
+- [Impeccable](https://impeccable.style/) - UI refinement
+- [Superpowers](https://github.com/obra/superpowers) - Agents for SDLC workflow

@@ -19,6 +19,8 @@ import type {
   PeriodRow,
   CreatePeriodInput,
   UpdatePeriodInput,
+  BatchSaveSubcategoriesInput,
+  ResetSubcategoriesInput,
 } from "@finplan/shared";
 
 export const waterfallService = {
@@ -81,6 +83,18 @@ export const waterfallService = {
   // Subcategories
   getSubcategories: (tier: "income" | "committed" | "discretionary") =>
     apiClient.get<SubcategoryRow[]>(`/api/waterfall/subcategories/${tier}`),
+
+  // Subcategory mutations
+  getSubcategoryCounts: (tier: "income" | "committed" | "discretionary") =>
+    apiClient.get<Record<string, number>>(`/api/waterfall/subcategories/${tier}/counts`),
+
+  saveSubcategories: (
+    tier: "income" | "committed" | "discretionary",
+    data: BatchSaveSubcategoriesInput
+  ) => apiClient.put<SubcategoryRow[]>(`/api/waterfall/subcategories/${tier}`, data),
+
+  resetSubcategories: (data: ResetSubcategoriesInput) =>
+    apiClient.post<{ success: boolean }>("/api/waterfall/subcategories/reset", data),
 
   // Planner year budget (waterfall-adjacent)
   getYearBudget: (year: number) => apiClient.get<any>(`/api/planner/budget/${year}`),

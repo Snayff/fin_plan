@@ -75,3 +75,53 @@ describe("createDiscretionaryItemSchema", () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe("batchSaveSubcategoriesSchema", () => {
+  it("accepts valid batch save payload", () => {
+    const { batchSaveSubcategoriesSchema } = require("./waterfall.schemas");
+    const result = batchSaveSubcategoriesSchema.safeParse({
+      subcategories: [
+        { id: "sub-1", name: "Housing", sortOrder: 0 },
+        { name: "New Category", sortOrder: 1 },
+      ],
+      reassignments: [{ fromSubcategoryId: "sub-old", toSubcategoryId: "sub-1" }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty name", () => {
+    const { batchSaveSubcategoriesSchema } = require("./waterfall.schemas");
+    const result = batchSaveSubcategoriesSchema.safeParse({
+      subcategories: [{ name: "", sortOrder: 0 }],
+      reassignments: [],
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects name over 24 characters", () => {
+    const { batchSaveSubcategoriesSchema } = require("./waterfall.schemas");
+    const result = batchSaveSubcategoriesSchema.safeParse({
+      subcategories: [{ name: "A".repeat(25), sortOrder: 0 }],
+      reassignments: [],
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("resetSubcategoriesSchema", () => {
+  it("accepts valid reset payload", () => {
+    const { resetSubcategoriesSchema } = require("./waterfall.schemas");
+    const result = resetSubcategoriesSchema.safeParse({
+      reassignments: [{ fromSubcategoryId: "sub-custom", toSubcategoryId: "sub-other" }],
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts empty reassignments", () => {
+    const { resetSubcategoriesSchema } = require("./waterfall.schemas");
+    const result = resetSubcategoriesSchema.safeParse({
+      reassignments: [],
+    });
+    expect(result.success).toBe(true);
+  });
+});

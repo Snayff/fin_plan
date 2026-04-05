@@ -396,3 +396,31 @@ export const deleteAllWaterfallSchema = z.object({
   confirm: z.literal(true),
 });
 export type DeleteAllWaterfallInput = z.infer<typeof deleteAllWaterfallSchema>;
+
+// ─── Subcategory mutation schemas ────────────────────────────────────────────
+
+const subcategoryReassignmentSchema = z.object({
+  fromSubcategoryId: z.string().min(1),
+  toSubcategoryId: z.string().min(1),
+});
+
+const subcategoryEntrySchema = z.object({
+  id: z.string().min(1).optional(), // omitted for new subcategories
+  name: z.string().min(1).max(24).trim(),
+  sortOrder: z.number().int().min(0),
+});
+
+export const batchSaveSubcategoriesSchema = z.object({
+  subcategories: z.array(subcategoryEntrySchema).min(1).max(7),
+  reassignments: z.array(subcategoryReassignmentSchema),
+});
+
+export type BatchSaveSubcategoriesInput = z.infer<typeof batchSaveSubcategoriesSchema>;
+export type SubcategoryEntry = z.infer<typeof subcategoryEntrySchema>;
+export type SubcategoryReassignment = z.infer<typeof subcategoryReassignmentSchema>;
+
+export const resetSubcategoriesSchema = z.object({
+  reassignments: z.array(subcategoryReassignmentSchema),
+});
+
+export type ResetSubcategoriesInput = z.infer<typeof resetSubcategoriesSchema>;
