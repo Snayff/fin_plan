@@ -1,4 +1,8 @@
-import type { WaterfallTier, BatchSaveSubcategoriesInput } from "@finplan/shared";
+import type {
+  WaterfallTier,
+  BatchSaveSubcategoriesInput,
+  ResetSubcategoriesInput,
+} from "@finplan/shared";
 import { prisma } from "../config/database.js";
 
 const DEFAULT_SUBCATEGORIES = {
@@ -223,6 +227,78 @@ export const subcategoryService = {
           });
         }
       }
+    });
+  },
+
+  getDefaults() {
+    return DEFAULT_SUBCATEGORIES;
+  },
+
+  async resetToDefaults(householdId: string, input: ResetSubcategoriesInput) {
+    const { reassignments } = input;
+    const tiers = ["income", "committed", "discretionary"] as const;
+
+    // Fetch all existing subcategories across all tiers
+    const allExisting: Array<{ id: string; tier: string; householdId: string }> = [];
+    for (const tier of tiers) {
+      const subs = await prisma.subcategory.findMany({
+        where: { householdId, tier },
+      });
+      allExisting.push(...subs);
+    }
+    const existingIds = new Set(allExisting.map((s) => s.id));
+
+    // Validate reassignment source IDs
+    for (const r of reassignments) {
+      if (!existingIds.has(r.fromSubcategoryId)) {
+        throw new Error(`Reassignment source "${r.fromSubcategoryId}" not found in household`);
+      }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Reassign items for each reassignment
+      for (const r of reassignments) {
+        const source = allExisting.find((s) => s.id === r.fromSubcategoryId);
+        if (!source) continue;
+        const tier = source.tier as WaterfallTier;
+        const itemModel =
+          tier === "income"
+            ? tx.incomeSource
+            : tier === "committed"
+              ? tx.committedItem
+              : tx.discretionaryItem;
+
+        await (itemModel as any).updateMany({
+          where: { subcategoryId: r.fromSubcategoryId, householdId },
+          data: { subcategoryId: r.toSubcategoryId },
+        });
+      }
+
+      // 2. Delete all existing subcategories across all tiers
+      await tx.subcategory.deleteMany({ where: { householdId } });
+
+      // 3. Re-seed defaults
+      const rows: Array<{
+        householdId: string;
+        tier: "income" | "committed" | "discretionary";
+        name: string;
+        sortOrder: number;
+        isLocked: boolean;
+        isDefault: boolean;
+      }> = [];
+      for (const [tier, subs] of Object.entries(DEFAULT_SUBCATEGORIES)) {
+        for (const sub of subs) {
+          rows.push({
+            householdId,
+            tier: tier as "income" | "committed" | "discretionary",
+            name: sub.name,
+            sortOrder: sub.sortOrder,
+            isLocked: "isLocked" in sub ? sub.isLocked : false,
+            isDefault: true,
+          });
+        }
+      }
+      await tx.subcategory.createMany({ data: rows });
     });
   },
 };

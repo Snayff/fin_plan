@@ -494,3 +494,80 @@ describe("subcategoryService.batchSave", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("subcategoryService.resetToDefaults", () => {
+  it("deletes non-default subcategories, reassigns items, and restores defaults", async () => {
+    const existing = [
+      {
+        id: "sub-custom",
+        householdId: "hh-1",
+        tier: "income",
+        name: "Custom",
+        sortOrder: 0,
+        isLocked: false,
+        isDefault: false,
+      },
+      {
+        id: "sub-salary",
+        householdId: "hh-1",
+        tier: "income",
+        name: "Wages",
+        sortOrder: 1,
+        isLocked: false,
+        isDefault: true,
+      },
+      {
+        id: "sub-other-i",
+        householdId: "hh-1",
+        tier: "income",
+        name: "Other",
+        sortOrder: 2,
+        isLocked: false,
+        isDefault: true,
+      },
+    ];
+    prismaMock.subcategory.findMany
+      .mockResolvedValueOnce(existing as any)
+      .mockResolvedValueOnce([] as any)
+      .mockResolvedValueOnce([] as any);
+
+    prismaMock.incomeSource.updateMany.mockResolvedValue({ count: 1 } as any);
+    prismaMock.subcategory.deleteMany.mockResolvedValue({ count: 2 } as any);
+    prismaMock.subcategory.createMany.mockResolvedValue({ count: 3 } as any);
+
+    await subcategoryService.resetToDefaults("hh-1", {
+      reassignments: [{ fromSubcategoryId: "sub-custom", toSubcategoryId: "sub-other-i" }],
+    });
+
+    expect(prismaMock.incomeSource.updateMany).toHaveBeenCalledWith({
+      where: { subcategoryId: "sub-custom", householdId: "hh-1" },
+      data: { subcategoryId: "sub-other-i" },
+    });
+
+    expect(prismaMock.subcategory.deleteMany).toHaveBeenCalled();
+    expect(prismaMock.subcategory.createMany).toHaveBeenCalled();
+  });
+
+  it("validates reassignment source IDs exist in the household", async () => {
+    prismaMock.subcategory.findMany
+      .mockResolvedValueOnce([
+        {
+          id: "sub-1",
+          householdId: "hh-1",
+          tier: "income",
+          name: "Salary",
+          sortOrder: 0,
+          isLocked: false,
+          isDefault: true,
+        },
+      ] as any)
+      .mockResolvedValueOnce([] as any)
+      .mockResolvedValueOnce([] as any);
+
+    await expect(
+      subcategoryService.resetToDefaults("hh-1", {
+        reassignments: [{ fromSubcategoryId: "sub-foreign", toSubcategoryId: "sub-1" }],
+      })
+    ).rejects.toThrow();
+  });
+});
