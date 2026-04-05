@@ -7,7 +7,6 @@ import { subcategoryService } from "../services/subcategory.service.js";
 import {
   createIncomeSourceSchema,
   updateIncomeSourceSchema,
-  endIncomeSourceSchema,
   createCommittedItemSchema,
   updateCommittedItemSchema,
   createDiscretionaryItemSchema,
@@ -15,7 +14,12 @@ import {
   confirmBatchSchema,
   deleteAllWaterfallSchema,
   WaterfallTierEnum,
+  createPeriodSchema,
+  updatePeriodSchema,
 } from "@finplan/shared";
+import { periodService } from "../services/period.service.js";
+import { prisma } from "../config/database.js";
+import { NotFoundError } from "../utils/errors.js";
 
 export async function waterfallRoutes(fastify: FastifyInstance) {
   const pre = {
@@ -71,14 +75,16 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(sources);
   });
 
-  fastify.get("/income/ended", pre, async (req, reply) => {
-    const sources = await waterfallService.listEndedIncome(req.householdId!);
-    return reply.send(sources);
-  });
-
   fastify.post("/income", pre, async (req, reply) => {
     const data = createIncomeSourceSchema.parse(req.body);
     const source = await waterfallService.createIncome(req.householdId!, data, actorCtx(req));
+    await periodService.createPeriod({
+      itemType: "income_source",
+      itemId: source.id,
+      startDate: data.startDate ?? new Date(),
+      endDate: data.endDate,
+      amount: data.amount,
+    });
     return reply.status(201).send(source);
   });
 
@@ -93,19 +99,6 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     const { id } = req.params as { id: string };
     await waterfallService.deleteIncome(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
-  });
-
-  fastify.post("/income/:id/end", pre, async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const data = endIncomeSourceSchema.parse(req.body);
-    const source = await waterfallService.endIncome(req.householdId!, id, data, actorCtx(req));
-    return reply.send(source);
-  });
-
-  fastify.post("/income/:id/reactivate", pre, async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const source = await waterfallService.reactivateIncome(req.householdId!, id, actorCtx(req));
-    return reply.send(source);
   });
 
   fastify.post("/income/:id/confirm", pre, async (req, reply) => {
@@ -124,6 +117,13 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   fastify.post("/committed", pre, async (req, reply) => {
     const data = createCommittedItemSchema.parse(req.body);
     const bill = await waterfallService.createCommitted(req.householdId!, data, actorCtx(req));
+    await periodService.createPeriod({
+      itemType: "committed_item",
+      itemId: bill.id,
+      startDate: data.startDate ?? new Date(),
+      endDate: data.endDate,
+      amount: data.amount,
+    });
     return reply.status(201).send(bill);
   });
 
@@ -156,6 +156,13 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   fastify.post("/yearly", pre, async (req, reply) => {
     const data = createCommittedItemSchema.parse(req.body);
     const bill = await waterfallService.createYearly(req.householdId!, data, actorCtx(req));
+    await periodService.createPeriod({
+      itemType: "committed_item",
+      itemId: bill.id,
+      startDate: data.startDate ?? new Date(),
+      endDate: data.endDate,
+      amount: data.amount,
+    });
     return reply.status(201).send(bill);
   });
 
@@ -188,6 +195,13 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   fastify.post("/discretionary", pre, async (req, reply) => {
     const data = createDiscretionaryItemSchema.parse(req.body);
     const cat = await waterfallService.createDiscretionary(req.householdId!, data, actorCtx(req));
+    await periodService.createPeriod({
+      itemType: "discretionary_item",
+      itemId: cat.id,
+      startDate: data.startDate ?? new Date(),
+      endDate: data.endDate,
+      amount: data.amount,
+    });
     return reply.status(201).send(cat);
   });
 
@@ -225,6 +239,13 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
   fastify.post("/savings", pre, async (req, reply) => {
     const data = createDiscretionaryItemSchema.parse(req.body);
     const alloc = await waterfallService.createSavings(req.householdId!, data, actorCtx(req));
+    await periodService.createPeriod({
+      itemType: "discretionary_item",
+      itemId: alloc.id,
+      startDate: data.startDate ?? new Date(),
+      endDate: data.endDate,
+      amount: data.amount,
+    });
     return reply.status(201).send(alloc);
   });
 
@@ -269,6 +290,61 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.status(204).send();
   });
 
+  // ─── Periods ──────────────────────────────────────────────────────────────
+
+  fastify.get("/periods/:itemType/:itemId", pre, async (req, reply) => {
+    const { itemType, itemId } = req.params as { itemType: string; itemId: string };
+    await verifyItemOwnership(req.householdId!, itemType, itemId);
+    const periods = await periodService.listPeriods(itemType, itemId);
+    return reply.send(periods);
+  });
+
+  fastify.post("/periods", pre, async (req, reply) => {
+    const data = createPeriodSchema.parse(req.body);
+    await verifyItemOwnership(req.householdId!, data.itemType, data.itemId);
+    const period = await periodService.createPeriod(data);
+    return reply.status(201).send(period);
+  });
+
+  fastify.patch("/periods/:id", pre, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const data = updatePeriodSchema.parse(req.body);
+    // Verify ownership via parent item
+    const existing = await prisma.itemAmountPeriod.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundError("Period not found");
+    await verifyItemOwnership(req.householdId!, existing.itemType, existing.itemId);
+    const period = await periodService.updatePeriod(id, data);
+    return reply.send(period);
+  });
+
+  fastify.delete("/periods/:id", pre, async (req, reply) => {
+    const { id } = req.params as { id: string };
+    // Verify ownership via parent item
+    const existing = await prisma.itemAmountPeriod.findUnique({ where: { id } });
+    if (!existing) throw new NotFoundError("Period not found");
+    await verifyItemOwnership(req.householdId!, existing.itemType, existing.itemId);
+    const result = await periodService.deletePeriod(id);
+    if (result?.deleteItem) {
+      switch (result.itemType) {
+        case "income_source":
+          await waterfallService.deleteIncome(req.householdId!, result.itemId!, actorCtx(req));
+          break;
+        case "committed_item":
+          await waterfallService.deleteCommitted(req.householdId!, result.itemId!, actorCtx(req));
+          break;
+        case "discretionary_item":
+          await waterfallService.deleteDiscretionary(
+            req.householdId!,
+            result.itemId!,
+            actorCtx(req)
+          );
+          break;
+      }
+      return reply.status(200).send({ deleted: "item", itemId: result.itemId });
+    }
+    return reply.status(204).send();
+  });
+
   // ─── Subcategories ─────────────────────────────────────────────────────────
 
   fastify.get("/subcategories/:tier", pre, async (req, reply) => {
@@ -284,4 +360,39 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     const subcategories = await subcategoryService.listByTier(householdId, parsed.data);
     return reply.send(subcategories);
   });
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function assertOwned(item: { householdId: string } | null, householdId: string, label: string) {
+  if (!item) throw new NotFoundError(`${label} not found`);
+  if (item.householdId !== householdId) throw new NotFoundError(`${label} not found`);
+}
+
+async function verifyItemOwnership(householdId: string, itemType: string, itemId: string) {
+  switch (itemType) {
+    case "income_source": {
+      const item = await prisma.incomeSource.findUnique({
+        where: { id: itemId },
+      });
+      assertOwned(item, householdId, "Income source");
+      break;
+    }
+    case "committed_item": {
+      const item = await prisma.committedItem.findUnique({
+        where: { id: itemId },
+      });
+      assertOwned(item, householdId, "Committed item");
+      break;
+    }
+    case "discretionary_item": {
+      const item = await prisma.discretionaryItem.findUnique({
+        where: { id: itemId },
+      });
+      assertOwned(item, householdId, "Discretionary item");
+      break;
+    }
+    default:
+      throw new NotFoundError("Unknown item type");
+  }
 }

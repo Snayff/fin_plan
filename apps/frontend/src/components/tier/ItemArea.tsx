@@ -3,11 +3,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import GhostAddButton from "./GhostAddButton";
 import ItemAreaRow from "./ItemAreaRow";
 import ItemForm from "./ItemForm";
+import ItemStatusFilter from "./ItemStatusFilter";
 import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import { getEmptyStateCopy } from "./emptyStateCopy";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useCreateItem, useDeleteItem, type TierItemRow } from "@/hooks/useWaterfall";
 import { toGBP } from "@finplan/shared";
+import type { ItemLifecycleState } from "@finplan/shared";
 import { AnimatedCurrency } from "@/components/common/AnimatedCurrency";
 import type { TierConfig, TierKey } from "./tierConfig";
 
@@ -54,12 +56,34 @@ export default function ItemArea({
   const [sortField, setSortField] = useState<"name" | "createdAt" | "monthlyValue">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
   const [recentlyAddedItemId, setRecentlyAddedItemId] = useState<string | null>(null);
+  const [selectedStates, setSelectedStates] = useState<Set<ItemLifecycleState>>(
+    new Set(["active"])
+  );
+
+  const stateCounts = useMemo(() => {
+    const counts: Record<ItemLifecycleState, number> = { active: 0, future: 0, expired: 0 };
+    for (const item of items) {
+      const state = (item as TierItemRow & { lifecycleState?: ItemLifecycleState }).lifecycleState;
+      counts[state ?? "active"]++;
+    }
+    return counts;
+  }, [items]);
+
+  const filteredItems = useMemo(
+    () =>
+      items.filter((item) => {
+        const state = (item as TierItemRow & { lifecycleState?: ItemLifecycleState })
+          .lifecycleState;
+        return selectedStates.has(state ?? "active");
+      }),
+    [items, selectedStates]
+  );
 
   const createItem = useCreateItem(tier);
   const deleteItem = useDeleteItem(tier, deletingItemId ?? "");
 
   const displayItems = useMemo(() => {
-    const sorted = [...items].sort((a, b) => {
+    const sorted = [...filteredItems].sort((a, b) => {
       let cmp: number;
       if (sortField === "name") {
         cmp = a.name.localeCompare(b.name);
@@ -76,7 +100,7 @@ export default function ItemArea({
     const pinned = sorted.find((i) => i.id === recentlyAddedItemId);
     if (!pinned) return sorted;
     return [pinned, ...sorted.filter((i) => i.id !== recentlyAddedItemId)];
-  }, [items, sortField, sortDir, recentlyAddedItemId]);
+  }, [filteredItems, sortField, sortDir, recentlyAddedItemId]);
 
   // Monthly-equivalent total
   const total = items.reduce((sum, item) => {
@@ -152,6 +176,15 @@ export default function ItemArea({
         </div>
       </div>
 
+      {/* Lifecycle filter */}
+      <div className="px-4 py-2 border-b border-foreground/5">
+        <ItemStatusFilter
+          counts={stateCounts}
+          selected={selectedStates}
+          onChange={setSelectedStates}
+        />
+      </div>
+
       {/* Content */}
       <div className="flex-1 overflow-y-auto">
         {/* Add form at top */}
@@ -205,6 +238,22 @@ export default function ItemArea({
             ctaText={getEmptyStateCopy(subcategory.name, tier).body}
             onCtaClick={() => setIsAddingItem(true)}
           />
+        )}
+
+        {/* Filtered empty state — items exist but none match the current filter */}
+        {items.length > 0 && filteredItems.length === 0 && !isAddingItem && (
+          <div className="flex flex-col items-center justify-center py-12 text-center">
+            <p className="text-sm text-text-tertiary">
+              No {[...selectedStates].join(" or ")} items in this category.
+            </p>
+            <button
+              type="button"
+              onClick={() => setSelectedStates(new Set(["active", "future", "expired"]))}
+              className="mt-2 text-xs text-text-muted hover:text-text-secondary transition-colors"
+            >
+              Show all items
+            </button>
+          </div>
         )}
 
         {/* Item list */}

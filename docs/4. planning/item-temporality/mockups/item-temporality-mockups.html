@@ -1,0 +1,885 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>finplan — Item Temporality Mockups</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=Nunito+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #080a14;
+    --surface: #0d1120;
+    --surface-border: #1a1f35;
+    --surface-elevated: #141b2e;
+    --surface-elevated-border: #222c45;
+    --text-primary: rgba(238, 242, 255, 0.92);
+    --text-secondary: rgba(238, 242, 255, 0.65);
+    --text-tertiary: rgba(238, 242, 255, 0.40);
+    --text-muted: rgba(238, 242, 255, 0.25);
+    --tier-committed: #6366f1;
+    --tier-income: #0ea5e9;
+    --tier-discretionary: #a855f7;
+    --attention: #f59e0b;
+    --attention-bg: rgba(245, 158, 11, 0.04);
+    --action: #7c3aed;
+    --font-heading: 'Outfit', sans-serif;
+    --font-body: 'Nunito Sans', sans-serif;
+    --font-numeric: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    padding: 32px 48px;
+    min-height: 100vh;
+  }
+
+  .mockup-section {
+    margin-bottom: 64px;
+  }
+
+  .mockup-label {
+    font-family: var(--font-heading);
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+  }
+
+  .mockup-title {
+    font-family: var(--font-heading);
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+  }
+
+  .mockup-desc {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin-bottom: 24px;
+    line-height: 1.5;
+  }
+
+  /* ── Filter toggle ── */
+  .filter-bar {
+    display: flex;
+    gap: 4px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    padding: 3px;
+    width: fit-content;
+    margin-bottom: 24px;
+  }
+
+  .filter-btn {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 6px 16px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    color: var(--text-tertiary);
+    background: transparent;
+    transition: all 150ms ease-out;
+  }
+
+  .filter-btn.active {
+    color: var(--text-primary);
+    background: var(--surface-elevated);
+    border: 1px solid var(--surface-elevated-border);
+  }
+
+  .filter-btn .count {
+    font-family: var(--font-numeric);
+    font-size: 10px;
+    margin-left: 6px;
+    opacity: 0.5;
+  }
+
+  /* ── Item rows ── */
+  .item-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+
+  .item-row {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+  }
+
+  .item-row:hover {
+    background: var(--surface-elevated);
+  }
+
+  .item-row.future {
+    opacity: 0.55;
+    border-style: dashed;
+  }
+
+  .item-row.expired {
+    opacity: 0.35;
+  }
+
+  .item-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .item-name {
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .item-amount {
+    font-family: var(--font-numeric);
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+
+  .item-amount.derived {
+    color: var(--text-muted);
+  }
+
+  .item-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 2px;
+  }
+
+  .item-meta {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+
+  .item-badge {
+    font-family: var(--font-body);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-left: 8px;
+  }
+
+  .badge-future {
+    color: var(--tier-committed);
+    background: rgba(99, 102, 241, 0.1);
+    border: 1px solid rgba(99, 102, 241, 0.15);
+  }
+
+  .badge-expired {
+    color: var(--text-muted);
+    background: rgba(238, 242, 255, 0.03);
+    border: 1px solid rgba(238, 242, 255, 0.06);
+  }
+
+  .staleness-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--attention);
+    display: inline-block;
+    margin-right: 8px;
+    flex-shrink: 0;
+  }
+
+  .item-name-wrap {
+    display: flex;
+    align-items: center;
+  }
+
+  /* ── Scheduled change indicator ── */
+  .scheduled-change {
+    font-family: var(--font-numeric);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-left: 4px;
+  }
+
+  .scheduled-change .arrow {
+    color: var(--text-muted);
+    margin: 0 4px;
+  }
+
+  .scheduled-change .new-amount {
+    color: var(--tier-committed);
+    opacity: 0.7;
+  }
+
+  .scheduled-change .date {
+    font-family: var(--font-body);
+    font-size: 10px;
+    color: var(--text-muted);
+    margin-left: 4px;
+  }
+
+  /* ── Subcategory header ── */
+  .subcategory-header {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    padding: 16px 0 8px 0;
+  }
+
+  /* ── Expanded row ── */
+  .item-row.expanded {
+    background: rgba(99, 102, 241, 0.06);
+    border-left: 2px solid var(--tier-committed);
+    border-color: var(--surface-elevated-border);
+    border-left-color: var(--tier-committed);
+  }
+
+  .accordion-content {
+    padding: 12px 0 4px 0;
+    margin-left: 14px;
+  }
+
+  .accordion-label {
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+  }
+
+  .accordion-value {
+    font-family: var(--font-body);
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-style: italic;
+    margin-bottom: 12px;
+  }
+
+  /* ── Sparkline ── */
+  .sparkline-wrap {
+    margin: 12px 0 4px 0;
+  }
+
+  .sparkline-label {
+    font-family: var(--font-body);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+
+  .sparkline-svg {
+    width: 100%;
+    height: 48px;
+  }
+
+  .sparkline-line {
+    stroke: var(--tier-committed);
+    stroke-width: 1.5;
+    fill: none;
+    opacity: 0.6;
+  }
+
+  .sparkline-line-future {
+    stroke: var(--tier-committed);
+    stroke-width: 1.5;
+    fill: none;
+    opacity: 0.4;
+    stroke-dasharray: 4 3;
+  }
+
+  .sparkline-area {
+    fill: var(--tier-committed);
+    opacity: 0.06;
+  }
+
+  .sparkline-dot {
+    fill: var(--tier-committed);
+    opacity: 0.8;
+  }
+
+  .sparkline-amount-label {
+    font-family: var(--font-numeric);
+    font-size: 9px;
+    fill: var(--text-tertiary);
+  }
+
+  .sparkline-date-label {
+    font-family: var(--font-body);
+    font-size: 8px;
+    fill: var(--text-muted);
+  }
+
+  /* ── Edit form history entries ── */
+  .history-entries {
+    margin-top: 8px;
+  }
+
+  .history-entry {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 6px;
+    margin-bottom: 4px;
+  }
+
+  .history-entry.current {
+    border-color: var(--surface-elevated-border);
+    background: var(--surface-elevated);
+  }
+
+  .history-entry-date {
+    font-family: var(--font-numeric);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    min-width: 80px;
+  }
+
+  .history-entry-amount {
+    font-family: var(--font-numeric);
+    font-size: 13px;
+    color: var(--text-secondary);
+    min-width: 70px;
+  }
+
+  .history-entry-current-label {
+    font-family: var(--font-body);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--tier-committed);
+    opacity: 0.7;
+  }
+
+  .history-entry-future-label {
+    font-family: var(--font-body);
+    font-size: 9px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--text-muted);
+  }
+
+  .history-entry-delete {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-muted);
+    cursor: pointer;
+    margin-left: auto;
+  }
+
+  .history-entry-delete:hover {
+    color: #ef4444;
+  }
+
+  .add-period-btn {
+    font-family: var(--font-body);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: 1px dashed var(--surface-border);
+    border-radius: 6px;
+    padding: 6px 14px;
+    cursor: pointer;
+    margin-top: 4px;
+  }
+
+  .add-period-btn:hover {
+    color: var(--text-secondary);
+    border-color: var(--surface-elevated-border);
+  }
+
+  /* ── Calendar ── */
+  .calendar-header {
+    font-family: var(--font-heading);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 16px;
+  }
+
+  .calendar-month {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 6px;
+    margin-bottom: 2px;
+    cursor: pointer;
+    transition: all 150ms ease-out;
+  }
+
+  .calendar-month:hover {
+    background: var(--surface-elevated);
+  }
+
+  .calendar-month-name {
+    font-family: var(--font-heading);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .calendar-pot {
+    font-family: var(--font-numeric);
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .calendar-pot.shortfall {
+    color: var(--attention);
+  }
+
+  .calendar-month.expanded-month {
+    background: rgba(99, 102, 241, 0.06);
+    border-left: 2px solid var(--tier-committed);
+    border-radius: 6px 6px 0 0;
+    margin-bottom: 0;
+  }
+
+  .calendar-expanded-content {
+    background: rgba(99, 102, 241, 0.03);
+    border: 1px solid var(--surface-border);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    padding: 12px 16px 12px 28px;
+    margin-bottom: 2px;
+  }
+
+  .calendar-bill {
+    display: flex;
+    justify-content: space-between;
+    padding: 6px 0;
+  }
+
+  .calendar-bill-name {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .calendar-bill-amount {
+    font-family: var(--font-numeric);
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+
+  .calendar-divider {
+    border-top: 1px solid var(--surface-border);
+    margin: 8px 0;
+  }
+
+  .calendar-balance-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 4px 0;
+  }
+
+  .calendar-balance-label {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 600;
+  }
+
+  .calendar-balance-value {
+    font-family: var(--font-numeric);
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+
+  .calendar-balance-value.shortfall {
+    color: var(--attention);
+  }
+
+  .calendar-shortfall-note {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--attention);
+    background: var(--attention-bg);
+    border-radius: 4px;
+    padding: 6px 10px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .amber-dot-small {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--attention);
+    flex-shrink: 0;
+  }
+
+  .divider {
+    border-top: 1px solid var(--surface-border);
+    margin: 48px 0;
+  }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MOCKUP 1: TIER PAGE WITH FILTER
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="mockup-section">
+  <div class="mockup-label">Mockup 1 of 4</div>
+  <div class="mockup-title">Tier Page — Active/Future/Expired Filter</div>
+  <div class="mockup-desc">
+    Filter bar at the top of the item area. "Active" is selected by default.
+    Items in each state have distinct visual treatment. Badges label non-active items.
+  </div>
+
+  <div class="filter-bar">
+    <button class="filter-btn active">Active<span class="count">6</span></button>
+    <button class="filter-btn">Future<span class="count">2</span></button>
+    <button class="filter-btn">Expired<span class="count">3</span></button>
+  </div>
+
+  <div class="subcategory-header">Services</div>
+
+  <div class="item-list">
+    <!-- Active item -->
+    <div class="item-row">
+      <div class="item-top">
+        <div class="item-name-wrap">
+          <span class="item-name">Netflix</span>
+        </div>
+        <span class="item-amount">£8.00/mo</span>
+      </div>
+      <div class="item-bottom">
+        <span class="item-meta">Monthly · Services</span>
+        <span class="item-amount derived">£96.00/yr</span>
+      </div>
+    </div>
+
+    <!-- Active item with scheduled change -->
+    <div class="item-row">
+      <div class="item-top">
+        <div class="item-name-wrap">
+          <span class="staleness-dot"></span>
+          <span class="item-name">Spotify</span>
+        </div>
+        <div>
+          <span class="item-amount">£10.99/mo</span>
+          <span class="scheduled-change"><span class="arrow">→</span> <span class="new-amount">£12.99</span> <span class="date">from 1 May</span></span>
+        </div>
+      </div>
+      <div class="item-bottom">
+        <span class="item-meta">Monthly · Services</span>
+        <span class="item-amount derived">£131.88/yr</span>
+      </div>
+    </div>
+
+    <!-- Active item -->
+    <div class="item-row">
+      <div class="item-top">
+        <div class="item-name-wrap">
+          <span class="item-name">Car Insurance</span>
+        </div>
+        <span class="item-amount">£480.00/yr</span>
+      </div>
+      <div class="item-bottom">
+        <span class="item-meta">Yearly · Insurance · Due Aug</span>
+        <span class="item-amount derived">£40.00/mo</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Future filter selected view -->
+  <div style="margin-top: 32px;">
+    <div class="filter-bar">
+      <button class="filter-btn">Active<span class="count">6</span></button>
+      <button class="filter-btn active">Future<span class="count">2</span></button>
+      <button class="filter-btn">Expired<span class="count">3</span></button>
+    </div>
+
+    <div class="subcategory-header">Services</div>
+    <div class="item-list">
+      <!-- Future item -->
+      <div class="item-row future">
+        <div class="item-top">
+          <div class="item-name-wrap">
+            <span class="item-name">Disney+</span>
+            <span class="item-badge badge-future">From 1 Jun 2026</span>
+          </div>
+          <span class="item-amount">£7.99/mo</span>
+        </div>
+        <div class="item-bottom">
+          <span class="item-meta">Monthly · Services</span>
+          <span class="item-amount derived">£95.88/yr</span>
+        </div>
+      </div>
+
+      <!-- Future one-off item -->
+      <div class="item-row future">
+        <div class="item-top">
+          <div class="item-name-wrap">
+            <span class="item-name">Boiler Service</span>
+            <span class="item-badge badge-future">Due Oct 2026</span>
+          </div>
+          <span class="item-amount">£180.00</span>
+        </div>
+        <div class="item-bottom">
+          <span class="item-meta">One-off · Maintenance</span>
+          <span class="item-amount derived">£15.00/mo pot</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MOCKUP 2: EXPANDED ROW WITH SPARKLINE
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="mockup-section">
+  <div class="mockup-label">Mockup 2 of 4</div>
+  <div class="mockup-title">Expanded Row — Value History Sparkline</div>
+  <div class="mockup-desc">
+    The accordion shows notes, last reviewed, and a sparkline of the item's value timeline.
+    Past periods are solid, future periods are dashed. Step changes are visible.
+  </div>
+
+  <div class="item-list">
+    <div class="item-row expanded">
+      <div class="item-top">
+        <div class="item-name-wrap">
+          <span class="item-name">Netflix</span>
+        </div>
+        <div>
+          <span class="item-amount">£8.00/mo</span>
+          <span class="scheduled-change"><span class="arrow">→</span> <span class="new-amount">£9.00</span> <span class="date">from 3 Oct</span></span>
+        </div>
+      </div>
+      <div class="item-bottom">
+        <span class="item-meta">Monthly · Services</span>
+        <span class="item-amount derived">£96.00/yr</span>
+      </div>
+
+      <div class="accordion-content">
+        <div class="accordion-label">Notes</div>
+        <div class="accordion-value">Standard plan, shared with family</div>
+
+        <div class="sparkline-wrap">
+          <div class="sparkline-label">Value History</div>
+          <svg class="sparkline-svg" viewBox="0 0 500 48" preserveAspectRatio="none">
+            <!-- Y axis: £7=42, £8=24, £9=6. X axis: 0=2011, 250=2018, 430=today, 500=future -->
+            <!-- £7 period: 2011–2017 -->
+            <polyline class="sparkline-area" points="0,42 0,42 240,42 240,24 430,24 430,6 500,6 500,48 0,48" />
+            <polyline class="sparkline-line" points="0,42 240,42 240,24 430,24" />
+            <!-- £8 current period, to today -->
+            <circle class="sparkline-dot" cx="430" cy="24" r="3" />
+            <!-- Future: £9 from Oct -->
+            <polyline class="sparkline-line-future" points="430,24 430,6 500,6" />
+
+            <!-- Amount labels -->
+            <text class="sparkline-amount-label" x="4" y="40">£7</text>
+            <text class="sparkline-amount-label" x="244" y="22">£8</text>
+            <text class="sparkline-amount-label" x="434" y="12">£9</text>
+
+            <!-- Date labels -->
+            <text class="sparkline-date-label" x="0" y="48">2011</text>
+            <text class="sparkline-date-label" x="240" y="48">2017</text>
+            <text class="sparkline-date-label" x="420" y="48">Now</text>
+            <text class="sparkline-date-label" x="470" y="48">Oct</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MOCKUP 3: EDIT FORM WITH VALUE HISTORY ENTRIES
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="mockup-section">
+  <div class="mockup-label">Mockup 3 of 4</div>
+  <div class="mockup-title">Edit Mode — Value History Entries</div>
+  <div class="mockup-desc">
+    In edit mode, the value history is shown as an editable list of periods.
+    Users can add, modify, or delete periods. The current period is highlighted.
+  </div>
+
+  <div style="max-width: 480px;">
+    <div class="accordion-label" style="margin-bottom: 8px;">Value History</div>
+
+    <div class="history-entries">
+      <div class="history-entry">
+        <span class="history-entry-date">Jan 2011</span>
+        <span class="history-entry-amount">£7.00</span>
+        <span class="history-entry-delete">Remove</span>
+      </div>
+      <div class="history-entry current">
+        <span class="history-entry-date">Sep 2017</span>
+        <span class="history-entry-amount">£8.00</span>
+        <span class="history-entry-current-label">Current</span>
+        <span class="history-entry-delete">Remove</span>
+      </div>
+      <div class="history-entry">
+        <span class="history-entry-date">Oct 2026</span>
+        <span class="history-entry-amount">£9.00</span>
+        <span class="history-entry-future-label">Scheduled</span>
+        <span class="history-entry-delete">Remove</span>
+      </div>
+    </div>
+
+    <button class="add-period-btn">+ Add period</button>
+  </div>
+</div>
+
+<div class="divider"></div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════
+     MOCKUP 4: YEARLY CALENDAR WITH BILLS + SHORTFALL
+     ═══════════════════════════════════════════════════════════════════════ -->
+<div class="mockup-section">
+  <div class="mockup-label">Mockup 4 of 4</div>
+  <div class="mockup-title">Yearly Calendar — Bills &amp; Cashflow</div>
+  <div class="mockup-desc">
+    Each month shows the running pot balance. Months with shortfalls get an amber indicator.
+    Expanding a month shows individual bills, pot before/after, and a cashflow note if negative.
+  </div>
+
+  <div style="max-width: 600px;">
+    <div class="calendar-header">Yearly Bills — 2026 Cashflow</div>
+
+    <!-- Normal months -->
+    <div class="calendar-month">
+      <span class="calendar-month-name">January</span>
+      <span class="calendar-pot">Pot after: £83</span>
+    </div>
+    <div class="calendar-month">
+      <span class="calendar-month-name">February</span>
+      <span class="calendar-pot">Pot after: £167</span>
+    </div>
+    <div class="calendar-month">
+      <span class="calendar-month-name">March</span>
+      <span class="calendar-pot">Pot after: £250</span>
+    </div>
+    <div class="calendar-month">
+      <span class="calendar-month-name">April</span>
+      <span class="calendar-pot">Pot after: £333</span>
+    </div>
+    <div class="calendar-month">
+      <span class="calendar-month-name">May</span>
+      <span class="calendar-pot">Pot after: £416</span>
+    </div>
+
+    <!-- June: has a bill but covered -->
+    <div class="calendar-month">
+      <span class="calendar-month-name">June</span>
+      <span class="calendar-pot">Pot after: £259</span>
+    </div>
+
+    <div class="calendar-month">
+      <span class="calendar-month-name">July</span>
+      <span class="calendar-pot">Pot after: £342</span>
+    </div>
+
+    <!-- August: expanded, has bills + shortfall -->
+    <div class="calendar-month expanded-month">
+      <span class="calendar-month-name">
+        <span class="amber-dot-small"></span>
+        August
+      </span>
+      <span class="calendar-pot shortfall">Pot after: −£98</span>
+    </div>
+    <div class="calendar-expanded-content">
+      <div class="calendar-bill">
+        <span class="calendar-bill-name">Car Insurance</span>
+        <span class="calendar-bill-amount">−£480</span>
+      </div>
+      <div class="calendar-bill">
+        <span class="calendar-bill-name">Boiler Service</span>
+        <span class="calendar-bill-amount">−£180</span>
+      </div>
+
+      <div class="calendar-divider"></div>
+
+      <div class="calendar-balance-row">
+        <span class="calendar-balance-label">Pot before</span>
+        <span class="calendar-balance-value">£425</span>
+      </div>
+      <div class="calendar-balance-row">
+        <span class="calendar-balance-label">Bills due</span>
+        <span class="calendar-balance-value">−£660</span>
+      </div>
+      <div class="calendar-balance-row">
+        <span class="calendar-balance-label">Monthly accrual</span>
+        <span class="calendar-balance-value">+£83</span>
+      </div>
+      <div class="calendar-balance-row">
+        <span class="calendar-balance-label">Pot after</span>
+        <span class="calendar-balance-value shortfall">−£98</span>
+      </div>
+
+      <div class="calendar-shortfall-note">
+        <span class="amber-dot-small"></span>
+        Pot is £98 short for August. Consider an earlier top-up or staggering bills.
+      </div>
+    </div>
+
+    <div class="calendar-month">
+      <span class="calendar-month-name">September</span>
+      <span class="calendar-pot">Pot after: −£15</span>
+    </div>
+    <div class="calendar-month">
+      <span class="calendar-month-name">October</span>
+      <span class="calendar-pot">Pot after: £68</span>
+    </div>
+    <div class="calendar-month">
+      <span class="calendar-month-name">November</span>
+      <span class="calendar-pot">Pot after: £151</span>
+    </div>
+    <div class="calendar-month">
+      <span class="calendar-month-name">December</span>
+      <span class="calendar-pot">Pot after: £234</span>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

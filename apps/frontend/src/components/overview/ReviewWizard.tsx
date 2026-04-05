@@ -293,13 +293,14 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     const svcType = getServiceType(currentStep, item);
     const fromAmount = getItemAmount(item);
     try {
-      if (svcType === "income") await waterfallService.updateIncome(item.id, { amount: newAmount });
+      // Amount updates for income go through periods now; confirm only for review
+      if (svcType === "income") await waterfallService.confirmIncome(item.id);
       else if (svcType === "committed")
         await waterfallService.updateCommitted(item.id, { amount: newAmount });
       else if (svcType === "yearly")
         await waterfallService.updateYearly(item.id, { amount: newAmount });
-      else if (svcType === "discretionary")
-        await waterfallService.updateDiscretionary(item.id, { amount: newAmount });
+      // Amount updates for discretionary go through periods now; confirm only for review
+      else if (svcType === "discretionary") await waterfallService.confirmDiscretionary(item.id);
       else if (svcType === "savings")
         await waterfallService.updateSavings(item.id, { monthlyAmount: newAmount });
 

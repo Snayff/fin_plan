@@ -15,12 +15,9 @@ const waterfallServiceMock = {
   ),
   getCashflow: mock(() => Promise.resolve([])),
   listIncome: mock(() => Promise.resolve([])),
-  listEndedIncome: mock(() => Promise.resolve([])),
   createIncome: mock(() => Promise.resolve(null)),
   updateIncome: mock(() => Promise.resolve(null)),
   deleteIncome: mock(() => Promise.resolve()),
-  endIncome: mock(() => Promise.resolve(null)),
-  reactivateIncome: mock(() => Promise.resolve(null)),
   confirmIncome: mock(() => Promise.resolve(null)),
   listCommitted: mock(() => Promise.resolve([])),
   createCommitted: mock(() => Promise.resolve(null)),
@@ -59,8 +56,27 @@ const snapshotServiceMock = {
   ),
 };
 
+const periodServiceMock = {
+  listPeriods: mock(() => Promise.resolve([])),
+  createPeriod: mock(() => Promise.resolve({ id: "p1", amount: 0 })),
+  updatePeriod: mock(() => Promise.resolve({ id: "p1" })),
+  deletePeriod: mock(() => Promise.resolve(undefined)),
+  getCurrentAmount: mock(() => Promise.resolve(0)),
+  getEffectiveAmountForMonth: mock(() => Promise.resolve(0)),
+  getLifecycleState: mock(() => Promise.resolve("active")),
+};
+
+const computeLifecycleStateMock = mock(() => "active");
+const findEffectivePeriodMock = mock(() => null);
+
 mock.module("../services/waterfall.service", () => ({
   waterfallService: waterfallServiceMock,
+}));
+
+mock.module("../services/period.service.js", () => ({
+  periodService: periodServiceMock,
+  computeLifecycleState: computeLifecycleStateMock,
+  findEffectivePeriod: findEffectivePeriodMock,
 }));
 
 const subcategoryServiceMock = {
@@ -77,6 +93,18 @@ mock.module("../services/snapshot.service", () => ({
 
 mock.module("../services/subcategory.service", () => ({
   subcategoryService: subcategoryServiceMock,
+}));
+
+mock.module("../config/database.js", () => ({
+  prisma: {
+    incomeSource: { findUnique: mock(() => Promise.resolve(null)) },
+    committedItem: { findUnique: mock(() => Promise.resolve(null)) },
+    discretionaryItem: { findUnique: mock(() => Promise.resolve(null)) },
+  },
+}));
+
+mock.module("../lib/actor-ctx.js", () => ({
+  actorCtx: mock(() => ({ userId: "user-1", email: "test@test.com" })),
 }));
 
 mock.module("../middleware/auth.middleware", () => ({
@@ -110,13 +138,11 @@ const mockIncomeSource = {
   id: "inc-1",
   householdId: "hh-1",
   name: "Salary",
-  amount: 5000,
   frequency: "monthly",
   incomeType: "salary",
   expectedMonth: null,
   ownerId: null,
   sortOrder: 0,
-  endedAt: null,
   lastReviewedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
@@ -126,7 +152,6 @@ const mockCommittedBill = {
   id: "bill-1",
   householdId: "hh-1",
   name: "Rent",
-  amount: 1000,
   ownerId: null,
   sortOrder: 0,
   lastReviewedAt: new Date().toISOString(),
@@ -138,7 +163,6 @@ const mockYearlyBill = {
   id: "ybill-1",
   householdId: "hh-1",
   name: "Car Insurance",
-  amount: 600,
   dueMonth: 3,
   sortOrder: 0,
   lastReviewedAt: new Date().toISOString(),
@@ -150,7 +174,6 @@ const mockDiscretionaryCategory = {
   id: "disc-1",
   householdId: "hh-1",
   name: "Groceries",
-  amount: 400,
   subcategoryId: "sub-food",
   sortOrder: 0,
   lastReviewedAt: new Date().toISOString(),
@@ -162,7 +185,6 @@ const mockSavingsAllocation = {
   id: "sav-1",
   householdId: "hh-1",
   name: "Emergency Fund",
-  amount: 200,
   subcategoryId: "sub-savings",
   sortOrder: 0,
   lastReviewedAt: new Date().toISOString(),
@@ -180,16 +202,16 @@ beforeEach(() => {
   for (const method of Object.values(subcategoryServiceMock)) {
     if (typeof method?.mockReset === "function") method.mockReset();
   }
+  for (const method of Object.values(periodServiceMock)) {
+    if (typeof method?.mockReset === "function") method.mockReset();
+  }
 
   waterfallServiceMock.getWaterfallSummary.mockResolvedValue(mockSummary as any);
   waterfallServiceMock.getCashflow.mockResolvedValue([] as any);
   waterfallServiceMock.listIncome.mockResolvedValue([mockIncomeSource] as any);
-  waterfallServiceMock.listEndedIncome.mockResolvedValue([] as any);
   waterfallServiceMock.createIncome.mockResolvedValue(mockIncomeSource as any);
   waterfallServiceMock.updateIncome.mockResolvedValue(mockIncomeSource as any);
   waterfallServiceMock.deleteIncome.mockResolvedValue(undefined);
-  waterfallServiceMock.endIncome.mockResolvedValue(mockIncomeSource as any);
-  waterfallServiceMock.reactivateIncome.mockResolvedValue(mockIncomeSource as any);
   waterfallServiceMock.confirmIncome.mockResolvedValue(mockIncomeSource as any);
   waterfallServiceMock.listCommitted.mockResolvedValue([mockCommittedBill] as any);
   waterfallServiceMock.createCommitted.mockResolvedValue(mockCommittedBill as any);
@@ -228,6 +250,14 @@ beforeEach(() => {
   subcategoryServiceMock.seedDefaults.mockResolvedValue(undefined as any);
   subcategoryServiceMock.getDefaultSubcategoryId.mockResolvedValue("sub-other" as any);
   subcategoryServiceMock.getSubcategoryIdByName.mockResolvedValue(null as any);
+
+  periodServiceMock.listPeriods.mockResolvedValue([] as any);
+  periodServiceMock.createPeriod.mockResolvedValue({ id: "p1", amount: 0 } as any);
+  periodServiceMock.updatePeriod.mockResolvedValue({ id: "p1" } as any);
+  periodServiceMock.deletePeriod.mockResolvedValue(undefined as any);
+  periodServiceMock.getCurrentAmount.mockResolvedValue(0 as any);
+  periodServiceMock.getEffectiveAmountForMonth.mockResolvedValue(0 as any);
+  periodServiceMock.getLifecycleState.mockResolvedValue("active" as any);
 
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
@@ -438,7 +468,7 @@ describe("POST /api/waterfall/discretionary", () => {
       payload: { name: "Groceries", amount: 400, subcategoryId: "sub-food" },
     });
     expect(res.statusCode).toBe(201);
-    expect(res.json().amount).toBe(400);
+    expect(res.json().name).toBe("Groceries");
   });
 
   it("returns 400 for missing amount", async () => {
@@ -472,7 +502,7 @@ describe("POST /api/waterfall/savings", () => {
       payload: { name: "Emergency Fund", amount: 200, subcategoryId: "sub-savings" },
     });
     expect(res.statusCode).toBe(201);
-    expect(res.json().amount).toBe(200);
+    expect(res.json().name).toBe("Emergency Fund");
   });
 
   it("returns 400 for missing amount", async () => {

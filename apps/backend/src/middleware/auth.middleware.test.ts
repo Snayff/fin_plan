@@ -38,11 +38,17 @@ describe("authMiddleware", () => {
     prismaMock.user.findUnique.mockResolvedValue(
       buildUser({ id: "user-1", email: "test@test.com", activeHouseholdId: "household-1" } as any)
     );
+    prismaMock.householdMember.findUnique.mockResolvedValue({ role: "owner" });
 
     const request = buildMockRequest("Bearer valid-token");
     await authMiddleware(request, mockReply);
 
-    expect(request.user).toEqual({ userId: "user-1", email: "test@test.com", name: "Test User" });
+    expect(request.user).toEqual({
+      userId: "user-1",
+      email: "test@test.com",
+      name: "Test User",
+      role: "owner",
+    });
     expect(request.householdId).toBe("household-1");
   });
 
@@ -98,10 +104,36 @@ describe("authMiddleware", () => {
       name: "Alice",
       activeHouseholdId: "hh_1",
     } as any);
+    prismaMock.householdMember.findUnique.mockResolvedValue({ role: "member" });
 
     const request = buildMockRequest("Bearer valid_token");
     await authMiddleware(request, mockReply);
 
     expect(request.user.name).toBe("Alice");
+    expect(request.user.role).toBe("member");
+  });
+
+  it("throws AuthenticationError when user is no longer a member of active household", async () => {
+    const payload = { userId: "user-1", email: "test@test.com" };
+    (verifyAccessToken as any).mockReturnValue(payload);
+    prismaMock.user.findUnique.mockResolvedValue(
+      buildUser({ id: "user-1", email: "test@test.com", activeHouseholdId: "household-1" } as any)
+    );
+    // Membership no longer exists
+    prismaMock.householdMember.findUnique.mockResolvedValue(null);
+    // No other memberships to fall back to
+    prismaMock.householdMember.findFirst.mockResolvedValue(null);
+    prismaMock.user.update.mockResolvedValue({});
+
+    const request = buildMockRequest("Bearer valid-token");
+    await expect(authMiddleware(request, mockReply)).rejects.toThrow(
+      "No longer a member of this household"
+    );
+
+    // Verify it cleared the stale activeHouseholdId
+    expect(prismaMock.user.update).toHaveBeenCalledWith({
+      where: { id: "user-1" },
+      data: { activeHouseholdId: null },
+    });
   });
 });

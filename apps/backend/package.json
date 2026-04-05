@@ -25,7 +25,6 @@
     "@fastify/csrf-protection": "^7.1.0",
     "@fastify/helmet": "^12.0.1",
     "@fastify/rate-limit": "^10.1.1",
-    "@fastify/websocket": "^11.2.0",
     "@finplan/shared": "*",
     "@prisma/adapter-pg": "^7.6.0",
     "@prisma/client": "^7.0.0",
