@@ -1,4 +1,4 @@
-interface LegendEntry {
+export interface LegendEntry {
   colour: string;
   label: string;
 }
