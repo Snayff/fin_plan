@@ -83,7 +83,6 @@ function buildBands(
     yStartRight: yMid,
     heightRight: dHeight,
   });
-  yMid += dHeight;
 
   // Surplus: flows from remaining income through to right
   bands.push({

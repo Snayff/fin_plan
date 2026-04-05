@@ -34,11 +34,11 @@ export function generateTierColours(tier: "committed" | "discretionary", count: 
   const n = Math.min(Math.max(count, 0), 7);
   if (n === 0) return [];
 
-  if (n === 1) return [scale[0]];
+  if (n === 1) return [scale[0]!];
 
   // Evenly space across the scale
   return Array.from({ length: n }, (_, i) => {
     const idx = Math.round((i / (n - 1)) * (scale.length - 1));
-    return scale[idx];
+    return scale[idx]!;
   });
 }
