@@ -292,21 +292,23 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
 
   // ─── Periods ──────────────────────────────────────────────────────────────
 
-  fastify.get("/periods/:itemType/:itemId", pre, async (req, reply) => {
+  const periodRateLimit = { ...pre, config: { rateLimit: { max: 30, timeWindow: "1 minute" } } };
+
+  fastify.get("/periods/:itemType/:itemId", periodRateLimit, async (req, reply) => {
     const { itemType, itemId } = req.params as { itemType: string; itemId: string };
     await verifyItemOwnership(req.householdId!, itemType, itemId);
     const periods = await periodService.listPeriods(itemType, itemId);
     return reply.send(periods);
   });
 
-  fastify.post("/periods", pre, async (req, reply) => {
+  fastify.post("/periods", periodRateLimit, async (req, reply) => {
     const data = createPeriodSchema.parse(req.body);
     await verifyItemOwnership(req.householdId!, data.itemType, data.itemId);
     const period = await periodService.createPeriod(data);
     return reply.status(201).send(period);
   });
 
-  fastify.patch("/periods/:id", pre, async (req, reply) => {
+  fastify.patch("/periods/:id", periodRateLimit, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updatePeriodSchema.parse(req.body);
     // Verify ownership via parent item
@@ -317,7 +319,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(period);
   });
 
-  fastify.delete("/periods/:id", pre, async (req, reply) => {
+  fastify.delete("/periods/:id", periodRateLimit, async (req, reply) => {
     const { id } = req.params as { id: string };
     // Verify ownership via parent item
     const existing = await prisma.itemAmountPeriod.findUnique({ where: { id } });
