@@ -292,60 +292,86 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
 
   // ─── Periods ──────────────────────────────────────────────────────────────
 
-  const periodRateLimit = { ...pre, config: { rateLimit: { max: 30, timeWindow: "1 minute" } } };
-
-  fastify.get("/periods/:itemType/:itemId", periodRateLimit, async (req, reply) => {
-    const { itemType, itemId } = req.params as { itemType: string; itemId: string };
-    await verifyItemOwnership(req.householdId!, itemType, itemId);
-    const periods = await periodService.listPeriods(itemType, itemId);
-    return reply.send(periods);
-  });
-
-  fastify.post("/periods", periodRateLimit, async (req, reply) => {
-    const data = createPeriodSchema.parse(req.body);
-    await verifyItemOwnership(req.householdId!, data.itemType, data.itemId);
-    const period = await periodService.createPeriod(data);
-    return reply.status(201).send(period);
-  });
-
-  fastify.patch("/periods/:id", periodRateLimit, async (req, reply) => {
-    const { id } = req.params as { id: string };
-    const data = updatePeriodSchema.parse(req.body);
-    // Verify ownership via parent item
-    const existing = await prisma.itemAmountPeriod.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundError("Period not found");
-    await verifyItemOwnership(req.householdId!, existing.itemType, existing.itemId);
-    const period = await periodService.updatePeriod(id, data);
-    return reply.send(period);
-  });
-
-  fastify.delete("/periods/:id", periodRateLimit, async (req, reply) => {
-    const { id } = req.params as { id: string };
-    // Verify ownership via parent item
-    const existing = await prisma.itemAmountPeriod.findUnique({ where: { id } });
-    if (!existing) throw new NotFoundError("Period not found");
-    await verifyItemOwnership(req.householdId!, existing.itemType, existing.itemId);
-    const result = await periodService.deletePeriod(id);
-    if (result?.deleteItem) {
-      switch (result.itemType) {
-        case "income_source":
-          await waterfallService.deleteIncome(req.householdId!, result.itemId!, actorCtx(req));
-          break;
-        case "committed_item":
-          await waterfallService.deleteCommitted(req.householdId!, result.itemId!, actorCtx(req));
-          break;
-        case "discretionary_item":
-          await waterfallService.deleteDiscretionary(
-            req.householdId!,
-            result.itemId!,
-            actorCtx(req)
-          );
-          break;
-      }
-      return reply.status(200).send({ deleted: "item", itemId: result.itemId });
+  fastify.get(
+    "/periods/:itemType/:itemId",
+    {
+      preHandler: pre.preHandler,
+      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+    },
+    async (req, reply) => {
+      const { itemType, itemId } = req.params as { itemType: string; itemId: string };
+      await verifyItemOwnership(req.householdId!, itemType, itemId);
+      const periods = await periodService.listPeriods(itemType, itemId);
+      return reply.send(periods);
     }
-    return reply.status(204).send();
-  });
+  );
+
+  fastify.post(
+    "/periods",
+    {
+      preHandler: pre.preHandler,
+      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+    },
+    async (req, reply) => {
+      const data = createPeriodSchema.parse(req.body);
+      await verifyItemOwnership(req.householdId!, data.itemType, data.itemId);
+      const period = await periodService.createPeriod(data);
+      return reply.status(201).send(period);
+    }
+  );
+
+  fastify.patch(
+    "/periods/:id",
+    {
+      preHandler: pre.preHandler,
+      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+    },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      const data = updatePeriodSchema.parse(req.body);
+      // Verify ownership via parent item
+      const existing = await prisma.itemAmountPeriod.findUnique({ where: { id } });
+      if (!existing) throw new NotFoundError("Period not found");
+      await verifyItemOwnership(req.householdId!, existing.itemType, existing.itemId);
+      const period = await periodService.updatePeriod(id, data);
+      return reply.send(period);
+    }
+  );
+
+  fastify.delete(
+    "/periods/:id",
+    {
+      preHandler: pre.preHandler,
+      config: { rateLimit: { max: 30, timeWindow: "1 minute" } },
+    },
+    async (req, reply) => {
+      const { id } = req.params as { id: string };
+      // Verify ownership via parent item
+      const existing = await prisma.itemAmountPeriod.findUnique({ where: { id } });
+      if (!existing) throw new NotFoundError("Period not found");
+      await verifyItemOwnership(req.householdId!, existing.itemType, existing.itemId);
+      const result = await periodService.deletePeriod(id);
+      if (result?.deleteItem) {
+        switch (result.itemType) {
+          case "income_source":
+            await waterfallService.deleteIncome(req.householdId!, result.itemId!, actorCtx(req));
+            break;
+          case "committed_item":
+            await waterfallService.deleteCommitted(req.householdId!, result.itemId!, actorCtx(req));
+            break;
+          case "discretionary_item":
+            await waterfallService.deleteDiscretionary(
+              req.householdId!,
+              result.itemId!,
+              actorCtx(req)
+            );
+            break;
+        }
+        return reply.status(200).send({ deleted: "item", itemId: result.itemId });
+      }
+      return reply.status(204).send();
+    }
+  );
 
   // ─── Subcategories ─────────────────────────────────────────────────────────
 
