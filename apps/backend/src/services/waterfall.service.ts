@@ -47,6 +47,45 @@ async function validateMemberOwnership(householdId: string, memberId: string) {
   if (!member) throw new NotFoundError("Household member not found");
 }
 
+// ─── Period enrichment helper ────────────────────────────────────────────────
+
+async function enrichItemsWithPeriods<T extends { id: string }>(
+  items: T[],
+  itemType: string
+): Promise<Array<T & { amount: number; lifecycleState: string; periods: any[] }>> {
+  if (items.length === 0) return [];
+
+  const now = new Date();
+  const allPeriods = await prisma.itemAmountPeriod.findMany({
+    where: {
+      itemType: itemType as any,
+      itemId: { in: items.map((i) => i.id) },
+    },
+    orderBy: { startDate: "asc" },
+  });
+
+  const periodsByItem = new Map<string, typeof allPeriods>();
+  for (const period of allPeriods) {
+    const existing = periodsByItem.get(period.itemId) ?? [];
+    existing.push(period);
+    periodsByItem.set(period.itemId, existing);
+  }
+
+  return items.map((item) => {
+    const periods = periodsByItem.get(item.id) ?? [];
+    let amount = 0;
+    for (let i = periods.length - 1; i >= 0; i--) {
+      const p = periods[i]!;
+      if (p.startDate <= now && (p.endDate === null || p.endDate > now)) {
+        amount = p.amount;
+        break;
+      }
+    }
+    const lifecycleState = computeLifecycleState(periods, now);
+    return { ...item, amount, lifecycleState, periods };
+  });
+}
+
 // ─── Subcategory totals helper ────────────────────────────────────────────────
 
 function buildSubcategoryTotals(
@@ -413,10 +452,11 @@ export const waterfallService = {
   // ─── Income sources ──────────────────────────────────────────────────────────
 
   async listIncome(householdId: string) {
-    return prisma.incomeSource.findMany({
+    const items = await prisma.incomeSource.findMany({
       where: { householdId },
       orderBy: { sortOrder: "asc" },
     });
+    return enrichItemsWithPeriods(items, "income_source");
   },
 
   async createIncome(householdId: string, data: CreateIncomeSourceInput, ctx?: ActorCtx) {
@@ -526,10 +566,11 @@ export const waterfallService = {
   // ─── Committed items ──────────────────────────────────────────────────────────
 
   async listCommitted(householdId: string) {
-    return prisma.committedItem.findMany({
+    const items = await prisma.committedItem.findMany({
       where: { householdId },
       orderBy: { sortOrder: "asc" },
     });
+    return enrichItemsWithPeriods(items, "committed_item");
   },
 
   async createCommitted(householdId: string, data: CreateCommittedItemInput, ctx?: ActorCtx) {
@@ -643,10 +684,11 @@ export const waterfallService = {
   // ─── Yearly items (CommittedItem with spendType=yearly) ─────────────────────
 
   async listYearly(householdId: string) {
-    return prisma.committedItem.findMany({
+    const items = await prisma.committedItem.findMany({
       where: { householdId, spendType: "yearly" },
       orderBy: { sortOrder: "asc" },
     });
+    return enrichItemsWithPeriods(items, "committed_item");
   },
 
   async createYearly(householdId: string, data: CreateCommittedItemInput, ctx?: ActorCtx) {
@@ -754,10 +796,11 @@ export const waterfallService = {
   // ─── Discretionary items ─────────────────────────────────────────────────────
 
   async listDiscretionary(householdId: string) {
-    return prisma.discretionaryItem.findMany({
+    const items = await prisma.discretionaryItem.findMany({
       where: { householdId },
       orderBy: { sortOrder: "asc" },
     });
+    return enrichItemsWithPeriods(items, "discretionary_item");
   },
 
   async createDiscretionary(
@@ -882,10 +925,11 @@ export const waterfallService = {
       where: { householdId, tier: "discretionary", name: "Savings" },
     });
     if (!savingsSubcategory) return [];
-    return prisma.discretionaryItem.findMany({
+    const items = await prisma.discretionaryItem.findMany({
       where: { householdId, subcategoryId: savingsSubcategory.id },
       orderBy: { sortOrder: "asc" },
     });
+    return enrichItemsWithPeriods(items, "discretionary_item");
   },
 
   async createSavings(householdId: string, data: CreateDiscretionaryItemInput, ctx?: ActorCtx) {

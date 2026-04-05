@@ -232,6 +232,9 @@ export interface TierItemRow {
   lastReviewedAt: Date;
   createdAt: Date;
   sortOrder: number;
+  lifecycleState?: "active" | "future" | "expired";
+  periods?: Array<{ id: string; startDate: Date; endDate: Date | null; amount: number }>;
+  nextPeriod?: { amount: number; startDate: Date } | null;
 }
 
 function normaliseIncomeFrequency(frequency: string): "monthly" | "yearly" | "one_off" {
@@ -240,50 +243,48 @@ function normaliseIncomeFrequency(frequency: string): "monthly" | "yearly" | "on
   return "monthly";
 }
 
-async function fetchTierItems(
-  tier: "income" | "committed" | "discretionary"
-): Promise<TierItemRow[]> {
-  if (tier === "income") {
-    const rows = await waterfallService.listIncome();
-    return rows.map((r: any) => ({
-      id: r.id,
-      name: r.name,
-      amount: r.amount,
-      spendType: normaliseIncomeFrequency(r.frequency),
-      subcategoryId: r.subcategoryId ?? "",
-      notes: r.notes ?? null,
-      lastReviewedAt: new Date(r.lastReviewedAt),
-      createdAt: new Date(r.createdAt),
-      sortOrder: r.sortOrder ?? 0,
-    }));
-  }
-  if (tier === "committed") {
-    const rows = await waterfallService.listCommitted();
-    return rows.map((r: any) => ({
-      id: r.id,
-      name: r.name,
-      amount: r.amount,
-      spendType: (r.spendType ?? "monthly") as "monthly" | "yearly" | "one_off",
-      subcategoryId: r.subcategoryId ?? "",
-      notes: r.notes ?? null,
-      lastReviewedAt: new Date(r.lastReviewedAt),
-      createdAt: new Date(r.createdAt),
-      sortOrder: r.sortOrder ?? 0,
-    }));
-  }
-  // discretionary
-  const rows = await waterfallService.listDiscretionary();
-  return rows.map((r: any) => ({
+function mapTierItem(r: any, spendType: string): TierItemRow {
+  const periods = (r.periods ?? []).map((p: any) => ({
+    id: p.id,
+    startDate: new Date(p.startDate),
+    endDate: p.endDate ? new Date(p.endDate) : null,
+    amount: p.amount,
+  }));
+
+  // Find next future period for scheduled change indicator
+  const now = new Date();
+  const nextPeriod = periods.find((p: { startDate: Date }) => p.startDate > now) ?? null;
+
+  return {
     id: r.id,
     name: r.name,
     amount: r.amount,
-    spendType: (r.spendType ?? "monthly") as "monthly" | "yearly" | "one_off",
+    spendType: spendType as "monthly" | "yearly" | "one_off",
     subcategoryId: r.subcategoryId ?? "",
     notes: r.notes ?? null,
     lastReviewedAt: new Date(r.lastReviewedAt),
     createdAt: new Date(r.createdAt),
     sortOrder: r.sortOrder ?? 0,
-  }));
+    lifecycleState: r.lifecycleState ?? "active",
+    periods,
+    nextPeriod,
+  };
+}
+
+async function fetchTierItems(
+  tier: "income" | "committed" | "discretionary"
+): Promise<TierItemRow[]> {
+  if (tier === "income") {
+    const rows = await waterfallService.listIncome();
+    return rows.map((r: any) => mapTierItem(r, normaliseIncomeFrequency(r.frequency)));
+  }
+  if (tier === "committed") {
+    const rows = await waterfallService.listCommitted();
+    return rows.map((r: any) => mapTierItem(r, r.spendType ?? "monthly"));
+  }
+  // discretionary
+  const rows = await waterfallService.listDiscretionary();
+  return rows.map((r: any) => mapTierItem(r, r.spendType ?? "monthly"));
 }
 
 export function useTierItems(tier: "income" | "committed" | "discretionary") {
