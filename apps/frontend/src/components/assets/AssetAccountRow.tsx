@@ -150,6 +150,7 @@ export function AssetAccountRow({
                 mode="edit"
                 initialName={item.name}
                 initialMemberUserId={item.memberUserId ?? null}
+                initialGrowthRatePct={(item as AssetItem).growthRatePct ?? null}
                 isSaving={isSavingEdit}
                 isSavingConfirm={isSavingConfirm}
                 isStale={stale}
