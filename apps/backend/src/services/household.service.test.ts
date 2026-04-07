@@ -1,12 +1,6 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
-import {
-  buildUser,
-  buildHousehold,
-  buildHouseholdMember,
-  buildHouseholdInvite,
-  buildMember,
-} from "../test/fixtures";
+import { buildUser, buildHousehold, buildHouseholdInvite, buildMember } from "../test/fixtures";
 
 mock.module("../config/database", () => ({
   prisma: prismaMock,
@@ -360,15 +354,14 @@ describe("householdService.inviteMember with audited()", () => {
   it("writes an INVITE_MEMBER AuditLog entry when ctx is provided", async () => {
     const owner = buildUser({ id: "owner-user-id" });
     const household = buildHousehold({ id: "household-1" });
-    const ownerMember = buildHouseholdMember({
+    const ownerMember = buildMember({
       householdId: household.id,
       userId: owner.id,
       role: "owner",
     });
 
-    prismaMock.householdMember.findUnique.mockResolvedValue(ownerMember);
+    prismaMock.member.findFirst.mockResolvedValueOnce(ownerMember).mockResolvedValueOnce(null);
     prismaMock.household.findUnique.mockResolvedValue(household);
-    prismaMock.householdMember.findFirst.mockResolvedValue(null);
     prismaMock.householdInvite.findFirst.mockResolvedValue(null);
     prismaMock.householdInvite.create.mockResolvedValue(
       buildHouseholdInvite({ email: "invitee@test.com" })
@@ -399,15 +392,14 @@ describe("householdService.inviteMember", () => {
   it("stores normalized invite email when provided", async () => {
     const owner = buildUser();
     const household = buildHousehold();
-    const ownerMember = buildHouseholdMember({
+    const ownerMember = buildMember({
       householdId: household.id,
       userId: owner.id,
       role: "owner",
     });
 
-    prismaMock.householdMember.findUnique.mockResolvedValue(ownerMember);
+    prismaMock.member.findFirst.mockResolvedValueOnce(ownerMember).mockResolvedValueOnce(null);
     prismaMock.household.findUnique.mockResolvedValue(household);
-    prismaMock.householdMember.findFirst.mockResolvedValue(null);
     prismaMock.householdInvite.findFirst.mockResolvedValue(null);
     prismaMock.householdInvite.create.mockResolvedValue(
       buildHouseholdInvite({ email: "invitee@test.com" })
@@ -434,17 +426,16 @@ describe("householdService.inviteMember", () => {
   it("rejects invite when email already belongs to a household member", async () => {
     const owner = buildUser();
     const household = buildHousehold();
-    const ownerMember = buildHouseholdMember({
+    const ownerMember = buildMember({
       householdId: household.id,
       userId: owner.id,
       role: "owner",
     });
 
-    prismaMock.householdMember.findUnique.mockResolvedValue(ownerMember);
+    prismaMock.member.findFirst
+      .mockResolvedValueOnce(ownerMember)
+      .mockResolvedValueOnce(buildMember({ userId: "member-2" }));
     prismaMock.household.findUnique.mockResolvedValue(household);
-    prismaMock.householdMember.findFirst.mockResolvedValue(
-      buildHouseholdMember({ userId: "member-2" })
-    );
 
     await expect(
       householdService.inviteMember(household.id, owner.id, "member@example.com")
@@ -609,20 +600,14 @@ describe("assertOwnerOrAdmin", () => {
 
 describe("updateMemberRole", () => {
   it("allows owner to promote member to admin", async () => {
-    prismaMock.householdMember.findUnique
-      .mockResolvedValueOnce({
-        userId: "user_1",
-        householdId: "hh_1",
-        role: "owner",
-      } as any)
-      .mockResolvedValueOnce({
-        userId: "user_2",
-        householdId: "hh_1",
-        role: "member",
-      } as any);
-    prismaMock.householdMember.update.mockResolvedValue({
-      role: "admin",
-    } as any);
+    prismaMock.member.findFirst
+      .mockResolvedValueOnce(
+        buildMember({ id: "m_1", userId: "user_1", householdId: "hh_1", role: "owner" })
+      )
+      .mockResolvedValueOnce(
+        buildMember({ id: "m_2", userId: "user_2", householdId: "hh_1", role: "member" })
+      );
+    prismaMock.member.update.mockResolvedValue(buildMember({ id: "m_2", role: "admin" }));
 
     await updateMemberRole(prismaMock as any, {
       householdId: "hh_1",
@@ -631,16 +616,20 @@ describe("updateMemberRole", () => {
       newRole: "admin",
     });
 
-    expect(prismaMock.householdMember.update).toHaveBeenCalledWith(
-      expect.objectContaining({ data: { role: "admin" } })
+    expect(prismaMock.member.update).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { id: "m_2" }, data: { role: "admin" } })
     );
   });
 
   it("allows admin to promote member to admin", async () => {
-    prismaMock.householdMember.findUnique
-      .mockResolvedValueOnce({ userId: "user_1", householdId: "hh_1", role: "admin" } as any)
-      .mockResolvedValueOnce({ userId: "user_2", householdId: "hh_1", role: "member" } as any);
-    prismaMock.householdMember.update.mockResolvedValue({ role: "admin" } as any);
+    prismaMock.member.findFirst
+      .mockResolvedValueOnce(
+        buildMember({ id: "m_1", userId: "user_1", householdId: "hh_1", role: "admin" })
+      )
+      .mockResolvedValueOnce(
+        buildMember({ id: "m_2", userId: "user_2", householdId: "hh_1", role: "member" })
+      );
+    prismaMock.member.update.mockResolvedValue(buildMember({ id: "m_2", role: "admin" }));
 
     await updateMemberRole(prismaMock as any, {
       householdId: "hh_1",
@@ -649,13 +638,17 @@ describe("updateMemberRole", () => {
       newRole: "admin",
     });
 
-    expect(prismaMock.householdMember.update).toHaveBeenCalled();
+    expect(prismaMock.member.update).toHaveBeenCalled();
   });
 
   it("throws AuthorizationError when admin tries to demote another admin", async () => {
-    prismaMock.householdMember.findUnique
-      .mockResolvedValueOnce({ userId: "user_1", householdId: "hh_1", role: "admin" } as any)
-      .mockResolvedValueOnce({ userId: "user_2", householdId: "hh_1", role: "admin" } as any);
+    prismaMock.member.findFirst
+      .mockResolvedValueOnce(
+        buildMember({ id: "m_1", userId: "user_1", householdId: "hh_1", role: "admin" })
+      )
+      .mockResolvedValueOnce(
+        buildMember({ id: "m_2", userId: "user_2", householdId: "hh_1", role: "admin" })
+      );
 
     await expect(
       updateMemberRole(prismaMock as any, {
@@ -668,9 +661,13 @@ describe("updateMemberRole", () => {
   });
 
   it("throws AuthorizationError when trying to change owner role", async () => {
-    prismaMock.householdMember.findUnique
-      .mockResolvedValueOnce({ userId: "user_1", householdId: "hh_1", role: "owner" } as any)
-      .mockResolvedValueOnce({ userId: "user_2", householdId: "hh_1", role: "owner" } as any);
+    prismaMock.member.findFirst
+      .mockResolvedValueOnce(
+        buildMember({ id: "m_1", userId: "user_1", householdId: "hh_1", role: "owner" })
+      )
+      .mockResolvedValueOnce(
+        buildMember({ id: "m_2", userId: "user_2", householdId: "hh_1", role: "owner" })
+      );
 
     await expect(
       updateMemberRole(prismaMock as any, {

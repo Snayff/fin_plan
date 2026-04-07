@@ -73,11 +73,11 @@ export async function updateMemberRole(
   ctx?: ActorCtx
 ) {
   const [caller, target] = await Promise.all([
-    db.householdMember.findUnique({
-      where: { householdId_userId: { householdId, userId: callerId } },
+    db.member.findFirst({
+      where: { householdId, userId: callerId },
     }),
-    db.householdMember.findUnique({
-      where: { householdId_userId: { householdId, userId: targetUserId } },
+    db.member.findFirst({
+      where: { householdId, userId: targetUserId },
     }),
   ]);
 
@@ -109,19 +109,19 @@ export async function updateMemberRole(
       resource: "household-member",
       resourceId: targetUserId,
       beforeFetch: async (tx) =>
-        tx.householdMember.findUnique({
-          where: { householdId_userId: { householdId, userId: targetUserId } },
+        tx.member.findFirst({
+          where: { householdId, userId: targetUserId },
         }) as Promise<Record<string, unknown> | null>,
       mutation: async (tx) =>
-        tx.householdMember.update({
-          where: { householdId_userId: { householdId, userId: targetUserId } },
+        tx.member.update({
+          where: { id: target.id },
           data: { role: newRole },
         }),
     });
   }
 
-  return db.householdMember.update({
-    where: { householdId_userId: { householdId, userId: targetUserId } },
+  return db.member.update({
+    where: { id: target.id },
     data: { role: newRole },
   });
 }
@@ -289,8 +289,8 @@ export const householdService = {
     role: "member" | "admin" = "member",
     ctx?: ActorCtx
   ) {
-    const callerMembership = await prisma.householdMember.findUnique({
-      where: { householdId_userId: { householdId, userId: ownerUserId } },
+    const callerMembership = await prisma.member.findFirst({
+      where: { householdId, userId: ownerUserId },
     });
     if (!callerMembership) throw new AuthorizationError("Not a member of this household");
     assertOwnerOrAdmin(callerMembership.role);
@@ -300,7 +300,7 @@ export const householdService = {
 
     const normalizedEmail = normalizeEmail(email)!;
 
-    const existingMember = await prisma.householdMember.findFirst({
+    const existingMember = await prisma.member.findFirst({
       where: {
         householdId,
         user: { email: normalizedEmail },
@@ -434,16 +434,24 @@ export const householdService = {
       const personal = await tx.household.create({
         data: {
           name: `${newUser.name}'s Household`,
-          members: { create: { userId: created.id, role: "owner" } },
+        },
+      });
+      await tx.member.create({
+        data: {
+          householdId: personal.id,
+          userId: created.id,
+          name: newUser.name,
+          role: "owner",
         },
       });
       await tx.householdSettings.create({ data: { householdId: personal.id } });
 
       // Join the invited household and set it as active
-      await tx.householdMember.create({
+      await tx.member.create({
         data: {
           householdId: invite.householdId,
           userId: created.id,
+          name: newUser.name,
           role: invite.intendedRole ?? "member",
         },
       });
@@ -498,16 +506,17 @@ export const householdService = {
       );
     }
 
-    const existing = await prisma.householdMember.findUnique({
-      where: { householdId_userId: { householdId: invite.householdId, userId: existingUserId } },
+    const existing = await prisma.member.findFirst({
+      where: { householdId: invite.householdId, userId: existingUserId },
     });
     if (existing) throw new ConflictError("You are already a member of this household");
 
     await prisma.$transaction([
-      prisma.householdMember.create({
+      prisma.member.create({
         data: {
           householdId: invite.householdId,
           userId: existingUserId,
+          name: user.name,
           role: invite.intendedRole ?? "member",
         },
       }),
