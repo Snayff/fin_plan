@@ -21,6 +21,7 @@ model User {
   activeHouseholdId    String?           @map("active_household_id")
   activeHousehold      Household?        @relation("UserActiveHousehold", fields: [activeHouseholdId], references: [id])
   householdMemberships HouseholdMember[]
+  memberProfiles       Member[]          @relation("MemberUser")
   createdInvites       HouseholdInvite[]
   devices              Device[]
   refreshTokens        RefreshToken[]
@@ -36,6 +37,7 @@ model Household {
   createdAt      DateTime          @default(now()) @map("created_at")
   updatedAt      DateTime          @updatedAt @map("updated_at")
   members        HouseholdMember[]
+  memberProfiles Member[]
   invites        HouseholdInvite[]
   activeForUsers User[]            @relation("UserActiveHousehold")
   auditLogs      AuditLog[]
@@ -58,6 +60,26 @@ model HouseholdMember {
   @@id([householdId, userId])
   @@index([userId])
   @@map("household_members")
+}
+
+model Member {
+  id             String        @id @default(cuid())
+  householdId    String        @map("household_id")
+  userId         String?       @map("user_id")
+  name           String
+  role           HouseholdRole @default(member)
+  dateOfBirth    DateTime?     @map("date_of_birth")
+  retirementYear Int?          @map("retirement_year")
+  joinedAt       DateTime      @default(now()) @map("joined_at")
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
+  household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  user           User?         @relation("MemberUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@unique([householdId, userId])
+  @@index([householdId])
+  @@index([userId])
+  @@map("members")
 }
 
 model HouseholdInvite {
