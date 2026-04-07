@@ -23,9 +23,6 @@ export interface Member {
   } | null;
 }
 
-/** @deprecated Use Member */
-export type HouseholdMember = Member;
-
 export interface HouseholdInvite {
   id: string;
   email: string;

@@ -123,8 +123,8 @@ export function useCancelInvite() {
 export function useRemoveMember() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ householdId, userId }: { householdId: string; userId: string }) =>
-      householdService.removeMember(householdId, userId),
+    mutationFn: ({ householdId, memberId }: { householdId: string; memberId: string }) =>
+      householdService.removeMember(householdId, memberId),
     onSuccess: (_data, { householdId }) => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
     },
@@ -165,12 +165,13 @@ export function useHouseholdMembers() {
   const user = useAuthStore((s) => s.user);
   const householdId = user?.activeHouseholdId ?? "";
   const { data } = useHouseholdDetails(householdId);
-  const members = data?.household?.members ?? [];
+  const members = data?.household?.memberProfiles ?? [];
   return {
     data: members.map((m) => ({
+      id: m.id,
       userId: m.userId,
-      firstName: m.user.name.split(" ")[0] ?? m.user.name,
-      name: m.user.name,
+      firstName: m.name.split(" ")[0] ?? m.name,
+      name: m.name,
       role: m.role,
     })),
   };

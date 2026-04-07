@@ -14,7 +14,7 @@ const mockUseSettings = {
   useUpdateProfile: () => ({ mutate: () => {}, isPending: false }),
   useHousehold: () => ({ data: undefined, isLoading: false }),
   useHouseholdDetails: () => ({ data: undefined, isLoading: false }),
-  useHouseholdMembers: () => ({ data: undefined, isLoading: false }),
+  useHouseholdMembers: () => ({ data: [] }),
   useInviteMember: () => ({ mutate: () => {}, isPending: false }),
   useRemoveMember: () => ({ mutate: () => {}, isPending: false }),
 };

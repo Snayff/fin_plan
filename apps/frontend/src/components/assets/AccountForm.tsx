@@ -118,11 +118,13 @@ export function AccountForm({
             className={inputClass}
           >
             <option value="">Household</option>
-            {members?.map((m) => (
-              <option key={m.userId} value={m.userId}>
-                {m.firstName}
-              </option>
-            ))}
+            {members
+              ?.filter((m): m is typeof m & { userId: string } => m.userId !== null)
+              .map((m) => (
+                <option key={m.userId} value={m.userId}>
+                  {m.firstName}
+                </option>
+              ))}
           </select>
         </div>
 

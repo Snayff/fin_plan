@@ -44,10 +44,10 @@ export function HouseholdSection() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const currentUserId = user?.id;
-  const currentMember = household?.members.find((m) => m.userId === currentUserId);
+  const currentMember = household?.memberProfiles.find((m) => m.userId === currentUserId);
   const isOwner = currentMember?.role === "owner";
   const isAdmin = currentMember?.role === "admin";
-  const ownerCount = household?.members.filter((m) => m.role === "owner").length ?? 0;
+  const ownerCount = household?.memberProfiles.filter((m) => m.role === "owner").length ?? 0;
   const isSoleOwner = isOwner && ownerCount <= 1;
 
   function startRename() {
@@ -134,20 +134,21 @@ export function HouseholdSection() {
       {/* Members list */}
       <div className="space-y-1">
         <p className="text-sm font-medium">Members</p>
-        {(household?.members ?? []).map((member) => (
+        {(household?.memberProfiles ?? []).map((member) => (
           <div
-            key={member.userId}
+            key={member.id}
             className="flex items-center justify-between py-1.5 border-b last:border-b-0"
           >
             <div>
-              <p className="text-sm font-medium">{member.user.name}</p>
+              <p className="text-sm font-medium">{member.name}</p>
               <p className="text-xs text-muted-foreground">
-                {member.user.email} · {member.role}
+                {member.user?.email ?? "Not yet linked"} · {member.role}
               </p>
             </div>
             <div className="flex items-center gap-3">
               {/* Role promotion/demotion: owner can change any non-owner; admin can promote/demote members only */}
-              {member.userId !== currentUserId &&
+              {member.userId !== null &&
+                member.userId !== currentUserId &&
                 member.role !== "owner" &&
                 (isOwner || (isAdmin && member.role === "member")) && (
                   <button
@@ -157,7 +158,7 @@ export function HouseholdSection() {
                     onClick={() =>
                       updateMemberRole.mutate(
                         {
-                          targetUserId: member.userId,
+                          targetUserId: member.userId as string,
                           role: member.role === "admin" ? "member" : "admin",
                         },
                         {
@@ -180,7 +181,7 @@ export function HouseholdSection() {
                   className="text-xs text-muted-foreground hover:text-destructive transition-colors"
                   onClick={() =>
                     removeMember.mutate(
-                      { householdId, userId: member.userId },
+                      { householdId, memberId: member.id },
                       { onSuccess: () => toast.success("Member removed") }
                     )
                   }

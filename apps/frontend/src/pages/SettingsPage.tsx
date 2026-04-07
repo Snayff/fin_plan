@@ -34,7 +34,7 @@ export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const householdId = user?.activeHouseholdId ?? "";
   const { data: householdData } = useHouseholdDetails(householdId);
-  const currentMember = householdData?.household?.members.find((m) => m.userId === user?.id);
+  const currentMember = householdData?.household?.memberProfiles.find((m) => m.userId === user?.id);
   const callerRole = currentMember?.role ?? "member";
   const canSeeAuditLog = callerRole === "owner" || callerRole === "admin";
 
