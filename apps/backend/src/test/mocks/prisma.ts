@@ -24,6 +24,7 @@ export const prismaMock = {
   user: buildModelMock(),
   household: buildModelMock(),
   householdMember: buildModelMock(),
+  member: buildModelMock(),
   householdInvite: buildModelMock(),
   householdSettings: buildModelMock(),
   device: buildModelMock(),
