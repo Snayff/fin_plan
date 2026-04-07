@@ -6,12 +6,16 @@ import {
 } from "../services/household.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { prisma } from "../config/database.js";
+import { memberService } from "../services/member.service.js";
 import {
   createHouseholdSchema,
   createHouseholdInviteSchema,
   renameHouseholdSchema,
   updateMemberRoleSchema,
   updateMemberProfileSchema,
+  createMemberSchema,
+  updateMemberSchema,
+  deleteMemberSchema,
 } from "@finplan/shared";
 import { AuthorizationError, NotFoundError } from "../utils/errors.js";
 import { actorCtx } from "../lib/actor-ctx.js";
@@ -214,6 +218,56 @@ export async function householdRoutes(fastify: FastifyInstance) {
         }
         throw err;
       }
+    }
+  );
+
+  // List member profiles for a household
+  fastify.get(
+    "/households/:id/member-profiles",
+    { preHandler: [authMiddleware] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const members = await memberService.listMembers(id);
+      return reply.send({ members });
+    }
+  );
+
+  // Create a new member profile (owner only)
+  fastify.post(
+    "/households/:id/member-profiles",
+    { preHandler: [authMiddleware] },
+    async (request, reply) => {
+      const userId = request.user!.userId;
+      const { id } = request.params as { id: string };
+      const data = createMemberSchema.parse(request.body);
+      const member = await memberService.createMember(id, userId, data);
+      return reply.status(201).send({ member });
+    }
+  );
+
+  // Update a member profile (owner only)
+  fastify.patch(
+    "/households/:id/member-profiles/:memberId",
+    { preHandler: [authMiddleware] },
+    async (request, reply) => {
+      const userId = request.user!.userId;
+      const { id, memberId } = request.params as { id: string; memberId: string };
+      const data = updateMemberSchema.parse(request.body);
+      const member = await memberService.updateMember(id, userId, memberId, data);
+      return reply.send({ member });
+    }
+  );
+
+  // Delete a member profile (owner only, with optional reassignment)
+  fastify.delete(
+    "/households/:id/member-profiles/:memberId",
+    { preHandler: [authMiddleware] },
+    async (request, reply) => {
+      const userId = request.user!.userId;
+      const { id, memberId } = request.params as { id: string; memberId: string };
+      const { reassignToMemberId } = deleteMemberSchema.parse(request.body ?? {});
+      await memberService.deleteMember(id, userId, memberId, reassignToMemberId);
+      return reply.send({ success: true });
     }
   );
 }

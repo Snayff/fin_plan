@@ -15,6 +15,16 @@ const mockUpdatedMember = buildMember({
   retirementYear: 2055,
 });
 
+mock.module("../services/member.service", () => ({
+  memberService: {
+    listMembers: mock(() => {}),
+    createMember: mock(() => {}),
+    updateMember: mock(() => {}),
+    deleteMember: mock(() => {}),
+    getItemCountsForMember: mock(() => {}),
+  },
+}));
+
 mock.module("../services/household.service", () => ({
   householdService: {
     getUserHouseholds: mock(() => {}),
@@ -83,6 +93,7 @@ mock.module("../middleware/auth.middleware", () => ({
 }));
 
 import { householdService } from "../services/household.service";
+import { memberService } from "../services/member.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { householdRoutes } from "./households";
 
@@ -140,6 +151,27 @@ beforeEach(() => {
   for (const method of Object.values(householdService) as any[]) {
     if (typeof method?.mockReset === "function") method.mockReset();
   }
+  for (const method of Object.values(memberService) as any[]) {
+    if (typeof method?.mockReset === "function") method.mockReset();
+  }
+
+  const mockMemberProfile = {
+    id: "member-profile-1",
+    householdId: "household-1",
+    userId: null,
+    name: "Profile One",
+    role: "member",
+    dateOfBirth: null,
+    retirementYear: null,
+    joinedAt: new Date("2025-01-01T00:00:00Z"),
+  };
+  (memberService.listMembers as any).mockResolvedValue([mockMemberProfile]);
+  (memberService.createMember as any).mockResolvedValue(mockMemberProfile);
+  (memberService.updateMember as any).mockResolvedValue({
+    ...mockMemberProfile,
+    name: "Updated Name",
+  });
+  (memberService.deleteMember as any).mockResolvedValue(undefined);
 
   // Re-apply default mock return values
   (householdService.getUserHouseholds as any).mockResolvedValue([mockMembership]);
@@ -641,6 +673,198 @@ describe("PATCH /api/households/:householdId/members/:userId/profile", () => {
       method: "PATCH",
       url: "/api/households/household-1/members/user-1/profile",
       payload: { retirementYear: 2055 },
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("GET /api/households/:id/member-profiles", () => {
+  it("returns 200 with list of members", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/households/household-1/member-profiles",
+      headers: authHeaders,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.members).toBeDefined();
+    expect(Array.isArray(body.members)).toBe(true);
+    expect(body.members).toHaveLength(1);
+    expect(memberService.listMembers).toHaveBeenCalledWith("household-1");
+  });
+
+  it("returns 401 without auth", async () => {
+    const response = await app.inject({
+      method: "GET",
+      url: "/api/households/household-1/member-profiles",
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("POST /api/households/:id/member-profiles", () => {
+  it("returns 201 with the created member", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/households/household-1/member-profiles",
+      headers: authHeaders,
+      payload: { name: "New Member" },
+    });
+
+    expect(response.statusCode).toBe(201);
+    const body = response.json();
+    expect(body.member).toBeDefined();
+    expect(body.member.id).toBe("member-profile-1");
+  });
+
+  it("calls service with householdId, callerUserId, and parsed data", async () => {
+    await app.inject({
+      method: "POST",
+      url: "/api/households/household-1/member-profiles",
+      headers: authHeaders,
+      payload: { name: "New Member", retirementYear: 2055 },
+    });
+
+    expect(memberService.createMember).toHaveBeenCalledWith(
+      "household-1",
+      "user-1",
+      expect.objectContaining({ name: "New Member", retirementYear: 2055 })
+    );
+  });
+
+  it("returns 400 when name is missing", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/households/household-1/member-profiles",
+      headers: authHeaders,
+      payload: {},
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
+  it("returns 403 when caller is not the owner", async () => {
+    (memberService.createMember as any).mockImplementation(async () => {
+      throw Object.assign(new Error("Only household owners can manage members"), {
+        statusCode: 403,
+        code: "FORBIDDEN",
+      });
+    });
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/households/household-1/member-profiles",
+      headers: authHeaders,
+      payload: { name: "New Member" },
+    });
+
+    expect(response.statusCode).toBe(403);
+  });
+
+  it("returns 401 without auth", async () => {
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/households/household-1/member-profiles",
+      payload: { name: "New Member" },
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("PATCH /api/households/:id/member-profiles/:memberId", () => {
+  it("returns 200 with the updated member", async () => {
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/households/household-1/member-profiles/member-profile-1",
+      headers: authHeaders,
+      payload: { name: "Updated Name" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.member).toBeDefined();
+    expect(body.member.name).toBe("Updated Name");
+  });
+
+  it("calls service with all parameters", async () => {
+    await app.inject({
+      method: "PATCH",
+      url: "/api/households/household-1/member-profiles/member-profile-1",
+      headers: authHeaders,
+      payload: { name: "Updated Name", retirementYear: 2060 },
+    });
+
+    expect(memberService.updateMember).toHaveBeenCalledWith(
+      "household-1",
+      "user-1",
+      "member-profile-1",
+      expect.objectContaining({ name: "Updated Name", retirementYear: 2060 })
+    );
+  });
+
+  it("returns 401 without auth", async () => {
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/households/household-1/member-profiles/member-profile-1",
+      payload: { name: "Updated Name" },
+    });
+
+    expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("DELETE /api/households/:id/member-profiles/:memberId", () => {
+  it("returns 200 with success", async () => {
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/households/household-1/member-profiles/member-profile-1",
+      headers: authHeaders,
+    });
+
+    expect(response.statusCode).toBe(200);
+    const body = response.json();
+    expect(body.success).toBe(true);
+  });
+
+  it("calls service without reassignment when body is empty", async () => {
+    await app.inject({
+      method: "DELETE",
+      url: "/api/households/household-1/member-profiles/member-profile-1",
+      headers: authHeaders,
+    });
+
+    expect(memberService.deleteMember).toHaveBeenCalledWith(
+      "household-1",
+      "user-1",
+      "member-profile-1",
+      undefined
+    );
+  });
+
+  it("calls service with reassignment target when provided", async () => {
+    await app.inject({
+      method: "DELETE",
+      url: "/api/households/household-1/member-profiles/member-profile-1",
+      headers: authHeaders,
+      payload: { reassignToMemberId: "member-profile-2" },
+    });
+
+    expect(memberService.deleteMember).toHaveBeenCalledWith(
+      "household-1",
+      "user-1",
+      "member-profile-1",
+      "member-profile-2"
+    );
+  });
+
+  it("returns 401 without auth", async () => {
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/households/household-1/member-profiles/member-profile-1",
     });
 
     expect(response.statusCode).toBe(401);
