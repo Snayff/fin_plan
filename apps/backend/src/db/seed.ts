@@ -29,8 +29,8 @@ async function main() {
     where: { id: user.activeHouseholdId ?? "seed-household" },
     create: {
       name: "Test Household",
-      members: {
-        create: { userId: user.id, role: "owner" },
+      memberProfiles: {
+        create: { userId: user.id, name: user.name ?? "Test Owner", role: "owner" },
       },
     },
     update: {},
