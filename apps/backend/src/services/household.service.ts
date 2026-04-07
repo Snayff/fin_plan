@@ -178,7 +178,7 @@ export const householdService = {
     return prisma.household.findUnique({
       where: { id: householdId },
       include: {
-        members: {
+        memberProfiles: {
           include: {
             user: { select: { id: true, name: true, email: true } },
           },
@@ -199,64 +199,61 @@ export const householdService = {
 
   // ─── Members ───────────────────────────────────────────────────────────────
 
-  async removeMember(
-    householdId: string,
-    ownerUserId: string,
-    targetUserId: string,
-    ctx?: ActorCtx
-  ) {
+  async removeMember(householdId: string, ownerUserId: string, memberId: string, ctx?: ActorCtx) {
     await assertOwner(householdId, ownerUserId);
-    if (targetUserId === ownerUserId) {
+    const target = await prisma.member.findUnique({ where: { id: memberId } });
+    if (!target || target.householdId !== householdId) {
+      throw new NotFoundError("Member not found");
+    }
+    if (target.userId === ownerUserId) {
       throw new ValidationError("Owner cannot remove themselves from the household");
     }
+
     if (ctx) {
       await audited({
         db: prisma,
         ctx,
         action: "REMOVE_MEMBER",
-        resource: "household-member",
-        resourceId: targetUserId,
+        resource: "member",
+        resourceId: memberId,
         beforeFetch: async (tx) =>
-          tx.householdMember.findUnique({
-            where: { householdId_userId: { householdId, userId: targetUserId } },
-          }) as Promise<Record<string, unknown> | null>,
-        mutation: async (tx) =>
-          tx.householdMember.delete({
-            where: { householdId_userId: { householdId, userId: targetUserId } },
-          }),
+          tx.member.findUnique({ where: { id: memberId } }) as Promise<Record<
+            string,
+            unknown
+          > | null>,
+        mutation: async (tx) => tx.member.delete({ where: { id: memberId } }),
       });
     } else {
-      await prisma.householdMember.delete({
-        where: { householdId_userId: { householdId, userId: targetUserId } },
-      });
+      await prisma.member.delete({ where: { id: memberId } });
     }
 
-    // Clear stale activeHouseholdId if it points to the household they were removed from
-    const user = await prisma.user.findUnique({
-      where: { id: targetUserId },
-      select: { activeHouseholdId: true },
-    });
-
-    if (user?.activeHouseholdId === householdId) {
-      const otherMembership = await prisma.householdMember.findFirst({
-        where: { userId: targetUserId },
-        orderBy: { joinedAt: "asc" },
+    // Clear stale activeHouseholdId if the removed member had a linked user
+    if (target.userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: target.userId },
+        select: { activeHouseholdId: true },
       });
-      await prisma.user.update({
-        where: { id: targetUserId },
-        data: { activeHouseholdId: otherMembership?.householdId ?? null },
-      });
+      if (user?.activeHouseholdId === householdId) {
+        const otherMembership = await prisma.member.findFirst({
+          where: { userId: target.userId },
+          orderBy: { joinedAt: "asc" },
+        });
+        await prisma.user.update({
+          where: { id: target.userId },
+          data: { activeHouseholdId: otherMembership?.householdId ?? null },
+        });
+      }
     }
   },
 
   async leaveHousehold(householdId: string, userId: string) {
-    const member = await prisma.householdMember.findUnique({
-      where: { householdId_userId: { householdId, userId } },
+    const member = await prisma.member.findFirst({
+      where: { householdId, userId },
     });
     if (!member) throw new NotFoundError("You are not a member of this household");
 
     if (member.role === "owner") {
-      const ownerCount = await prisma.householdMember.count({
+      const ownerCount = await prisma.member.count({
         where: { householdId, role: "owner" },
       });
       if (ownerCount <= 1) {
@@ -264,9 +261,7 @@ export const householdService = {
       }
     }
 
-    await prisma.householdMember.delete({
-      where: { householdId_userId: { householdId, userId } },
-    });
+    await prisma.member.delete({ where: { id: member.id } });
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -274,7 +269,7 @@ export const householdService = {
     });
 
     if (user?.activeHouseholdId === householdId) {
-      const otherMembership = await prisma.householdMember.findFirst({
+      const otherMembership = await prisma.member.findFirst({
         where: { userId },
         orderBy: { joinedAt: "asc" },
       });
