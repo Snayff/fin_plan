@@ -23,7 +23,6 @@ export const prismaMock = {
   refreshToken: buildModelMock(),
   user: buildModelMock(),
   household: buildModelMock(),
-  householdMember: buildModelMock(),
   member: buildModelMock(),
   householdInvite: buildModelMock(),
   householdSettings: buildModelMock(),

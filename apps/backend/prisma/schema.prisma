@@ -20,7 +20,6 @@ model User {
   twoFactorSecret      String?           @map("two_factor_secret")
   activeHouseholdId    String?           @map("active_household_id")
   activeHousehold      Household?        @relation("UserActiveHousehold", fields: [activeHouseholdId], references: [id])
-  householdMemberships HouseholdMember[]
   memberProfiles       Member[]          @relation("MemberUser")
   createdInvites       HouseholdInvite[]
   devices              Device[]
@@ -36,7 +35,6 @@ model Household {
   name           String
   createdAt      DateTime          @default(now()) @map("created_at")
   updatedAt      DateTime          @updatedAt @map("updated_at")
-  members        HouseholdMember[]
   memberProfiles Member[]
   invites        HouseholdInvite[]
   activeForUsers User[]            @relation("UserActiveHousehold")
@@ -45,21 +43,6 @@ model Household {
   accounts       Account[]
 
   @@map("households")
-}
-
-model HouseholdMember {
-  householdId    String        @map("household_id")
-  userId         String        @map("user_id")
-  role           HouseholdRole @default(member)
-  joinedAt       DateTime      @default(now()) @map("joined_at")
-  dateOfBirth    DateTime?
-  retirementYear Int?
-  household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@id([householdId, userId])
-  @@index([userId])
-  @@map("household_members")
 }
 
 model Member {
