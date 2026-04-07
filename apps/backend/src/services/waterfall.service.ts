@@ -41,7 +41,7 @@ async function validateSubcategoryOwnership(
 }
 
 async function validateMemberOwnership(householdId: string, memberId: string) {
-  const member = await prisma.householdMember.findFirst({
+  const member = await prisma.member.findFirst({
     where: { householdId, userId: memberId },
   });
   if (!member) throw new NotFoundError("Household member not found");

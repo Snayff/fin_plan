@@ -99,7 +99,7 @@ export const forecastService = {
       prisma.account.findMany({ where: { householdId }, include: balanceInclude }),
       prisma.asset.findMany({ where: { householdId }, include: balanceInclude }),
       prisma.householdSettings.findUnique({ where: { householdId } }),
-      prisma.householdMember.findMany({
+      prisma.member.findMany({
         where: { householdId },
         include: { user: { select: { id: true, name: true } } },
       }),
@@ -173,7 +173,7 @@ export const forecastService = {
 
       return {
         memberId: member.userId,
-        memberName: member.user.name,
+        memberName: member.user?.name ?? member.name,
         retirementYear: member.retirementYear ?? null,
         series,
       };

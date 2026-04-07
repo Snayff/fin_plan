@@ -102,7 +102,8 @@ describe("assetsService.listAssetsByType", () => {
 
 describe("assetsService.createAsset", () => {
   it("creates asset with valid memberUserId", async () => {
-    prismaMock.householdMember.findUnique.mockResolvedValue({
+    prismaMock.member.findFirst.mockResolvedValue({
+      id: "member-1",
       userId: MEMBER_USER_ID,
       householdId: HOUSEHOLD_ID,
     } as any);
@@ -124,13 +125,13 @@ describe("assetsService.createAsset", () => {
     );
 
     expect(result.name).toBe("Test House");
-    expect(prismaMock.householdMember.findUnique).toHaveBeenCalledWith({
-      where: { householdId_userId: { householdId: HOUSEHOLD_ID, userId: MEMBER_USER_ID } },
+    expect(prismaMock.member.findFirst).toHaveBeenCalledWith({
+      where: { householdId: HOUSEHOLD_ID, userId: MEMBER_USER_ID },
     });
   });
 
   it("throws AuthorizationError when memberUserId is from another household", async () => {
-    prismaMock.householdMember.findUnique.mockResolvedValue(null);
+    prismaMock.member.findFirst.mockResolvedValue(null);
 
     await expect(
       assetsService.createAsset(

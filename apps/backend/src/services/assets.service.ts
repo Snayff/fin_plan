@@ -47,8 +47,8 @@ async function assertAccountOwned(householdId: string, accountId: string) {
 }
 
 async function assertMemberOwned(householdId: string, memberUserId: string) {
-  const member = await prisma.householdMember.findUnique({
-    where: { householdId_userId: { householdId, userId: memberUserId } },
+  const member = await prisma.member.findFirst({
+    where: { householdId, userId: memberUserId },
   });
   if (!member) {
     throw new ValidationError("Member not found in household");
