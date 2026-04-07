@@ -7,17 +7,24 @@ export interface Household {
   updatedAt: string;
 }
 
-export interface HouseholdMember {
-  userId: string;
+export interface Member {
+  id: string;
   householdId: string;
+  userId: string | null;
+  name: string;
   role: "owner" | "admin" | "member";
+  dateOfBirth: string | null;
+  retirementYear: number | null;
   joinedAt: string;
   user: {
     id: string;
     name: string;
     email: string;
-  };
+  } | null;
 }
+
+/** @deprecated Use Member */
+export type HouseholdMember = Member;
 
 export interface HouseholdInvite {
   id: string;
@@ -32,17 +39,19 @@ export interface CreateInviteResponse {
 }
 
 export interface HouseholdDetails extends Household {
-  members: HouseholdMember[];
+  memberProfiles: Member[];
   invites: HouseholdInvite[];
 }
 
 export interface Membership {
+  id: string;
   householdId: string;
-  userId: string;
+  userId: string | null;
+  name: string;
   role: "owner" | "admin" | "member";
   joinedAt: string;
   household: Household & {
-    _count: { members: number };
+    _count: { memberProfiles: number };
   };
 }
 
