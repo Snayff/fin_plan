@@ -46,16 +46,16 @@ function makeAuthMiddleware(role: string | null = "owner") {
 // Mock prisma to return the role set on request
 mock.module("../config/database", () => ({
   prisma: {
-    householdMember: {
-      findUnique: mock(async (_args: any) => {
-        // Role is set per-test via mockHouseholdMember
-        return mockHouseholdMember;
+    member: {
+      findFirst: mock(async (_args: any) => {
+        // Role is set per-test via mockMember
+        return mockMember;
       }),
     },
   },
 }));
 
-let mockHouseholdMember: {
+let mockMember: {
   userId: string;
   householdId: string;
   role: string;
@@ -65,7 +65,7 @@ let mockHouseholdMember: {
 describe("GET /api/audit-log", () => {
   beforeEach(() => {
     queryAuditLogMock.mockResolvedValue({ entries: [], nextCursor: null });
-    mockHouseholdMember = {
+    mockMember = {
       userId: "user_1",
       householdId: "hh_1",
       role: "owner",
@@ -95,7 +95,7 @@ describe("GET /api/audit-log", () => {
   });
 
   it("returns 200 for admin", async () => {
-    mockHouseholdMember = {
+    mockMember = {
       userId: "user_1",
       householdId: "hh_1",
       role: "admin",
@@ -110,7 +110,7 @@ describe("GET /api/audit-log", () => {
   });
 
   it("returns 403 for member", async () => {
-    mockHouseholdMember = {
+    mockMember = {
       userId: "user_1",
       householdId: "hh_1",
       role: "member",

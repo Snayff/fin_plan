@@ -3,7 +3,7 @@ import { prisma } from "./config/database";
 async function main() {
   const existing = await prisma.user.findUnique({ where: { email: "owner@finplan.test" } });
   if (existing) {
-    await prisma.householdMember.deleteMany({ where: { userId: existing.id } });
+    await prisma.member.deleteMany({ where: { userId: existing.id } });
     await prisma.user.update({ where: { id: existing.id }, data: { activeHouseholdId: null } });
     await prisma.household.deleteMany({ where: { name: "Browser Test Household" } });
     await prisma.user.delete({ where: { id: existing.id } });
@@ -19,8 +19,8 @@ async function main() {
       activeHouseholdId: household.id,
     },
   });
-  await prisma.householdMember.create({
-    data: { householdId: household.id, userId: user.id, role: "owner" },
+  await prisma.member.create({
+    data: { householdId: household.id, userId: user.id, name: user.name, role: "owner" },
   });
   console.log("Setup complete:", user.email, "| household:", household.id);
 }

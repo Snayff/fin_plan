@@ -25,8 +25,8 @@ export async function settingsRoutes(fastify: FastifyInstance) {
     const hasGrowthRateChange = growthRateFields.some((f) => f in (req.body as object));
     if (hasGrowthRateChange) {
       const callerId = req.user!.userId;
-      const member = await prisma.householdMember.findUnique({
-        where: { householdId_userId: { householdId: req.householdId!, userId: callerId } },
+      const member = await prisma.member.findFirst({
+        where: { householdId: req.householdId!, userId: callerId },
         select: { role: true },
       });
       assertOwnerOrAdmin(member?.role ?? "member");
