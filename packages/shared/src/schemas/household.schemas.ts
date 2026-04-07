@@ -25,8 +25,27 @@ export const updateMemberRoleSchema = z.object({
   role: z.enum(["member", "admin"]),
 });
 
+export const createMemberSchema = z.object({
+  name: z.string().min(1, "Member name is required").trim(),
+  dateOfBirth: z.string().datetime().nullable().optional(),
+  retirementYear: z.number().int().min(2000).max(2100).nullable().optional(),
+});
+
+export const updateMemberSchema = z.object({
+  name: z.string().min(1, "Member name is required").trim().optional(),
+  dateOfBirth: z.string().datetime().nullable().optional(),
+  retirementYear: z.number().int().min(2000).max(2100).nullable().optional(),
+});
+
+export const deleteMemberSchema = z.object({
+  reassignToMemberId: z.string().optional(),
+});
+
 export type CreateHouseholdInput = z.infer<typeof createHouseholdSchema>;
 export type RenameHouseholdInput = z.infer<typeof renameHouseholdSchema>;
 export type CreateHouseholdInviteInput = z.infer<typeof createHouseholdInviteSchema>;
 export type AcceptInviteInput = z.infer<typeof acceptInviteSchema>;
 export type UpdateMemberRoleInput = z.infer<typeof updateMemberRoleSchema>;
+export type CreateMemberInput = z.infer<typeof createMemberSchema>;
+export type UpdateMemberInput = z.infer<typeof updateMemberSchema>;
+export type DeleteMemberInput = z.infer<typeof deleteMemberSchema>;

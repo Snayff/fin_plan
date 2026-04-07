@@ -9,11 +9,17 @@ export {
   createHouseholdInviteSchema,
   acceptInviteSchema,
   updateMemberRoleSchema,
+  createMemberSchema,
+  updateMemberSchema,
+  deleteMemberSchema,
   type CreateHouseholdInput,
   type RenameHouseholdInput,
   type CreateHouseholdInviteInput,
   type AcceptInviteInput,
   type UpdateMemberRoleInput,
+  type CreateMemberInput,
+  type UpdateMemberInput,
+  type DeleteMemberInput,
 } from "./household.schemas";
 
 // Waterfall schemas and types

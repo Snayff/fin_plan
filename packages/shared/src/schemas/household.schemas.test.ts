@@ -4,6 +4,8 @@ import {
   renameHouseholdSchema,
   createHouseholdInviteSchema,
   acceptInviteSchema,
+  createMemberSchema,
+  updateMemberSchema,
 } from "./household.schemas";
 
 describe("createHouseholdSchema", () => {
@@ -121,5 +123,38 @@ describe("acceptInviteSchema", () => {
     const { password, ...rest } = validInput;
     const result = acceptInviteSchema.safeParse(rest);
     expect(result.success).toBe(false);
+  });
+});
+
+describe("createMemberSchema", () => {
+  it("accepts valid member with name only", () => {
+    const result = createMemberSchema.safeParse({ name: "Alice" });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts member with all optional fields", () => {
+    const result = createMemberSchema.safeParse({
+      name: "Alice",
+      dateOfBirth: "1990-05-15T00:00:00.000Z",
+      retirementYear: 2055,
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty name", () => {
+    const result = createMemberSchema.safeParse({ name: "" });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("updateMemberSchema", () => {
+  it("accepts partial update", () => {
+    const result = updateMemberSchema.safeParse({ name: "Bob" });
+    expect(result.success).toBe(true);
+  });
+
+  it("accepts null dateOfBirth to clear it", () => {
+    const result = updateMemberSchema.safeParse({ dateOfBirth: null });
+    expect(result.success).toBe(true);
   });
 });
