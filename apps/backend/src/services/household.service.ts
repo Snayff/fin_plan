@@ -37,19 +37,21 @@ function hashInviteToken(token: string): string {
 }
 
 async function assertOwner(householdId: string, userId: string) {
-  const m = await prisma.householdMember.findUnique({
-    where: { householdId_userId: { householdId, userId } },
+  const m = await prisma.member.findFirst({
+    where: { householdId, userId },
   });
   if (!m || m.role !== "owner") {
     throw new AuthorizationError("Only household owners can perform this action");
   }
+  return m;
 }
 
 async function assertMember(householdId: string, userId: string) {
-  const m = await prisma.householdMember.findUnique({
-    where: { householdId_userId: { householdId, userId } },
+  const m = await prisma.member.findFirst({
+    where: { householdId, userId },
   });
   if (!m) throw new AuthorizationError("Not a member of this household");
+  return m;
 }
 
 export function assertOwnerOrAdmin(role: string): void {
@@ -128,10 +130,19 @@ export const householdService = {
   // ─── Household CRUD ────────────────────────────────────────────────────────
 
   async createHousehold(userId: string, name: string) {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
+    });
     const household = await prisma.household.create({
+      data: { name },
+    });
+    await prisma.member.create({
       data: {
-        name,
-        members: { create: { userId, role: "owner" } },
+        householdId: household.id,
+        userId,
+        name: user?.name ?? "Owner",
+        role: "owner",
       },
     });
     await prisma.householdSettings.create({ data: { householdId: household.id } });
@@ -140,12 +151,12 @@ export const householdService = {
   },
 
   async getUserHouseholds(userId: string) {
-    return prisma.householdMember.findMany({
+    return prisma.member.findMany({
       where: { userId },
       include: {
         household: {
           include: {
-            _count: { select: { members: true } },
+            _count: { select: { memberProfiles: true } },
           },
         },
       },

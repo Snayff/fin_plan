@@ -5,6 +5,7 @@ import {
   buildHousehold,
   buildHouseholdMember,
   buildHouseholdInvite,
+  buildMember,
 } from "../test/fixtures";
 
 mock.module("../config/database", () => ({
@@ -35,17 +36,28 @@ beforeEach(() => {
 
 describe("householdService.createHousehold", () => {
   it("creates a household with the given name and owner membership", async () => {
-    const user = buildUser();
+    const user = buildUser({ name: "Test User" });
     const household = buildHousehold({ name: "My Household" });
+    prismaMock.user.findUnique.mockResolvedValue(user);
     prismaMock.household.create.mockResolvedValue(household);
+    prismaMock.member.create.mockResolvedValue(
+      buildMember({ householdId: household.id, userId: user.id, role: "owner" })
+    );
 
     const result = await householdService.createHousehold(user.id, "My Household");
 
     expect(prismaMock.household.create).toHaveBeenCalledWith(
       expect.objectContaining({
+        data: expect.objectContaining({ name: "My Household" }),
+      })
+    );
+    expect(prismaMock.member.create).toHaveBeenCalledWith(
+      expect.objectContaining({
         data: expect.objectContaining({
-          name: "My Household",
-          members: { create: { userId: user.id, role: "owner" } },
+          householdId: household.id,
+          userId: user.id,
+          name: "Test User",
+          role: "owner",
         }),
       })
     );
@@ -56,10 +68,14 @@ describe("householdService.createHousehold", () => {
 
 describe("householdService.createHousehold — subcategory seeding", () => {
   it("seeds default subcategories after creating household", async () => {
+    prismaMock.user.findUnique.mockResolvedValue(buildUser({ id: "user-1", name: "Test User" }));
     prismaMock.household.create.mockResolvedValue({
       id: "hh-new",
       name: "New Household",
     } as any);
+    prismaMock.member.create.mockResolvedValue(
+      buildMember({ householdId: "hh-new", userId: "user-1", role: "owner" })
+    );
     prismaMock.householdSettings.create.mockResolvedValue({} as any);
     prismaMock.subcategory.createMany.mockResolvedValue({ count: 16 });
 
@@ -79,16 +95,16 @@ describe("householdService.getUserHouseholds", () => {
   it("returns household memberships for the user", async () => {
     const user = buildUser();
     const household = buildHousehold();
-    const member = buildHouseholdMember({
+    const member = buildMember({
       userId: user.id,
       householdId: household.id,
-      household: { ...household, _count: { members: 1 } },
+      household: { ...household, _count: { memberProfiles: 1 } },
     });
-    prismaMock.householdMember.findMany.mockResolvedValue([member]);
+    prismaMock.member.findMany.mockResolvedValue([member]);
 
     const result = await householdService.getUserHouseholds(user.id);
 
-    expect(prismaMock.householdMember.findMany).toHaveBeenCalledWith(
+    expect(prismaMock.member.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { userId: expect.any(String) },
         include: {
@@ -106,7 +122,7 @@ describe("householdService.getUserHouseholds", () => {
   });
 
   it("returns empty array when user has no memberships", async () => {
-    prismaMock.householdMember.findMany.mockResolvedValue([]);
+    prismaMock.member.findMany.mockResolvedValue([]);
     const result = await householdService.getUserHouseholds("user-no-households");
     expect(result).toEqual([]);
   });
