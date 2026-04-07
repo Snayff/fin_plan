@@ -1,0 +1,80 @@
+import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+
+interface MemberReassignmentPromptProps {
+  isOpen: boolean;
+  memberName: string;
+  itemCount: number;
+  destinations: Array<{ id: string; name: string }>;
+  onConfirm: (destinationId: string) => void;
+  onCancel: () => void;
+}
+
+export function MemberReassignmentPrompt({
+  isOpen,
+  memberName,
+  itemCount,
+  destinations,
+  onConfirm,
+  onCancel,
+}: MemberReassignmentPromptProps) {
+  const [selectedId, setSelectedId] = useState<string>("");
+
+  return (
+    <AlertDialog open={isOpen} onOpenChange={(open) => !open && onCancel()}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Reassign items</AlertDialogTitle>
+          <AlertDialogDescription>
+            <strong>{memberName}</strong> has {itemCount} assigned item
+            {itemCount !== 1 ? "s" : ""}. Choose a member to reassign them to before deleting.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+
+        <div className="py-2">
+          <Select value={selectedId} onValueChange={setSelectedId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select a member..." />
+            </SelectTrigger>
+            <SelectContent>
+              {destinations.map((d) => (
+                <SelectItem key={d.id} value={d.id}>
+                  {d.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onCancel}>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            disabled={!selectedId}
+            onClick={() => {
+              onConfirm(selectedId);
+              setSelectedId("");
+            }}
+          >
+            Reassign &amp; delete
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}

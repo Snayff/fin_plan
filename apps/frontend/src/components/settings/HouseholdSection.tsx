@@ -13,11 +13,10 @@ import {
   useRenameHousehold,
   useInviteMember,
   useCancelInvite,
-  useRemoveMember,
   useLeaveHousehold,
-  useUpdateMemberRole,
 } from "@/hooks/useSettings";
 import { Section } from "./Section";
+import { MemberManagementSection } from "./MemberManagementSection";
 
 export function HouseholdSection() {
   const user = useAuthStore((s) => s.user);
@@ -30,9 +29,7 @@ export function HouseholdSection() {
   const renameHousehold = useRenameHousehold();
   const inviteMember = useInviteMember();
   const cancelInvite = useCancelInvite();
-  const removeMember = useRemoveMember();
   const leaveHousehold = useLeaveHousehold();
-  const updateMemberRole = useUpdateMemberRole(householdId);
 
   const [editName, setEditName] = useState("");
   const [editingName, setEditingName] = useState(false);
@@ -46,7 +43,6 @@ export function HouseholdSection() {
   const currentUserId = user?.id;
   const currentMember = household?.memberProfiles.find((m) => m.userId === currentUserId);
   const isOwner = currentMember?.role === "owner";
-  const isAdmin = currentMember?.role === "admin";
   const ownerCount = household?.memberProfiles.filter((m) => m.role === "owner").length ?? 0;
   const isSoleOwner = isOwner && ownerCount <= 1;
 
@@ -131,68 +127,7 @@ export function HouseholdSection() {
         )}
       </div>
 
-      {/* Members list */}
-      <div className="space-y-1">
-        <p className="text-sm font-medium">Members</p>
-        {(household?.memberProfiles ?? []).map((member) => (
-          <div
-            key={member.id}
-            className="flex items-center justify-between py-1.5 border-b last:border-b-0"
-          >
-            <div>
-              <p className="text-sm font-medium">{member.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {member.user?.email ?? "Not yet linked"} · {member.role}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Role promotion/demotion: owner can change any non-owner; admin can promote/demote members only */}
-              {member.userId !== null &&
-                member.userId !== currentUserId &&
-                member.role !== "owner" &&
-                (isOwner || (isAdmin && member.role === "member")) && (
-                  <button
-                    type="button"
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    disabled={updateMemberRole.isPending}
-                    onClick={() =>
-                      updateMemberRole.mutate(
-                        {
-                          targetUserId: member.userId as string,
-                          role: member.role === "admin" ? "member" : "admin",
-                        },
-                        {
-                          onSuccess: () =>
-                            toast.success(
-                              member.role === "admin"
-                                ? "Role changed to member"
-                                : "Role changed to admin"
-                            ),
-                        }
-                      )
-                    }
-                  >
-                    {member.role === "admin" ? "Make member" : "Make admin"}
-                  </button>
-                )}
-              {isOwner && member.userId !== currentUserId && (
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-                  onClick={() =>
-                    removeMember.mutate(
-                      { householdId, memberId: member.id },
-                      { onSuccess: () => toast.success("Member removed") }
-                    )
-                  }
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      <MemberManagementSection />
 
       {!isSoleOwner && currentMember && (
         <>

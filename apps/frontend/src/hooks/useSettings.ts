@@ -177,6 +177,58 @@ export function useHouseholdMembers() {
   };
 }
 
+export function useCreateMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      householdId,
+      data,
+    }: {
+      householdId: string;
+      data: { name: string; dateOfBirth?: string | null; retirementYear?: number | null };
+    }) => householdService.createMember(householdId, data),
+    onSuccess: (_data, { householdId }) => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+  });
+}
+
+export function useUpdateMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      householdId,
+      memberId,
+      data,
+    }: {
+      householdId: string;
+      memberId: string;
+      data: { name?: string; dateOfBirth?: string | null; retirementYear?: number | null };
+    }) => householdService.updateMember(householdId, memberId, data),
+    onSuccess: (_data, { householdId }) => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+  });
+}
+
+export function useDeleteMember() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      householdId,
+      memberId,
+      reassignToMemberId,
+    }: {
+      householdId: string;
+      memberId: string;
+      reassignToMemberId?: string;
+    }) => householdService.deleteMember(householdId, memberId, reassignToMemberId),
+    onSuccess: (_data, { householdId }) => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+  });
+}
+
 export function useUpdateMemberRole(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({

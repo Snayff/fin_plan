@@ -130,4 +130,40 @@ export const householdService = {
   async joinViaInvite(token: string): Promise<{ household: Household }> {
     return apiClient.post<{ household: Household }>(`/api/auth/invite/${token}/join`);
   },
+
+  async listMembers(householdId: string): Promise<{ members: Member[] }> {
+    return apiClient.get<{ members: Member[] }>(`/api/households/${householdId}/member-profiles`);
+  },
+
+  async createMember(
+    householdId: string,
+    data: { name: string; dateOfBirth?: string | null; retirementYear?: number | null }
+  ): Promise<{ member: Member }> {
+    return apiClient.post<{ member: Member }>(
+      `/api/households/${householdId}/member-profiles`,
+      data
+    );
+  },
+
+  async updateMember(
+    householdId: string,
+    memberId: string,
+    data: { name?: string; dateOfBirth?: string | null; retirementYear?: number | null }
+  ): Promise<{ member: Member }> {
+    return apiClient.patch<{ member: Member }>(
+      `/api/households/${householdId}/member-profiles/${memberId}`,
+      data
+    );
+  },
+
+  async deleteMember(
+    householdId: string,
+    memberId: string,
+    reassignToMemberId?: string
+  ): Promise<{ success: boolean }> {
+    return apiClient.delete<{ success: boolean }>(
+      `/api/households/${householdId}/member-profiles/${memberId}`,
+      reassignToMemberId ? { reassignToMemberId } : undefined
+    );
+  },
 };

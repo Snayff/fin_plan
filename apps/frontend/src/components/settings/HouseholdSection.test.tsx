@@ -48,6 +48,9 @@ mock.module("@/hooks/useSettings", () => ({
   useRemoveMember: () => ({ mutate: mock(() => {}), isPending: false }),
   useLeaveHousehold: () => ({ mutate: mock(() => {}), isPending: false }),
   useUpdateMemberRole: () => ({ mutate: mock(() => {}), isPending: false }),
+  useCreateMember: () => ({ mutate: mock(() => {}), isPending: false }),
+  useUpdateMember: () => ({ mutate: mock(() => {}), isPending: false }),
+  useDeleteMember: () => ({ mutate: mock(() => {}), isPending: false }),
 }));
 
 describe("HouseholdSection", () => {
