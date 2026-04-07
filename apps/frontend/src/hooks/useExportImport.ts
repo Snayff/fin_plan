@@ -3,6 +3,14 @@ import { householdService } from "@/services/household.service";
 import { useAuthStore } from "@/stores/authStore";
 import { authService } from "@/services/auth.service";
 
+const safeName = (name: string) =>
+  name
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60) || "household";
+
 export function useExportHousehold() {
   return useMutation({
     mutationFn: (householdId: string) => householdService.exportHousehold(householdId),
@@ -14,7 +22,7 @@ export function useExportHousehold() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `finplan-export-${name.toLowerCase().replace(/\s+/g, "-")}-${date}.json`;
+      a.download = `finplan-export-${safeName(name)}-${date}.json`;
       a.click();
       URL.revokeObjectURL(url);
     },
