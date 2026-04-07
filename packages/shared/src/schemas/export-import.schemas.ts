@@ -167,12 +167,20 @@ const exportGiftPersonSchema = z.object({
   events: z.array(exportGiftEventSchema),
 });
 
+const stalenessThresholdsSchema = z.object({
+  income_source: z.number().int().nonnegative(),
+  committed_item: z.number().int().nonnegative(),
+  discretionary_item: z.number().int().nonnegative(),
+  asset_item: z.number().int().nonnegative(),
+  account_item: z.number().int().nonnegative(),
+});
+
 const exportSettingsSchema = z.object({
   surplusBenchmarkPct: z.number().optional(),
   isaAnnualLimit: z.number().optional(),
   isaYearStartMonth: z.number().int().optional(),
   isaYearStartDay: z.number().int().optional(),
-  stalenessThresholds: z.any().optional(),
+  stalenessThresholds: stalenessThresholdsSchema.optional(),
   savingsRatePct: z.number().nullable().optional(),
   investmentRatePct: z.number().nullable().optional(),
   pensionRatePct: z.number().nullable().optional(),
