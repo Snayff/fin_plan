@@ -166,4 +166,26 @@ export const householdService = {
       reassignToMemberId ? { reassignToMemberId } : undefined
     );
   },
+
+  async exportHousehold(householdId: string): Promise<unknown> {
+    return apiClient.get<unknown>(`/api/households/${householdId}/export`);
+  },
+
+  async validateImport(data: unknown): Promise<{ valid: boolean; errors?: string[] }> {
+    return apiClient.post<{ valid: boolean; errors?: string[] }>(
+      "/api/households/validate-import",
+      data
+    );
+  },
+
+  async importHousehold(
+    householdId: string,
+    data: unknown,
+    mode: "overwrite" | "create_new"
+  ): Promise<{ success: boolean; householdId: string }> {
+    return apiClient.post<{ success: boolean; householdId: string }>(
+      `/api/households/${householdId}/import?mode=${mode}`,
+      data
+    );
+  },
 };
