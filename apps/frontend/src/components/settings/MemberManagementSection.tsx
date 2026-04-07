@@ -11,6 +11,8 @@ import {
   useCreateMember,
   useUpdateMember,
   useDeleteMember,
+  useUpdateMemberRole,
+  useRemoveMember,
 } from "@/hooks/useSettings";
 import type { Member } from "@/services/household.service";
 import type { ApiError } from "@/lib/api";
@@ -32,10 +34,13 @@ export function MemberManagementSection() {
   const members: Member[] = data?.household?.memberProfiles ?? [];
   const currentMember = members.find((m) => m.userId === user?.id);
   const isOwner = currentMember?.role === "owner";
+  const ownerCount = members.filter((m) => m.role === "owner").length;
 
   const createMutation = useCreateMember();
   const updateMutation = useUpdateMember();
   const deleteMutation = useDeleteMember();
+  const updateRoleMutation = useUpdateMemberRole(householdId);
+  const removeMutation = useRemoveMember();
 
   const [showAdd, setShowAdd] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -114,6 +119,35 @@ export function MemberManagementSection() {
           } else {
             toast.error(message);
           }
+        },
+      }
+    );
+  }
+
+  function handleChangeRole(member: Member, nextRole: "member" | "admin") {
+    if (!member.userId) return;
+    updateRoleMutation.mutate(
+      { targetUserId: member.userId, role: nextRole },
+      {
+        onSuccess: () => {
+          toast.success(nextRole === "admin" ? "Role changed to admin" : "Role changed to member");
+        },
+        onError: (err: unknown) => {
+          toast.error((err as ApiError).message ?? "Failed to update role");
+        },
+      }
+    );
+  }
+
+  function handleRemoveLinked(member: Member) {
+    removeMutation.mutate(
+      { householdId, memberId: member.id },
+      {
+        onSuccess: () => {
+          toast.success("Member removed");
+        },
+        onError: (err: unknown) => {
+          toast.error((err as ApiError).message ?? "Failed to remove member");
         },
       }
     );
@@ -218,26 +252,55 @@ export function MemberManagementSection() {
               )}
             </div>
             {isOwner && editingId !== member.id && (
-              <div className="flex items-center gap-1">
-                <button
-                  type="button"
-                  aria-label={`Edit ${member.name}`}
-                  className="p-1 text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={() => startEdit(member)}
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                </button>
+              <div className="flex items-center gap-3">
                 {!member.userId && (
-                  <button
-                    type="button"
-                    aria-label={`Delete ${member.name}`}
-                    className="p-1 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                    disabled={deleteMutation.isPending}
-                    onClick={() => handleDelete(member)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
+                  <>
+                    <button
+                      type="button"
+                      aria-label={`Edit ${member.name}`}
+                      className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => startEdit(member)}
+                    >
+                      <Pencil className="h-3.5 w-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      aria-label={`Delete ${member.name}`}
+                      className="p-1 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                      disabled={deleteMutation.isPending}
+                      onClick={() => handleDelete(member)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </>
                 )}
+                {member.userId !== null &&
+                  member.userId !== user?.id &&
+                  member.role !== "owner" && (
+                    <button
+                      type="button"
+                      className="text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+                      disabled={updateRoleMutation.isPending}
+                      onClick={() =>
+                        handleChangeRole(member, member.role === "admin" ? "member" : "admin")
+                      }
+                    >
+                      {member.role === "admin" ? "Make member" : "Make admin"}
+                    </button>
+                  )}
+                {member.userId !== null &&
+                  member.userId !== user?.id &&
+                  !(member.role === "owner" && ownerCount <= 1) && (
+                    <button
+                      type="button"
+                      aria-label={`Remove ${member.name} from household`}
+                      className="p-1 text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
+                      disabled={removeMutation.isPending}
+                      onClick={() => handleRemoveLinked(member)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
               </div>
             )}
           </li>
