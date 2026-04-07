@@ -54,19 +54,17 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
     }
 
     // Zero Trust: verify user is still a member of the active household
-    const membership = await prisma.householdMember.findUnique({
+    const membership = await prisma.member.findFirst({
       where: {
-        householdId_userId: {
-          householdId: user.activeHouseholdId,
-          userId: resolvedUserId,
-        },
+        householdId: user.activeHouseholdId,
+        userId: resolvedUserId,
       },
       select: { role: true },
     });
 
     if (!membership) {
       // Clear stale activeHouseholdId and reject
-      const fallback = await prisma.householdMember.findFirst({
+      const fallback = await prisma.member.findFirst({
         where: { userId: resolvedUserId },
         orderBy: { joinedAt: "asc" },
         select: { householdId: true },
