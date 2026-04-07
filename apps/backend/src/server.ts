@@ -17,6 +17,7 @@ import { setupRoutes } from "./routes/setup-session.routes";
 import { auditLogRoutes } from "./routes/audit-log.routes";
 import { assetsRoutes } from "./routes/assets.routes";
 import { forecastRoutes } from "./routes/forecast.routes";
+import { exportImportRoutes } from "./routes/export-import.routes.js";
 import { errorHandler } from "./middleware/errorHandler";
 
 const server = Fastify({
@@ -78,6 +79,7 @@ async function start() {
     // API routes
     server.register(authRoutes, { prefix: "/api/auth" });
     server.register(householdRoutes, { prefix: "/api" });
+    server.register(exportImportRoutes, { prefix: "/api" });
     server.register(inviteRoutes, { prefix: "/api/auth" });
     server.register(waterfallRoutes, { prefix: "/api/waterfall" });
     server.register(plannerRoutes, { prefix: "/api/planner" });
