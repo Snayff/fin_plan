@@ -43,15 +43,21 @@ const authHeaders = { authorization: "Bearer valid-token" };
 
 const mockExportEnvelope = {
   schemaVersion: 1,
-  exportedAt: "2026-04-06T00:00:00.000Z",
+  exportedAt: "2026-01-01T00:00:00.000Z",
   household: { name: "Test Household" },
+  settings: {},
   members: [],
-  categories: [],
   subcategories: [],
-  items: [],
+  incomeSources: [],
+  committedItems: [],
+  discretionaryItems: [],
+  itemAmountPeriods: [],
+  waterfallHistory: [],
   assets: [],
-  liabilities: [],
-  goals: [],
+  accounts: [],
+  purchaseItems: [],
+  plannerYearBudgets: [],
+  giftPersons: [],
 };
 
 beforeEach(() => {
