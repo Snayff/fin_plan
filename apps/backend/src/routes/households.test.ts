@@ -3,17 +3,17 @@ import type { FastifyInstance } from "fastify";
 import { buildTestApp } from "../test/helpers/fastify";
 import { errorHandler } from "../middleware/errorHandler";
 import { AuthenticationError } from "../utils/errors";
+import { buildMember } from "../test/fixtures";
 
 let mockCallerMember: { role: string } | null = { role: "owner" };
-const mockUpdatedMember = {
-  id: "membership-1",
+let mockTargetMember: { id: string } | null = { id: "member-target-1" };
+const mockUpdatedMember = buildMember({
+  id: "member-target-1",
   householdId: "household-1",
   userId: "user-2",
   role: "member",
-  dateOfBirth: null,
   retirementYear: 2055,
-  joinedAt: new Date("2025-01-01T00:00:00Z"),
-};
+});
 
 mock.module("../services/household.service", () => ({
   householdService: {
@@ -40,8 +40,14 @@ mock.module("../services/household.service", () => ({
 
 mock.module("../config/database", () => ({
   prisma: {
-    householdMember: {
-      findUnique: mock(async () => mockCallerMember),
+    member: {
+      findFirst: mock(async ({ where, select }: any) => {
+        // caller lookup uses `select: { role: true }`; target lookup uses `select: { id: true }`
+        if (select?.role) return mockCallerMember;
+        if (select?.id) return mockTargetMember;
+        return mockTargetMember;
+      }),
+      findUnique: mock(async () => mockUpdatedMember),
       update: mock(async () => mockUpdatedMember),
     },
   },
@@ -51,7 +57,8 @@ mock.module("../services/audit.service.js", () => ({
   audited: mock(async ({ mutation }: any) => {
     // Run the mutation with a mock tx
     const mockTx = {
-      householdMember: {
+      member: {
+        findFirst: mock(async () => mockTargetMember),
         findUnique: mock(async () => mockUpdatedMember),
         update: mock(async () => mockUpdatedMember),
       },
@@ -149,6 +156,7 @@ beforeEach(() => {
   (householdService.leaveHousehold as any).mockResolvedValue(undefined);
 
   mockCallerMember = { role: "owner" };
+  mockTargetMember = { id: "member-target-1" };
 
   // Re-apply auth middleware mock
   (authMiddleware as any).mockImplementation(async (request: any) => {

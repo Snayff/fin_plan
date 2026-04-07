@@ -141,11 +141,18 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const callerId = req.user!.userId;
       const isSelf = userId === callerId;
       if (!isSelf) {
-        const callerMember = await prisma.householdMember.findUnique({
-          where: { householdId_userId: { householdId, userId: callerId } },
+        const callerMember = await prisma.member.findFirst({
+          where: { householdId, userId: callerId },
           select: { role: true },
         });
         assertOwnerOrAdmin(callerMember?.role ?? "member");
+      }
+      const targetMember = await prisma.member.findFirst({
+        where: { householdId, userId },
+        select: { id: true },
+      });
+      if (!targetMember) {
+        throw new NotFoundError("Member not found");
       }
       const data = updateMemberProfileSchema.parse(req.body);
       const updated = await audited({
@@ -153,14 +160,14 @@ export async function householdRoutes(fastify: FastifyInstance) {
         ctx: actorCtx(req),
         action: "UPDATE_MEMBER_PROFILE",
         resource: "household-member",
-        resourceId: userId,
+        resourceId: targetMember.id,
         beforeFetch: async (tx) =>
-          tx.householdMember.findUnique({
-            where: { householdId_userId: { householdId, userId } },
+          tx.member.findUnique({
+            where: { id: targetMember.id },
           }) as Promise<Record<string, unknown> | null>,
         mutation: async (tx) =>
-          tx.householdMember.update({
-            where: { householdId_userId: { householdId, userId } },
+          tx.member.update({
+            where: { id: targetMember.id },
             data: {
               ...(data.dateOfBirth !== undefined
                 ? { dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null }
