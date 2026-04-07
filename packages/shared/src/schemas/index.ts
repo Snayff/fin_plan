@@ -158,6 +158,15 @@ export {
   type UpsertGiftYearRecordInput,
 } from "./planner.schemas";
 
+// Export/Import schemas and types
+export {
+  householdExportSchema,
+  importOptionsSchema,
+  CURRENT_EXPORT_SCHEMA_VERSION,
+  type HouseholdExport,
+  type ImportOptions,
+} from "./export-import.schemas";
+
 // Forecast schemas and types
 export {
   ForecastHorizonSchema,

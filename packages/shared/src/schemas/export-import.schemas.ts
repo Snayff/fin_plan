@@ -1,0 +1,209 @@
+import { z } from "zod";
+
+const CURRENT_SCHEMA_VERSION = 1;
+
+const exportMemberSchema = z.object({
+  name: z.string(),
+  role: z.enum(["owner", "admin", "member"]),
+  dateOfBirth: z.string().datetime().nullable().optional(),
+  retirementYear: z.number().int().nullable().optional(),
+});
+
+const exportSubcategorySchema = z.object({
+  tier: z.enum(["income", "committed", "discretionary"]),
+  name: z.string(),
+  sortOrder: z.number().int(),
+  isLocked: z.boolean(),
+  isDefault: z.boolean(),
+  items: z.array(z.string()).optional(),
+});
+
+const exportIncomeSourceSchema = z.object({
+  subcategoryName: z.string(),
+  name: z.string(),
+  frequency: z.enum(["monthly", "annual", "one_off"]),
+  incomeType: z.enum(["salary", "dividends", "freelance", "rental", "benefits", "other"]),
+  expectedMonth: z.number().int().nullable().optional(),
+  ownerName: z.string().nullable().optional(),
+  sortOrder: z.number().int(),
+  lastReviewedAt: z.string().datetime(),
+  notes: z.string().nullable().optional(),
+  periods: z.array(
+    z.object({
+      startDate: z.string(),
+      endDate: z.string().nullable().optional(),
+      amount: z.number(),
+    })
+  ),
+});
+
+const exportCommittedItemSchema = z.object({
+  subcategoryName: z.string(),
+  name: z.string(),
+  spendType: z.enum(["monthly", "yearly", "one_off"]),
+  notes: z.string().nullable().optional(),
+  ownerName: z.string().nullable().optional(),
+  dueMonth: z.number().int().nullable().optional(),
+  sortOrder: z.number().int(),
+  lastReviewedAt: z.string().datetime(),
+  periods: z.array(
+    z.object({
+      startDate: z.string(),
+      endDate: z.string().nullable().optional(),
+      amount: z.number(),
+    })
+  ),
+});
+
+const exportDiscretionaryItemSchema = z.object({
+  subcategoryName: z.string(),
+  name: z.string(),
+  spendType: z.enum(["monthly", "yearly", "one_off"]),
+  notes: z.string().nullable().optional(),
+  sortOrder: z.number().int(),
+  lastReviewedAt: z.string().datetime(),
+  periods: z.array(
+    z.object({
+      startDate: z.string(),
+      endDate: z.string().nullable().optional(),
+      amount: z.number(),
+    })
+  ),
+});
+
+const exportItemAmountPeriodSchema = z.object({
+  itemType: z.enum(["income_source", "committed_item", "discretionary_item"]),
+  itemName: z.string(),
+  startDate: z.string(),
+  endDate: z.string().nullable().optional(),
+  amount: z.number(),
+});
+
+const exportWaterfallHistorySchema = z.object({
+  itemType: z.enum(["income_source", "committed_item", "discretionary_item"]),
+  itemName: z.string(),
+  value: z.number(),
+  recordedAt: z.string().datetime(),
+});
+
+const exportAssetSchema = z.object({
+  name: z.string(),
+  type: z.enum(["Property", "Vehicle", "Other"]),
+  ownerName: z.string().nullable().optional(),
+  growthRatePct: z.number().nullable().optional(),
+  lastReviewedAt: z.string().datetime().nullable().optional(),
+  balances: z.array(
+    z.object({
+      value: z.number(),
+      date: z.string(),
+      note: z.string().nullable().optional(),
+    })
+  ),
+});
+
+const exportAccountSchema = z.object({
+  name: z.string(),
+  type: z.enum(["Savings", "Pension", "StocksAndShares", "Other"]),
+  ownerName: z.string().nullable().optional(),
+  growthRatePct: z.number().nullable().optional(),
+  monthlyContribution: z.number(),
+  lastReviewedAt: z.string().datetime().nullable().optional(),
+  balances: z.array(
+    z.object({
+      value: z.number(),
+      date: z.string(),
+      note: z.string().nullable().optional(),
+    })
+  ),
+});
+
+const exportPurchaseItemSchema = z.object({
+  yearAdded: z.number().int(),
+  name: z.string(),
+  estimatedCost: z.number(),
+  priority: z.enum(["lowest", "low", "medium", "high"]),
+  scheduledThisYear: z.boolean(),
+  fundingSources: z.array(z.string()),
+  fundingAccountId: z.string().nullable().optional(),
+  status: z.enum(["not_started", "in_progress", "done"]),
+  reason: z.string().nullable().optional(),
+  comment: z.string().nullable().optional(),
+});
+
+const exportPlannerYearBudgetSchema = z.object({
+  year: z.number().int(),
+  purchaseBudget: z.number(),
+  giftBudget: z.number(),
+});
+
+const exportGiftEventSchema = z.object({
+  eventType: z.enum([
+    "birthday",
+    "christmas",
+    "mothers_day",
+    "fathers_day",
+    "valentines_day",
+    "anniversary",
+    "custom",
+  ]),
+  customName: z.string().nullable().optional(),
+  dateMonth: z.number().int().nullable().optional(),
+  dateDay: z.number().int().nullable().optional(),
+  specificDate: z.string().datetime().nullable().optional(),
+  recurrence: z.enum(["annual", "one_off"]),
+  yearRecords: z.array(
+    z.object({
+      year: z.number().int(),
+      budget: z.number(),
+      notes: z.string().nullable().optional(),
+    })
+  ),
+});
+
+const exportGiftPersonSchema = z.object({
+  name: z.string(),
+  notes: z.string().nullable().optional(),
+  sortOrder: z.number().int(),
+  events: z.array(exportGiftEventSchema),
+});
+
+const exportSettingsSchema = z.object({
+  surplusBenchmarkPct: z.number().optional(),
+  isaAnnualLimit: z.number().optional(),
+  isaYearStartMonth: z.number().int().optional(),
+  isaYearStartDay: z.number().int().optional(),
+  stalenessThresholds: z.any().optional(),
+  savingsRatePct: z.number().nullable().optional(),
+  investmentRatePct: z.number().nullable().optional(),
+  pensionRatePct: z.number().nullable().optional(),
+  inflationRatePct: z.number().optional(),
+  showPence: z.boolean().optional(),
+});
+
+export const householdExportSchema = z.object({
+  schemaVersion: z.literal(CURRENT_SCHEMA_VERSION),
+  exportedAt: z.string().datetime(),
+  household: z.object({ name: z.string() }),
+  settings: exportSettingsSchema,
+  members: z.array(exportMemberSchema),
+  subcategories: z.array(exportSubcategorySchema),
+  incomeSources: z.array(exportIncomeSourceSchema),
+  committedItems: z.array(exportCommittedItemSchema),
+  discretionaryItems: z.array(exportDiscretionaryItemSchema),
+  itemAmountPeriods: z.array(exportItemAmountPeriodSchema),
+  waterfallHistory: z.array(exportWaterfallHistorySchema),
+  assets: z.array(exportAssetSchema),
+  accounts: z.array(exportAccountSchema),
+  purchaseItems: z.array(exportPurchaseItemSchema),
+  plannerYearBudgets: z.array(exportPlannerYearBudgetSchema),
+  giftPersons: z.array(exportGiftPersonSchema),
+});
+
+export const importOptionsSchema = z.object({
+  mode: z.enum(["overwrite", "create_new"]),
+});
+
+export const CURRENT_EXPORT_SCHEMA_VERSION = CURRENT_SCHEMA_VERSION;
+
+export type HouseholdExport = z.infer<typeof householdExportSchema>;
+export type ImportOptions = z.infer<typeof importOptionsSchema>;
