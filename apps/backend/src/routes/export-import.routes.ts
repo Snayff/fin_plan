@@ -59,6 +59,13 @@ export async function exportImportRoutes(fastify: FastifyInstance) {
     {
       preHandler: [authMiddleware],
       bodyLimit: FIVE_MB,
+      config: {
+        rateLimit: {
+          max: 30,
+          timeWindow: "1 hour",
+          keyGenerator: (req: FastifyRequest) => `validate_import_${req.user!.userId}`,
+        },
+      },
     },
     async (request, reply) => {
       const result = importService.validateImportData(request.body);
