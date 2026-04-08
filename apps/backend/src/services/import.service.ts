@@ -125,6 +125,16 @@ export const importService = {
           data: { name: data.household.name },
         });
 
+        // Purge household-scoped history and session state first. These
+        // models don't reference waterfall items via FK, so order within
+        // this group is unimportant — but they must be deleted before we
+        // start wiping waterfall items so nothing is left dangling.
+        await tx.auditLog.deleteMany({ where: { householdId } });
+        await tx.snapshot.deleteMany({ where: { householdId } });
+        await tx.householdInvite.deleteMany({ where: { householdId } });
+        await tx.reviewSession.deleteMany({ where: { householdId } });
+        await tx.waterfallSetupSession.deleteMany({ where: { householdId } });
+
         // Collect existing waterfall item ids so we can purge periods/history.
         const [existingIncome, existingCommitted, existingDiscretionary] = await Promise.all([
           tx.incomeSource.findMany({ where: { householdId }, select: { id: true } }),
