@@ -78,14 +78,11 @@ export const exportService = {
       }),
     ]);
 
-    // Build lookup maps. ownerId on waterfall items references Member.id.
-    // memberUserId on assets/accounts references User.id — so we need a
-    // separate lookup keyed by the member's userId.
+    // Build lookup map keyed by Member.id. Both waterfall item ownerId and
+    // asset/account memberId reference Member.id.
     const memberNameByMemberId = new Map<string, string>();
-    const memberNameByUserId = new Map<string, string>();
     for (const m of members) {
       memberNameByMemberId.set(m.id, m.name);
-      if (m.userId) memberNameByUserId.set(m.userId, m.name);
     }
 
     // Collect all waterfall item IDs so we can fetch their periods and history
@@ -156,7 +153,13 @@ export const exportService = {
             isaAnnualLimit: settings.isaAnnualLimit,
             isaYearStartMonth: settings.isaYearStartMonth,
             isaYearStartDay: settings.isaYearStartDay,
-            stalenessThresholds: settings.stalenessThresholds,
+            stalenessThresholds: settings.stalenessThresholds as {
+              income_source: number;
+              committed_item: number;
+              discretionary_item: number;
+              asset_item: number;
+              account_item: number;
+            },
             savingsRatePct: settings.savingsRatePct,
             investmentRatePct: settings.investmentRatePct,
             pensionRatePct: settings.pensionRatePct,
@@ -225,7 +228,7 @@ export const exportService = {
       assets: assets.map((a) => ({
         name: a.name,
         type: a.type,
-        ownerName: a.memberUserId ? (memberNameByUserId.get(a.memberUserId) ?? null) : null,
+        ownerName: a.memberId ? (memberNameByMemberId.get(a.memberId) ?? null) : null,
         growthRatePct: a.growthRatePct,
         lastReviewedAt: a.lastReviewedAt ? a.lastReviewedAt.toISOString() : null,
         balances: a.balances.map((b) => ({
@@ -237,7 +240,7 @@ export const exportService = {
       accounts: accounts.map((a) => ({
         name: a.name,
         type: a.type,
-        ownerName: a.memberUserId ? (memberNameByUserId.get(a.memberUserId) ?? null) : null,
+        ownerName: a.memberId ? (memberNameByMemberId.get(a.memberId) ?? null) : null,
         growthRatePct: a.growthRatePct,
         monthlyContribution: a.monthlyContribution,
         lastReviewedAt: a.lastReviewedAt ? a.lastReviewedAt.toISOString() : null,

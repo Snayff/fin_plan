@@ -4,11 +4,11 @@ import { useHouseholdMembers } from "../../hooks/useSettings.js";
 interface Props {
   mode: "add" | "edit";
   initialName?: string;
-  initialMemberUserId?: string | null;
+  initialMemberId?: string | null;
   isSaving?: boolean;
   isSavingConfirm?: boolean;
   isStale?: boolean;
-  onSave: (data: { name: string; memberUserId: string | null }) => void;
+  onSave: (data: { name: string; memberId: string | null }) => void;
   onCancel: () => void;
   onDeleteRequest?: () => void;
   onConfirm?: () => void;
@@ -21,7 +21,7 @@ const inputClass =
 export function AssetForm({
   mode,
   initialName = "",
-  initialMemberUserId = null,
+  initialMemberId = null,
   isSaving,
   isSavingConfirm,
   isStale,
@@ -31,7 +31,7 @@ export function AssetForm({
   onConfirm,
 }: Props) {
   const [name, setName] = useState(initialName);
-  const [memberUserId, setMemberUserId] = useState<string | null>(initialMemberUserId);
+  const [memberId, setMemberId] = useState<string | null>(initialMemberId);
   const [nameError, setNameError] = useState<string | null>(null);
 
   const { data: members } = useHouseholdMembers();
@@ -42,7 +42,7 @@ export function AssetForm({
       return;
     }
     setNameError(null);
-    onSave({ name: name.trim(), memberUserId });
+    onSave({ name: name.trim(), memberId });
   }
 
   return (
@@ -71,19 +71,17 @@ export function AssetForm({
         <div className="col-span-2 flex flex-col gap-1">
           <label className={labelClass}>Assigned to</label>
           <select
-            value={memberUserId ?? ""}
-            onChange={(e) => setMemberUserId(e.target.value || null)}
+            value={memberId ?? ""}
+            onChange={(e) => setMemberId(e.target.value || null)}
             aria-label="Assigned to"
             className={inputClass}
           >
             <option value="">Household</option>
-            {members
-              ?.filter((m): m is typeof m & { userId: string } => m.userId !== null)
-              .map((m) => (
-                <option key={m.userId} value={m.userId}>
-                  {m.firstName}
-                </option>
-              ))}
+            {members?.map((m) => (
+              <option key={m.id} value={m.id}>
+                {m.firstName}
+              </option>
+            ))}
           </select>
         </div>
       </div>

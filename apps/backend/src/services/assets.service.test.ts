@@ -12,7 +12,7 @@ const { assetsService } = await import("./assets.service.js");
 
 const HOUSEHOLD_ID = "hh-1";
 const USER_ID = "user-1";
-const MEMBER_USER_ID = "member-1";
+const MEMBER_ID = "member-1";
 const ASSET_ID = "asset-1";
 const ACCOUNT_ID = "account-1";
 
@@ -66,7 +66,7 @@ describe("assetsService.listAssetsByType", () => {
         name: "My House",
         type: "Property",
         householdId: HOUSEHOLD_ID,
-        memberUserId: null,
+        memberId: null,
         lastReviewedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -101,10 +101,9 @@ describe("assetsService.listAssetsByType", () => {
 });
 
 describe("assetsService.createAsset", () => {
-  it("creates asset with valid memberUserId", async () => {
-    prismaMock.member.findFirst.mockResolvedValue({
-      id: "member-1",
-      userId: MEMBER_USER_ID,
+  it("creates asset with valid memberId", async () => {
+    prismaMock.member.findUnique.mockResolvedValue({
+      id: MEMBER_ID,
       householdId: HOUSEHOLD_ID,
     } as any);
     prismaMock.asset.create.mockResolvedValue({
@@ -112,7 +111,7 @@ describe("assetsService.createAsset", () => {
       name: "Test House",
       type: "Property",
       householdId: HOUSEHOLD_ID,
-      memberUserId: MEMBER_USER_ID,
+      memberId: MEMBER_ID,
       lastReviewedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -120,23 +119,27 @@ describe("assetsService.createAsset", () => {
 
     const result = await assetsService.createAsset(
       HOUSEHOLD_ID,
-      { name: "Test House", type: "Property", memberUserId: MEMBER_USER_ID },
+      { name: "Test House", type: "Property", memberId: MEMBER_ID },
       mockCtx
     );
 
     expect(result.name).toBe("Test House");
-    expect(prismaMock.member.findFirst).toHaveBeenCalledWith({
-      where: { householdId: HOUSEHOLD_ID, userId: MEMBER_USER_ID },
+    expect(prismaMock.member.findUnique).toHaveBeenCalledWith({
+      where: { id: MEMBER_ID },
+      select: { id: true, householdId: true },
     });
   });
 
-  it("throws AuthorizationError when memberUserId is from another household", async () => {
-    prismaMock.member.findFirst.mockResolvedValue(null);
+  it("throws ValidationError when memberId is from another household", async () => {
+    prismaMock.member.findUnique.mockResolvedValue({
+      id: "foreign-member",
+      householdId: "other-household",
+    } as any);
 
     await expect(
       assetsService.createAsset(
         HOUSEHOLD_ID,
-        { name: "Test House", type: "Property", memberUserId: "foreign-user" },
+        { name: "Test House", type: "Property", memberId: "foreign-member" },
         mockCtx
       )
     ).rejects.toThrow("Member not found in household");
@@ -197,7 +200,7 @@ describe("assetsService.listAccountsByType", () => {
         name: "SIPP",
         type: "Pension",
         householdId: HOUSEHOLD_ID,
-        memberUserId: USER_ID,
+        memberId: USER_ID,
         growthRatePct: null,
         lastReviewedAt: null,
         createdAt: new Date(),

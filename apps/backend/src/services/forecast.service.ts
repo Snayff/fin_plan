@@ -158,28 +158,26 @@ export const forecastService = {
     const savingsSums = sumAccountSeries(savingsAccounts, settings, horizonYears);
     const ssSums = sumAccountSeries(ssAccounts, settings, horizonYears);
 
-    const retirement = members
-      .filter((member): member is typeof member & { userId: string } => member.userId !== null)
-      .map((member) => {
-        const pensionAccounts = accounts
-          .filter((a) => a.type === "Pension" && a.memberUserId === member.userId)
-          .map(toProjectableAccount);
-        const pensionSums = sumAccountSeries(pensionAccounts, settings, horizonYears);
+    const retirement = members.map((member) => {
+      const pensionAccounts = accounts
+        .filter((a) => a.type === "Pension" && a.memberId === member.id)
+        .map(toProjectableAccount);
+      const pensionSums = sumAccountSeries(pensionAccounts, settings, horizonYears);
 
-        const series = Array.from({ length: horizonYears + 1 }, (_, y) => ({
-          year: currentYear + y,
-          pension: Math.round(pensionSums[y] ?? 0),
-          savings: Math.round(savingsSums[y] ?? 0),
-          stocksAndShares: Math.round(ssSums[y] ?? 0),
-        }));
+      const series = Array.from({ length: horizonYears + 1 }, (_, y) => ({
+        year: currentYear + y,
+        pension: Math.round(pensionSums[y] ?? 0),
+        savings: Math.round(savingsSums[y] ?? 0),
+        stocksAndShares: Math.round(ssSums[y] ?? 0),
+      }));
 
-        return {
-          memberId: member.userId,
-          memberName: member.user?.name ?? member.name,
-          retirementYear: member.retirementYear ?? null,
-          series,
-        };
-      });
+      return {
+        memberId: member.id,
+        memberName: member.user?.name ?? member.name,
+        retirementYear: member.retirementYear ?? null,
+        series,
+      };
+    });
 
     return { netWorth, surplus, retirement };
   },

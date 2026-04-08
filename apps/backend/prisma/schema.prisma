@@ -58,6 +58,8 @@ model Member {
   updatedAt      DateTime      @updatedAt @map("updated_at")
   household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
   user           User?         @relation("MemberUser", fields: [userId], references: [id], onDelete: SetNull)
+  assets         Asset[]
+  accounts       Account[]
 
   @@unique([householdId, userId])
   @@index([householdId])
@@ -303,7 +305,7 @@ model ItemAmountPeriod {
 model Asset {
   id             String         @id @default(cuid())
   householdId    String
-  memberUserId   String?
+  memberId       String?
   name           String
   type           AssetType
   growthRatePct  Float?
@@ -311,9 +313,11 @@ model Asset {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   household      Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member         Member?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
   balances       AssetBalance[]
 
   @@index([householdId])
+  @@index([memberId])
 }
 
 model AssetBalance {
@@ -331,7 +335,7 @@ model AssetBalance {
 model Account {
   id                  String           @id @default(cuid())
   householdId         String
-  memberUserId        String?
+  memberId            String?
   name                String
   type                AccountType
   growthRatePct       Float?
@@ -340,9 +344,11 @@ model Account {
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   household           Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member              Member?          @relation(fields: [memberId], references: [id], onDelete: SetNull)
   balances            AccountBalance[]
 
   @@index([householdId])
+  @@index([memberId])
 }
 
 model AccountBalance {

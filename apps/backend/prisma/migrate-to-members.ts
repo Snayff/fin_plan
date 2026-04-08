@@ -1,4 +1,9 @@
 // apps/backend/prisma/migrate-to-members.ts
+// HISTORICAL: This script is no longer runnable against the current schema.
+// The Asset.memberUserId / Account.memberUserId columns were renamed to
+// Asset.memberId / Account.memberId by the 20260407120000 migration. The
+// values written by this script (Member.id values) are now correctly
+// interpreted by the new schema column names.
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 

@@ -204,13 +204,12 @@ export const importService = {
         });
       }
 
-      // Re-read all members to build name lookup maps for owner references.
+      // Re-read all members to build a name lookup map. Asset/account owner
+      // references use Member.id — no need to filter to linked members.
       const allMembers = await tx.member.findMany({ where: { householdId } });
       const memberIdByName = new Map<string, string>();
-      const userIdByMemberName = new Map<string, string>();
       for (const m of allMembers) {
         memberIdByName.set(m.name, m.id);
-        if (m.userId) userIdByMemberName.set(m.name, m.userId);
       }
 
       // === IMPORT SETTINGS ===
@@ -359,7 +358,7 @@ export const importService = {
             householdId,
             name: a.name,
             type: a.type,
-            memberUserId: a.ownerName ? (userIdByMemberName.get(a.ownerName) ?? null) : null,
+            memberId: a.ownerName ? (memberIdByName.get(a.ownerName) ?? null) : null,
             growthRatePct: a.growthRatePct ?? null,
             lastReviewedAt: a.lastReviewedAt ? new Date(a.lastReviewedAt) : null,
           },
@@ -383,7 +382,7 @@ export const importService = {
             householdId,
             name: a.name,
             type: a.type,
-            memberUserId: a.ownerName ? (userIdByMemberName.get(a.ownerName) ?? null) : null,
+            memberId: a.ownerName ? (memberIdByName.get(a.ownerName) ?? null) : null,
             growthRatePct: a.growthRatePct ?? null,
             monthlyContribution: a.monthlyContribution,
             lastReviewedAt: a.lastReviewedAt ? new Date(a.lastReviewedAt) : null,

@@ -124,12 +124,12 @@ export function AccountItemArea({ type }: Props) {
                 mode="add"
                 type={type}
                 isSaving={createAccount.isPending}
-                onSave={async ({ name, memberUserId, growthRatePct }) => {
+                onSave={async ({ name, memberId, growthRatePct }) => {
                   try {
                     await createAccount.mutateAsync({
                       name,
                       type,
-                      memberUserId: memberUserId ?? undefined,
+                      memberId: memberId ?? undefined,
                       growthRatePct: growthRatePct ?? undefined,
                     });
                     setIsAddingItem(false);
@@ -187,11 +187,11 @@ export function AccountItemArea({ type }: Props) {
                 // error handled by mutation onError (toast)
               }
             }}
-            onSaveEdit={async ({ name, memberUserId, growthRatePct }) => {
+            onSaveEdit={async ({ name, memberId, growthRatePct }) => {
               try {
                 await updateAccount.mutateAsync({
                   accountId: item.id,
-                  data: { name, memberUserId, growthRatePct: growthRatePct ?? null },
+                  data: { name, memberId, growthRatePct: growthRatePct ?? null },
                 });
                 setEditingId(null);
               } catch {

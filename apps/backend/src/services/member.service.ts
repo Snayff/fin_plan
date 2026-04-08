@@ -85,8 +85,8 @@ export const memberService = {
     const [incomeCount, committedCount, assetCount, accountCount] = await Promise.all([
       prisma.incomeSource.count({ where: { householdId, ownerId: memberId } }),
       prisma.committedItem.count({ where: { householdId, ownerId: memberId } }),
-      prisma.asset.count({ where: { householdId, memberUserId: memberId } }),
-      prisma.account.count({ where: { householdId, memberUserId: memberId } }),
+      prisma.asset.count({ where: { householdId, memberId: memberId } }),
+      prisma.account.count({ where: { householdId, memberId: memberId } }),
     ]);
 
     const totalItems = incomeCount + committedCount + assetCount + accountCount;
@@ -115,12 +115,12 @@ export const memberService = {
             data: { ownerId: reassignToMemberId },
           }),
           tx.asset.updateMany({
-            where: { householdId, memberUserId: memberId },
-            data: { memberUserId: reassignToMemberId },
+            where: { householdId, memberId: memberId },
+            data: { memberId: reassignToMemberId },
           }),
           tx.account.updateMany({
-            where: { householdId, memberUserId: memberId },
-            data: { memberUserId: reassignToMemberId },
+            where: { householdId, memberId: memberId },
+            data: { memberId: reassignToMemberId },
           }),
         ]);
       }
@@ -133,8 +133,8 @@ export const memberService = {
     const [income, committed, assets, accounts] = await Promise.all([
       prisma.incomeSource.count({ where: { householdId, ownerId: memberId } }),
       prisma.committedItem.count({ where: { householdId, ownerId: memberId } }),
-      prisma.asset.count({ where: { householdId, memberUserId: memberId } }),
-      prisma.account.count({ where: { householdId, memberUserId: memberId } }),
+      prisma.asset.count({ where: { householdId, memberId: memberId } }),
+      prisma.account.count({ where: { householdId, memberId: memberId } }),
     ]);
     return { total: income + committed + assets + accounts, income, committed, assets, accounts };
   },
