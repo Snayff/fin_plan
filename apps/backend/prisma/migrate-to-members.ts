@@ -1,9 +1,9 @@
 // apps/backend/prisma/migrate-to-members.ts
-// HISTORICAL: This script is no longer runnable against the current schema.
-// The Asset.memberUserId / Account.memberUserId columns were renamed to
-// Asset.memberId / Account.memberId by the 20260407120000 migration. The
-// values written by this script (Member.id values) are now correctly
-// interpreted by the new schema column names.
+// SUPERSEDED: This script's work is now handled by the squashed SQL migration
+// at prisma/migrations/20260407000000_member_model_migration/migration.sql.
+// That migration copies household_members → members and rewrites ownerId /
+// memberId references in pure SQL, so no TS script is needed for deployment.
+// This file is kept for historical reference only.
 import { PrismaClient } from "@prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
 
