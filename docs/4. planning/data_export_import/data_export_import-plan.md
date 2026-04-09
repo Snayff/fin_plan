@@ -2733,9 +2733,36 @@ git commit -m "feat(ui): add data export/import section to settings"
 - [ ] Manual: verify DataSection only shows for owners
 - [ ] Grep for `householdMember` / `HouseholdMember` — no remaining references
 
+## Post-Review Fixes
+
+The following fixes were applied after an automated code review at the end of execution:
+
+### Critical
+
+1. **Asset/Account `memberUserId` → `memberId` rename** — The original Tasks 1–14 migrated `IncomeSource.ownerId` and `CommittedItem.ownerId` from `User.id` to `Member.id`, but left `Asset.memberUserId` and `Account.memberUserId` referencing `User.id`. Task 2's data migration had already written `Member.id` values into those columns, creating a semantics mismatch. Fixed by renaming the columns to `memberId`, adding a FK to `Member`, and updating all backend services (assets, forecast, member, export, import), shared schemas, and frontend components. The frontend asset/account forms now list ALL members (linked and unlinked) in the assignee dropdown, fixing the lossy import roundtrip. Commit: `3555039`.
+2. **Rate limit on validate-import** — `POST /api/households/validate-import` had no rate limit (CPU-DoS vector via unlimited 5MB Zod parses). Added `max: 30/hour` per user. Commit: `e7a1f85`.
+
+### Important
+
+3. **Overwrite import: purge household-scoped history** — The overwrite branch in `import.service.ts` now also deletes `AuditLog`, `Snapshot`, `HouseholdInvite`, `ReviewSession`, and `WaterfallSetupSession` before re-importing data. Commit: `5e3bccf`.
+4. **Import test coverage expanded** — Added 3 tests: `create_new` happy path with non-empty payload + owner mapping, overwrite caller-member preservation + history purge assertions, unknown-subcategory rollback. Commit: `fc33217`.
+5. **Export test coverage expanded** — Added 1 test: income source ownerId resolves to member name, subcategory name mapping, period inlining. Commit: `3836c21`.
+6. **Route test fixture corrected** — Replaced `mockExportEnvelope` with fields matching the real `householdExportSchema` (removed non-existent `categories`, `items`, `liabilities`, `goals`). Commit: `3ae9a2e`.
+7. **HouseholdSection UX regression fixed** — Restored role promote/demote and linked-member-removal controls inside `MemberManagementSection`. Linked members now show "Make admin"/"Make member" and a "Remove from household" button (both owner-only, self-disabled, sole-owner-protected). Commit: `ad5d680`.
+8. **`stalenessThresholds` schema tightened** — Replaced `z.any().optional()` with a strict 5-field integer object schema matching the Prisma model default. Commit: `0ed6b18`.
+9. **Filename sanitisation on export download** — Household name is now lowercased, NFKD-normalised, collapsed to `[a-z0-9-]`, and capped at 60 chars in the download filename. Commit: `e59ba3e`.
+
+### Minor (noted, not fixed)
+
+- Import transaction body is ~370 lines of sequential awaits; for large households, default Prisma txn timeout (5s) may expire. Consider `{ timeout: 30_000 }`.
+- Export schema has both inlined `periods` per item AND a flat `itemAmountPeriods` array (fully redundant). Consider dropping the flat array in schema v2.
+- Member DOB exported as full ISO timestamp rather than date-only.
+- Plan folder should move to `docs/5. built/infrastructure/` after merge.
+
 ## Post-conditions
 
 - [ ] Members exist independently of user accounts — enables future member-centric features
 - [ ] Users can back up and restore household data via JSON export/import
 - [ ] Household creation is general-purpose — available from the switcher at any time
 - [ ] Schema versioning infrastructure in place for future export format changes
+- [ ] Asset/Account ownership references `Member.id` consistently across schema, services, frontend, export, and import
