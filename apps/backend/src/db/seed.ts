@@ -7,6 +7,37 @@ if (process.env.NODE_ENV === "production") {
   process.exit(0);
 }
 
+type WaterfallModel = "incomeSource" | "committedItem" | "discretionaryItem";
+type WaterfallItemType = "income_source" | "committed_item" | "discretionary_item";
+
+async function createItemWithPeriod(
+  model: WaterfallModel,
+  itemType: WaterfallItemType,
+  householdId: string,
+  data: Record<string, unknown>,
+  amount: number
+) {
+  const existing = await (prisma[model] as any).findFirst({
+    where: { householdId, name: data.name },
+  });
+  if (existing) return existing;
+
+  const item = await (prisma[model] as any).create({
+    data: { householdId, ...data },
+  });
+
+  await prisma.itemAmountPeriod.create({
+    data: {
+      itemType,
+      itemId: item.id,
+      startDate: new Date(),
+      amount,
+    },
+  });
+
+  return item;
+}
+
 async function main() {
   const email = "owner@finplan.test";
   const password = "BrowserTest123!";
@@ -44,6 +75,11 @@ async function main() {
 
   const hId = household.id;
 
+  // Get the owner's Member record (needed for ownerId references)
+  const ownerMember = await prisma.member.findFirst({
+    where: { householdId: hId, userId: user.id },
+  });
+
   // ─── Household Settings ────────────────────────────────────────────────────
 
   await prisma.householdSettings.upsert({
@@ -79,113 +115,108 @@ async function main() {
 
   // ─── Income Sources ────────────────────────────────────────────────────────
 
-  const incomeData = [
+  await createItemWithPeriod(
+    "incomeSource",
+    "income_source",
+    hId,
     {
       name: "Alice Salary",
-      amount: 3500,
       frequency: "monthly" as const,
       incomeType: "salary" as const,
       subcategoryId: incomeSalaryId,
-      ownerId: user.id,
+      ownerId: ownerMember?.id ?? null,
       sortOrder: 0,
     },
+    3500
+  );
+
+  await createItemWithPeriod(
+    "incomeSource",
+    "income_source",
+    hId,
     {
       name: "Bob Salary",
-      amount: 2800,
       frequency: "monthly" as const,
       incomeType: "salary" as const,
       subcategoryId: incomeSalaryId,
       sortOrder: 1,
     },
-  ];
-
-  for (const income of incomeData) {
-    const existing = await prisma.incomeSource.findFirst({
-      where: { householdId: hId, name: income.name },
-    });
-    if (!existing) {
-      await prisma.incomeSource.create({ data: { householdId: hId, ...income } });
-    }
-  }
+    2800
+  );
 
   // ─── Committed Items (monthly) ─────────────────────────────────────────────
 
-  const committedData = [
-    { name: "Rent", amount: 1200, spendType: "monthly" as const, sortOrder: 0 },
-    { name: "Internet", amount: 45, spendType: "monthly" as const, sortOrder: 1 },
-    { name: "Phone", amount: 25, spendType: "monthly" as const, sortOrder: 2 },
+  const committedMonthly = [
+    { name: "Rent", spendType: "monthly" as const, sortOrder: 0, amount: 1200 },
+    { name: "Internet", spendType: "monthly" as const, sortOrder: 1, amount: 45 },
+    { name: "Phone", spendType: "monthly" as const, sortOrder: 2, amount: 25 },
   ];
 
-  for (const item of committedData) {
-    const existing = await prisma.committedItem.findFirst({
-      where: { householdId: hId, name: item.name },
-    });
-    if (!existing) {
-      await prisma.committedItem.create({
-        data: { householdId: hId, subcategoryId: committedOtherId, ...item },
-      });
-    }
+  for (const { amount, ...item } of committedMonthly) {
+    await createItemWithPeriod(
+      "committedItem",
+      "committed_item",
+      hId,
+      { subcategoryId: committedOtherId, ...item },
+      amount
+    );
   }
 
   // ─── Committed Items (yearly) ──────────────────────────────────────────────
 
-  const yearlyData = [
+  const committedYearly = [
     {
       name: "Home Insurance",
-      amount: 600,
       spendType: "yearly" as const,
       dueMonth: 9,
       sortOrder: 0,
+      amount: 600,
     },
-    { name: "Car Tax", amount: 180, spendType: "yearly" as const, dueMonth: 3, sortOrder: 1 },
+    { name: "Car Tax", spendType: "yearly" as const, dueMonth: 3, sortOrder: 1, amount: 180 },
   ];
 
-  for (const item of yearlyData) {
-    const existing = await prisma.committedItem.findFirst({
-      where: { householdId: hId, name: item.name },
-    });
-    if (!existing) {
-      await prisma.committedItem.create({
-        data: { householdId: hId, subcategoryId: committedOtherId, ...item },
-      });
-    }
+  for (const { amount, ...item } of committedYearly) {
+    await createItemWithPeriod(
+      "committedItem",
+      "committed_item",
+      hId,
+      { subcategoryId: committedOtherId, ...item },
+      amount
+    );
   }
 
   // ─── Discretionary Items ───────────────────────────────────────────────────
 
-  const discretionaryData = [
-    { name: "Groceries", amount: 500, spendType: "monthly" as const, sortOrder: 0 },
-    { name: "Dining Out", amount: 150, spendType: "monthly" as const, sortOrder: 1 },
-    { name: "Entertainment", amount: 80, spendType: "monthly" as const, sortOrder: 2 },
+  const discretionary = [
+    { name: "Groceries", spendType: "monthly" as const, sortOrder: 0, amount: 500 },
+    { name: "Dining Out", spendType: "monthly" as const, sortOrder: 1, amount: 150 },
+    { name: "Entertainment", spendType: "monthly" as const, sortOrder: 2, amount: 80 },
   ];
 
-  for (const item of discretionaryData) {
-    const existing = await prisma.discretionaryItem.findFirst({
-      where: { householdId: hId, name: item.name },
-    });
-    if (!existing) {
-      await prisma.discretionaryItem.create({
-        data: { householdId: hId, subcategoryId: discretionaryFoodId, ...item },
-      });
-    }
+  for (const { amount, ...item } of discretionary) {
+    await createItemWithPeriod(
+      "discretionaryItem",
+      "discretionary_item",
+      hId,
+      { subcategoryId: discretionaryFoodId, ...item },
+      amount
+    );
   }
 
   // ─── Savings Allocations ───────────────────────────────────────────────────
 
-  const savingsData = [
-    { name: "Emergency Fund", amount: 200, spendType: "monthly" as const, sortOrder: 0 },
-  ];
-
-  for (const item of savingsData) {
-    const existing = await prisma.discretionaryItem.findFirst({
-      where: { householdId: hId, name: item.name },
-    });
-    if (!existing) {
-      await prisma.discretionaryItem.create({
-        data: { householdId: hId, subcategoryId: discretionarySavingsId, ...item },
-      });
-    }
-  }
+  await createItemWithPeriod(
+    "discretionaryItem",
+    "discretionary_item",
+    hId,
+    {
+      name: "Emergency Fund",
+      spendType: "monthly" as const,
+      subcategoryId: discretionarySavingsId,
+      sortOrder: 0,
+    },
+    200
+  );
 
   console.log(`Seed complete: user=${email}, household=${household.name} (${hId})`);
 }

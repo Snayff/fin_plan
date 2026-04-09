@@ -22,7 +22,7 @@ export function DataSection() {
     if (!householdId) return;
     exportMutation.mutate(householdId, {
       onSuccess: () => toast.success("Export downloaded"),
-      onError: (err: Error) => toast.error(`Export failed: ${err.message}`),
+      onError: () => toast.error("Export failed. Please try again."),
     });
   }
 
@@ -40,20 +40,20 @@ export function DataSection() {
       const text = await file.text();
       parsed = JSON.parse(text);
     } catch {
-      toast.error("Could not read JSON file");
+      toast.error("Could not read this file. Please select a valid JSON file.");
       return;
     }
 
     validateMutation.mutate(parsed, {
       onSuccess: (result) => {
         if (!result.valid) {
-          toast.error(result.errors?.[0] ?? "Invalid import file");
+          toast.error(result.errors?.[0] ?? "This file is not a valid finplan export.");
           return;
         }
         setPendingImportData(parsed);
         setShowDestination(true);
       },
-      onError: (err: Error) => toast.error(`Validation failed: ${err.message}`),
+      onError: () => toast.error("Could not validate the file. Please try again."),
     });
   }
 
@@ -69,8 +69,8 @@ export function DataSection() {
           setShowDestination(false);
           setPendingImportData(null);
         },
-        onError: (err: Error) => {
-          toast.error(`Import failed: ${err.message}`);
+        onError: () => {
+          toast.error("Import failed. Please try again.");
           setShowDestination(false);
         },
       }

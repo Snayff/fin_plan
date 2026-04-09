@@ -67,6 +67,18 @@ export function MemberManagementSection() {
     };
   }
 
+  function friendlyError(err: unknown, fallback: string): string {
+    if (
+      err &&
+      typeof err === "object" &&
+      "message" in err &&
+      typeof (err as ApiError).message === "string"
+    ) {
+      return (err as ApiError).message;
+    }
+    return fallback;
+  }
+
   function handleCreate() {
     const payload = buildPayload();
     if (!payload.name) return;
@@ -78,7 +90,7 @@ export function MemberManagementSection() {
           resetForm();
         },
         onError: (err: unknown) => {
-          toast.error((err as ApiError).message ?? "Failed to add member");
+          toast.error(friendlyError(err, "Failed to add member. Please try again."));
         },
       }
     );
@@ -96,7 +108,7 @@ export function MemberManagementSection() {
           resetForm();
         },
         onError: (err: unknown) => {
-          toast.error((err as ApiError).message ?? "Failed to update member");
+          toast.error(friendlyError(err, "Failed to update member. Please try again."));
         },
       }
     );
@@ -111,7 +123,7 @@ export function MemberManagementSection() {
           setReassignFor(null);
         },
         onError: (err: unknown) => {
-          const message = (err as ApiError).message ?? "Failed to delete member";
+          const message = friendlyError(err, "Failed to delete member. Please try again.");
           const match = message.match(/(\d+)\s+assigned items?/i);
           if (match && !reassignToMemberId) {
             const count = Number.parseInt(match[1] ?? "0", 10);
@@ -133,7 +145,7 @@ export function MemberManagementSection() {
           toast.success(nextRole === "admin" ? "Role changed to admin" : "Role changed to member");
         },
         onError: (err: unknown) => {
-          toast.error((err as ApiError).message ?? "Failed to update role");
+          toast.error(friendlyError(err, "Failed to update role. Please try again."));
         },
       }
     );
@@ -147,7 +159,7 @@ export function MemberManagementSection() {
           toast.success("Member removed");
         },
         onError: (err: unknown) => {
-          toast.error((err as ApiError).message ?? "Failed to remove member");
+          toast.error(friendlyError(err, "Failed to remove member. Please try again."));
         },
       }
     );
@@ -198,7 +210,9 @@ export function MemberManagementSection() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1">
-              <Label htmlFor="member-dob">Date of birth</Label>
+              <Label htmlFor="member-dob">
+                Date of birth <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
               <Input
                 id="member-dob"
                 type="date"
@@ -207,7 +221,10 @@ export function MemberManagementSection() {
               />
             </div>
             <div className="space-y-1">
-              <Label htmlFor="member-retirement">Retirement year</Label>
+              <Label htmlFor="member-retirement">
+                Retirement year{" "}
+                <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
               <Input
                 id="member-retirement"
                 type="number"
