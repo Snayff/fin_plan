@@ -20,7 +20,7 @@ export function DataSection() {
 
   function handleExport() {
     if (!householdId) return;
-    exportMutation.mutate(householdId, {
+    exportMutation.mutate(undefined, {
       onSuccess: () => toast.success("Export downloaded"),
       onError: () => toast.error("Export failed. Please try again."),
     });
@@ -60,7 +60,7 @@ export function DataSection() {
   function handleConfirmImport(mode: "overwrite" | "create_new") {
     if (!pendingImportData || !householdId) return;
     importMutation.mutate(
-      { householdId, data: pendingImportData, mode },
+      { data: pendingImportData, mode },
       {
         onSuccess: () => {
           toast.success(

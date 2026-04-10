@@ -9,7 +9,7 @@ const FIVE_MB = 5 * 1024 * 1024;
 export async function exportImportRoutes(fastify: FastifyInstance) {
   // Export household data (owner only — enforced inside exportService)
   fastify.get(
-    "/households/:id/export",
+    "/households/export",
     {
       preHandler: [authMiddleware],
       config: {
@@ -18,8 +18,7 @@ export async function exportImportRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const userId = request.user!.userId;
-      const { id } = request.params as { id: string };
-      const data = await exportService.exportHousehold(id, userId);
+      const data = await exportService.exportHousehold(request.householdId!, userId);
       return reply.send(data);
     }
   );
@@ -28,7 +27,7 @@ export async function exportImportRoutes(fastify: FastifyInstance) {
   // - overwrite mode: owner-of-target check enforced inside importService
   // - create_new mode: any authenticated user can create a fresh household
   fastify.post(
-    "/households/:id/import",
+    "/households/import",
     {
       preHandler: [authMiddleware],
       bodyLimit: FIVE_MB,
@@ -38,9 +37,31 @@ export async function exportImportRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const userId = request.user!.userId;
-      const { id } = request.params as { id: string };
       const { mode } = importOptionsSchema.parse(request.query);
-      const result = await importService.importHousehold(id, userId, request.body, mode);
+      const result = await importService.importHousehold(
+        request.householdId!,
+        userId,
+        request.body,
+        mode
+      );
+      return reply.send(result);
+    }
+  );
+
+  // Restore from import backup (undo overwrite)
+  fastify.post(
+    "/households/import/restore/:backupId",
+    {
+      preHandler: [authMiddleware],
+      config: {
+        rateLimit: { max: 5, timeWindow: "1 hour" },
+      },
+    },
+    async (request, reply) => {
+      const userId = request.user!.userId;
+      const householdId = request.householdId!;
+      const { backupId } = request.params as { backupId: string };
+      const result = await importService.restoreFromBackup(householdId, userId, backupId);
       return reply.send(result);
     }
   );

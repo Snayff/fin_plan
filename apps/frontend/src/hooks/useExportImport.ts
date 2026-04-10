@@ -13,7 +13,7 @@ const safeName = (name: string) =>
 
 export function useExportHousehold() {
   return useMutation({
-    mutationFn: (householdId: string) => householdService.exportHousehold(householdId),
+    mutationFn: () => householdService.exportHousehold(),
     onSuccess: (data) => {
       const envelope = data as { household?: { name?: string } } | null;
       const name = envelope?.household?.name ?? "household";
@@ -35,15 +35,8 @@ export function useImportHousehold() {
   const setUser = useAuthStore((s) => s.setUser);
 
   return useMutation({
-    mutationFn: ({
-      householdId,
-      data,
-      mode,
-    }: {
-      householdId: string;
-      data: unknown;
-      mode: "overwrite" | "create_new";
-    }) => householdService.importHousehold(householdId, data, mode),
+    mutationFn: ({ data, mode }: { data: unknown; mode: "overwrite" | "create_new" }) =>
+      householdService.importHousehold(data, mode),
     onSuccess: async () => {
       if (accessToken) {
         const { user } = await authService.getCurrentUser(accessToken);

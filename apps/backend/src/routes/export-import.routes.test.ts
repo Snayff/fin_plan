@@ -82,11 +82,11 @@ beforeEach(() => {
   });
 });
 
-describe("GET /api/households/:id/export", () => {
+describe("GET /api/households/export", () => {
   it("returns 200 with the export envelope for an owner", async () => {
     const response = await app.inject({
       method: "GET",
-      url: "/api/households/household-1/export",
+      url: "/api/households/export",
       headers: authHeaders,
     });
 
@@ -100,18 +100,18 @@ describe("GET /api/households/:id/export", () => {
   it("returns 401 without auth", async () => {
     const response = await app.inject({
       method: "GET",
-      url: "/api/households/household-1/export",
+      url: "/api/households/export",
     });
 
     expect(response.statusCode).toBe(401);
   });
 });
 
-describe("POST /api/households/:id/import", () => {
+describe("POST /api/households/import", () => {
   it("returns 200 with success + householdId for create_new mode", async () => {
     const response = await app.inject({
       method: "POST",
-      url: "/api/households/household-1/import?mode=create_new",
+      url: "/api/households/import?mode=create_new",
       headers: authHeaders,
       payload: { schemaVersion: 1, household: { name: "Imported" } },
     });
@@ -131,7 +131,7 @@ describe("POST /api/households/:id/import", () => {
   it("returns 200 for overwrite mode", async () => {
     const response = await app.inject({
       method: "POST",
-      url: "/api/households/household-1/import?mode=overwrite",
+      url: "/api/households/import?mode=overwrite",
       headers: authHeaders,
       payload: { schemaVersion: 1, household: { name: "Imported" } },
     });
@@ -148,7 +148,7 @@ describe("POST /api/households/:id/import", () => {
   it("returns 401 without auth", async () => {
     const response = await app.inject({
       method: "POST",
-      url: "/api/households/household-1/import?mode=create_new",
+      url: "/api/households/import?mode=create_new",
       payload: {},
     });
 

@@ -167,8 +167,8 @@ export const householdService = {
     );
   },
 
-  async exportHousehold(householdId: string): Promise<unknown> {
-    return apiClient.get<unknown>(`/api/households/${householdId}/export`);
+  async exportHousehold(): Promise<unknown> {
+    return apiClient.get<unknown>("/api/households/export");
   },
 
   async validateImport(data: unknown): Promise<{ valid: boolean; errors?: string[] }> {
@@ -179,12 +179,11 @@ export const householdService = {
   },
 
   async importHousehold(
-    householdId: string,
     data: unknown,
     mode: "overwrite" | "create_new"
-  ): Promise<{ success: boolean; householdId: string }> {
-    return apiClient.post<{ success: boolean; householdId: string }>(
-      `/api/households/${householdId}/import?mode=${mode}`,
+  ): Promise<{ success: boolean; householdId: string; backupId?: string }> {
+    return apiClient.post<{ success: boolean; householdId: string; backupId?: string }>(
+      `/api/households/import?mode=${mode}`,
       data
     );
   },
