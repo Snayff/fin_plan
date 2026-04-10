@@ -90,11 +90,12 @@ mock.module("../lib/actor-ctx.js", () => ({
 
 mock.module("../middleware/auth.middleware", () => ({
   authMiddleware: mock(() => {}),
+  userOnlyAuth: mock(() => {}),
 }));
 
 import { householdService } from "../services/household.service";
 import { memberService } from "../services/member.service";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { authMiddleware, userOnlyAuth } from "../middleware/auth.middleware";
 import { householdRoutes } from "./households";
 
 let app: FastifyInstance;
@@ -190,7 +191,7 @@ beforeEach(() => {
   mockCallerMember = { role: "owner" };
   mockTargetMember = { id: "member-target-1" };
 
-  // Re-apply auth middleware mock
+  // Re-apply auth middleware mocks
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
@@ -198,6 +199,13 @@ beforeEach(() => {
     }
     request.user = { userId: "user-1", email: "test@test.com" };
     request.householdId = "household-1";
+  });
+  (userOnlyAuth as any).mockImplementation(async (request: any) => {
+    const authHeader = request.headers.authorization;
+    if (!authHeader?.startsWith("Bearer ")) {
+      throw new AuthenticationError("No authorization token provided");
+    }
+    request.user = { userId: "user-1", email: "test@test.com" };
   });
 });
 

@@ -4,7 +4,7 @@ import {
   updateMemberRole,
   assertOwnerOrAdmin,
 } from "../services/household.service";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { authMiddleware, userOnlyAuth } from "../middleware/auth.middleware";
 import { prisma } from "../config/database.js";
 import { memberService } from "../services/member.service.js";
 import {
@@ -23,14 +23,14 @@ import { audited } from "../services/audit.service.js";
 
 export async function householdRoutes(fastify: FastifyInstance) {
   // List all households the current user belongs to
-  fastify.get("/households", { preHandler: [authMiddleware] }, async (request, reply) => {
+  fastify.get("/households", { preHandler: [userOnlyAuth] }, async (request, reply) => {
     const userId = request.user!.userId;
     const memberships = await householdService.getUserHouseholds(userId);
     return reply.send({ households: memberships });
   });
 
   // Create a new household
-  fastify.post("/households", { preHandler: [authMiddleware] }, async (request, reply) => {
+  fastify.post("/households", { preHandler: [userOnlyAuth] }, async (request, reply) => {
     const userId = request.user!.userId;
     const { name } = createHouseholdSchema.parse(request.body);
     const household = await householdService.createHousehold(userId, name);

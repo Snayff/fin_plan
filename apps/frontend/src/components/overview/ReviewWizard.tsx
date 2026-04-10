@@ -8,6 +8,7 @@ import { isStale } from "@/utils/staleness";
 import { useSettings } from "@/hooks/useSettings";
 import { useCreateSnapshot } from "@/hooks/useSettings";
 import { waterfallService } from "@/services/waterfall.service";
+import type { WaterfallItemType } from "@finplan/shared";
 import {
   useReviewSession,
   useCreateReviewSession,
@@ -23,6 +24,17 @@ import { useWaterfallSummary } from "@/hooks/useWaterfall";
 import { useQueryClient } from "@tanstack/react-query";
 
 const STEPS = ["Income", "Monthly Bills", "Yearly Bills", "Discretionary", "Summary"];
+
+/** Minimal shape shared by all waterfall item types used in the review wizard. */
+interface ReviewItem {
+  id: string;
+  name: string;
+  lastReviewedAt?: string | null;
+  amount?: number;
+  monthlyBudget?: number;
+  monthlyAmount?: number;
+  balance?: number;
+}
 
 interface ReviewWizardProps {
   onClose: () => void;
@@ -130,7 +142,7 @@ function ItemCard({
 
 // ─── Step data ────────────────────────────────────────────────────────────────
 
-function useStepItems(step: number) {
+function useStepItems(step: number): ReviewItem[] {
   const { data: income = [] } = useReviewIncome();
   const { data: committed = [] } = useReviewCommitted();
   const { data: yearly = [] } = useReviewYearly();
@@ -139,13 +151,13 @@ function useStepItems(step: number) {
 
   switch (step) {
     case 0:
-      return income as any[];
+      return income as ReviewItem[];
     case 1:
-      return committed as any[];
+      return committed as ReviewItem[];
     case 2:
-      return yearly as any[];
+      return yearly as ReviewItem[];
     case 3:
-      return [...(discretionary as any[]), ...(savings as any[])];
+      return [...(discretionary as ReviewItem[]), ...(savings as ReviewItem[])];
     default:
       return [];
   }
@@ -215,7 +227,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     savings_allocation: 12,
   };
 
-  const TYPE_MAP: Record<number, string> = {
+  const TYPE_MAP: Record<number, WaterfallItemType> = {
     0: "income_source",
     1: "committed_bill",
     2: "yearly_bill",
@@ -229,7 +241,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     3: "discretionary",
   };
 
-  function getThreshold(step: number, item: any): number {
+  function getThreshold(step: number, item: ReviewItem): number {
     if (step === 3) {
       return item.monthlyBudget !== undefined
         ? ((thresholds as Record<string, number | undefined>)["discretionary_category"] ?? 12)
@@ -240,11 +252,11 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     return (thresholds as Record<string, number | undefined>)[key] ?? 12;
   }
 
-  function getItemAmount(item: any): number {
+  function getItemAmount(item: ReviewItem): number {
     return item.amount ?? item.monthlyBudget ?? item.monthlyAmount ?? item.balance ?? 0;
   }
 
-  function getServiceType(step: number, item: any): string {
+  function getServiceType(step: number, item: ReviewItem): string {
     if (step === 3) {
       return item.monthlyBudget !== undefined ? "discretionary" : "savings";
     }
@@ -263,7 +275,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     (it) => !isStale(it.lastReviewedAt ?? new Date(0).toISOString(), getThreshold(currentStep, it))
   );
 
-  async function handleConfirm(item: any) {
+  async function handleConfirm(item: ReviewItem) {
     const svcType = getServiceType(currentStep, item);
     try {
       if (svcType === "income") await waterfallService.confirmIncome(item.id);
@@ -289,7 +301,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     }
   }
 
-  async function handleUpdate(item: any, newAmount: number) {
+  async function handleUpdate(item: ReviewItem, newAmount: number) {
     const svcType = getServiceType(currentStep, item);
     const fromAmount = getItemAmount(item);
     try {
@@ -320,12 +332,14 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
     const unresolved = freshItems.filter((it) => !isResolved(it.id));
     if (unresolved.length === 0) return;
     try {
-      const ids = unresolved.map((it: any) => it.id as string);
+      const ids = unresolved.map((it) => it.id);
+      const batchType = TYPE_MAP[currentStep] ?? "income_source";
       await waterfallService.confirmBatch({
-        items: ids.map((id) => ({ type: TYPE_MAP[currentStep] ?? "", id })),
-      } as any);
+        items: ids.map((id) => ({ type: batchType, id })),
+      });
 
-      const svcType = getServiceType(currentStep, freshItems[0]);
+      const firstFresh = freshItems[0];
+      const svcType = firstFresh ? getServiceType(currentStep, firstFresh) : "income";
       const typeKey = TYPE_MAP[currentStep] ?? svcType;
       const newConfirmed = {
         ...confirmedItems,
@@ -363,7 +377,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
       toast.success("Review complete — you've saved a snapshot");
       onClose();
     } catch (err: unknown) {
-      if ((err as any)?.status === 409) {
+      if (err !== null && typeof err === "object" && "status" in err && err.status === 409) {
         toast.error("Couldn't save snapshot — that name's already taken");
       } else {
         toast.error("Couldn't save snapshot — try again");

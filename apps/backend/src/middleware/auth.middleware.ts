@@ -25,12 +25,9 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
     }
 
     // Verify token
-    const payload = verifyAccessToken(token) as any;
+    const payload = verifyAccessToken(token);
 
-    // Backward compatibility / hardening:
-    // some older tokens may use `id` or `sub` instead of `userId`
-    const resolvedUserId = payload.userId || payload.id || payload.sub;
-    if (!resolvedUserId || typeof resolvedUserId !== "string") {
+    if (!payload.userId || typeof payload.userId !== "string") {
       throw new AuthenticationError("Invalid token payload");
     }
 
@@ -41,7 +38,7 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
 
     // Resolve active household from the database
     const user = await prisma.user.findUnique({
-      where: { id: resolvedUserId },
+      where: { id: payload.userId },
       select: { id: true, email: true, name: true, activeHouseholdId: true },
     });
 
@@ -57,7 +54,7 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
     const membership = await prisma.member.findFirst({
       where: {
         householdId: user.activeHouseholdId,
-        userId: resolvedUserId,
+        userId: payload.userId,
       },
       select: { role: true },
     });
@@ -65,25 +62,76 @@ export async function authMiddleware(request: FastifyRequest, _reply: FastifyRep
     if (!membership) {
       // Clear stale activeHouseholdId and reject
       const fallback = await prisma.member.findFirst({
-        where: { userId: resolvedUserId },
+        where: { userId: payload.userId },
         orderBy: { joinedAt: "asc" },
         select: { householdId: true },
       });
       await prisma.user.update({
-        where: { id: resolvedUserId },
+        where: { id: payload.userId },
         data: { activeHouseholdId: fallback?.householdId ?? null },
       });
       throw new AuthenticationError("No longer a member of this household");
     }
 
     // Attach normalized user info + householdId to request
-    (request as any).user = {
-      userId: resolvedUserId,
+    request.user = {
+      userId: payload.userId,
       email: user.email,
       name: user.name ?? "",
       role: membership.role,
     };
-    (request as any).householdId = user.activeHouseholdId;
+    request.householdId = user.activeHouseholdId;
+  } catch (error) {
+    if (error instanceof AuthenticationError) {
+      throw error;
+    }
+    throw new AuthenticationError("Invalid or expired token");
+  }
+}
+
+/**
+ * Lightweight auth middleware — verifies JWT + user existence only.
+ * Use for routes that don't require an active household (e.g. creating/listing households).
+ */
+export async function userOnlyAuth(request: FastifyRequest, _reply: FastifyReply) {
+  try {
+    const authHeader = request.headers.authorization;
+
+    if (!authHeader) {
+      throw new AuthenticationError("No authorization token provided");
+    }
+
+    const [bearer, token] = authHeader.split(" ");
+
+    if (bearer !== "Bearer" || !token) {
+      throw new AuthenticationError("Invalid authorization format. Use: Bearer <token>");
+    }
+
+    const payload = verifyAccessToken(token);
+
+    if (!payload.userId || typeof payload.userId !== "string") {
+      throw new AuthenticationError("Invalid token payload");
+    }
+
+    if (payload.jti && isTokenBlacklisted(payload.jti)) {
+      throw new AuthenticationError("Token has been revoked");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: { id: true, email: true, name: true },
+    });
+
+    if (!user) {
+      throw new AuthenticationError("User not found");
+    }
+
+    request.user = {
+      userId: payload.userId,
+      email: user.email,
+      name: user.name ?? "",
+      role: "",
+    };
   } catch (error) {
     if (error instanceof AuthenticationError) {
       throw error;
