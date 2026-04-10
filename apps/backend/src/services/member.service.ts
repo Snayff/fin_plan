@@ -1,5 +1,10 @@
 import { prisma } from "../config/database.js";
-import { AuthorizationError, NotFoundError, ValidationError } from "../utils/errors.js";
+import {
+  AuthorizationError,
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from "../utils/errors.js";
 import type { CreateMemberInput, UpdateMemberInput } from "@finplan/shared";
 
 async function assertCallerIsOwner(householdId: string, userId: string) {
@@ -16,16 +21,23 @@ export const memberService = {
   async createMember(householdId: string, callerUserId: string, data: CreateMemberInput) {
     await assertCallerIsOwner(householdId, callerUserId);
 
-    return prisma.member.create({
-      data: {
-        householdId,
-        userId: null,
-        name: data.name,
-        dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-        retirementYear: data.retirementYear ?? null,
-        role: "member",
-      },
-    });
+    try {
+      return await prisma.member.create({
+        data: {
+          householdId,
+          userId: null,
+          name: data.name,
+          dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+          retirementYear: data.retirementYear ?? null,
+          role: "member",
+        },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2002") {
+        throw new ConflictError("A member with that name already exists in this household");
+      }
+      throw err;
+    }
   },
 
   async listMembers(householdId: string) {
@@ -51,16 +63,23 @@ export const memberService = {
       throw new NotFoundError("Member not found");
     }
 
-    return prisma.member.update({
-      where: { id: memberId },
-      data: {
-        ...(data.name !== undefined ? { name: data.name } : {}),
-        ...(data.dateOfBirth !== undefined
-          ? { dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null }
-          : {}),
-        ...(data.retirementYear !== undefined ? { retirementYear: data.retirementYear } : {}),
-      },
-    });
+    try {
+      return await prisma.member.update({
+        where: { id: memberId },
+        data: {
+          ...(data.name !== undefined ? { name: data.name } : {}),
+          ...(data.dateOfBirth !== undefined
+            ? { dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null }
+            : {}),
+          ...(data.retirementYear !== undefined ? { retirementYear: data.retirementYear } : {}),
+        },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2002") {
+        throw new ConflictError("A member with that name already exists in this household");
+      }
+      throw err;
+    }
   },
 
   async deleteMember(

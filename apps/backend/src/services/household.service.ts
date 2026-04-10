@@ -137,14 +137,21 @@ export const householdService = {
     const household = await prisma.household.create({
       data: { name },
     });
-    await prisma.member.create({
-      data: {
-        householdId: household.id,
-        userId,
-        name: user?.name ?? "Owner",
-        role: "owner",
-      },
-    });
+    try {
+      await prisma.member.create({
+        data: {
+          householdId: household.id,
+          userId,
+          name: user?.name ?? "Owner",
+          role: "owner",
+        },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2002") {
+        throw new ConflictError("A member with that name already exists in this household");
+      }
+      throw err;
+    }
     await prisma.householdSettings.create({ data: { householdId: household.id } });
     await subcategoryService.seedDefaults(household.id);
     await prisma.user.update({
@@ -440,25 +447,39 @@ export const householdService = {
           name: `${newUser.name}'s Household`,
         },
       });
-      await tx.member.create({
-        data: {
-          householdId: personal.id,
-          userId: created.id,
-          name: newUser.name,
-          role: "owner",
-        },
-      });
+      try {
+        await tx.member.create({
+          data: {
+            householdId: personal.id,
+            userId: created.id,
+            name: newUser.name,
+            role: "owner",
+          },
+        });
+      } catch (err: any) {
+        if (err?.code === "P2002") {
+          throw new ConflictError("A member with that name already exists in this household");
+        }
+        throw err;
+      }
       await tx.householdSettings.create({ data: { householdId: personal.id } });
 
       // Join the invited household and set it as active
-      await tx.member.create({
-        data: {
-          householdId: invite.householdId,
-          userId: created.id,
-          name: newUser.name,
-          role: invite.intendedRole ?? "member",
-        },
-      });
+      try {
+        await tx.member.create({
+          data: {
+            householdId: invite.householdId,
+            userId: created.id,
+            name: newUser.name,
+            role: invite.intendedRole ?? "member",
+          },
+        });
+      } catch (err: any) {
+        if (err?.code === "P2002") {
+          throw new ConflictError("A member with that name already exists in this household");
+        }
+        throw err;
+      }
 
       const updated = await tx.user.update({
         where: { id: created.id },
@@ -515,24 +536,31 @@ export const householdService = {
     });
     if (existing) throw new ConflictError("You are already a member of this household");
 
-    await prisma.$transaction([
-      prisma.member.create({
-        data: {
-          householdId: invite.householdId,
-          userId: existingUserId,
-          name: user.name,
-          role: invite.intendedRole ?? "member",
-        },
-      }),
-      prisma.user.update({
-        where: { id: existingUserId },
-        data: { activeHouseholdId: invite.householdId },
-      }),
-      prisma.householdInvite.update({
-        where: { id: invite.id },
-        data: { usedAt: new Date() },
-      }),
-    ]);
+    try {
+      await prisma.$transaction([
+        prisma.member.create({
+          data: {
+            householdId: invite.householdId,
+            userId: existingUserId,
+            name: user.name,
+            role: invite.intendedRole ?? "member",
+          },
+        }),
+        prisma.user.update({
+          where: { id: existingUserId },
+          data: { activeHouseholdId: invite.householdId },
+        }),
+        prisma.householdInvite.update({
+          where: { id: invite.id },
+          data: { usedAt: new Date() },
+        }),
+      ]);
+    } catch (err: any) {
+      if (err?.code === "P2002") {
+        throw new ConflictError("A member with that name already exists in this household");
+      }
+      throw err;
+    }
 
     return invite.household;
   },
