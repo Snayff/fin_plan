@@ -3,6 +3,30 @@ import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
 import { buildMember } from "../test/fixtures";
 
 mock.module("../config/database", () => ({ prisma: prismaMock }));
+mock.module("./export.service", () => ({
+  exportService: {
+    exportHousehold: mock(() =>
+      Promise.resolve({
+        schemaVersion: 1,
+        exportedAt: "2026-01-01T00:00:00.000Z",
+        household: { name: "Backup" },
+        settings: {},
+        members: [],
+        subcategories: [],
+        incomeSources: [],
+        committedItems: [],
+        discretionaryItems: [],
+        itemAmountPeriods: [],
+        waterfallHistory: [],
+        assets: [],
+        accounts: [],
+        purchaseItems: [],
+        plannerYearBudgets: [],
+        giftPersons: [],
+      })
+    ),
+  },
+}));
 
 import { importService } from "./import.service";
 import { AuthorizationError, ValidationError } from "../utils/errors";
@@ -283,8 +307,18 @@ describe("importService.importHousehold", () => {
     );
     prismaMock.user.findUnique.mockResolvedValue({ name: "Bob" });
 
+    // Auto-backup mocks (exportService is already mocked at module level)
+    prismaMock.importBackup.create.mockResolvedValue({ id: "backup-1" });
+    prismaMock.importBackup.deleteMany.mockResolvedValue({ count: 0 });
+
     // household.update returns the updated household
     prismaMock.household.update.mockResolvedValue({
+      id: "household-1",
+      name: "Imported Household",
+    });
+
+    // Export service needs household.findUnique for backup
+    prismaMock.household.findUnique.mockResolvedValue({
       id: "household-1",
       name: "Imported Household",
     });
@@ -351,6 +385,7 @@ describe("importService.importHousehold", () => {
 
     expect(result.success).toBe(true);
     expect(result.householdId).toBe("household-1");
+    expect(result.backupId).toBe("backup-1");
 
     // Caller's Member record is preserved: non-caller members are deleted
     expect(prismaMock.member.deleteMany).toHaveBeenCalledWith({

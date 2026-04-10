@@ -41,6 +41,7 @@ model Household {
   auditLogs      AuditLog[]
   assets         Asset[]
   accounts       Account[]
+  importBackups  ImportBackup[]
 
   @@map("households")
 }
@@ -62,6 +63,7 @@ model Member {
   accounts       Account[]
 
   @@unique([householdId, userId])
+  @@unique([householdId, name])
   @@index([householdId])
   @@index([userId])
   @@map("members")
@@ -499,6 +501,20 @@ model Snapshot {
   createdAt   DateTime @default(now())
 
   @@unique([householdId, name])
+}
+
+model ImportBackup {
+  id          String    @id @default(cuid())
+  householdId String
+  data        Json
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@index([expiresAt])
+  @@map("import_backups")
 }
 
 // ─── Wizard Sessions ──────────────────────────────────────────────────────────

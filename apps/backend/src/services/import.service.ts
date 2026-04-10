@@ -1,5 +1,11 @@
 import { prisma } from "../config/database.js";
-import { AuthorizationError, ValidationError } from "../utils/errors.js";
+import {
+  AuthorizationError,
+  ConflictError,
+  NotFoundError,
+  ValidationError,
+} from "../utils/errors.js";
+import { exportService } from "./export.service.js";
 import {
   CURRENT_EXPORT_SCHEMA_VERSION,
   householdExportSchema,
@@ -57,6 +63,24 @@ export const importService = {
       }
     }
 
+    // Check for duplicate member names
+    if (
+      data &&
+      typeof data === "object" &&
+      "members" in data &&
+      Array.isArray((data as { members: unknown }).members)
+    ) {
+      const members = (data as { members: Array<{ name: string }> }).members;
+      const names = members.map((m) => m.name);
+      const duplicates = names.filter((name, idx) => names.indexOf(name) !== idx);
+      if (duplicates.length > 0) {
+        return {
+          valid: false,
+          errors: [`Duplicate member names in import data: ${[...new Set(duplicates)].join(", ")}`],
+        };
+      }
+    }
+
     const parsed = householdExportSchema.safeParse(data);
     if (!parsed.success) {
       return {
@@ -80,7 +104,7 @@ export const importService = {
     callerUserId: string,
     rawData: unknown,
     mode: ImportOptions["mode"]
-  ): Promise<{ success: boolean; householdId: string }> {
+  ): Promise<{ success: boolean; householdId: string; backupId?: string }> {
     // Validate first — version check included
     const validation = this.validateImportData(rawData);
     if (!validation.valid) {
@@ -90,10 +114,27 @@ export const importService = {
     }
     const data = householdExportSchema.parse(rawData);
 
+    let backup: { id: string } | undefined;
+
     // For overwrite mode, caller must be owner of the target household.
     // For create_new mode, caller is free to create a fresh household.
     if (mode === "overwrite") {
       await assertOwner(targetHouseholdId, callerUserId);
+
+      // Auto-backup current data before overwrite
+      const backupData = await exportService.exportHousehold(targetHouseholdId, callerUserId);
+      backup = await prisma.importBackup.create({
+        data: {
+          householdId: targetHouseholdId,
+          data: backupData as object,
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
+      });
+
+      // Clean up expired backups opportunistically
+      await prisma.importBackup.deleteMany({
+        where: { expiresAt: { lt: new Date() } },
+      });
     }
 
     // Get caller's name for the owner Member record
@@ -104,252 +145,289 @@ export const importService = {
     if (!callerUser) throw new ValidationError("Caller user not found");
     const callerName = callerUser.name;
 
-    const newHouseholdId = await prisma.$transaction(async (tx) => {
-      let householdId: string;
+    const newHouseholdId = await prisma.$transaction(
+      async (tx) => {
+        let householdId: string;
 
-      if (mode === "create_new") {
-        const household = await tx.household.create({ data: { name: data.household.name } });
-        householdId = household.id;
-        await tx.member.create({
-          data: {
-            householdId,
-            userId: callerUserId,
-            name: callerName,
-            role: "owner",
-          },
-        });
-      } else {
-        householdId = targetHouseholdId;
-        await tx.household.update({
-          where: { id: householdId },
-          data: { name: data.household.name },
-        });
+        if (mode === "create_new") {
+          const household = await tx.household.create({ data: { name: data.household.name } });
+          householdId = household.id;
+          try {
+            await tx.member.create({
+              data: {
+                householdId,
+                userId: callerUserId,
+                name: callerName,
+                role: "owner",
+              },
+            });
+          } catch (err: any) {
+            if (err?.code === "P2002") {
+              throw new ConflictError("A member with that name already exists in this household");
+            }
+            throw err;
+          }
+        } else {
+          householdId = targetHouseholdId;
+          await tx.household.update({
+            where: { id: householdId },
+            data: { name: data.household.name },
+          });
 
-        // Purge household-scoped history and session state first. These
-        // models don't reference waterfall items via FK, so order within
-        // this group is unimportant — but they must be deleted before we
-        // start wiping waterfall items so nothing is left dangling.
-        await tx.auditLog.deleteMany({ where: { householdId } });
-        await tx.snapshot.deleteMany({ where: { householdId } });
-        await tx.householdInvite.deleteMany({ where: { householdId } });
-        await tx.reviewSession.deleteMany({ where: { householdId } });
-        await tx.waterfallSetupSession.deleteMany({ where: { householdId } });
+          // Purge household-scoped history and session state first. These
+          // models don't reference waterfall items via FK, so order within
+          // this group is unimportant — but they must be deleted before we
+          // start wiping waterfall items so nothing is left dangling.
+          await tx.auditLog.deleteMany({ where: { householdId } });
+          await tx.snapshot.deleteMany({ where: { householdId } });
+          await tx.householdInvite.deleteMany({ where: { householdId } });
+          await tx.reviewSession.deleteMany({ where: { householdId } });
+          await tx.waterfallSetupSession.deleteMany({ where: { householdId } });
 
-        // Collect existing waterfall item ids so we can purge periods/history.
-        const [existingIncome, existingCommitted, existingDiscretionary] = await Promise.all([
-          tx.incomeSource.findMany({ where: { householdId }, select: { id: true } }),
-          tx.committedItem.findMany({ where: { householdId }, select: { id: true } }),
-          tx.discretionaryItem.findMany({ where: { householdId }, select: { id: true } }),
-        ]);
-        const allItemIds = [
-          ...existingIncome.map((i) => i.id),
-          ...existingCommitted.map((i) => i.id),
-          ...existingDiscretionary.map((i) => i.id),
-        ];
+          // Collect existing waterfall item ids so we can purge periods/history.
+          const [existingIncome, existingCommitted, existingDiscretionary] = await Promise.all([
+            tx.incomeSource.findMany({ where: { householdId }, select: { id: true } }),
+            tx.committedItem.findMany({ where: { householdId }, select: { id: true } }),
+            tx.discretionaryItem.findMany({ where: { householdId }, select: { id: true } }),
+          ]);
+          const allItemIds = [
+            ...existingIncome.map((i) => i.id),
+            ...existingCommitted.map((i) => i.id),
+            ...existingDiscretionary.map((i) => i.id),
+          ];
 
-        if (allItemIds.length > 0) {
-          await tx.itemAmountPeriod.deleteMany({ where: { itemId: { in: allItemIds } } });
-          await tx.waterfallHistory.deleteMany({ where: { itemId: { in: allItemIds } } });
-        }
+          if (allItemIds.length > 0) {
+            await tx.itemAmountPeriod.deleteMany({ where: { itemId: { in: allItemIds } } });
+            await tx.waterfallHistory.deleteMany({ where: { itemId: { in: allItemIds } } });
+          }
 
-        await tx.incomeSource.deleteMany({ where: { householdId } });
-        await tx.committedItem.deleteMany({ where: { householdId } });
-        await tx.discretionaryItem.deleteMany({ where: { householdId } });
+          await tx.incomeSource.deleteMany({ where: { householdId } });
+          await tx.committedItem.deleteMany({ where: { householdId } });
+          await tx.discretionaryItem.deleteMany({ where: { householdId } });
 
-        // Assets & accounts — balances cascade via onDelete: Cascade on FK
-        await tx.asset.deleteMany({ where: { householdId } });
-        await tx.account.deleteMany({ where: { householdId } });
+          // Assets & accounts — balances cascade via onDelete: Cascade on FK
+          await tx.asset.deleteMany({ where: { householdId } });
+          await tx.account.deleteMany({ where: { householdId } });
 
-        await tx.purchaseItem.deleteMany({ where: { householdId } });
-        await tx.plannerYearBudget.deleteMany({ where: { householdId } });
+          await tx.purchaseItem.deleteMany({ where: { householdId } });
+          await tx.plannerYearBudget.deleteMany({ where: { householdId } });
 
-        // Gift persons: purge year records + events first (no cascade in schema)
-        const existingPersons = await tx.giftPerson.findMany({
-          where: { householdId },
-          select: { id: true },
-        });
-        const personIds = existingPersons.map((p) => p.id);
-        if (personIds.length > 0) {
-          const existingEvents = await tx.giftEvent.findMany({
-            where: { giftPersonId: { in: personIds } },
+          // Gift persons: purge year records + events first (no cascade in schema)
+          const existingPersons = await tx.giftPerson.findMany({
+            where: { householdId },
             select: { id: true },
           });
-          const eventIds = existingEvents.map((e) => e.id);
-          if (eventIds.length > 0) {
-            await tx.giftYearRecord.deleteMany({ where: { giftEventId: { in: eventIds } } });
-            await tx.giftEvent.deleteMany({ where: { id: { in: eventIds } } });
+          const personIds = existingPersons.map((p) => p.id);
+          if (personIds.length > 0) {
+            const existingEvents = await tx.giftEvent.findMany({
+              where: { giftPersonId: { in: personIds } },
+              select: { id: true },
+            });
+            const eventIds = existingEvents.map((e) => e.id);
+            if (eventIds.length > 0) {
+              await tx.giftYearRecord.deleteMany({ where: { giftEventId: { in: eventIds } } });
+              await tx.giftEvent.deleteMany({ where: { id: { in: eventIds } } });
+            }
+            await tx.giftPerson.deleteMany({ where: { id: { in: personIds } } });
           }
-          await tx.giftPerson.deleteMany({ where: { id: { in: personIds } } });
-        }
 
-        // Subcategories are referenced by waterfall items (already deleted) — safe now
-        await tx.subcategory.deleteMany({ where: { householdId } });
+          // Subcategories are referenced by waterfall items (already deleted) — safe now
+          await tx.subcategory.deleteMany({ where: { householdId } });
 
-        // Remove settings so we can re-create cleanly via upsert below
-        // (HouseholdSettings has no cascade in the schema)
-        // Using deleteMany to avoid errors if the row is missing
-        await tx.householdSettings.deleteMany({ where: { householdId } });
+          // Remove settings so we can re-create cleanly via upsert below
+          // (HouseholdSettings has no cascade in the schema)
+          // Using deleteMany to avoid errors if the row is missing
+          await tx.householdSettings.deleteMany({ where: { householdId } });
 
-        // Delete all non-caller members; preserve caller's owner Member record
-        await tx.member.deleteMany({
-          where: { householdId, NOT: { userId: callerUserId } },
-        });
-      }
-
-      // === IMPORT MEMBERS ===
-      // Skip importing a member whose name matches the caller — they already
-      // exist as the owner Member record.
-      const membersToImport = data.members.filter((m) => m.name !== callerName);
-      for (const m of membersToImport) {
-        await tx.member.create({
-          data: {
-            householdId,
-            userId: null,
-            name: m.name,
-            // Demote duplicate owners so we only ever have one per household
-            role: m.role === "owner" ? "member" : m.role,
-            dateOfBirth: m.dateOfBirth ? new Date(m.dateOfBirth) : null,
-            retirementYear: m.retirementYear ?? null,
-          },
-        });
-      }
-
-      // Re-read all members to build a name lookup map. Asset/account owner
-      // references use Member.id — no need to filter to linked members.
-      const allMembers = await tx.member.findMany({ where: { householdId } });
-      const memberIdByName = new Map<string, string>();
-      for (const m of allMembers) {
-        memberIdByName.set(m.name, m.id);
-      }
-
-      // === IMPORT SETTINGS ===
-      await tx.householdSettings.upsert({
-        where: { householdId },
-        create: { householdId, ...sanitizeSettings(data.settings) },
-        update: sanitizeSettings(data.settings),
-      });
-
-      // === IMPORT SUBCATEGORIES ===
-      const subIdByTierAndName = new Map<string, string>();
-      for (const s of data.subcategories) {
-        const created = await tx.subcategory.create({
-          data: {
-            householdId,
-            tier: s.tier,
-            name: s.name,
-            sortOrder: s.sortOrder,
-            isLocked: s.isLocked,
-            isDefault: s.isDefault,
-          },
-        });
-        subIdByTierAndName.set(`${s.tier}:${s.name}`, created.id);
-      }
-
-      function lookupSub(tier: "income" | "committed" | "discretionary", name: string): string {
-        const id = subIdByTierAndName.get(`${tier}:${name}`);
-        if (!id) throw new ValidationError(`Unknown subcategory: ${tier}:${name}`);
-        return id;
-      }
-
-      // === IMPORT INCOME SOURCES ===
-      const incomeNameToId = new Map<string, string>();
-      for (const i of data.incomeSources) {
-        const created = await tx.incomeSource.create({
-          data: {
-            householdId,
-            subcategoryId: lookupSub("income", i.subcategoryName),
-            name: i.name,
-            frequency: i.frequency,
-            incomeType: i.incomeType,
-            expectedMonth: i.expectedMonth ?? null,
-            ownerId: i.ownerName ? (memberIdByName.get(i.ownerName) ?? null) : null,
-            sortOrder: i.sortOrder,
-            lastReviewedAt: new Date(i.lastReviewedAt),
-            notes: i.notes ?? null,
-          },
-        });
-        incomeNameToId.set(i.name, created.id);
-        for (const p of i.periods) {
-          await tx.itemAmountPeriod.create({
-            data: {
-              itemType: "income_source",
-              itemId: created.id,
-              startDate: new Date(p.startDate),
-              endDate: p.endDate ? new Date(p.endDate) : null,
-              amount: p.amount,
-            },
+          // Delete all non-caller members; preserve caller's owner Member record
+          await tx.member.deleteMany({
+            where: { householdId, NOT: { userId: callerUserId } },
           });
         }
-      }
 
-      // === IMPORT COMMITTED ITEMS ===
-      const committedNameToId = new Map<string, string>();
-      for (const i of data.committedItems) {
-        const created = await tx.committedItem.create({
-          data: {
-            householdId,
-            subcategoryId: lookupSub("committed", i.subcategoryName),
-            name: i.name,
-            spendType: i.spendType,
-            notes: i.notes ?? null,
-            ownerId: i.ownerName ? (memberIdByName.get(i.ownerName) ?? null) : null,
-            dueMonth: i.dueMonth ?? null,
-            sortOrder: i.sortOrder,
-            lastReviewedAt: new Date(i.lastReviewedAt),
-          },
+        // === IMPORT MEMBERS ===
+        // Skip importing a member whose name matches the caller — they already
+        // exist as the owner Member record.
+        const membersToImport = data.members.filter((m) => m.name !== callerName);
+        for (const m of membersToImport) {
+          try {
+            await tx.member.create({
+              data: {
+                householdId,
+                userId: null,
+                name: m.name,
+                // Demote duplicate owners so we only ever have one per household
+                role: m.role === "owner" ? "member" : m.role,
+                dateOfBirth: m.dateOfBirth ? new Date(m.dateOfBirth) : null,
+                retirementYear: m.retirementYear ?? null,
+              },
+            });
+          } catch (err: any) {
+            if (err?.code === "P2002") {
+              throw new ConflictError("A member with that name already exists in this household");
+            }
+            throw err;
+          }
+        }
+
+        // Re-read all members to build a name lookup map. Asset/account owner
+        // references use Member.id — no need to filter to linked members.
+        const allMembers = await tx.member.findMany({ where: { householdId } });
+        const memberIdByName = new Map<string, string>();
+        for (const m of allMembers) {
+          memberIdByName.set(m.name, m.id);
+        }
+
+        // === IMPORT SETTINGS ===
+        await tx.householdSettings.upsert({
+          where: { householdId },
+          create: { householdId, ...sanitizeSettings(data.settings) },
+          update: sanitizeSettings(data.settings),
         });
-        committedNameToId.set(i.name, created.id);
-        for (const p of i.periods) {
-          await tx.itemAmountPeriod.create({
+
+        // === IMPORT SUBCATEGORIES ===
+        const subIdByTierAndName = new Map<string, string>();
+        for (const s of data.subcategories) {
+          const created = await tx.subcategory.create({
             data: {
-              itemType: "committed_item",
-              itemId: created.id,
-              startDate: new Date(p.startDate),
-              endDate: p.endDate ? new Date(p.endDate) : null,
-              amount: p.amount,
+              householdId,
+              tier: s.tier,
+              name: s.name,
+              sortOrder: s.sortOrder,
+              isLocked: s.isLocked,
+              isDefault: s.isDefault,
             },
           });
+          subIdByTierAndName.set(`${s.tier}:${s.name}`, created.id);
         }
-      }
 
-      // === IMPORT DISCRETIONARY ITEMS ===
-      const discretionaryNameToId = new Map<string, string>();
-      for (const i of data.discretionaryItems) {
-        const created = await tx.discretionaryItem.create({
-          data: {
-            householdId,
-            subcategoryId: lookupSub("discretionary", i.subcategoryName),
-            name: i.name,
-            spendType: i.spendType,
-            notes: i.notes ?? null,
-            sortOrder: i.sortOrder,
-            lastReviewedAt: new Date(i.lastReviewedAt),
-          },
-        });
-        discretionaryNameToId.set(i.name, created.id);
-        for (const p of i.periods) {
-          await tx.itemAmountPeriod.create({
-            data: {
-              itemType: "discretionary_item",
-              itemId: created.id,
-              startDate: new Date(p.startDate),
-              endDate: p.endDate ? new Date(p.endDate) : null,
-              amount: p.amount,
-            },
-          });
+        function lookupSub(tier: "income" | "committed" | "discretionary", name: string): string {
+          const id = subIdByTierAndName.get(`${tier}:${name}`);
+          if (!id) throw new ValidationError(`Unknown subcategory: ${tier}:${name}`);
+          return id;
         }
-      }
 
-      // === WATERFALL HISTORY ===
-      for (const h of data.waterfallHistory) {
-        const itemMap =
-          h.itemType === "income_source"
-            ? incomeNameToId
-            : h.itemType === "committed_item"
-              ? committedNameToId
-              : discretionaryNameToId;
-        const itemId = itemMap.get(h.itemName);
-        if (itemId) {
+        // === IMPORT INCOME SOURCES ===
+        const incomeNameToId = new Map<string, string>();
+        for (const [idx, i] of data.incomeSources.entries()) {
+          try {
+            const created = await tx.incomeSource.create({
+              data: {
+                householdId,
+                subcategoryId: lookupSub("income", i.subcategoryName),
+                name: i.name,
+                frequency: i.frequency,
+                incomeType: i.incomeType,
+                expectedMonth: i.expectedMonth ?? null,
+                ownerId: i.ownerName ? (memberIdByName.get(i.ownerName) ?? null) : null,
+                sortOrder: i.sortOrder,
+                lastReviewedAt: new Date(i.lastReviewedAt),
+                notes: i.notes ?? null,
+              },
+            });
+            incomeNameToId.set(i.name, created.id);
+            for (const p of i.periods) {
+              await tx.itemAmountPeriod.create({
+                data: {
+                  itemType: "income_source",
+                  itemId: created.id,
+                  startDate: new Date(p.startDate),
+                  endDate: p.endDate ? new Date(p.endDate) : null,
+                  amount: p.amount,
+                },
+              });
+            }
+          } catch (err) {
+            throw new ValidationError(
+              `Failed to import income source '${i.name}' (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+
+        // === IMPORT COMMITTED ITEMS ===
+        const committedNameToId = new Map<string, string>();
+        for (const [idx, i] of data.committedItems.entries()) {
+          try {
+            const created = await tx.committedItem.create({
+              data: {
+                householdId,
+                subcategoryId: lookupSub("committed", i.subcategoryName),
+                name: i.name,
+                spendType: i.spendType,
+                notes: i.notes ?? null,
+                ownerId: i.ownerName ? (memberIdByName.get(i.ownerName) ?? null) : null,
+                dueMonth: i.dueMonth ?? null,
+                sortOrder: i.sortOrder,
+                lastReviewedAt: new Date(i.lastReviewedAt),
+              },
+            });
+            committedNameToId.set(i.name, created.id);
+            for (const p of i.periods) {
+              await tx.itemAmountPeriod.create({
+                data: {
+                  itemType: "committed_item",
+                  itemId: created.id,
+                  startDate: new Date(p.startDate),
+                  endDate: p.endDate ? new Date(p.endDate) : null,
+                  amount: p.amount,
+                },
+              });
+            }
+          } catch (err) {
+            throw new ValidationError(
+              `Failed to import committed item '${i.name}' (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+
+        // === IMPORT DISCRETIONARY ITEMS ===
+        const discretionaryNameToId = new Map<string, string>();
+        for (const [idx, i] of data.discretionaryItems.entries()) {
+          try {
+            const created = await tx.discretionaryItem.create({
+              data: {
+                householdId,
+                subcategoryId: lookupSub("discretionary", i.subcategoryName),
+                name: i.name,
+                spendType: i.spendType,
+                notes: i.notes ?? null,
+                sortOrder: i.sortOrder,
+                lastReviewedAt: new Date(i.lastReviewedAt),
+              },
+            });
+            discretionaryNameToId.set(i.name, created.id);
+            for (const p of i.periods) {
+              await tx.itemAmountPeriod.create({
+                data: {
+                  itemType: "discretionary_item",
+                  itemId: created.id,
+                  startDate: new Date(p.startDate),
+                  endDate: p.endDate ? new Date(p.endDate) : null,
+                  amount: p.amount,
+                },
+              });
+            }
+          } catch (err) {
+            throw new ValidationError(
+              `Failed to import discretionary item '${i.name}' (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+
+        // === WATERFALL HISTORY ===
+        for (const [idx, h] of data.waterfallHistory.entries()) {
+          const itemMap =
+            h.itemType === "income_source"
+              ? incomeNameToId
+              : h.itemType === "committed_item"
+                ? committedNameToId
+                : discretionaryNameToId;
+          const itemId = itemMap.get(h.itemName);
+          if (!itemId) {
+            throw new ValidationError(
+              `Failed to import waterfall history entry (index ${idx}): no matching item '${h.itemName}' of type '${h.itemType}'`
+            );
+          }
           await tx.waterfallHistory.create({
             data: {
               itemType: h.itemType,
@@ -359,128 +437,192 @@ export const importService = {
             },
           });
         }
-      }
 
-      // === ASSETS ===
-      for (const a of data.assets) {
-        const created = await tx.asset.create({
-          data: {
-            householdId,
-            name: a.name,
-            type: a.type,
-            memberId: a.ownerName ? (memberIdByName.get(a.ownerName) ?? null) : null,
-            growthRatePct: a.growthRatePct ?? null,
-            lastReviewedAt: a.lastReviewedAt ? new Date(a.lastReviewedAt) : null,
-          },
-        });
-        for (const b of a.balances) {
-          await tx.assetBalance.create({
-            data: {
-              assetId: created.id,
-              value: b.value,
-              date: new Date(b.date),
-              note: b.note ?? null,
-            },
-          });
-        }
-      }
-
-      // === ACCOUNTS ===
-      for (const a of data.accounts) {
-        const created = await tx.account.create({
-          data: {
-            householdId,
-            name: a.name,
-            type: a.type,
-            memberId: a.ownerName ? (memberIdByName.get(a.ownerName) ?? null) : null,
-            growthRatePct: a.growthRatePct ?? null,
-            monthlyContribution: a.monthlyContribution,
-            lastReviewedAt: a.lastReviewedAt ? new Date(a.lastReviewedAt) : null,
-          },
-        });
-        for (const b of a.balances) {
-          await tx.accountBalance.create({
-            data: {
-              accountId: created.id,
-              value: b.value,
-              date: new Date(b.date),
-              note: b.note ?? null,
-            },
-          });
-        }
-      }
-
-      // === PURCHASE ITEMS ===
-      for (const p of data.purchaseItems) {
-        await tx.purchaseItem.create({
-          data: {
-            householdId,
-            yearAdded: p.yearAdded,
-            name: p.name,
-            estimatedCost: p.estimatedCost,
-            priority: p.priority,
-            scheduledThisYear: p.scheduledThisYear,
-            fundingSources: p.fundingSources,
-            // Account IDs aren't portable across imports; leave unset
-            fundingAccountId: null,
-            status: p.status,
-            reason: p.reason ?? null,
-            comment: p.comment ?? null,
-          },
-        });
-      }
-
-      // === PLANNER YEAR BUDGETS ===
-      for (const b of data.plannerYearBudgets) {
-        await tx.plannerYearBudget.create({
-          data: {
-            householdId,
-            year: b.year,
-            purchaseBudget: b.purchaseBudget,
-            giftBudget: b.giftBudget,
-          },
-        });
-      }
-
-      // === GIFT PERSONS / EVENTS / YEAR RECORDS ===
-      for (const gp of data.giftPersons) {
-        const createdPerson = await tx.giftPerson.create({
-          data: {
-            householdId,
-            name: gp.name,
-            notes: gp.notes ?? null,
-            sortOrder: gp.sortOrder,
-          },
-        });
-        for (const e of gp.events) {
-          const createdEvent = await tx.giftEvent.create({
-            data: {
-              giftPersonId: createdPerson.id,
-              householdId,
-              eventType: e.eventType,
-              customName: e.customName ?? null,
-              dateMonth: e.dateMonth ?? null,
-              dateDay: e.dateDay ?? null,
-              specificDate: e.specificDate ? new Date(e.specificDate) : null,
-              recurrence: e.recurrence,
-            },
-          });
-          for (const yr of e.yearRecords) {
-            await tx.giftYearRecord.create({
+        // === ASSETS ===
+        for (const [idx, a] of data.assets.entries()) {
+          try {
+            const created = await tx.asset.create({
               data: {
-                giftEventId: createdEvent.id,
-                year: yr.year,
-                budget: yr.budget,
-                notes: yr.notes ?? null,
+                householdId,
+                name: a.name,
+                type: a.type,
+                memberId: a.ownerName ? (memberIdByName.get(a.ownerName) ?? null) : null,
+                growthRatePct: a.growthRatePct ?? null,
+                lastReviewedAt: a.lastReviewedAt ? new Date(a.lastReviewedAt) : null,
               },
             });
+            for (const b of a.balances) {
+              await tx.assetBalance.create({
+                data: {
+                  assetId: created.id,
+                  value: b.value,
+                  date: new Date(b.date),
+                  note: b.note ?? null,
+                },
+              });
+            }
+          } catch (err) {
+            throw new ValidationError(
+              `Failed to import asset '${a.name}' (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+            );
           }
         }
-      }
 
-      return householdId;
-    });
+        // === ACCOUNTS ===
+        for (const [idx, a] of data.accounts.entries()) {
+          try {
+            const created = await tx.account.create({
+              data: {
+                householdId,
+                name: a.name,
+                type: a.type,
+                memberId: a.ownerName ? (memberIdByName.get(a.ownerName) ?? null) : null,
+                growthRatePct: a.growthRatePct ?? null,
+                monthlyContribution: a.monthlyContribution,
+                lastReviewedAt: a.lastReviewedAt ? new Date(a.lastReviewedAt) : null,
+              },
+            });
+            for (const b of a.balances) {
+              await tx.accountBalance.create({
+                data: {
+                  accountId: created.id,
+                  value: b.value,
+                  date: new Date(b.date),
+                  note: b.note ?? null,
+                },
+              });
+            }
+          } catch (err) {
+            throw new ValidationError(
+              `Failed to import account '${a.name}' (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
 
-    return { success: true, householdId: newHouseholdId };
+        // === PURCHASE ITEMS ===
+        for (const [idx, p] of data.purchaseItems.entries()) {
+          try {
+            await tx.purchaseItem.create({
+              data: {
+                householdId,
+                yearAdded: p.yearAdded,
+                name: p.name,
+                estimatedCost: p.estimatedCost,
+                priority: p.priority,
+                scheduledThisYear: p.scheduledThisYear,
+                fundingSources: p.fundingSources,
+                // Account IDs aren't portable across imports; leave unset
+                fundingAccountId: null,
+                status: p.status,
+                reason: p.reason ?? null,
+                comment: p.comment ?? null,
+              },
+            });
+          } catch (err) {
+            throw new ValidationError(
+              `Failed to import purchase item '${p.name}' (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+
+        // === PLANNER YEAR BUDGETS ===
+        for (const [idx, b] of data.plannerYearBudgets.entries()) {
+          try {
+            await tx.plannerYearBudget.create({
+              data: {
+                householdId,
+                year: b.year,
+                purchaseBudget: b.purchaseBudget,
+                giftBudget: b.giftBudget,
+              },
+            });
+          } catch (err) {
+            throw new ValidationError(
+              `Failed to import planner year budget for year ${b.year} (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+
+        // === GIFT PERSONS / EVENTS / YEAR RECORDS ===
+        for (const [idx, gp] of data.giftPersons.entries()) {
+          try {
+            const createdPerson = await tx.giftPerson.create({
+              data: {
+                householdId,
+                name: gp.name,
+                notes: gp.notes ?? null,
+                sortOrder: gp.sortOrder,
+              },
+            });
+            for (const e of gp.events) {
+              const createdEvent = await tx.giftEvent.create({
+                data: {
+                  giftPersonId: createdPerson.id,
+                  householdId,
+                  eventType: e.eventType,
+                  customName: e.customName ?? null,
+                  dateMonth: e.dateMonth ?? null,
+                  dateDay: e.dateDay ?? null,
+                  specificDate: e.specificDate ? new Date(e.specificDate) : null,
+                  recurrence: e.recurrence,
+                },
+              });
+              for (const yr of e.yearRecords) {
+                await tx.giftYearRecord.create({
+                  data: {
+                    giftEventId: createdEvent.id,
+                    year: yr.year,
+                    budget: yr.budget,
+                    notes: yr.notes ?? null,
+                  },
+                });
+              }
+            }
+          } catch (err) {
+            throw new ValidationError(
+              `Failed to import gift person '${gp.name}' (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+            );
+          }
+        }
+
+        return householdId;
+      },
+      { timeout: 30_000 }
+    );
+
+    return {
+      success: true,
+      householdId: newHouseholdId,
+      backupId: mode === "overwrite" ? backup?.id : undefined,
+    };
+  },
+
+  async restoreFromBackup(
+    householdId: string,
+    callerUserId: string,
+    backupId: string
+  ): Promise<{ success: boolean; householdId: string }> {
+    await assertOwner(householdId, callerUserId);
+
+    const backupRecord = await prisma.importBackup.findUnique({ where: { id: backupId } });
+    if (!backupRecord || backupRecord.householdId !== householdId) {
+      throw new NotFoundError("Backup not found");
+    }
+    if (backupRecord.expiresAt < new Date()) {
+      throw new ValidationError("Backup has expired");
+    }
+
+    // Import the backup data as an overwrite (this will create its own backup of current state)
+    const result = await this.importHousehold(
+      householdId,
+      callerUserId,
+      backupRecord.data,
+      "overwrite"
+    );
+
+    // Delete the used backup
+    await prisma.importBackup.delete({ where: { id: backupId } });
+
+    return { success: true, householdId: result.householdId };
   },
 };

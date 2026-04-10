@@ -162,9 +162,11 @@ export {
 export {
   householdExportSchema,
   importOptionsSchema,
+  importResultSchema,
   CURRENT_EXPORT_SCHEMA_VERSION,
   type HouseholdExport,
   type ImportOptions,
+  type ImportResult,
 } from "./export-import.schemas";
 
 // Forecast schemas and types

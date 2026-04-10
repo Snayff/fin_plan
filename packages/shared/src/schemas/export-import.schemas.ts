@@ -211,7 +211,14 @@ export const importOptionsSchema = z.object({
   mode: z.enum(["overwrite", "create_new"]),
 });
 
+export const importResultSchema = z.object({
+  success: z.boolean(),
+  householdId: z.string(),
+  backupId: z.string().optional(),
+});
+
 export const CURRENT_EXPORT_SCHEMA_VERSION = CURRENT_SCHEMA_VERSION;
 
 export type HouseholdExport = z.infer<typeof householdExportSchema>;
 export type ImportOptions = z.infer<typeof importOptionsSchema>;
+export type ImportResult = z.infer<typeof importResultSchema>;
