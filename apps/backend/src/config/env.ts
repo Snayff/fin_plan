@@ -65,7 +65,22 @@ const envSchema = z.object({
   COOKIE_SECRET: z.string().min(32),
 
   // CSRF Protection
-  CSRF_SECRET: z.string().min(32).optional(),
+  CSRF_SECRET: z
+    .string()
+    .min(32)
+    .optional()
+    .refine(
+      (val) => {
+        if (process.env.NODE_ENV === "production") {
+          return val !== undefined && val.length >= 32;
+        }
+        return true;
+      },
+      {
+        message:
+          "CSRF_SECRET is required in production (min 32 chars). Generate with: openssl rand -base64 64",
+      }
+    ),
 
   // CORS
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
