@@ -8,11 +8,14 @@ export const createAssetSchema = z.object({
   name: z.string().min(1).max(100).trim(),
   type: assetTypeSchema,
   memberUserId: z.string().nullable().optional(),
+  growthRatePct: z.number().min(-100).max(100).nullable().optional(),
+  initialValue: z.number().positive().optional(),
 });
 
 export const updateAssetSchema = z.object({
   name: z.string().min(1).max(100).trim().optional(),
   memberUserId: z.string().nullable().optional(),
+  growthRatePct: z.number().min(-100).max(100).nullable().optional(),
 });
 
 export const recordAssetBalanceSchema = z.object({
