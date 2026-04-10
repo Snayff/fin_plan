@@ -1,4 +1,4 @@
-import type { FastifyInstance, FastifyRequest } from "fastify";
+import type { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { exportService } from "../services/export.service.js";
 import { importService } from "../services/import.service.js";
@@ -13,11 +13,7 @@ export async function exportImportRoutes(fastify: FastifyInstance) {
     {
       preHandler: [authMiddleware],
       config: {
-        rateLimit: {
-          max: 10,
-          timeWindow: "1 hour",
-          keyGenerator: (req: FastifyRequest) => `export_${req.user!.userId}`,
-        },
+        rateLimit: { max: 10, timeWindow: "1 hour" },
       },
     },
     async (request, reply) => {
@@ -37,11 +33,7 @@ export async function exportImportRoutes(fastify: FastifyInstance) {
       preHandler: [authMiddleware],
       bodyLimit: FIVE_MB,
       config: {
-        rateLimit: {
-          max: 10,
-          timeWindow: "1 hour",
-          keyGenerator: (req: FastifyRequest) => `import_${req.user!.userId}`,
-        },
+        rateLimit: { max: 10, timeWindow: "1 hour" },
       },
     },
     async (request, reply) => {
@@ -60,11 +52,7 @@ export async function exportImportRoutes(fastify: FastifyInstance) {
       preHandler: [authMiddleware],
       bodyLimit: FIVE_MB,
       config: {
-        rateLimit: {
-          max: 30,
-          timeWindow: "1 hour",
-          keyGenerator: (req: FastifyRequest) => `validate_import_${req.user!.userId}`,
-        },
+        rateLimit: { max: 30, timeWindow: "1 hour" },
       },
     },
     async (request, reply) => {
