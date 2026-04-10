@@ -237,6 +237,8 @@ model IncomeSource {
   updatedAt      DateTime        @updatedAt
   notes          String?
   subcategory    Subcategory     @relation(fields: [subcategoryId], references: [id])
+
+  @@index([householdId])
 }
 
 model CommittedItem {
@@ -253,6 +255,8 @@ model CommittedItem {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
+
+  @@index([householdId])
 }
 
 model DiscretionaryItem {
@@ -267,6 +271,8 @@ model DiscretionaryItem {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
+
+  @@index([householdId])
 }
 
 enum WaterfallItemType {
@@ -407,6 +413,8 @@ model PurchaseItem {
   addedAt           DateTime         @default(now())
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+
+  @@index([householdId])
 }
 
 model PlannerYearBudget {
@@ -445,6 +453,8 @@ model GiftPerson {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   events      GiftEvent[]
+
+  @@index([householdId])
 }
 
 model GiftEvent {
@@ -461,6 +471,8 @@ model GiftEvent {
   updatedAt    DateTime        @updatedAt
   giftPerson   GiftPerson      @relation(fields: [giftPersonId], references: [id])
   yearRecords  GiftYearRecord[]
+
+  @@index([householdId])
 }
 
 model GiftYearRecord {
