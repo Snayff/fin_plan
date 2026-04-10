@@ -116,6 +116,7 @@ export default function SettingsPage() {
           <PanelError variant="right" onRetry={refetch} message="Could not load settings" />
         ) : (
           <div className="max-w-2xl space-y-12">
+            <p className="text-xs text-muted-foreground">finplan v{__APP_VERSION__}</p>
             <div ref={setRef("profile")} data-section-id="profile">
               <ProfileSection />
             </div>

@@ -1,9 +1,13 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import path from "path";
+import pkg from "../../package.json";
 
 export default defineConfig({
   plugins: [react()],
+  define: {
+    __APP_VERSION__: JSON.stringify(pkg.version),
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
@@ -12,9 +16,9 @@ export default defineConfig({
   },
   server: {
     port: 3000,
-    host: '0.0.0.0', // Listen on all interfaces for Docker
+    host: "0.0.0.0", // Listen on all interfaces for Docker
     hmr: {
-      host: 'localhost',
+      host: "localhost",
       clientPort: 3000,
     },
     proxy: {
