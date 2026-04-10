@@ -147,6 +147,10 @@ export const householdService = {
     });
     await prisma.householdSettings.create({ data: { householdId: household.id } });
     await subcategoryService.seedDefaults(household.id);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { activeHouseholdId: household.id },
+    });
     return household;
   },
 
