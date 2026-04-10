@@ -79,7 +79,7 @@ export const authService = {
     });
 
     if (existingUser) {
-      throw new ConflictError("User with this email already exists");
+      throw new ConflictError("Registration could not be completed. Please try again or log in.");
     }
 
     // Hash password

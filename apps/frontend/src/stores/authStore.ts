@@ -81,7 +81,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const apiError = error as ApiError;
         // 400 MISSING_REFRESH_TOKEN is expected when no session exists — treat silently
         if (apiError.statusCode !== 400) {
-          console.warn("[auth] Unexpected error during token refresh:", error);
+          if (import.meta.env.DEV)
+            console.warn("[auth] Unexpected error during token refresh:", error);
         }
         get().setUnauthenticated();
       } finally {
@@ -142,7 +143,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         await authService.logout(accessToken);
       } catch (error) {
-        console.error("Logout error:", error);
+        if (import.meta.env.DEV) console.error("Logout error:", error);
       }
     }
 
