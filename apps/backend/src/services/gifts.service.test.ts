@@ -209,3 +209,62 @@ describe("giftsService.seedLockedEventsIfMissing", () => {
     });
   });
 });
+
+describe("giftsService.upsertAllocation status transitions", () => {
+  beforeEach(() => {
+    prismaMock.giftPerson.findUnique.mockResolvedValue({ id: "p1", householdId: "hh-1" } as any);
+    prismaMock.giftEvent.findUnique.mockResolvedValue({ id: "e1", householdId: "hh-1" } as any);
+  });
+
+  it("rejects when year is in the past", async () => {
+    const lastYear = new Date().getFullYear() - 1;
+    await expect(
+      giftsService.upsertAllocation("hh-1", "p1", "e1", lastYear, { planned: 10 })
+    ).rejects.toMatchObject({ name: "ValidationError" });
+  });
+
+  it("setting spent to a number flips status to bought", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftAllocation.upsert.mockResolvedValue({} as any);
+    await giftsService.upsertAllocation("hh-1", "p1", "e1", year, { spent: 25 });
+    const args = (prismaMock.giftAllocation.upsert.mock.calls[0] as any)[0];
+    expect(args.create.status).toBe("bought");
+    expect(args.update.status).toBe("bought");
+  });
+
+  it("spent of 0 still flips status to bought", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftAllocation.upsert.mockResolvedValue({} as any);
+    await giftsService.upsertAllocation("hh-1", "p1", "e1", year, { spent: 0 });
+    const args = (prismaMock.giftAllocation.upsert.mock.calls[0] as any)[0];
+    expect(args.update.status).toBe("bought");
+  });
+
+  it("clearing spent (null) reverts to planned", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftAllocation.upsert.mockResolvedValue({} as any);
+    await giftsService.upsertAllocation("hh-1", "p1", "e1", year, { spent: null });
+    const args = (prismaMock.giftAllocation.upsert.mock.calls[0] as any)[0];
+    expect(args.update.status).toBe("planned");
+    expect(args.update.spent).toBe(null);
+  });
+
+  it("explicit status: skipped is honoured even when spent provided", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftAllocation.upsert.mockResolvedValue({} as any);
+    await giftsService.upsertAllocation("hh-1", "p1", "e1", year, {
+      spent: null,
+      status: "skipped",
+    });
+    const args = (prismaMock.giftAllocation.upsert.mock.calls[0] as any)[0];
+    expect(args.update.status).toBe("skipped");
+  });
+
+  it("rejects person from another household", async () => {
+    prismaMock.giftPerson.findUnique.mockResolvedValue({ id: "p1", householdId: "other" } as any);
+    const year = new Date().getFullYear();
+    await expect(
+      giftsService.upsertAllocation("hh-1", "p1", "e1", year, { planned: 10 })
+    ).rejects.toMatchObject({ name: "NotFoundError" });
+  });
+});

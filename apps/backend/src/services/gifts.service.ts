@@ -5,6 +5,7 @@ import type {
   UpdateGiftPersonInput,
   CreateGiftEventInput,
   UpdateGiftEventInput,
+  UpsertGiftAllocationInput,
 } from "@finplan/shared";
 
 function assertOwned(item: { householdId: string } | null, householdId: string, label: string) {
@@ -160,6 +161,66 @@ export const giftsService = {
     await prisma.giftEvent.createMany({
       data: seeds.map((s) => ({ ...s, householdId, isLocked: true })),
       skipDuplicates: true,
+    });
+  },
+
+  // ─── Allocations ────────────────────────────────────────────────────────────
+  _resolveStatus(input: UpsertGiftAllocationInput): "planned" | "bought" | "skipped" | undefined {
+    if (input.status === "skipped") return "skipped";
+    if (input.spent === null) return "planned";
+    if (input.spent !== undefined) return "bought";
+    return input.status;
+  },
+
+  _assertCurrentYear(year: number) {
+    if (year < new Date().getFullYear()) {
+      throw new ValidationError("Prior years are read-only");
+    }
+  },
+
+  async upsertAllocation(
+    householdId: string,
+    personId: string,
+    eventId: string,
+    year: number,
+    input: UpsertGiftAllocationInput
+  ) {
+    this._assertCurrentYear(year);
+    const person = await prisma.giftPerson.findUnique({ where: { id: personId } });
+    assertOwned(person, householdId, "Gift person");
+    const event = await prisma.giftEvent.findUnique({ where: { id: eventId } });
+    assertOwned(event, householdId, "Gift event");
+
+    const status = this._resolveStatus(input);
+    const writable: Record<string, unknown> = {};
+    if (input.planned !== undefined) writable.planned = input.planned;
+    if (input.spent !== undefined) writable.spent = input.spent;
+    if (input.notes !== undefined) writable.notes = input.notes;
+    if (input.dateMonth !== undefined) writable.dateMonth = input.dateMonth;
+    if (input.dateDay !== undefined) writable.dateDay = input.dateDay;
+    if (status !== undefined) writable.status = status;
+
+    return prisma.giftAllocation.upsert({
+      where: {
+        giftPersonId_giftEventId_year: {
+          giftPersonId: personId,
+          giftEventId: eventId,
+          year,
+        },
+      },
+      create: {
+        householdId,
+        giftPersonId: personId,
+        giftEventId: eventId,
+        year,
+        planned: input.planned ?? 0,
+        spent: input.spent ?? null,
+        status: status ?? "planned",
+        notes: input.notes ?? null,
+        dateMonth: input.dateMonth ?? null,
+        dateDay: input.dateDay ?? null,
+      },
+      update: writable,
     });
   },
 };
