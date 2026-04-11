@@ -47,12 +47,19 @@ export function buildHousehold(overrides: Record<string, any> = {}) {
   };
 }
 
-export function buildHouseholdMember(overrides: Record<string, any> = {}) {
+export function buildMember(overrides: Record<string, any> = {}) {
+  const id = nextId();
   return {
+    id,
     householdId: "household-1",
     userId: "user-1",
+    name: "Test User",
     role: "owner" as const,
+    dateOfBirth: null,
+    retirementYear: null,
     joinedAt: new Date("2025-01-01T00:00:00Z"),
+    createdAt: new Date("2025-01-01T00:00:00Z"),
+    updatedAt: new Date("2025-01-01T00:00:00Z"),
     ...overrides,
   };
 }

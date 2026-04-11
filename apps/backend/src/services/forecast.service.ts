@@ -99,7 +99,7 @@ export const forecastService = {
       prisma.account.findMany({ where: { householdId }, include: balanceInclude }),
       prisma.asset.findMany({ where: { householdId }, include: balanceInclude }),
       prisma.householdSettings.findUnique({ where: { householdId } }),
-      prisma.householdMember.findMany({
+      prisma.member.findMany({
         where: { householdId },
         include: { user: { select: { id: true, name: true } } },
       }),
@@ -160,7 +160,7 @@ export const forecastService = {
 
     const retirement = members.map((member) => {
       const pensionAccounts = accounts
-        .filter((a) => a.type === "Pension" && a.memberUserId === member.userId)
+        .filter((a) => a.type === "Pension" && a.memberId === member.id)
         .map(toProjectableAccount);
       const pensionSums = sumAccountSeries(pensionAccounts, settings, horizonYears);
 
@@ -172,8 +172,8 @@ export const forecastService = {
       }));
 
       return {
-        memberId: member.userId,
-        memberName: member.user.name,
+        memberId: member.id,
+        memberName: member.user?.name ?? member.name,
         retirementYear: member.retirementYear ?? null,
         series,
       };

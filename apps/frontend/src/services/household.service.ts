@@ -7,16 +7,20 @@ export interface Household {
   updatedAt: string;
 }
 
-export interface HouseholdMember {
-  userId: string;
+export interface Member {
+  id: string;
   householdId: string;
+  userId: string | null;
+  name: string;
   role: "owner" | "admin" | "member";
+  dateOfBirth: string | null;
+  retirementYear: number | null;
   joinedAt: string;
   user: {
     id: string;
     name: string;
     email: string;
-  };
+  } | null;
 }
 
 export interface HouseholdInvite {
@@ -32,17 +36,19 @@ export interface CreateInviteResponse {
 }
 
 export interface HouseholdDetails extends Household {
-  members: HouseholdMember[];
+  memberProfiles: Member[];
   invites: HouseholdInvite[];
 }
 
 export interface Membership {
+  id: string;
   householdId: string;
-  userId: string;
+  userId: string | null;
+  name: string;
   role: "owner" | "admin" | "member";
   joinedAt: string;
   household: Household & {
-    _count: { members: number };
+    _count: { memberProfiles: number };
   };
 }
 
@@ -123,5 +129,62 @@ export const householdService = {
 
   async joinViaInvite(token: string): Promise<{ household: Household }> {
     return apiClient.post<{ household: Household }>(`/api/auth/invite/${token}/join`);
+  },
+
+  async listMembers(householdId: string): Promise<{ members: Member[] }> {
+    return apiClient.get<{ members: Member[] }>(`/api/households/${householdId}/member-profiles`);
+  },
+
+  async createMember(
+    householdId: string,
+    data: { name: string; dateOfBirth?: string | null; retirementYear?: number | null }
+  ): Promise<{ member: Member }> {
+    return apiClient.post<{ member: Member }>(
+      `/api/households/${householdId}/member-profiles`,
+      data
+    );
+  },
+
+  async updateMember(
+    householdId: string,
+    memberId: string,
+    data: { name?: string; dateOfBirth?: string | null; retirementYear?: number | null }
+  ): Promise<{ member: Member }> {
+    return apiClient.patch<{ member: Member }>(
+      `/api/households/${householdId}/member-profiles/${memberId}`,
+      data
+    );
+  },
+
+  async deleteMember(
+    householdId: string,
+    memberId: string,
+    reassignToMemberId?: string
+  ): Promise<{ success: boolean }> {
+    return apiClient.delete<{ success: boolean }>(
+      `/api/households/${householdId}/member-profiles/${memberId}`,
+      reassignToMemberId ? { reassignToMemberId } : undefined
+    );
+  },
+
+  async exportHousehold(): Promise<unknown> {
+    return apiClient.get<unknown>("/api/households/export");
+  },
+
+  async validateImport(data: unknown): Promise<{ valid: boolean; errors?: string[] }> {
+    return apiClient.post<{ valid: boolean; errors?: string[] }>(
+      "/api/households/validate-import",
+      data
+    );
+  },
+
+  async importHousehold(
+    data: unknown,
+    mode: "overwrite" | "create_new"
+  ): Promise<{ success: boolean; householdId: string; backupId?: string }> {
+    return apiClient.post<{ success: boolean; householdId: string; backupId?: string }>(
+      `/api/households/import?mode=${mode}`,
+      data
+    );
   },
 };

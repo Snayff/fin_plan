@@ -23,7 +23,7 @@ export const prismaMock = {
   refreshToken: buildModelMock(),
   user: buildModelMock(),
   household: buildModelMock(),
-  householdMember: buildModelMock(),
+  member: buildModelMock(),
   householdInvite: buildModelMock(),
   householdSettings: buildModelMock(),
   device: buildModelMock(),
@@ -45,6 +45,7 @@ export const prismaMock = {
   snapshot: buildModelMock(),
   reviewSession: buildModelMock(),
   waterfallSetupSession: buildModelMock(),
+  importBackup: buildModelMock(),
   // Interactive transaction support: passes self so tx.model.method() resolves to same mocks
   $transaction: mock((fn: (tx: any) => any) => fn(prismaMock)),
   $queryRaw: mock(() => {}),

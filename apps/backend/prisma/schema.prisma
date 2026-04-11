@@ -20,7 +20,7 @@ model User {
   twoFactorSecret      String?           @map("two_factor_secret")
   activeHouseholdId    String?           @map("active_household_id")
   activeHousehold      Household?        @relation("UserActiveHousehold", fields: [activeHouseholdId], references: [id])
-  householdMemberships HouseholdMember[]
+  memberProfiles       Member[]          @relation("MemberUser")
   createdInvites       HouseholdInvite[]
   devices              Device[]
   refreshTokens        RefreshToken[]
@@ -35,29 +35,38 @@ model Household {
   name           String
   createdAt      DateTime          @default(now()) @map("created_at")
   updatedAt      DateTime          @updatedAt @map("updated_at")
-  members        HouseholdMember[]
+  memberProfiles Member[]
   invites        HouseholdInvite[]
   activeForUsers User[]            @relation("UserActiveHousehold")
   auditLogs      AuditLog[]
   assets         Asset[]
   accounts       Account[]
+  importBackups  ImportBackup[]
 
   @@map("households")
 }
 
-model HouseholdMember {
+model Member {
+  id             String        @id @default(cuid())
   householdId    String        @map("household_id")
-  userId         String        @map("user_id")
+  userId         String?       @map("user_id")
+  name           String
   role           HouseholdRole @default(member)
+  dateOfBirth    DateTime?     @map("date_of_birth")
+  retirementYear Int?          @map("retirement_year")
   joinedAt       DateTime      @default(now()) @map("joined_at")
-  dateOfBirth    DateTime?
-  retirementYear Int?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
   household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User?         @relation("MemberUser", fields: [userId], references: [id], onDelete: SetNull)
+  assets         Asset[]
+  accounts       Account[]
 
-  @@id([householdId, userId])
+  @@unique([householdId, userId])
+  @@unique([householdId, name])
+  @@index([householdId])
   @@index([userId])
-  @@map("household_members")
+  @@map("members")
 }
 
 model HouseholdInvite {
@@ -230,6 +239,8 @@ model IncomeSource {
   updatedAt      DateTime        @updatedAt
   notes          String?
   subcategory    Subcategory     @relation(fields: [subcategoryId], references: [id])
+
+  @@index([householdId])
 }
 
 model CommittedItem {
@@ -246,6 +257,8 @@ model CommittedItem {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
+
+  @@index([householdId])
 }
 
 model DiscretionaryItem {
@@ -260,6 +273,8 @@ model DiscretionaryItem {
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
+
+  @@index([householdId])
 }
 
 enum WaterfallItemType {
@@ -298,7 +313,7 @@ model ItemAmountPeriod {
 model Asset {
   id             String         @id @default(cuid())
   householdId    String
-  memberUserId   String?
+  memberId       String?
   name           String
   type           AssetType
   growthRatePct  Float?
@@ -306,9 +321,11 @@ model Asset {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   household      Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member         Member?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
   balances       AssetBalance[]
 
   @@index([householdId])
+  @@index([memberId])
 }
 
 model AssetBalance {
@@ -326,7 +343,7 @@ model AssetBalance {
 model Account {
   id                  String           @id @default(cuid())
   householdId         String
-  memberUserId        String?
+  memberId            String?
   name                String
   type                AccountType
   growthRatePct       Float?
@@ -335,9 +352,11 @@ model Account {
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   household           Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member              Member?          @relation(fields: [memberId], references: [id], onDelete: SetNull)
   balances            AccountBalance[]
 
   @@index([householdId])
+  @@index([memberId])
 }
 
 model AccountBalance {
@@ -396,6 +415,8 @@ model PurchaseItem {
   addedAt           DateTime         @default(now())
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+
+  @@index([householdId])
 }
 
 model PlannerYearBudget {
@@ -434,6 +455,8 @@ model GiftPerson {
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   events      GiftEvent[]
+
+  @@index([householdId])
 }
 
 model GiftEvent {
@@ -450,6 +473,8 @@ model GiftEvent {
   updatedAt    DateTime        @updatedAt
   giftPerson   GiftPerson      @relation(fields: [giftPersonId], references: [id])
   yearRecords  GiftYearRecord[]
+
+  @@index([householdId])
 }
 
 model GiftYearRecord {
@@ -476,6 +501,20 @@ model Snapshot {
   createdAt   DateTime @default(now())
 
   @@unique([householdId, name])
+}
+
+model ImportBackup {
+  id          String    @id @default(cuid())
+  householdId String
+  data        Json
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@index([expiresAt])
+  @@map("import_backups")
 }
 
 // ─── Wizard Sessions ──────────────────────────────────────────────────────────

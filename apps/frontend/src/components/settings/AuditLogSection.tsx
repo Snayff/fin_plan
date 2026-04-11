@@ -28,7 +28,7 @@ export function AuditLogSection() {
   const [filters, setFilters] = useState<Filters>({});
 
   const { data: householdData } = useHouseholdDetails(householdId);
-  const members = householdData?.household?.members ?? [];
+  const members = householdData?.household?.memberProfiles ?? [];
 
   const queryFilters = {
     actorId: filters.actorId,

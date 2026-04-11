@@ -1,4 +1,4 @@
-# FinPlan — Claude Code Context
+# finplan — Claude Code Context
 
 Household financial planning SaaS built around a **Waterfall** model: income → committed spend → discretionary spend → surplus. Multi-member household support, goals, forecasting, and asset/liability tracking.
 
@@ -63,6 +63,18 @@ docs/
 
 ---
 
+## Security Conventions
+
+- **Auth middleware required:** Every new route must use `authMiddleware` in `preHandler` unless explicitly public
+- **householdId from middleware only:** Never accept householdId from URL params for data scoping — always use `req.householdId!`
+- **Throw, don't inline errors:** Use error class hierarchy (`NotFoundError`, `AuthenticationError`, etc.), never `reply.status().send()` for errors
+- **Audit all mutations:** Wrap every create/update/delete in `audited()` with `actorCtx(req)`
+- **No `any` in security paths:** Auth middleware, token handling, and API client must be fully typed
+- **Generic auth messages:** Login/register errors must never reveal whether an account exists
+- **Error masking:** Use `NotFoundError` for both "not found" and "not owned" — never reveal resource existence to unauthorised callers
+
+---
+
 ## Testing
 
 Backend uses a **custom isolated per-file test runner** — do not use bare `bun test` for the backend:
@@ -106,7 +118,7 @@ GitHub Actions (`.github/workflows/ci.yml`): lint + type-check → test (real po
 
 ### Users
 
-Household financial planners — typically one person managing finances for a couple or family. They come to FinPlan during calm, intentional moments (weekend planning sessions, monthly reviews) to understand where money flows and make forward-looking decisions. The job: see the full picture of income → committed spend → discretionary spend → surplus, and feel confident the plan holds together. UK-based, GBP only.
+Household financial planners — typically one person managing finances for a couple or family. They come to finplan during calm, intentional moments (weekend planning sessions, monthly reviews) to understand where money flows and make forward-looking decisions. The job: see the full picture of income → committed spend → discretionary spend → surplus, and feel confident the plan holds together. UK-based, GBP only.
 
 ### Brand Personality
 

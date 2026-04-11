@@ -29,11 +29,13 @@ mock.module("@/hooks/useSettings", () => ({
     data: {
       household: {
         name: "Test Household",
-        members: [
+        memberProfiles: [
           {
+            id: "member-1",
             userId: "user-1",
+            name: "Owner",
             role: "owner",
-            user: { name: "Owner", email: "owner@example.com" },
+            user: { id: "user-1", name: "Owner", email: "owner@example.com" },
           },
         ],
         invites: [],
@@ -46,6 +48,9 @@ mock.module("@/hooks/useSettings", () => ({
   useRemoveMember: () => ({ mutate: mock(() => {}), isPending: false }),
   useLeaveHousehold: () => ({ mutate: mock(() => {}), isPending: false }),
   useUpdateMemberRole: () => ({ mutate: mock(() => {}), isPending: false }),
+  useCreateMember: () => ({ mutate: mock(() => {}), isPending: false }),
+  useUpdateMember: () => ({ mutate: mock(() => {}), isPending: false }),
+  useDeleteMember: () => ({ mutate: mock(() => {}), isPending: false }),
 }));
 
 describe("HouseholdSection", () => {

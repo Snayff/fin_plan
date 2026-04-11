@@ -15,7 +15,7 @@ export interface AssetItem {
   name: string;
   type: AssetType;
   householdId: string;
-  memberUserId: string | null;
+  memberId: string | null;
   growthRatePct: number | null;
   lastReviewedAt: string | null;
   createdAt: string;
@@ -36,7 +36,7 @@ export interface AccountItem {
   name: string;
   type: AccountType;
   householdId: string;
-  memberUserId: string | null;
+  memberId: string | null;
   growthRatePct: number | null;
   lastReviewedAt: string | null;
   createdAt: string;

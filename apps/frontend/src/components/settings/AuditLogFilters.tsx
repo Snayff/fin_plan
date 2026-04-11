@@ -6,7 +6,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ResourceSlugEnum } from "@finplan/shared";
-import type { HouseholdMember } from "@/services/household.service";
+import type { Member } from "@/services/household.service";
 
 type Filters = {
   actorId?: string;
@@ -16,7 +16,7 @@ type Filters = {
 
 type Props = {
   filters: Filters;
-  members: HouseholdMember[];
+  members: Member[];
   onChange: (filters: Filters) => void;
 };
 
@@ -50,11 +50,13 @@ export function AuditLogFilters({ filters, members, onChange }: Props) {
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All members</SelectItem>
-          {members.map((m) => (
-            <SelectItem key={m.userId} value={m.userId}>
-              {m.user.name}
-            </SelectItem>
-          ))}
+          {members
+            .filter((m): m is Member & { userId: string } => m.userId !== null)
+            .map((m) => (
+              <SelectItem key={m.id} value={m.userId}>
+                {m.user?.name ?? m.name}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
 

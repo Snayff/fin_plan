@@ -16,7 +16,7 @@ mock.module("../config/database", () => ({
 import { authMiddleware } from "./auth.middleware";
 import { verifyAccessToken } from "../utils/jwt";
 import { AuthenticationError } from "../utils/errors";
-import { buildUser } from "../test/fixtures";
+import { buildUser, buildMember } from "../test/fixtures";
 
 beforeEach(() => {
   resetPrismaMocks();
@@ -38,7 +38,7 @@ describe("authMiddleware", () => {
     prismaMock.user.findUnique.mockResolvedValue(
       buildUser({ id: "user-1", email: "test@test.com", activeHouseholdId: "household-1" } as any)
     );
-    prismaMock.householdMember.findUnique.mockResolvedValue({ role: "owner" });
+    prismaMock.member.findFirst.mockResolvedValue(buildMember({ role: "owner" }));
 
     const request = buildMockRequest("Bearer valid-token");
     await authMiddleware(request, mockReply);
@@ -104,7 +104,7 @@ describe("authMiddleware", () => {
       name: "Alice",
       activeHouseholdId: "hh_1",
     } as any);
-    prismaMock.householdMember.findUnique.mockResolvedValue({ role: "member" });
+    prismaMock.member.findFirst.mockResolvedValue(buildMember({ role: "member" }));
 
     const request = buildMockRequest("Bearer valid_token");
     await authMiddleware(request, mockReply);
@@ -119,10 +119,8 @@ describe("authMiddleware", () => {
     prismaMock.user.findUnique.mockResolvedValue(
       buildUser({ id: "user-1", email: "test@test.com", activeHouseholdId: "household-1" } as any)
     );
-    // Membership no longer exists
-    prismaMock.householdMember.findUnique.mockResolvedValue(null);
-    // No other memberships to fall back to
-    prismaMock.householdMember.findFirst.mockResolvedValue(null);
+    // Membership no longer exists; fallback also returns null
+    prismaMock.member.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
     prismaMock.user.update.mockResolvedValue({});
 
     const request = buildMockRequest("Bearer valid-token");

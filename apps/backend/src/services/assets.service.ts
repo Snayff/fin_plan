@@ -46,11 +46,12 @@ async function assertAccountOwned(householdId: string, accountId: string) {
   return account;
 }
 
-async function assertMemberOwned(householdId: string, memberUserId: string) {
-  const member = await prisma.householdMember.findUnique({
-    where: { householdId_userId: { householdId, userId: memberUserId } },
+async function assertMemberInHousehold(householdId: string, memberId: string) {
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+    select: { id: true, householdId: true },
   });
-  if (!member) {
+  if (!member || member.householdId !== householdId) {
     throw new ValidationError("Member not found in household");
   }
 }
@@ -120,8 +121,8 @@ export const assetsService = {
   },
 
   async createAsset(householdId: string, data: CreateAssetInput, ctx: ActorCtx) {
-    if (data.memberUserId) {
-      await assertMemberOwned(householdId, data.memberUserId);
+    if (data.memberId) {
+      await assertMemberInHousehold(householdId, data.memberId);
     }
     const { initialValue, ...assetData } = data;
     return audited({
@@ -151,8 +152,8 @@ export const assetsService = {
 
   async updateAsset(householdId: string, assetId: string, data: UpdateAssetInput, ctx: ActorCtx) {
     await assertAssetOwned(householdId, assetId);
-    if (data.memberUserId) {
-      await assertMemberOwned(householdId, data.memberUserId);
+    if (data.memberId) {
+      await assertMemberInHousehold(householdId, data.memberId);
     }
     return audited({
       db: prisma,
@@ -251,8 +252,8 @@ export const assetsService = {
   },
 
   async createAccount(householdId: string, data: CreateAccountInput, ctx: ActorCtx) {
-    if (data.memberUserId) {
-      await assertMemberOwned(householdId, data.memberUserId);
+    if (data.memberId) {
+      await assertMemberInHousehold(householdId, data.memberId);
     }
     return audited({
       db: prisma,
@@ -272,8 +273,8 @@ export const assetsService = {
     ctx: ActorCtx
   ) {
     await assertAccountOwned(householdId, accountId);
-    if (data.memberUserId) {
-      await assertMemberOwned(householdId, data.memberUserId);
+    if (data.memberId) {
+      await assertMemberInHousehold(householdId, data.memberId);
     }
     return audited({
       db: prisma,

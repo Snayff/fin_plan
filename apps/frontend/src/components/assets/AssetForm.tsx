@@ -5,14 +5,14 @@ import { formatCurrency } from "@/utils/format";
 interface Props {
   mode: "add" | "edit";
   initialName?: string;
-  initialMemberUserId?: string | null;
+  initialMemberId?: string | null;
   initialGrowthRatePct?: number | null;
   isSaving?: boolean;
   isSavingConfirm?: boolean;
   isStale?: boolean;
   onSave: (data: {
     name: string;
-    memberUserId: string | null;
+    memberId: string | null;
     growthRatePct: number | null;
     initialValue?: number;
   }) => void;
@@ -28,7 +28,7 @@ const inputClass =
 export function AssetForm({
   mode,
   initialName = "",
-  initialMemberUserId = null,
+  initialMemberId = null,
   initialGrowthRatePct = null,
   isSaving,
   isSavingConfirm,
@@ -39,7 +39,7 @@ export function AssetForm({
   onConfirm,
 }: Props) {
   const [name, setName] = useState(initialName);
-  const [memberUserId, setMemberUserId] = useState<string | null>(initialMemberUserId);
+  const [memberId, setMemberId] = useState<string | null>(initialMemberId);
   const [growthRatePct, setGrowthRatePct] = useState<string>(
     initialGrowthRatePct != null ? String(initialGrowthRatePct) : ""
   );
@@ -71,7 +71,7 @@ export function AssetForm({
     const parsedValue = initialValue.trim() === "" ? undefined : parseValue(initialValue);
     onSave({
       name: name.trim(),
-      memberUserId,
+      memberId,
       growthRatePct: parsedGrowth,
       ...(mode === "add" && parsedValue !== undefined ? { initialValue: parsedValue } : {}),
     });
@@ -138,14 +138,14 @@ export function AssetForm({
         <div className="col-span-2 flex flex-col gap-1">
           <label className={labelClass}>Assigned to</label>
           <select
-            value={memberUserId ?? ""}
-            onChange={(e) => setMemberUserId(e.target.value || null)}
+            value={memberId ?? ""}
+            onChange={(e) => setMemberId(e.target.value || null)}
             aria-label="Assigned to"
             className={inputClass}
           >
             <option value="">Household</option>
             {members?.map((m) => (
-              <option key={m.userId} value={m.userId}>
+              <option key={m.id} value={m.id}>
                 {m.firstName}
               </option>
             ))}

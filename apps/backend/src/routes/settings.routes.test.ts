@@ -17,12 +17,12 @@ mock.module("../middleware/auth.middleware", () => ({
   authMiddleware: mock(() => {}),
 }));
 
-let mockHouseholdMember: { role: string } | null = { role: "owner" };
+let mockMember: { role: string } | null = { role: "owner" };
 
 mock.module("../config/database", () => ({
   prisma: {
-    householdMember: {
-      findUnique: mock(async () => mockHouseholdMember),
+    member: {
+      findFirst: mock(async () => mockMember),
     },
   },
 }));
@@ -60,7 +60,7 @@ beforeEach(() => {
   settingsServiceMock.getSettings.mockResolvedValue(mockSettings as any);
   settingsServiceMock.updateSettings.mockResolvedValue(mockSettings as any);
 
-  mockHouseholdMember = { role: "owner" };
+  mockMember = { role: "owner" };
 
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
@@ -126,7 +126,7 @@ describe("PATCH /api/settings", () => {
 
 describe("PATCH /api/settings — growth rate role gate", () => {
   it("allows owner to update growth rate fields", async () => {
-    mockHouseholdMember = { role: "owner" };
+    mockMember = { role: "owner" };
     const updated = { ...mockSettings, savingsRatePct: 5 };
     settingsServiceMock.updateSettings.mockResolvedValue(updated as any);
 
@@ -140,7 +140,7 @@ describe("PATCH /api/settings — growth rate role gate", () => {
   });
 
   it("allows admin to update growth rate fields", async () => {
-    mockHouseholdMember = { role: "admin" };
+    mockMember = { role: "admin" };
     const updated = { ...mockSettings, investmentRatePct: 7 };
     settingsServiceMock.updateSettings.mockResolvedValue(updated as any);
 
@@ -154,7 +154,7 @@ describe("PATCH /api/settings — growth rate role gate", () => {
   });
 
   it("rejects member role from setting growth rate fields", async () => {
-    mockHouseholdMember = { role: "member" };
+    mockMember = { role: "member" };
 
     const res = await app.inject({
       method: "PATCH",
@@ -166,7 +166,7 @@ describe("PATCH /api/settings — growth rate role gate", () => {
   });
 
   it("allows member to update non-growth-rate fields", async () => {
-    mockHouseholdMember = { role: "member" };
+    mockMember = { role: "member" };
     const updated = { ...mockSettings, surplusBenchmarkPct: 15 };
     settingsServiceMock.updateSettings.mockResolvedValue(updated as any);
 

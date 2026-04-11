@@ -10,10 +10,8 @@ export async function auditLogRoutes(app: FastifyInstance) {
     const householdId = request.householdId!;
 
     // Verify caller is owner or admin
-    const membership = await prisma.householdMember.findUnique({
-      where: {
-        householdId_userId: { householdId, userId },
-      },
+    const membership = await prisma.member.findFirst({
+      where: { householdId, userId },
     });
 
     if (!membership || (membership.role !== "owner" && membership.role !== "admin")) {

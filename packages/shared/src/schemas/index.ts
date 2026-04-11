@@ -9,11 +9,17 @@ export {
   createHouseholdInviteSchema,
   acceptInviteSchema,
   updateMemberRoleSchema,
+  createMemberSchema,
+  updateMemberSchema,
+  deleteMemberSchema,
   type CreateHouseholdInput,
   type RenameHouseholdInput,
   type CreateHouseholdInviteInput,
   type AcceptInviteInput,
   type UpdateMemberRoleInput,
+  type CreateMemberInput,
+  type UpdateMemberInput,
+  type DeleteMemberInput,
 } from "./household.schemas";
 
 // Waterfall schemas and types
@@ -151,6 +157,17 @@ export {
   type UpdateGiftEventInput,
   type UpsertGiftYearRecordInput,
 } from "./planner.schemas";
+
+// Export/Import schemas and types
+export {
+  householdExportSchema,
+  importOptionsSchema,
+  importResultSchema,
+  CURRENT_EXPORT_SCHEMA_VERSION,
+  type HouseholdExport,
+  type ImportOptions,
+  type ImportResult,
+} from "./export-import.schemas";
 
 // Forecast schemas and types
 export {

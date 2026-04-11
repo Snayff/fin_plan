@@ -1,6 +1,15 @@
 import { prisma } from "../config/database";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
+const REDACTED_FIELDS = new Set([
+  "password",
+  "passwordHash",
+  "email",
+  "token",
+  "refreshToken",
+  "notes",
+]);
+
 export interface AuditLogEntry {
   userId?: string;
   action: string;
@@ -47,18 +56,22 @@ export function computeDiff(
 
   if (!before) {
     // CREATE — all after fields
-    return Object.entries(after!).map(([field, value]) => ({
-      field,
-      after: value,
-    }));
+    return Object.entries(after!)
+      .filter(([field]) => !REDACTED_FIELDS.has(field))
+      .map(([field, value]) => ({
+        field,
+        after: value,
+      }));
   }
 
   if (!after) {
     // DELETE — all before fields
-    return Object.entries(before).map(([field, value]) => ({
-      field,
-      before: value,
-    }));
+    return Object.entries(before)
+      .filter(([field]) => !REDACTED_FIELDS.has(field))
+      .map(([field, value]) => ({
+        field,
+        before: value,
+      }));
   }
 
   // UPDATE — changed fields only
@@ -66,6 +79,7 @@ export function computeDiff(
   const changes: AuditChange[] = [];
 
   for (const field of allKeys) {
+    if (REDACTED_FIELDS.has(field)) continue;
     const b = before[field];
     const a = after[field];
     if (JSON.stringify(b) !== JSON.stringify(a)) {

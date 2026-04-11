@@ -30,7 +30,7 @@ interface BaseProps {
   onConfirm: () => void;
   onSaveEdit: (data: {
     name: string;
-    memberUserId: string | null;
+    memberId: string | null;
     growthRatePct?: number | null;
   }) => void;
   onSaveRecord: (data: { value: number; date: string; note: string | null }) => void;
@@ -87,8 +87,8 @@ export function AssetAccountRow({
   const { data: settings } = useSettings();
   const showPence = settings?.showPence ?? false;
 
-  const memberName = item.memberUserId
-    ? (members?.find((m) => m.userId === item.memberUserId)?.firstName ?? item.memberUserId)
+  const memberName = item.memberId
+    ? (members?.find((m) => m.id === item.memberId)?.firstName ?? item.memberId)
     : "Household";
 
   const typeLabel = "type" in item ? item.type : "";
@@ -149,7 +149,7 @@ export function AssetAccountRow({
               <AssetForm
                 mode="edit"
                 initialName={item.name}
-                initialMemberUserId={item.memberUserId ?? null}
+                initialMemberId={item.memberId ?? null}
                 initialGrowthRatePct={(item as AssetItem).growthRatePct ?? null}
                 isSaving={isSavingEdit}
                 isSavingConfirm={isSavingConfirm}
@@ -164,7 +164,7 @@ export function AssetAccountRow({
                 mode="edit"
                 type={(item as AccountItem).type as AccountType}
                 initialName={item.name}
-                initialMemberUserId={item.memberUserId ?? null}
+                initialMemberId={item.memberId ?? null}
                 initialGrowthRatePct={(item as AccountItem).growthRatePct ?? null}
                 isSaving={isSavingEdit}
                 isSavingConfirm={isSavingConfirm}
