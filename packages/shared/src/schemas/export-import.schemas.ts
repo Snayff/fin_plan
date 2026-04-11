@@ -183,6 +183,7 @@ const exportSettingsSchema = z.object({
   isaYearStartMonth: z.number().int().optional(),
   isaYearStartDay: z.number().int().optional(),
   stalenessThresholds: stalenessThresholdsSchema.optional(),
+  currentRatePct: z.number().nullable().optional(),
   savingsRatePct: z.number().nullable().optional(),
   investmentRatePct: z.number().nullable().optional(),
   pensionRatePct: z.number().nullable().optional(),

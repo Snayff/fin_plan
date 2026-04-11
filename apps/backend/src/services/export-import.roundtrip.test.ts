@@ -63,6 +63,7 @@ function setupExportMocks() {
       asset_item: 180,
       account_item: 180,
     },
+    currentRatePct: 0.5,
     savingsRatePct: 10,
     investmentRatePct: 5,
     pensionRatePct: 8,
@@ -510,10 +511,12 @@ describe("export → import round-trip", () => {
         householdId: NEW_HOUSEHOLD_ID,
         surplusBenchmarkPct: 20,
         showPence: false,
+        currentRatePct: 0.5,
       }),
       update: expect.objectContaining({
         surplusBenchmarkPct: 20,
         showPence: false,
+        currentRatePct: 0.5,
       }),
     });
 

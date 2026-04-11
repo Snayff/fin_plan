@@ -8,6 +8,9 @@ export function GrowthRatesSection() {
 
   const settingsRecord = settings as Record<string, unknown> | undefined;
 
+  const [current, setCurrent] = useState<string>(
+    settingsRecord?.currentRatePct != null ? String(settingsRecord.currentRatePct) : ""
+  );
   const [savings, setSavings] = useState<string>(
     settingsRecord?.savingsRatePct != null ? String(settingsRecord.savingsRatePct) : ""
   );
@@ -30,7 +33,7 @@ export function GrowthRatesSection() {
     const toNum = (s: string) => (s !== "" ? parseFloat(s) : null);
     const inflationNum = inflation !== "" ? parseFloat(inflation) : 2.5;
     if (
-      [savings, investment, pension].some(
+      [current, savings, investment, pension].some(
         (s) => s !== "" && (isNaN(parseFloat(s)) || parseFloat(s) < 0 || parseFloat(s) > 100)
       )
     ) {
@@ -39,6 +42,7 @@ export function GrowthRatesSection() {
     }
     try {
       await updateSettings.mutateAsync({
+        currentRatePct: toNum(current),
         savingsRatePct: toNum(savings),
         investmentRatePct: toNum(investment),
         pensionRatePct: toNum(pension),
@@ -58,6 +62,7 @@ export function GrowthRatesSection() {
 
       <div className="grid grid-cols-2 gap-3">
         {[
+          { label: "Default current account rate (%)", value: current, onChange: setCurrent },
           { label: "Default savings rate (%)", value: savings, onChange: setSavings },
           { label: "Default investment rate (%)", value: investment, onChange: setInvestment },
           { label: "Default pension rate (%)", value: pension, onChange: setPension },

@@ -4,9 +4,9 @@ import { useHouseholdMembers, useSettings } from "../../hooks/useSettings.js";
 import { formatCurrency } from "@/utils/format";
 
 const GROWTH_RATE_SETTING_KEY: Partial<
-  Record<AccountType, "savingsRatePct" | "investmentRatePct" | "pensionRatePct">
+  Record<AccountType, "currentRatePct" | "savingsRatePct" | "investmentRatePct" | "pensionRatePct">
 > = {
-  Current: "savingsRatePct",
+  Current: "currentRatePct",
   Savings: "savingsRatePct",
   StocksAndShares: "investmentRatePct",
   Pension: "pensionRatePct",

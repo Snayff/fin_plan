@@ -17,6 +17,7 @@ export async function settingsRoutes(fastify: FastifyInstance) {
   fastify.patch("/", pre, async (req, reply) => {
     const data = updateSettingsSchema.parse(req.body);
     const growthRateFields = [
+      "currentRatePct",
       "savingsRatePct",
       "investmentRatePct",
       "pensionRatePct",

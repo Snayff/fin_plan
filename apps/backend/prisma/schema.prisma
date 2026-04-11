@@ -168,6 +168,7 @@ model HouseholdSettings {
   isaYearStartMonth   Int      @default(4)
   isaYearStartDay     Int      @default(6)
   stalenessThresholds Json     @default("{\"income_source\":12,\"committed_item\":6,\"discretionary_item\":12,\"asset_item\":12,\"account_item\":3}")
+  currentRatePct      Float?
   savingsRatePct      Float?
   investmentRatePct   Float?
   pensionRatePct      Float?

@@ -167,6 +167,7 @@ export const exportService = {
                   asset_item: number;
                   account_item: number;
                 },
+                currentRatePct: settings.currentRatePct,
                 savingsRatePct: settings.savingsRatePct,
                 investmentRatePct: settings.investmentRatePct,
                 pensionRatePct: settings.pensionRatePct,
