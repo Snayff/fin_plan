@@ -6,6 +6,7 @@ import type {
   CreateGiftEventInput,
   UpdateGiftEventInput,
   UpsertGiftAllocationInput,
+  BulkUpsertAllocationsInput,
 } from "@finplan/shared";
 
 function assertOwned(item: { householdId: string } | null, householdId: string, label: string) {
@@ -222,5 +223,47 @@ export const giftsService = {
       },
       update: writable,
     });
+  },
+
+  async bulkUpsertAllocations(householdId: string, input: BulkUpsertAllocationsInput) {
+    if (input.cells.length === 0) return { count: 0 };
+    for (const cell of input.cells) this._assertCurrentYear(cell.year);
+
+    const personIds = Array.from(new Set(input.cells.map((c) => c.personId)));
+    const eventIds = Array.from(new Set(input.cells.map((c) => c.eventId)));
+
+    const [persons, events] = await Promise.all([
+      prisma.giftPerson.findMany({ where: { id: { in: personIds } } }),
+      prisma.giftEvent.findMany({ where: { id: { in: eventIds } } }),
+    ]);
+    if (persons.length !== personIds.length) throw new NotFoundError("Gift person not found");
+    if (events.length !== eventIds.length) throw new NotFoundError("Gift event not found");
+    for (const p of persons)
+      if (p.householdId !== householdId) throw new NotFoundError("Gift person not found");
+    for (const e of events)
+      if (e.householdId !== householdId) throw new NotFoundError("Gift event not found");
+
+    await prisma.$transaction(async (tx) => {
+      for (const cell of input.cells) {
+        await tx.giftAllocation.upsert({
+          where: {
+            giftPersonId_giftEventId_year: {
+              giftPersonId: cell.personId,
+              giftEventId: cell.eventId,
+              year: cell.year,
+            },
+          },
+          create: {
+            householdId,
+            giftPersonId: cell.personId,
+            giftEventId: cell.eventId,
+            year: cell.year,
+            planned: cell.planned,
+          },
+          update: { planned: cell.planned },
+        });
+      }
+    });
+    return { count: input.cells.length };
   },
 };

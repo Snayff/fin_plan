@@ -268,3 +268,46 @@ describe("giftsService.upsertAllocation status transitions", () => {
     ).rejects.toMatchObject({ name: "NotFoundError" });
   });
 });
+
+describe("giftsService.bulkUpsertAllocations", () => {
+  it("rejects past-year cells", async () => {
+    const lastYear = new Date().getFullYear() - 1;
+    await expect(
+      giftsService.bulkUpsertAllocations("hh-1", {
+        cells: [{ personId: "p1", eventId: "e1", year: lastYear, planned: 10 }],
+      })
+    ).rejects.toMatchObject({ name: "ValidationError" });
+  });
+
+  it("upserts every cell in a transaction", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftPerson.findMany.mockResolvedValue([
+      { id: "p1", householdId: "hh-1" },
+      { id: "p2", householdId: "hh-1" },
+    ] as any);
+    prismaMock.giftEvent.findMany.mockResolvedValue([{ id: "e1", householdId: "hh-1" }] as any);
+    prismaMock.giftAllocation.upsert.mockResolvedValue({} as any);
+
+    await giftsService.bulkUpsertAllocations("hh-1", {
+      cells: [
+        { personId: "p1", eventId: "e1", year, planned: 25 },
+        { personId: "p2", eventId: "e1", year, planned: 30 },
+      ],
+    });
+
+    expect(prismaMock.$transaction).toHaveBeenCalled();
+    expect(prismaMock.giftAllocation.upsert).toHaveBeenCalledTimes(2);
+  });
+
+  it("rejects cells with mismatched household ids", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftPerson.findMany.mockResolvedValue([{ id: "p1", householdId: "other" }] as any);
+    prismaMock.giftEvent.findMany.mockResolvedValue([{ id: "e1", householdId: "hh-1" }] as any);
+
+    await expect(
+      giftsService.bulkUpsertAllocations("hh-1", {
+        cells: [{ personId: "p1", eventId: "e1", year, planned: 10 }],
+      })
+    ).rejects.toMatchObject({ name: "NotFoundError" });
+  });
+});
