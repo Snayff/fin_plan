@@ -100,3 +100,78 @@ describe("giftsService people CRUD", () => {
     expect(prismaMock.giftPerson.delete).toHaveBeenCalledWith({ where: { id: "p1" } });
   });
 });
+
+describe("giftsService events CRUD", () => {
+  it("createEvent persists with householdId", async () => {
+    prismaMock.giftEvent.create.mockResolvedValue({ id: "e1" } as any);
+    await giftsService.createEvent("hh-1", {
+      name: "Christmas",
+      dateType: "shared",
+      dateMonth: 12,
+      dateDay: 25,
+    });
+    expect(prismaMock.giftEvent.create).toHaveBeenCalledWith({
+      data: {
+        householdId: "hh-1",
+        name: "Christmas",
+        dateType: "shared",
+        dateMonth: 12,
+        dateDay: 25,
+        isLocked: false,
+      },
+    });
+  });
+
+  it("createEvent rejects duplicates", async () => {
+    prismaMock.giftEvent.create.mockRejectedValue({ code: "P2002" });
+    await expect(
+      giftsService.createEvent("hh-1", { name: "Birthday", dateType: "personal" })
+    ).rejects.toMatchObject({ name: "ConflictError" });
+  });
+
+  it("updateEvent rejects rename of locked event", async () => {
+    prismaMock.giftEvent.findUnique.mockResolvedValue({
+      id: "e1",
+      householdId: "hh-1",
+      isLocked: true,
+      name: "Christmas",
+    } as any);
+    await expect(giftsService.updateEvent("hh-1", "e1", { name: "Xmas" })).rejects.toMatchObject({
+      name: "ValidationError",
+    });
+  });
+
+  it("updateEvent allows date override on a locked event", async () => {
+    prismaMock.giftEvent.findUnique.mockResolvedValue({
+      id: "e1",
+      householdId: "hh-1",
+      isLocked: true,
+      name: "Mother's Day",
+    } as any);
+    prismaMock.giftEvent.update.mockResolvedValue({} as any);
+    await giftsService.updateEvent("hh-1", "e1", { dateMonth: 3, dateDay: 22 });
+    expect(prismaMock.giftEvent.update).toHaveBeenCalled();
+  });
+
+  it("deleteEvent rejects locked events", async () => {
+    prismaMock.giftEvent.findUnique.mockResolvedValue({
+      id: "e1",
+      householdId: "hh-1",
+      isLocked: true,
+    } as any);
+    await expect(giftsService.deleteEvent("hh-1", "e1")).rejects.toMatchObject({
+      name: "ValidationError",
+    });
+  });
+
+  it("deleteEvent succeeds for custom events", async () => {
+    prismaMock.giftEvent.findUnique.mockResolvedValue({
+      id: "e2",
+      householdId: "hh-1",
+      isLocked: false,
+    } as any);
+    prismaMock.giftEvent.delete.mockResolvedValue({} as any);
+    await giftsService.deleteEvent("hh-1", "e2");
+    expect(prismaMock.giftEvent.delete).toHaveBeenCalledWith({ where: { id: "e2" } });
+  });
+});
