@@ -1,0 +1,524 @@
+<style>
+  :root {
+    --bg: #080a14;
+    --surface: #0d1120;
+    --surface-elev: #141b2e;
+    --surface-overlay: #1c2540;
+    --border: #1a1f35;
+    --border-elev: #222c45;
+    --text-primary: rgba(238, 242, 255, 0.92);
+    --text-secondary: rgba(238, 242, 255, 0.65);
+    --text-tertiary: rgba(238, 242, 255, 0.40);
+    --text-muted: rgba(238, 242, 255, 0.25);
+    --tier-discretionary: #a855f7;
+    --page-accent: #8b5cf6;
+    --attention: #f59e0b;
+    --action: #7c3aed;
+    --font-heading: 'Outfit', system-ui, sans-serif;
+    --font-body: 'Nunito Sans', system-ui, sans-serif;
+    --font-numeric: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .gm-frame {
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    margin-top: 16px;
+  }
+  .gm-grid {
+    display: grid;
+    grid-template-columns: 290px 1fr;
+    min-height: 620px;
+  }
+  .gm-left {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 22px 18px;
+  }
+  .gm-right {
+    padding: 22px 26px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow: hidden;
+  }
+  .gm-pagetitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--page-accent);
+    margin: 0 0 14px 0;
+  }
+  .gm-budget-block {
+    background: var(--surface-elev);
+    border: 1px solid var(--border-elev);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .gm-label {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+  }
+  .gm-value {
+    font-family: var(--font-numeric);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .gm-sub-flex { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; }
+  .gm-sub-label { font-family: var(--font-body); font-size: 11px; color: var(--text-tertiary); }
+  .gm-sub-val { font-family: var(--font-numeric); font-size: 12px; color: var(--text-secondary); }
+  .gm-amber { color: var(--attention); }
+  .gm-amber-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--attention);
+    margin-right: 6px;
+  }
+  .gm-amber-line {
+    font-family: var(--font-numeric);
+    font-size: 11px;
+    margin-top: 10px;
+    line-height: 1.4;
+  }
+  .gm-vtabs { display: flex; flex-direction: column; gap: 4px; }
+  .gm-vtab {
+    width: 100%;
+    padding: 12px 14px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .gm-vtab.active {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.22);
+    color: var(--tier-discretionary);
+  }
+  .gm-vtab .count {
+    font-family: var(--font-numeric);
+    font-size: 11px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-tertiary);
+    opacity: 0.8;
+  }
+  .gm-vtab.active .count { color: var(--tier-discretionary); opacity: 1; }
+  /* breadcrumb */
+  .gm-breadcrumb {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--tier-discretionary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .gm-breadcrumb .back-arrow { color: var(--text-tertiary); cursor: pointer; font-size: 13px; }
+  .gm-breadcrumb .sep { color: var(--text-muted); }
+  .gm-breadcrumb .current {
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .gm-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .gm-header-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .gm-right-title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .gm-right-count { font-family: var(--font-body); font-size: 13px; color: var(--text-tertiary); }
+  .gm-btn {
+    font-family: var(--font-body);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: var(--surface-elev);
+    border: 1px solid var(--border-elev);
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .gm-btn:hover { color: var(--text-primary); }
+  .gm-btn-primary {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: rgba(124, 58, 237, 0.4);
+    color: #c4b5fd;
+  }
+  .gm-helper {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-tertiary);
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 6px;
+    padding: 10px 14px;
+  }
+  /* matrix */
+  .gm-matrix-wrap {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: auto;
+  }
+  .gm-matrix {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 12px;
+  }
+  .gm-matrix th {
+    font-family: var(--font-heading);
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    text-align: right;
+    padding: 12px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface-elev);
+    white-space: nowrap;
+  }
+  .gm-matrix th.left { text-align: left; padding-left: 16px; }
+  .gm-matrix th.add-col {
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-family: var(--font-body);
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  .gm-matrix th.add-col:hover { color: var(--tier-discretionary); }
+  .gm-matrix td {
+    padding: 0;
+    border-bottom: 1px solid rgba(26, 31, 53, 0.5);
+    border-left: 1px solid rgba(26, 31, 53, 0.4);
+  }
+  .gm-matrix td.name {
+    padding: 12px 16px;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 13px;
+    white-space: nowrap;
+    border-left: 0;
+  }
+  .gm-matrix td.total {
+    padding: 12px 10px;
+    font-family: var(--font-numeric);
+    font-size: 12px;
+    color: var(--text-primary);
+    text-align: right;
+    background: var(--surface-elev);
+    border-left-color: var(--border);
+  }
+  .gm-matrix tr:hover td { background: rgba(168, 85, 247, 0.03); }
+  .gm-matrix tr:hover td.total { background: var(--surface-elev); }
+  .gm-cell-input {
+    width: 100%;
+    padding: 12px 10px;
+    background: transparent;
+    border: 0;
+    font-family: var(--font-numeric);
+    font-size: 12px;
+    color: #cbd5e1;
+    text-align: right;
+    outline: none;
+  }
+  .gm-cell-input::placeholder { color: var(--text-muted); }
+  .gm-cell-input:focus {
+    background: rgba(168, 85, 247, 0.08);
+    color: var(--text-primary);
+  }
+  .gm-cell-input.empty { color: var(--text-muted); }
+  .gm-matrix .row-add td {
+    padding: 14px 16px;
+    color: var(--text-tertiary);
+    font-size: 12px;
+    cursor: pointer;
+    border-left: 0;
+  }
+  .gm-matrix .row-add:hover td { color: var(--tier-discretionary); background: rgba(168, 85, 247, 0.03); }
+  .gm-matrix tfoot td {
+    padding: 12px 10px;
+    text-align: right;
+    font-family: var(--font-numeric);
+    font-size: 12px;
+    color: var(--text-secondary);
+    background: var(--surface-elev);
+    border-top: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .gm-matrix tfoot td.name {
+    font-family: var(--font-heading);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-align: left;
+    padding-left: 16px;
+  }
+  .gm-matrix tfoot td.total {
+    color: var(--text-primary);
+    font-weight: 600;
+  }
+  .gm-household-badge {
+    font-size: 9px;
+    font-family: var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(139, 92, 246, 0.12);
+    color: #b79bf6;
+    margin-left: 6px;
+  }
+  .gm-summary {
+    display: flex;
+    gap: 28px;
+    padding: 14px 20px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .gm-summary-item { display: flex; flex-direction: column; gap: 2px; }
+  .gm-summary-item .gm-label { margin-bottom: 0; }
+  .gm-summary-item .val {
+    font-family: var(--font-numeric);
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+</style>
+
+<h2>Quick add — nested inside Config</h2>
+<p class="subtitle">Matrix editor for bulk people × events allocation. Opens from the Quick add button on Config State 2. Drills in as a State 3-style view with breadcrumb.</p>
+
+<div class="gm-frame">
+  <div class="gm-grid">
+    <div class="gm-left">
+      <div class="gm-pagetitle">Gifts</div>
+      <div class="gm-budget-block">
+        <div class="gm-label">Annual budget · 2026</div>
+        <div class="gm-value">£2,400.00</div>
+        <div class="gm-sub-flex"><span class="gm-sub-label">Planned</span><span class="gm-sub-val">£2,523.54</span></div>
+        <div class="gm-amber gm-amber-line"><span class="gm-amber-dot"></span>planned more than budget by £123.54</div>
+      </div>
+      <div class="gm-vtabs">
+        <button class="gm-vtab">Gifts <span class="count">7</span></button>
+        <button class="gm-vtab">Upcoming <span class="count">28</span></button>
+        <button class="gm-vtab active">Config</button>
+      </div>
+    </div>
+
+    <div class="gm-right">
+      <div class="gm-header-row">
+        <div>
+          <div class="gm-breadcrumb">
+            <span class="back-arrow">←</span>
+            <span>Config</span>
+            <span class="sep">/</span>
+            <span class="current">Quick add</span>
+          </div>
+          <div class="gm-header-title">
+            <span class="gm-right-title">Quick add</span>
+            <span class="gm-right-count">7 people · 5 events</span>
+          </div>
+        </div>
+        <div style="display: flex; gap: 8px; align-self: center;">
+          <button class="gm-btn">Cancel</button>
+          <button class="gm-btn gm-btn-primary">Save</button>
+        </div>
+      </div>
+
+      <div class="gm-helper">
+        Bulk-enter people, events, and planned amounts for 2026. Set person, event, and amount — dates, notes, and status can be added from the detail view later. Empty cells mean "no gift planned".
+      </div>
+
+      <div class="gm-matrix-wrap">
+        <table class="gm-matrix">
+          <thead>
+            <tr>
+              <th class="left">Person</th>
+              <th>Birthday</th>
+              <th>Christmas</th>
+              <th>Mothers Day</th>
+              <th>Fathers Day</th>
+              <th>Valentine's</th>
+              <th class="add-col">+ event</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="name">Cat</td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input" value="100" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td></td>
+              <td class="total">£100</td>
+            </tr>
+            <tr>
+              <td class="name">Josh</td>
+              <td><input class="gm-cell-input" value="100" /></td>
+              <td><input class="gm-cell-input" value="100" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td></td>
+              <td class="total">£200</td>
+            </tr>
+            <tr>
+              <td class="name">Mum <span class="gm-household-badge">Household</span></td>
+              <td><input class="gm-cell-input" value="160" /></td>
+              <td><input class="gm-cell-input" value="50" /></td>
+              <td><input class="gm-cell-input" value="115" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td></td>
+              <td class="total">£325</td>
+            </tr>
+            <tr>
+              <td class="name">Dad <span class="gm-household-badge">Household</span></td>
+              <td><input class="gm-cell-input" value="50" /></td>
+              <td><input class="gm-cell-input" value="50" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input" value="50" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td></td>
+              <td class="total">£150</td>
+            </tr>
+            <tr>
+              <td class="name">Nix</td>
+              <td><input class="gm-cell-input" value="55.95" /></td>
+              <td><input class="gm-cell-input" value="30" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td></td>
+              <td class="total">£85.95</td>
+            </tr>
+            <tr>
+              <td class="name">Jake</td>
+              <td><input class="gm-cell-input" value="31.95" /></td>
+              <td><input class="gm-cell-input" value="30" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td></td>
+              <td class="total">£61.95</td>
+            </tr>
+            <tr>
+              <td class="name">Andy</td>
+              <td><input class="gm-cell-input" value="17" /></td>
+              <td><input class="gm-cell-input" value="30" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td><input class="gm-cell-input empty" placeholder="—" /></td>
+              <td></td>
+              <td class="total">£47</td>
+            </tr>
+            <tr class="row-add"><td colspan="8">+ add person</td></tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="name">Total</td>
+              <td>£514.90</td>
+              <td>£390</td>
+              <td>£115</td>
+              <td>£50</td>
+              <td>—</td>
+              <td></td>
+              <td class="total">£1,069.90</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="gm-summary">
+        <div class="gm-summary-item">
+          <span class="gm-label">Budget</span>
+          <span class="val">£2,400.00</span>
+        </div>
+        <div class="gm-summary-item">
+          <span class="gm-label">Currently allocated</span>
+          <span class="val">£1,069.90</span>
+        </div>
+        <div class="gm-summary-item">
+          <span class="gm-label">Remaining</span>
+          <span class="val">£1,330.10</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px;">
+  <h3>How it works</h3>
+  <ul style="color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+    <li><strong>Matrix cells are editable inputs</strong> — tab across to fill, empty = no gift planned</li>
+    <li><strong>Row totals on the right</strong>, column totals at the bottom</li>
+    <li><strong>"+ add person" row</strong> at the bottom of the table inserts a new person row inline</li>
+    <li><strong>"+ event" column header</strong> inserts a new event column inline</li>
+    <li><strong>Live summary strip</strong> below the matrix shows Budget / Currently allocated / Remaining as cells are edited</li>
+    <li><strong>Save</strong> commits all changes (creates new people/events, updates allocations). <strong>Cancel</strong> discards, returning to Config State 2.</li>
+    <li><strong>Pre-populated on open</strong> — existing people and current-year allocations are loaded, so Quick Add is also a bulk-edit tool, not just bulk-create</li>
+    <li><strong>Dates, notes, status</strong> are not editable here — only in the per-person detail view (Gifts mode). Items created here are flagged "needs date" on dateless events.</li>
+  </ul>
+</div>
+
+<div class="options" style="margin-top: 20px;">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Looks right</h3>
+      <p>Move on to remaining areas (year boundaries, edge cases)</p>
+    </div>
+  </div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)">
+    <div class="letter">~</div>
+    <div class="content">
+      <h3>Tweak</h3>
+      <p>Tell me what to change</p>
+    </div>
+  </div>
+</div>
