@@ -22,7 +22,7 @@ export function CashflowYearBar({ month, maxAbsNet, onClick }: CashflowYearBarPr
       onClick={() => onClick(month)}
       aria-label={ariaLabel}
       className={cn(
-        "group relative flex flex-col items-center justify-end h-full rounded-t-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent",
+        "group relative flex w-full flex-col items-center justify-end h-full rounded-t-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent",
         month.dipBelowZero
           ? "bg-attention/30 hover:bg-attention/50"
           : "bg-tier-surplus/30 hover:bg-tier-surplus/50"

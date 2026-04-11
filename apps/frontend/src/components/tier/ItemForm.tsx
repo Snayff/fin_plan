@@ -104,8 +104,7 @@ export default function ItemForm({
   // Discretionary items only need a date for one-off purchases.
   const dueDateRequired = tier === "income" || tier === "committed";
   const showDueDate = dueDateRequired || spendType === "one_off";
-  const dueDateLabel =
-    spendType === "monthly" ? "Day of month" : spendType === "yearly" ? "Annual due date" : "Date";
+  const dueDateLabel = spendType === "monthly" || spendType === "yearly" ? "First payment" : "Date";
 
   const displayAmount =
     !amountFocused && amount
