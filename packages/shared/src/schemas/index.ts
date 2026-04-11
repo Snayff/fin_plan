@@ -172,3 +172,6 @@ export {
   type RetirementMemberProjection,
   type ForecastProjection,
 } from "./forecast.schemas";
+
+// Gifts schemas and types
+export * from "./gifts.schemas";
