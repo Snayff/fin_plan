@@ -1,0 +1,37 @@
+import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/utils/format";
+import type { CashflowProjectionMonth } from "@finplan/shared";
+import { format } from "date-fns";
+
+interface CashflowYearBarProps {
+  month: CashflowProjectionMonth;
+  maxAbsNet: number;
+  onClick: (month: CashflowProjectionMonth) => void;
+}
+
+export function CashflowYearBar({ month, maxAbsNet, onClick }: CashflowYearBarProps) {
+  const heightPct =
+    maxAbsNet > 0 ? Math.min(100, (Math.abs(month.netChange) / maxAbsNet) * 100) : 0;
+  const monthLabel = format(new Date(month.year, month.month - 1, 1), "MMM");
+  const ariaLabel = `${monthLabel} ${month.year}: net ${formatCurrency(month.netChange)}, closing ${formatCurrency(month.closingBalance)}${
+    month.dipBelowZero ? ", dips below zero" : ""
+  }`;
+  return (
+    <button
+      type="button"
+      onClick={() => onClick(month)}
+      aria-label={ariaLabel}
+      className={cn(
+        "group relative flex flex-col items-center justify-end h-full rounded-t-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent",
+        month.dipBelowZero
+          ? "bg-attention/30 hover:bg-attention/50"
+          : "bg-tier-surplus/30 hover:bg-tier-surplus/50"
+      )}
+      style={{ height: `${heightPct}%`, minHeight: 8 }}
+    >
+      <span className="absolute -bottom-5 text-[10px] uppercase tracking-widest text-text-tertiary">
+        {monthLabel}
+      </span>
+    </button>
+  );
+}
