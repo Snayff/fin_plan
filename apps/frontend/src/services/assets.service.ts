@@ -16,6 +16,7 @@ export interface AssetItem {
   type: AssetType;
   householdId: string;
   memberId: string | null;
+  growthRatePct: number | null;
   lastReviewedAt: string | null;
   createdAt: string;
   updatedAt: string;

@@ -122,12 +122,14 @@ export function AssetItemArea({ type }: Props) {
               <AssetForm
                 mode="add"
                 isSaving={createAsset.isPending}
-                onSave={async ({ name, memberId }) => {
+                onSave={async ({ name, memberId, growthRatePct, initialValue }) => {
                   try {
                     await createAsset.mutateAsync({
                       name,
                       type,
                       memberId: memberId ?? undefined,
+                      growthRatePct,
+                      initialValue,
                     });
                     setIsAddingItem(false);
                   } catch {
@@ -184,11 +186,11 @@ export function AssetItemArea({ type }: Props) {
                 // error handled by mutation onError (toast)
               }
             }}
-            onSaveEdit={async ({ name, memberId }) => {
+            onSaveEdit={async ({ name, memberId, growthRatePct }) => {
               try {
                 await updateAsset.mutateAsync({
                   assetId: item.id,
-                  data: { name, memberId },
+                  data: { name, memberId, growthRatePct },
                 });
                 setEditingId(null);
               } catch {

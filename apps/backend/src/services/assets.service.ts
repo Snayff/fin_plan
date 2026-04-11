@@ -124,6 +124,7 @@ export const assetsService = {
     if (data.memberId) {
       await assertMemberInHousehold(householdId, data.memberId);
     }
+    const { initialValue, ...assetData } = data;
     return audited({
       db: prisma,
       ctx,
@@ -131,10 +132,21 @@ export const assetsService = {
       resource: "asset",
       resourceId: "",
       beforeFetch: async () => null,
-      mutation: async (tx) =>
-        tx.asset.create({
-          data: { householdId, ...data },
-        }),
+      mutation: async (tx) => {
+        const asset = await tx.asset.create({
+          data: { householdId, ...assetData },
+        });
+        if (initialValue !== undefined) {
+          await tx.assetBalance.create({
+            data: {
+              assetId: asset.id,
+              value: initialValue,
+              date: new Date(),
+            },
+          });
+        }
+        return asset;
+      },
     });
   },
 
