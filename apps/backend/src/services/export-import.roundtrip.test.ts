@@ -108,7 +108,7 @@ function setupExportMocks() {
       name: "Day job",
       frequency: "monthly",
       incomeType: "salary",
-      expectedMonth: null,
+      dueDate: new Date("2026-04-01"),
       ownerId: "member-alice",
       sortOrder: 0,
       lastReviewedAt: new Date("2026-01-15T00:00:00Z"),
@@ -127,7 +127,7 @@ function setupExportMocks() {
       spendType: "monthly",
       notes: null,
       ownerId: "member-bob",
-      dueMonth: null,
+      dueDate: new Date("2026-04-01"),
       sortOrder: 0,
       lastReviewedAt: new Date("2026-02-01T00:00:00Z"),
       subcategory: { name: "Bills" },
@@ -681,5 +681,12 @@ describe("export → import round-trip", () => {
         notes: "Bouquet + card",
       }),
     });
+  });
+
+  it("round-trips dueDate fields", async () => {
+    setupExportMocks();
+    const exported = await exportService.exportHousehold(HOUSEHOLD_ID, CALLER_USER_ID);
+    const incomes = exported.incomeSources;
+    expect(incomes[0]).toHaveProperty("dueDate");
   });
 });

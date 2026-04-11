@@ -177,7 +177,7 @@ describe("importService.importHousehold", () => {
           spendType: "monthly" as const,
           notes: null,
           ownerName: "Alice",
-          dueMonth: null,
+          dueDate: new Date("2026-04-01"),
           sortOrder: 0,
           lastReviewedAt: "2026-01-01T00:00:00.000Z",
           periods: [
@@ -432,7 +432,7 @@ describe("importService.importHousehold", () => {
           name: "Day job",
           frequency: "monthly" as const,
           incomeType: "salary" as const,
-          expectedMonth: null,
+          dueDate: new Date("2026-04-01"),
           ownerName: null,
           sortOrder: 0,
           lastReviewedAt: "2026-01-01T00:00:00.000Z",

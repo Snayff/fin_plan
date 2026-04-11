@@ -13,7 +13,6 @@ const waterfallServiceMock = {
       surplus: { amount: 0, percentOfIncome: 0 },
     })
   ),
-  getCashflow: mock(() => Promise.resolve([])),
   listIncome: mock(() => Promise.resolve([])),
   createIncome: mock(() => Promise.resolve(null)),
   updateIncome: mock(() => Promise.resolve(null)),
@@ -152,7 +151,7 @@ const mockIncomeSource = {
   name: "Salary",
   frequency: "monthly",
   incomeType: "salary",
-  expectedMonth: null,
+  dueDate: new Date("2026-01-01"),
   ownerId: null,
   sortOrder: 0,
   lastReviewedAt: new Date().toISOString(),
@@ -175,7 +174,7 @@ const mockYearlyBill = {
   id: "ybill-1",
   householdId: "hh-1",
   name: "Car Insurance",
-  dueMonth: 3,
+  dueDate: new Date("2026-03-15"),
   sortOrder: 0,
   lastReviewedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
@@ -219,7 +218,6 @@ beforeEach(() => {
   }
 
   waterfallServiceMock.getWaterfallSummary.mockResolvedValue(mockSummary as any);
-  waterfallServiceMock.getCashflow.mockResolvedValue([] as any);
   waterfallServiceMock.listIncome.mockResolvedValue([mockIncomeSource] as any);
   waterfallServiceMock.createIncome.mockResolvedValue(mockIncomeSource as any);
   waterfallServiceMock.updateIncome.mockResolvedValue(mockIncomeSource as any);
@@ -302,35 +300,6 @@ describe("GET /api/waterfall", () => {
   });
 });
 
-// ─── Cashflow ─────────────────────────────────────────────────────────────────
-
-describe("GET /api/waterfall/cashflow", () => {
-  it("returns 401 without auth token", async () => {
-    const res = await app.inject({ method: "GET", url: "/api/waterfall/cashflow" });
-    expect(res.statusCode).toBe(401);
-  });
-
-  it("returns 200 with cashflow data", async () => {
-    const res = await app.inject({
-      method: "GET",
-      url: "/api/waterfall/cashflow",
-      headers: { authorization: "Bearer valid-token" },
-    });
-    expect(res.statusCode).toBe(200);
-    expect(Array.isArray(res.json())).toBe(true);
-  });
-
-  it("passes year query param to service", async () => {
-    const res = await app.inject({
-      method: "GET",
-      url: "/api/waterfall/cashflow?year=2025",
-      headers: { authorization: "Bearer valid-token" },
-    });
-    expect(res.statusCode).toBe(200);
-    expect(waterfallServiceMock.getCashflow).toHaveBeenCalledWith("hh-1", 2025);
-  });
-});
-
 // ─── Income ───────────────────────────────────────────────────────────────────
 
 describe("GET /api/waterfall/income", () => {
@@ -365,7 +334,12 @@ describe("POST /api/waterfall/income", () => {
       method: "POST",
       url: "/api/waterfall/income",
       headers: { authorization: "Bearer valid-token" },
-      payload: { name: "Salary", amount: 5000, frequency: "monthly" },
+      payload: {
+        name: "Salary",
+        amount: 5000,
+        frequency: "monthly",
+        dueDate: "2026-01-01",
+      },
     });
     expect(res.statusCode).toBe(201);
     expect(res.json().name).toBe("Salary");
@@ -409,7 +383,12 @@ describe("POST /api/waterfall/committed", () => {
       method: "POST",
       url: "/api/waterfall/committed",
       headers: { authorization: "Bearer valid-token" },
-      payload: { name: "Rent", amount: 1000, subcategoryId: "sub-1" },
+      payload: {
+        name: "Rent",
+        amount: 1000,
+        subcategoryId: "sub-1",
+        dueDate: "2026-01-01",
+      },
     });
     expect(res.statusCode).toBe(201);
     expect(res.json().name).toBe("Rent");
@@ -433,7 +412,12 @@ describe("POST /api/waterfall/yearly", () => {
     const res = await app.inject({
       method: "POST",
       url: "/api/waterfall/yearly",
-      payload: { name: "Car Insurance", amount: 600, subcategoryId: "sub-1", dueMonth: 3 },
+      payload: {
+        name: "Car Insurance",
+        amount: 600,
+        subcategoryId: "sub-1",
+        dueDate: "2026-03-15",
+      },
     });
     expect(res.statusCode).toBe(401);
   });
@@ -443,10 +427,15 @@ describe("POST /api/waterfall/yearly", () => {
       method: "POST",
       url: "/api/waterfall/yearly",
       headers: { authorization: "Bearer valid-token" },
-      payload: { name: "Car Insurance", amount: 600, subcategoryId: "sub-1", dueMonth: 3 },
+      payload: {
+        name: "Car Insurance",
+        amount: 600,
+        subcategoryId: "sub-1",
+        dueDate: "2026-03-15",
+      },
     });
     expect(res.statusCode).toBe(201);
-    expect(res.json().dueMonth).toBe(3);
+    expect(res.json().dueDate).toBe("2026-03-15T00:00:00.000Z");
   });
 
   it("returns 400 for missing subcategoryId", async () => {
@@ -596,20 +585,20 @@ describe("GET /api/waterfall/subcategories/:tier", () => {
       method: "POST",
       url: "/api/waterfall/committed",
       headers: { authorization: "Bearer test" },
-      payload: { name: "Rent", amount: 1200, subcategoryId: "sub-1" },
+      payload: { name: "Rent", amount: 1200, subcategoryId: "sub-1", dueDate: "2026-01-01" },
     });
 
     expect(res.statusCode).toBe(201);
   });
 
-  it("POST /api/waterfall/yearly sends valid payload with subcategoryId and dueMonth", async () => {
+  it("POST /api/waterfall/yearly sends valid payload with subcategoryId and dueDate", async () => {
     waterfallServiceMock.createYearly.mockResolvedValue({ id: "ci-2" } as any);
 
     const res = await app.inject({
       method: "POST",
       url: "/api/waterfall/yearly",
       headers: { authorization: "Bearer test" },
-      payload: { name: "Insurance", amount: 600, subcategoryId: "sub-1", dueMonth: 3 },
+      payload: { name: "Insurance", amount: 600, subcategoryId: "sub-1", dueDate: "2026-03-15" },
     });
 
     expect(res.statusCode).toBe(201);
@@ -683,7 +672,13 @@ describe("POST /api/waterfall/income — auto-snapshot hook", () => {
       method: "POST",
       url: "/api/waterfall/income",
       headers: { authorization: "Bearer valid-token" },
-      payload: { name: "Salary", amount: 5000, frequency: "monthly", subcategoryId: "sub-1" },
+      payload: {
+        name: "Salary",
+        amount: 5000,
+        frequency: "monthly",
+        subcategoryId: "sub-1",
+        dueDate: "2026-01-01",
+      },
     });
     await new Promise((r) => setTimeout(r, 0));
     expect(snapshotServiceMock.ensureTodayAutoSnapshot.mock.calls.length).toBeGreaterThan(0);
@@ -698,7 +693,13 @@ describe("POST /api/waterfall/income — baseline snapshot pre-handler", () => {
       method: "POST",
       url: "/api/waterfall/income",
       headers: { authorization: "Bearer valid-token" },
-      payload: { name: "Salary", amount: 5000, frequency: "monthly", subcategoryId: "sub-1" },
+      payload: {
+        name: "Salary",
+        amount: 5000,
+        frequency: "monthly",
+        subcategoryId: "sub-1",
+        dueDate: "2026-01-01",
+      },
     });
     expect(snapshotServiceMock.ensureBaselineSnapshot.mock.calls.length).toBeGreaterThan(0);
   });
