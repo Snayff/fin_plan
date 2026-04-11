@@ -50,3 +50,53 @@ describe("giftsService.getOrCreateSettings", () => {
     });
   });
 });
+
+describe("giftsService people CRUD", () => {
+  it("listPeople returns rows ordered by sortOrder asc", async () => {
+    prismaMock.giftPerson.findMany.mockResolvedValue([
+      { id: "a", name: "Mum", sortOrder: 0, memberId: null },
+      { id: "b", name: "Dad", sortOrder: 1, memberId: "m1" },
+    ] as any);
+    const rows = await giftsService.listPeople("hh-1");
+    expect(rows).toHaveLength(2);
+    expect(prismaMock.giftPerson.findMany).toHaveBeenCalledWith({
+      where: { householdId: "hh-1" },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    });
+  });
+
+  it("createPerson rejects duplicate names with ConflictError", async () => {
+    prismaMock.giftPerson.create.mockRejectedValue({ code: "P2002" });
+    await expect(giftsService.createPerson("hh-1", { name: "Mum" })).rejects.toMatchObject({
+      name: "ConflictError",
+    });
+  });
+
+  it("createPerson persists with householdId", async () => {
+    prismaMock.giftPerson.create.mockResolvedValue({ id: "p1" } as any);
+    await giftsService.createPerson("hh-1", { name: "Sis", notes: "fav books" });
+    expect(prismaMock.giftPerson.create).toHaveBeenCalledWith({
+      data: { householdId: "hh-1", name: "Sis", notes: "fav books" },
+    });
+  });
+
+  it("updatePerson asserts ownership", async () => {
+    prismaMock.giftPerson.findUnique.mockResolvedValue({
+      id: "p1",
+      householdId: "other",
+    } as any);
+    await expect(giftsService.updatePerson("hh-1", "p1", { name: "x" })).rejects.toMatchObject({
+      name: "NotFoundError",
+    });
+  });
+
+  it("deletePerson cascades via prisma onDelete", async () => {
+    prismaMock.giftPerson.findUnique.mockResolvedValue({
+      id: "p1",
+      householdId: "hh-1",
+    } as any);
+    prismaMock.giftPerson.delete.mockResolvedValue({} as any);
+    await giftsService.deletePerson("hh-1", "p1");
+    expect(prismaMock.giftPerson.delete).toHaveBeenCalledWith({ where: { id: "p1" } });
+  });
+});
