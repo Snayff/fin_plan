@@ -6,7 +6,7 @@ import pkg from "../../package.json";
 export default defineConfig({
   plugins: [react()],
   define: {
-    __APP_VERSION__: JSON.stringify(pkg.version),
+    "import.meta.env.VITE_APP_VERSION": JSON.stringify(pkg.version),
   },
   resolve: {
     alias: {
