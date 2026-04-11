@@ -44,7 +44,7 @@ export function RecordBalanceInlineForm({ isSaving, onSave, onCancel }: Props) {
   }
 
   return (
-    <div className="border-t border-foreground/5 bg-foreground/[0.02] py-3 pr-4 flex flex-col gap-3 border-l-2 border-page-accent/40 pl-[30px]">
+    <div className="flex flex-col gap-3 pt-1">
       <div className="grid grid-cols-2 gap-3">
         {/* Value */}
         <div className="flex flex-col gap-1">
