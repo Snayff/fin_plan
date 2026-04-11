@@ -1,10 +1,12 @@
 import { useState } from "react";
 import type { AccountType } from "@finplan/shared";
 import { useHouseholdMembers, useSettings } from "../../hooks/useSettings.js";
+import { formatCurrency } from "@/utils/format";
 
 const GROWTH_RATE_SETTING_KEY: Partial<
   Record<AccountType, "savingsRatePct" | "investmentRatePct" | "pensionRatePct">
 > = {
+  Current: "savingsRatePct",
   Savings: "savingsRatePct",
   StocksAndShares: "investmentRatePct",
   Pension: "pensionRatePct",
@@ -19,7 +21,12 @@ interface Props {
   isSaving?: boolean;
   isSavingConfirm?: boolean;
   isStale?: boolean;
-  onSave: (data: { name: string; memberId: string | null; growthRatePct: number | null }) => void;
+  onSave: (data: {
+    name: string;
+    memberId: string | null;
+    growthRatePct: number | null;
+    initialValue?: number;
+  }) => void;
   onCancel: () => void;
   onDeleteRequest?: () => void;
   onConfirm?: () => void;
@@ -48,8 +55,22 @@ export function AccountForm({
   const [growthRatePct, setGrowthRatePct] = useState(
     initialGrowthRatePct != null ? initialGrowthRatePct.toString() : ""
   );
+  const [initialValue, setInitialValue] = useState<string>("");
+  const [valueFocused, setValueFocused] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [rateError, setRateError] = useState<string | null>(null);
+
+  const displayValue =
+    !valueFocused && initialValue
+      ? (() => {
+          const n = parseFloat(initialValue.replace(/[£,\s]/g, ""));
+          return isNaN(n) ? initialValue : formatCurrency(n);
+        })()
+      : initialValue;
+
+  function parseValue(raw: string): number {
+    return parseFloat(raw.replace(/[£,\s]/g, ""));
+  }
 
   const { data: members } = useHouseholdMembers();
   const { data: settings } = useSettings();
@@ -79,7 +100,15 @@ export function AccountForm({
     }
 
     if (!valid) return;
-    onSave({ name: name.trim(), memberId, growthRatePct: parsedRate });
+    const parsedValue = initialValue.trim() === "" ? undefined : parseValue(initialValue);
+    onSave({
+      name: name.trim(),
+      memberId,
+      growthRatePct: parsedRate,
+      ...(mode === "add" && parsedValue !== undefined && !isNaN(parsedValue)
+        ? { initialValue: parsedValue }
+        : {}),
+    });
   }
 
   return (
@@ -103,6 +132,25 @@ export function AccountForm({
           />
           {nameError && <p className="-mt-0.5 text-xs text-amber-400">{nameError}</p>}
         </div>
+
+        {/* Current value (add mode only) */}
+        {mode === "add" && (
+          <div className="col-span-2 flex flex-col gap-1">
+            <label className={labelClass}>Current value</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="£0.00"
+              value={displayValue}
+              onChange={(e) => setInitialValue(e.target.value)}
+              onFocus={() => setValueFocused(true)}
+              onBlur={() => setValueFocused(false)}
+              aria-label="Current value"
+              className={[inputClass, "font-numeric"].join(" ")}
+            />
+            <p className="text-[11px] text-text-muted">Optional — leave blank to record later.</p>
+          </div>
+        )}
 
         {/* Assigned to */}
         <div className="col-span-2 flex flex-col gap-1">

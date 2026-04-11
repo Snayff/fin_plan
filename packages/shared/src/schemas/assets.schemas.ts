@@ -37,6 +37,7 @@ export const createAccountSchema = z.object({
   memberId: z.string().nullable().optional(),
   growthRatePct: z.number().min(0).max(100).nullable().optional(),
   isCashflowLinked: z.boolean().optional(),
+  initialValue: z.number().positive().optional(),
 });
 
 export const updateAccountSchema = z.object({

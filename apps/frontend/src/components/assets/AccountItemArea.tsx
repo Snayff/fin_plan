@@ -125,13 +125,14 @@ export function AccountItemArea({ type }: Props) {
                 mode="add"
                 type={type}
                 isSaving={createAccount.isPending}
-                onSave={async ({ name, memberId, growthRatePct }) => {
+                onSave={async ({ name, memberId, growthRatePct, initialValue }) => {
                   try {
                     await createAccount.mutateAsync({
                       name,
                       type,
                       memberId: memberId ?? undefined,
                       growthRatePct: growthRatePct ?? undefined,
+                      initialValue,
                     });
                     setIsAddingItem(false);
                   } catch {
