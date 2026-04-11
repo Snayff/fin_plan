@@ -231,7 +231,7 @@ model IncomeSource {
   name           String
   frequency      IncomeFrequency
   incomeType     IncomeType      @default(other)
-  expectedMonth  Int?
+  dueDate        DateTime        @db.Date
   ownerId        String?
   sortOrder      Int             @default(0)
   lastReviewedAt DateTime        @default(now())
@@ -251,7 +251,7 @@ model CommittedItem {
   spendType      SpendType   @default(monthly)
   notes          String?
   ownerId        String?
-  dueMonth       Int?
+  dueDate        DateTime    @db.Date
   sortOrder      Int         @default(0)
   lastReviewedAt DateTime    @default(now())
   createdAt      DateTime    @default(now())
@@ -268,6 +268,7 @@ model DiscretionaryItem {
   name           String
   spendType      SpendType   @default(monthly)
   notes          String?
+  dueDate        DateTime?   @db.Date
   sortOrder      Int         @default(0)
   lastReviewedAt DateTime    @default(now())
   createdAt      DateTime    @default(now())
@@ -348,6 +349,7 @@ model Account {
   type                AccountType
   growthRatePct       Float?
   monthlyContribution Float            @default(0)
+  isCashflowLinked    Boolean          @default(false)
   lastReviewedAt      DateTime?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
@@ -378,6 +380,7 @@ enum AssetType {
 }
 
 enum AccountType {
+  Current
   Savings
   Pension
   StocksAndShares

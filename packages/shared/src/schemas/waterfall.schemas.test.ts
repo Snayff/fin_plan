@@ -4,7 +4,9 @@ import {
   WaterfallTierEnum,
   createCommittedItemSchema,
   createDiscretionaryItemSchema,
+  createIncomeSourceSchema,
 } from "./waterfall.schemas";
+import { accountTypeSchema, updateAccountSchema } from "./assets.schemas";
 
 describe("SpendTypeEnum", () => {
   it("accepts valid spend types", () => {
@@ -38,6 +40,7 @@ describe("createCommittedItemSchema", () => {
       subcategoryId: "sub-1",
       spendType: "monthly",
       notes: "Fixed rate until 2027",
+      dueDate: "2026-04-01",
     });
     expect(result.success).toBe(true);
   });
@@ -47,6 +50,7 @@ describe("createCommittedItemSchema", () => {
       name: "Rent",
       amount: 1200,
       subcategoryId: "sub-1",
+      dueDate: "2026-04-01",
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -59,6 +63,7 @@ describe("createCommittedItemSchema", () => {
       name: "Rent",
       amount: 1200,
       subcategoryId: "sub-1",
+      dueDate: "2026-04-01",
       notes: "x".repeat(501),
     });
     expect(result.success).toBe(false);
@@ -122,6 +127,50 @@ describe("resetSubcategoriesSchema", () => {
     const result = resetSubcategoriesSchema.safeParse({
       reassignments: [],
     });
+    expect(result.success).toBe(true);
+  });
+});
+
+describe("schema migration to dueDate", () => {
+  it("createIncomeSourceSchema accepts dueDate as ISO string", () => {
+    const result = createIncomeSourceSchema.safeParse({
+      name: "Salary",
+      amount: 3000,
+      frequency: "monthly",
+      dueDate: "2026-04-15",
+      subcategoryId: "sub-1",
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("createIncomeSourceSchema rejects without dueDate", () => {
+    const result = createIncomeSourceSchema.safeParse({
+      name: "Salary",
+      amount: 3000,
+      frequency: "monthly",
+      subcategoryId: "sub-1",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("createCommittedItemSchema requires dueDate", () => {
+    const result = createCommittedItemSchema.safeParse({
+      name: "Rent",
+      amount: 1000,
+      subcategoryId: "sub-1",
+      spendType: "monthly",
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+describe("Current account type", () => {
+  it("accountTypeSchema accepts Current", () => {
+    expect(accountTypeSchema.parse("Current")).toBe("Current");
+  });
+
+  it("updateAccountSchema accepts isCashflowLinked", () => {
+    const result = updateAccountSchema.safeParse({ isCashflowLinked: true });
     expect(result.success).toBe(true);
   });
 });
