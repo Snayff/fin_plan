@@ -57,47 +57,56 @@ export function LinkedAccountsPopover({ onClose }: LinkedAccountsPopoverProps) {
 
   if (isLoading)
     return (
-      <div className="rounded-md border border-surface-border bg-surface p-4 w-80">Loading…</div>
+      <div className="rounded-md border border-border bg-popover p-4 w-80 shadow-lg">Loading…</div>
     );
 
   return (
     <div
       role="dialog"
       aria-label="Select linked accounts"
-      className="rounded-md border border-surface-border bg-surface p-3 w-80 shadow-lg"
+      className="rounded-md border border-border bg-popover text-popover-foreground p-3 w-80 shadow-lg"
     >
-      <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer">
-        <input type="checkbox" checked={allSelected} onChange={toggleAll} />
-        <span className="text-xs uppercase tracking-widest text-text-tertiary">Select all</span>
-      </label>
-      <div className="border-t border-surface-border my-2" />
-      <ul className="space-y-1 max-h-64 overflow-y-auto">
-        {accounts.map((a) => (
-          <li key={a.id}>
-            <label className="flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-accent/30 cursor-pointer">
-              <span className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={!!draft[a.id]}
-                  onChange={() => toggle(a.id)}
-                  aria-label={a.name}
-                />
-                <span className="text-sm">{a.name}</span>
-                <span className="text-[10px] uppercase tracking-widest text-text-tertiary">
-                  {a.type}
-                </span>
-              </span>
-              <span className="text-xs text-text-tertiary font-numeric">
-                {a.latestBalance != null ? formatCurrency(a.latestBalance) : "—"}
-                {a.latestBalanceDate && (
-                  <span className="ml-2">{format(new Date(a.latestBalanceDate), "d MMM")}</span>
-                )}
-              </span>
-            </label>
-          </li>
-        ))}
-      </ul>
-      <div className="border-t border-surface-border mt-2 pt-2 flex justify-end">
+      {accounts.length === 0 ? (
+        <p className="text-xs text-text-tertiary px-2 py-3">
+          No Current or Savings accounts found. Set an account type to Current or Savings in Assets
+          to link it here.
+        </p>
+      ) : (
+        <>
+          <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer">
+            <input type="checkbox" checked={allSelected} onChange={toggleAll} />
+            <span className="text-xs uppercase tracking-widest text-text-tertiary">Select all</span>
+          </label>
+          <div className="border-t border-border my-2" />
+          <ul className="space-y-1 max-h-64 overflow-y-auto">
+            {accounts.map((a) => (
+              <li key={a.id}>
+                <label className="flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-accent/30 cursor-pointer">
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={!!draft[a.id]}
+                      onChange={() => toggle(a.id)}
+                      aria-label={a.name}
+                    />
+                    <span className="text-sm">{a.name}</span>
+                    <span className="text-[10px] uppercase tracking-widest text-text-tertiary">
+                      {a.type}
+                    </span>
+                  </span>
+                  <span className="text-xs text-text-tertiary font-numeric">
+                    {a.latestBalance != null ? formatCurrency(a.latestBalance) : "—"}
+                    {a.latestBalanceDate && (
+                      <span className="ml-2">{format(new Date(a.latestBalanceDate), "d MMM")}</span>
+                    )}
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+      <div className="border-t border-border mt-2 pt-2 flex justify-end">
         <button type="button" onClick={onClose} className="text-xs text-text-secondary">
           Close
         </button>

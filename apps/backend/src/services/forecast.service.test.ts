@@ -20,7 +20,7 @@ beforeEach(() => {
 // Helper to build a mock account with a latest balance
 function mockAccount(overrides: {
   id?: string;
-  type: "Savings" | "Pension" | "StocksAndShares" | "Other";
+  type: "Current" | "Savings" | "Pension" | "StocksAndShares" | "Other";
   balance: number;
   monthlyContribution?: number;
   growthRatePct?: number | null;
@@ -129,6 +129,34 @@ describe("forecastService.getProjections — net worth", () => {
 
     // Year 1: 20000 * 0.85 = 17000
     expect(result.netWorth[1]!.nominal).toBe(17000);
+  });
+
+  it("Current accounts use savingsRatePct as default growth rate", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ type: "Current", balance: 5000 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    // Year 1: 5000 * 1.04 (savingsRatePct) = 5200
+    expect(result.netWorth[1]!.nominal).toBe(5200);
+  });
+
+  it("Current account growthRatePct override takes precedence over savingsRatePct", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ type: "Current", balance: 5000, growthRatePct: 1 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    // Year 1 with 1% override: 5000 * 1.01 = 5050
+    expect(result.netWorth[1]!.nominal).toBe(5050);
   });
 
   it("uses per-account growthRatePct override over household default", async () => {

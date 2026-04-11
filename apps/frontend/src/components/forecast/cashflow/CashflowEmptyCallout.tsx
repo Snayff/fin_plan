@@ -13,7 +13,7 @@ const COPY: Record<CashflowEmptyCalloutProps["variant"], string> = {
 
 export function CashflowEmptyCallout({ variant }: CashflowEmptyCalloutProps) {
   return (
-    <div className="rounded-md border border-surface-border bg-surface px-4 py-3 text-xs text-text-secondary">
+    <div className="rounded-md border border-border bg-card px-4 py-3 text-xs text-text-secondary">
       {COPY[variant]}
     </div>
   );

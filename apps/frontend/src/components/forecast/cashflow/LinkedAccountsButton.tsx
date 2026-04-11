@@ -21,7 +21,7 @@ export function LinkedAccountsButton({
       onClick={onClick}
       aria-expanded={isOpen}
       className={cn(
-        "flex flex-col items-start gap-0.5 rounded-md border border-surface-border bg-surface px-4 py-2.5 transition-colors",
+        "flex flex-col items-start gap-0.5 rounded-md border border-border bg-card px-4 py-2.5 transition-colors",
         "hover:border-page-accent focus-visible:border-page-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent"
       )}
     >

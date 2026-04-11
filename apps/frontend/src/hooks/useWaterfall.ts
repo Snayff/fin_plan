@@ -220,6 +220,8 @@ export interface TierItemRow {
   spendType: "monthly" | "yearly" | "one_off";
   subcategoryId: string;
   notes: string | null;
+  /** Required for income/committed; nullable for discretionary (only set on one_off). */
+  dueDate: Date | null;
   lastReviewedAt: Date;
   createdAt: Date;
   sortOrder: number;
@@ -253,6 +255,7 @@ function mapTierItem(r: any, spendType: string): TierItemRow {
     spendType: spendType as "monthly" | "yearly" | "one_off",
     subcategoryId: r.subcategoryId ?? "",
     notes: r.notes ?? null,
+    dueDate: r.dueDate ? new Date(r.dueDate) : null,
     lastReviewedAt: new Date(r.lastReviewedAt),
     createdAt: new Date(r.createdAt),
     sortOrder: r.sortOrder ?? 0,

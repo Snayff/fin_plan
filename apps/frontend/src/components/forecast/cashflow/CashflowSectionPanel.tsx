@@ -47,7 +47,7 @@ export function CashflowSectionPanel() {
     return (
       <div className="flex flex-col gap-4">
         <CashflowHeader startingBalance={0} linkedCount={0} />
-        <div className="h-64 bg-surface border border-surface-border rounded-md animate-pulse" />
+        <div className="h-64 bg-card border border-border rounded-md animate-pulse" />
       </div>
     );
   }

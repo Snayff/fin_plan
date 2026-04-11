@@ -7,11 +7,11 @@ import { RetirementChart } from "@/components/forecast/RetirementChart";
 import { useForecast } from "@/hooks/useForecast";
 
 const CHART_SKELETON = (
-  <div className="bg-surface border border-surface-elevated rounded-xl h-48 animate-pulse" />
+  <div className="bg-card border border-border rounded-xl h-48 animate-pulse" />
 );
 
 const CHART_ERROR = (
-  <div className="bg-surface border border-surface-elevated rounded-xl h-48 flex items-center justify-center">
+  <div className="bg-card border border-border rounded-xl h-48 flex items-center justify-center">
     <p className="text-sm text-text-tertiary">Could not load forecast — try refreshing</p>
   </div>
 );
@@ -33,7 +33,10 @@ export function GrowthSectionPanel() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between">
+        <h2 className="font-heading text-base uppercase tracking-widest text-page-accent">
+          Growth
+        </h2>
         <TimeHorizonSelector value={horizon} onChange={setHorizon} />
       </div>
       {isLoading ? (

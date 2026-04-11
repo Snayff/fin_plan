@@ -10,6 +10,7 @@ function accountEffectiveRate(
 ): number {
   if (account.growthRatePct != null) return account.growthRatePct / 100;
   switch (account.type) {
+    case "Current":
     case "Savings":
       return settings.savingsRatePct / 100;
     case "StocksAndShares":
