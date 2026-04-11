@@ -17,6 +17,7 @@ import { formatCurrency } from "@/utils/format";
 import { useSettings } from "@/hooks/useSettings";
 
 const TYPE_LABELS: Record<AccountType, string> = {
+  Current: "Current",
   Savings: "Savings",
   Pension: "Pension",
   StocksAndShares: "Stocks & Shares",

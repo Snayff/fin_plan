@@ -12,7 +12,7 @@ import { CreateSnapshotModal } from "./CreateSnapshotModal";
 import { NudgeCard } from "@/components/common/NudgeCard";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
-import { useYearlyBillNudge, useSavingsNudge } from "@/hooks/useNudge";
+import { useSavingsNudge } from "@/hooks/useNudge";
 import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 
 interface SelectedItem {
@@ -29,7 +29,6 @@ interface ItemDetailPanelProps {
   onBack: () => void;
   snapshotDate?: Date | null;
   isReadOnly?: boolean;
-  onViewCashflow?: () => void;
 }
 
 type InlineMode = "none" | "edit";
@@ -39,7 +38,6 @@ export function ItemDetailPanel({
   onBack,
   snapshotDate,
   isReadOnly: isReadOnlyProp,
-  onViewCashflow,
 }: ItemDetailPanelProps) {
   const [inlineMode, setInlineMode] = useState<InlineMode>("none");
   const [editAmount, setEditAmount] = useState(String(item.amount));
@@ -56,7 +54,6 @@ export function ItemDetailPanel({
   const updateItem = useUpdateItem();
   const { data: settings } = useSettings();
   const isReadOnly = !!isReadOnlyProp || snapshotDate != null;
-  const { nudge: yearlyBillNudge } = useYearlyBillNudge(item.type, isReadOnly);
   const savingsNudge = useSavingsNudge(item.id, item.type, isReadOnly);
 
   if (historyLoading && !historyRaw) return <SkeletonLoader variant="right-panel" />;
@@ -189,14 +186,6 @@ export function ItemDetailPanel({
                 onRightClick={handleConfirm}
                 isLoading={confirmItem.isPending}
               />
-              {item.type === "yearly_bill" && yearlyBillNudge && (
-                <NudgeCard
-                  message={yearlyBillNudge.message}
-                  options={yearlyBillNudge.options}
-                  actionLabel="See cashflow calendar"
-                  onAction={onViewCashflow}
-                />
-              )}
               {item.type === "savings_allocation" && savingsNudge && (
                 <NudgeCard message={savingsNudge.message} options={savingsNudge.options} />
               )}

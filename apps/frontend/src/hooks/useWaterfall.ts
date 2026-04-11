@@ -6,7 +6,6 @@ import type { CreatePeriodInput, UpdatePeriodInput } from "@finplan/shared";
 export const WATERFALL_KEYS = {
   summary: ["waterfall", "summary"] as const,
   financialSummary: ["waterfall", "financial-summary"] as const,
-  cashflow: (year: number) => ["waterfall", "cashflow", year] as const,
   history: (type: string, id: string) => ["waterfall", "history", type, id] as const,
   subcategories: (tier: string) => ["waterfall", "subcategories", tier] as const,
 };
@@ -22,14 +21,6 @@ export function useFinancialSummary() {
   return useQuery({
     queryKey: WATERFALL_KEYS.financialSummary,
     queryFn: waterfallService.getFinancialSummary,
-  });
-}
-
-export function useCashflow(year: number, options?: { enabled?: boolean }) {
-  return useQuery({
-    queryKey: WATERFALL_KEYS.cashflow(year),
-    queryFn: () => waterfallService.getCashflow(year),
-    enabled: options?.enabled ?? true,
   });
 }
 

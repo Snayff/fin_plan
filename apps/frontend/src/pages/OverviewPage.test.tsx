@@ -20,7 +20,6 @@ mock.module("@/hooks/useWaterfall", () => ({
   useConfirmItem: () => ({ mutate: () => {}, isPending: false }),
   useUpdateItem: () => ({ mutate: () => {}, isPending: false }),
   useEndIncome: () => ({ mutate: () => {}, isPending: false }),
-  useCashflow: () => ({ data: undefined, isLoading: false, isError: false }),
 }));
 mock.module("@/hooks/useSettings", () => ({
   useSnapshot: () => ({ data: undefined, isLoading: false, isError: false }),
