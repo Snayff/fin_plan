@@ -57,14 +57,14 @@ export function LinkedAccountsPopover({ onClose }: LinkedAccountsPopoverProps) {
 
   if (isLoading)
     return (
-      <div className="rounded-md border border-border bg-popover p-4 w-80 shadow-lg">Loading…</div>
+      <div className="rounded-md border border-border bg-popover p-4 w-96 shadow-lg">Loading…</div>
     );
 
   return (
     <div
       role="dialog"
       aria-label="Select linked accounts"
-      className="rounded-md border border-border bg-popover text-popover-foreground p-3 w-80 shadow-lg"
+      className="rounded-md border border-border bg-popover text-popover-foreground p-3 w-96 shadow-lg"
     >
       {accounts.length === 0 ? (
         <p className="text-xs text-text-tertiary px-2 py-3">
@@ -73,7 +73,7 @@ export function LinkedAccountsPopover({ onClose }: LinkedAccountsPopoverProps) {
         </p>
       ) : (
         <>
-          <label className="flex items-center gap-2 px-2 py-1.5 cursor-pointer">
+          <label className="flex items-center gap-3 px-2 py-1.5 cursor-pointer">
             <input type="checkbox" checked={allSelected} onChange={toggleAll} />
             <span className="text-xs uppercase tracking-widest text-text-tertiary">Select all</span>
           </label>
@@ -81,24 +81,27 @@ export function LinkedAccountsPopover({ onClose }: LinkedAccountsPopoverProps) {
           <ul className="space-y-1 max-h-64 overflow-y-auto">
             {accounts.map((a) => (
               <li key={a.id}>
-                <label className="flex items-center justify-between gap-2 px-2 py-1.5 rounded hover:bg-accent/30 cursor-pointer">
-                  <span className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={!!draft[a.id]}
-                      onChange={() => toggle(a.id)}
-                      aria-label={a.name}
-                    />
-                    <span className="text-sm">{a.name}</span>
-                    <span className="text-[10px] uppercase tracking-widest text-text-tertiary">
+                <label className="flex items-center gap-3 px-2 py-1.5 rounded hover:bg-accent/30 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!draft[a.id]}
+                    onChange={() => toggle(a.id)}
+                    aria-label={a.name}
+                    className="shrink-0"
+                  />
+                  <span className="flex-1 min-w-0 flex items-center gap-2">
+                    <span className="text-sm truncate" title={a.name}>
+                      {a.name}
+                    </span>
+                    <span className="text-[10px] uppercase tracking-widest text-text-tertiary shrink-0">
                       {a.type}
                     </span>
                   </span>
-                  <span className="text-xs text-text-tertiary font-numeric">
-                    {a.latestBalance != null ? formatCurrency(a.latestBalance) : "—"}
-                    {a.latestBalanceDate && (
-                      <span className="ml-2">{format(new Date(a.latestBalanceDate), "d MMM")}</span>
-                    )}
+                  <span className="font-numeric text-xs text-text-secondary shrink-0 w-16 text-right">
+                    {formatCurrency(a.latestBalance ?? 0)}
+                  </span>
+                  <span className="text-[10px] text-text-tertiary shrink-0 w-12 text-right">
+                    {a.latestBalanceDate ? format(new Date(a.latestBalanceDate), "d MMM") : ""}
                   </span>
                 </label>
               </li>
