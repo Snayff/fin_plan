@@ -175,3 +175,37 @@ describe("giftsService events CRUD", () => {
     expect(prismaMock.giftEvent.delete).toHaveBeenCalledWith({ where: { id: "e2" } });
   });
 });
+
+describe("giftsService.seedLockedEventsIfMissing", () => {
+  it("creates the seven locked events when none exist", async () => {
+    prismaMock.giftEvent.findMany.mockResolvedValue([] as any);
+    prismaMock.giftEvent.createMany.mockResolvedValue({ count: 7 } as any);
+
+    await giftsService.seedLockedEventsIfMissing("hh-1");
+
+    expect(prismaMock.giftEvent.createMany).toHaveBeenCalledTimes(1);
+    const args = (prismaMock.giftEvent.createMany.mock.calls[0] as any)[0];
+    const names = args.data.map((d: any) => d.name);
+    expect(names).toEqual([
+      "Birthday",
+      "Wedding Anniversary",
+      "Valentine's Day",
+      "Mother's Day",
+      "Easter",
+      "Father's Day",
+      "Christmas",
+    ]);
+    expect(args.skipDuplicates).toBe(true);
+    expect(args.data.every((d: any) => d.isLocked === true)).toBe(true);
+    expect(args.data.find((d: any) => d.name === "Christmas")).toMatchObject({
+      dateType: "shared",
+      dateMonth: 12,
+      dateDay: 25,
+    });
+    expect(args.data.find((d: any) => d.name === "Birthday")).toMatchObject({
+      dateType: "personal",
+      dateMonth: null,
+      dateDay: null,
+    });
+  });
+});

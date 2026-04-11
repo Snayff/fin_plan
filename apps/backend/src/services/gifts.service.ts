@@ -115,4 +115,51 @@ export const giftsService = {
     }
     await prisma.giftEvent.delete({ where: { id } });
   },
+
+  // ─── Locked event seeding ───────────────────────────────────────────────────
+  async seedLockedEventsIfMissing(householdId: string) {
+    const seeds = [
+      {
+        name: "Birthday",
+        dateType: "personal" as const,
+        dateMonth: null,
+        dateDay: null,
+        sortOrder: 0,
+      },
+      {
+        name: "Wedding Anniversary",
+        dateType: "personal" as const,
+        dateMonth: null,
+        dateDay: null,
+        sortOrder: 1,
+      },
+      {
+        name: "Valentine's Day",
+        dateType: "shared" as const,
+        dateMonth: 2,
+        dateDay: 14,
+        sortOrder: 2,
+      },
+      {
+        name: "Mother's Day",
+        dateType: "shared" as const,
+        dateMonth: 3,
+        dateDay: 15,
+        sortOrder: 3,
+      },
+      { name: "Easter", dateType: "shared" as const, dateMonth: 4, dateDay: 10, sortOrder: 4 },
+      {
+        name: "Father's Day",
+        dateType: "shared" as const,
+        dateMonth: 6,
+        dateDay: 15,
+        sortOrder: 5,
+      },
+      { name: "Christmas", dateType: "shared" as const, dateMonth: 12, dateDay: 25, sortOrder: 6 },
+    ];
+    await prisma.giftEvent.createMany({
+      data: seeds.map((s) => ({ ...s, householdId, isLocked: true })),
+      skipDuplicates: true,
+    });
+  },
 };
