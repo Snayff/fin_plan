@@ -100,10 +100,10 @@ CREATE UNIQUE INDEX "GiftAllocation_giftPersonId_giftEventId_year_key" ON "GiftA
 CREATE UNIQUE INDEX "GiftRolloverDismissal_householdId_userId_year_key" ON "GiftRolloverDismissal"("householdId", "userId", "year");
 
 -- CreateIndex
-CREATE INDEX "CommittedItem_householdId_idx" ON "CommittedItem"("householdId");
+CREATE INDEX IF NOT EXISTS "CommittedItem_householdId_idx" ON "CommittedItem"("householdId");
 
 -- CreateIndex
-CREATE INDEX "DiscretionaryItem_householdId_idx" ON "DiscretionaryItem"("householdId");
+CREATE INDEX IF NOT EXISTS "DiscretionaryItem_householdId_idx" ON "DiscretionaryItem"("householdId");
 
 -- CreateIndex
 CREATE INDEX "GiftEvent_householdId_idx" ON "GiftEvent"("householdId");
@@ -121,10 +121,10 @@ CREATE INDEX "GiftPerson_memberId_idx" ON "GiftPerson"("memberId");
 CREATE UNIQUE INDEX "GiftPerson_householdId_name_key" ON "GiftPerson"("householdId", "name");
 
 -- CreateIndex
-CREATE INDEX "IncomeSource_householdId_idx" ON "IncomeSource"("householdId");
+CREATE INDEX IF NOT EXISTS "IncomeSource_householdId_idx" ON "IncomeSource"("householdId");
 
 -- CreateIndex
-CREATE INDEX "PurchaseItem_householdId_idx" ON "PurchaseItem"("householdId");
+CREATE INDEX IF NOT EXISTS "PurchaseItem_householdId_idx" ON "PurchaseItem"("householdId");
 
 -- AddForeignKey
 ALTER TABLE "GiftAllocation" ADD CONSTRAINT "GiftAllocation_giftPersonId_fkey" FOREIGN KEY ("giftPersonId") REFERENCES "GiftPerson"("id") ON DELETE CASCADE ON UPDATE CASCADE;
