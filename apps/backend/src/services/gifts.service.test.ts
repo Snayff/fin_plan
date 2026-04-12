@@ -451,3 +451,81 @@ describe("giftsService.setMode", () => {
     expect(prismaMock.discretionaryItem.delete).not.toHaveBeenCalled();
   });
 });
+
+describe("giftsService.getPlannerState", () => {
+  it("returns budget, mode, and per-person aggregates", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+      id: "s1",
+      householdId: "hh-1",
+      mode: "synced",
+      syncedDiscretionaryItemId: "d1",
+    } as any);
+    prismaMock.plannerYearBudget.findUnique.mockResolvedValue({ giftBudget: 1000 } as any);
+    prismaMock.giftPerson.findMany.mockResolvedValue([
+      { id: "p1", name: "Mum", notes: null, sortOrder: 0, memberId: null },
+      { id: "p2", name: "Dad", notes: null, sortOrder: 1, memberId: "m1" },
+    ] as any);
+    prismaMock.giftAllocation.findMany.mockResolvedValue([
+      { giftPersonId: "p1", planned: 100, spent: 90, status: "bought" },
+      { giftPersonId: "p1", planned: 50, spent: null, status: "planned" },
+      { giftPersonId: "p2", planned: 200, spent: 250, status: "bought" },
+    ] as any);
+    prismaMock.giftRolloverDismissal.findUnique.mockResolvedValue(null);
+
+    const state = await giftsService.getPlannerState("hh-1", year, "user-1");
+
+    expect(state.mode).toBe("synced");
+    expect(state.year).toBe(year);
+    expect(state.isReadOnly).toBe(false);
+    expect(state.budget.annualBudget).toBe(1000);
+    expect(state.budget.planned).toBe(350);
+    expect(state.budget.spent).toBe(340);
+    expect(state.budget.plannedOverBudgetBy).toBe(0);
+    expect(state.budget.spentOverBudgetBy).toBe(0);
+
+    const mum = state.people.find((p) => p.id === "p1")!;
+    expect(mum.plannedTotal).toBe(150);
+    expect(mum.spentTotal).toBe(90);
+    expect(mum.plannedCount).toBe(1);
+    expect(mum.boughtCount).toBe(1);
+    expect(mum.hasOverspend).toBe(false);
+
+    const dad = state.people.find((p) => p.id === "p2")!;
+    expect(dad.isHouseholdMember).toBe(true);
+    expect(dad.hasOverspend).toBe(true);
+  });
+
+  it("computes plannedOverBudgetBy and spentOverBudgetBy when over", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+      mode: "independent",
+      syncedDiscretionaryItemId: null,
+    } as any);
+    prismaMock.plannerYearBudget.findUnique.mockResolvedValue({ giftBudget: 100 } as any);
+    prismaMock.giftPerson.findMany.mockResolvedValue([] as any);
+    prismaMock.giftAllocation.findMany.mockResolvedValue([
+      { giftPersonId: "p1", planned: 150, spent: 200, status: "bought" },
+    ] as any);
+    prismaMock.giftRolloverDismissal.findUnique.mockResolvedValue(null);
+
+    const state = await giftsService.getPlannerState("hh-1", year, "user-1");
+    expect(state.budget.plannedOverBudgetBy).toBe(50);
+    expect(state.budget.spentOverBudgetBy).toBe(100);
+  });
+
+  it("flags prior years as read-only", async () => {
+    const lastYear = new Date().getFullYear() - 1;
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+      mode: "synced",
+      syncedDiscretionaryItemId: "d1",
+    } as any);
+    prismaMock.plannerYearBudget.findUnique.mockResolvedValue({ giftBudget: 0 } as any);
+    prismaMock.giftPerson.findMany.mockResolvedValue([] as any);
+    prismaMock.giftAllocation.findMany.mockResolvedValue([] as any);
+    prismaMock.giftRolloverDismissal.findUnique.mockResolvedValue(null);
+
+    const state = await giftsService.getPlannerState("hh-1", lastYear, "user-1");
+    expect(state.isReadOnly).toBe(true);
+  });
+});

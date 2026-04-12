@@ -304,6 +304,85 @@ export const giftsService = {
     return { annualBudget: input.annualBudget };
   },
 
+  // ─── Reads ──────────────────────────────────────────────────────────────────
+  async getPlannerState(householdId: string, year: number, userId: string) {
+    const [settings, budgetRow, persons, allocations, dismissal] = await Promise.all([
+      this.getOrCreateSettings(householdId),
+      prisma.plannerYearBudget.findUnique({
+        where: { householdId_year: { householdId, year } },
+      }),
+      prisma.giftPerson.findMany({
+        where: { householdId },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      }),
+      prisma.giftAllocation.findMany({ where: { householdId, year } }),
+      prisma.giftRolloverDismissal.findUnique({
+        where: { householdId_userId_year: { householdId, userId, year } },
+      }),
+    ]);
+
+    const annualBudget = budgetRow?.giftBudget ?? 0;
+    const plannedTotal = allocations.reduce((s, a) => s + (a.planned ?? 0), 0);
+    const spentTotal = allocations.reduce((s, a) => s + (a.spent ?? 0), 0);
+
+    const allocationsByPerson = new Map<string, typeof allocations>();
+    for (const a of allocations) {
+      const arr = allocationsByPerson.get(a.giftPersonId) ?? [];
+      arr.push(a);
+      allocationsByPerson.set(a.giftPersonId, arr);
+    }
+
+    const people = persons.map((p) => {
+      const items = allocationsByPerson.get(p.id) ?? [];
+      const plannedCount = items.filter((i) => i.status === "planned").length;
+      const boughtCount = items.filter((i) => i.status === "bought").length;
+      const plannedRowTotal = items.reduce((s, i) => s + (i.planned ?? 0), 0);
+      const spentRowTotal = items.reduce((s, i) => s + (i.spent ?? 0), 0);
+      const hasOverspend = items.some(
+        (i) => i.spent !== null && i.spent !== undefined && i.spent > (i.planned ?? 0)
+      );
+      return {
+        id: p.id,
+        name: p.name,
+        notes: p.notes,
+        sortOrder: p.sortOrder,
+        isHouseholdMember: p.memberId !== null,
+        plannedCount,
+        boughtCount,
+        plannedTotal: plannedRowTotal,
+        spentTotal: spentRowTotal,
+        hasOverspend,
+      };
+    });
+
+    return {
+      mode: settings.mode,
+      year,
+      isReadOnly: year < new Date().getFullYear(),
+      budget: {
+        annualBudget,
+        planned: plannedTotal,
+        spent: spentTotal,
+        plannedOverBudgetBy: Math.max(0, plannedTotal - annualBudget),
+        spentOverBudgetBy: Math.max(0, spentTotal - annualBudget),
+      },
+      people,
+      rolloverPending: dismissal === null && (await this._isRolloverPending(householdId, year)),
+    };
+  },
+
+  async _isRolloverPending(householdId: string, year: number): Promise<boolean> {
+    if (year !== new Date().getFullYear()) return false;
+    const current = await prisma.plannerYearBudget.findUnique({
+      where: { householdId_year: { householdId, year } },
+    });
+    if (!current) return false;
+    const prior = await prisma.plannerYearBudget.findUnique({
+      where: { householdId_year: { householdId, year: year - 1 } },
+    });
+    return prior !== null;
+  },
+
   // ─── Mode switch ────────────────────────────────────────────────────────────
   async setMode(householdId: string, input: { mode: GiftPlannerMode }, _ctx?: ActorCtx) {
     const settings = await this.getOrCreateSettings(householdId);
