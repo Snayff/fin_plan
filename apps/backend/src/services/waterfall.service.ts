@@ -9,7 +9,6 @@ import type {
   UpdateIncomeSourceInput,
   ConfirmBatchInput,
   WaterfallSummary,
-  CashflowMonth,
   IncomeType,
   IncomeByType,
   IncomeSourceRow,
@@ -20,7 +19,7 @@ import type {
   WaterfallTier,
   SubcategoryTotal,
 } from "@finplan/shared";
-import { computeLifecycleState, findEffectivePeriod } from "./period.service.js";
+import { computeLifecycleState } from "./period.service.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -329,7 +328,7 @@ export const waterfallService = {
         monthlyAvg12: yearlyMonthlyAvg,
         bySubcategory: committedBySubcategory,
         bills: monthlyCommitted,
-        yearlyBills: yearlyCommitted.map((b) => ({ ...b, dueMonth: b.dueMonth ?? 1 })),
+        yearlyBills: yearlyCommitted,
       },
       discretionary: {
         total: discretionaryTotal,
@@ -345,108 +344,6 @@ export const waterfallService = {
         percentOfIncome,
       },
     };
-  },
-
-  // ─── Cashflow ───────────────────────────────────────────────────────────────
-
-  async getCashflow(householdId: string, year: number): Promise<CashflowMonth[]> {
-    const [yearlyCommittedItems, oneOffSources] = await Promise.all([
-      prisma.committedItem.findMany({ where: { householdId, spendType: "yearly" } }),
-      prisma.incomeSource.findMany({ where: { householdId, frequency: "one_off" } }),
-    ]);
-
-    // Fetch periods for these items
-    const itemRefs = [
-      ...yearlyCommittedItems.map((i) => ({
-        type: "committed_item" as const,
-        id: i.id,
-      })),
-      ...oneOffSources.map((i) => ({ type: "income_source" as const, id: i.id })),
-    ];
-
-    const periods =
-      itemRefs.length > 0
-        ? await prisma.itemAmountPeriod.findMany({
-            where: {
-              OR: itemRefs.map((r) => ({ itemType: r.type, itemId: r.id })),
-            },
-            orderBy: { startDate: "asc" },
-          })
-        : [];
-
-    const periodMap = new Map<string, typeof periods>();
-    for (const p of periods) {
-      const key = `${p.itemType}:${p.itemId}`;
-      const arr = periodMap.get(key) ?? [];
-      arr.push(p);
-      periodMap.set(key, arr);
-    }
-
-    function getAmountForMonth(
-      itemType: string,
-      itemId: string,
-      year: number,
-      month: number
-    ): number {
-      const ps = periodMap.get(`${itemType}:${itemId}`) ?? [];
-      const refDate = new Date(year, month - 1, 1);
-      const effective = findEffectivePeriod(ps, refDate);
-      return effective?.amount ?? 0;
-    }
-
-    // Monthly contribution = sum of yearly committed amounts / 12 (using current amounts)
-    const now = new Date();
-    const activeYearly = yearlyCommittedItems.filter((i) => {
-      const ps = periodMap.get(`committed_item:${i.id}`) ?? [];
-      return computeLifecycleState(ps, now) === "active";
-    });
-    const monthlyContribution =
-      activeYearly.reduce((s, b) => {
-        const ps = periodMap.get(`committed_item:${b.id}`) ?? [];
-        const current = findEffectivePeriod(ps, now);
-        return s + (current?.amount ?? 0);
-      }, 0) / 12;
-
-    const months: CashflowMonth[] = [];
-    let pot = 0;
-
-    for (let month = 1; month <= 12; month++) {
-      const bills = yearlyCommittedItems
-        .filter((b) => b.dueMonth === month)
-        .map((b) => ({
-          id: b.id,
-          name: b.name,
-          amount: getAmountForMonth("committed_item", b.id, year, month),
-        }))
-        .filter((b) => b.amount > 0);
-
-      const oneOffIncome = oneOffSources
-        .filter((s) => s.expectedMonth === month)
-        .map((s) => ({
-          id: s.id,
-          name: s.name,
-          amount: getAmountForMonth("income_source", s.id, year, month),
-        }))
-        .filter((s) => s.amount > 0);
-
-      const potBefore = pot;
-      pot += monthlyContribution;
-      pot += oneOffIncome.reduce((s, i) => s + i.amount, 0);
-      pot -= bills.reduce((s, b) => s + b.amount, 0);
-
-      months.push({
-        month,
-        year,
-        contribution: monthlyContribution,
-        bills,
-        oneOffIncome,
-        potBefore,
-        potAfter: pot,
-        shortfall: pot < 0,
-      });
-    }
-
-    return months;
   },
 
   // ─── Income sources ──────────────────────────────────────────────────────────

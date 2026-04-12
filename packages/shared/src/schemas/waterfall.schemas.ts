@@ -67,7 +67,7 @@ export const createCommittedItemSchema = z.object({
   spendType: SpendTypeEnum.default("monthly"),
   notes: z.string().max(500).nullable().optional(),
   ownerId: z.string().optional(),
-  dueMonth: z.number().int().min(1).max(12).optional(),
+  dueDate: z.coerce.date(),
   sortOrder: z.number().int().optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
@@ -79,7 +79,7 @@ export const updateCommittedItemSchema = z.object({
   spendType: SpendTypeEnum.optional(),
   notes: z.string().max(500).nullable().optional(),
   ownerId: z.string().nullable().optional(),
-  dueMonth: z.number().int().min(1).max(12).nullable().optional(),
+  dueDate: z.coerce.date().optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -94,6 +94,7 @@ export const createDiscretionaryItemSchema = z.object({
   subcategoryId: z.string().min(1),
   spendType: SpendTypeEnum.default("monthly"),
   notes: z.string().max(500).nullable().optional(),
+  dueDate: z.coerce.date().nullable().optional(),
   sortOrder: z.number().int().optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
@@ -117,7 +118,7 @@ export const createIncomeSourceSchema = z.object({
   amount: z.number().positive(),
   frequency: IncomeFrequencyEnum,
   incomeType: IncomeTypeEnum.default("other"),
-  expectedMonth: z.number().int().min(1).max(12).optional(),
+  dueDate: z.coerce.date(),
   ownerId: z.string().optional(),
   sortOrder: z.number().int().optional(),
   subcategoryId: z.string().min(1).optional(),
@@ -130,7 +131,7 @@ export const updateIncomeSourceSchema = z.object({
   name: z.string().min(1).trim().optional(),
   frequency: IncomeFrequencyEnum.optional(),
   incomeType: IncomeTypeEnum.optional(),
-  expectedMonth: z.number().int().min(1).max(12).nullable().optional(),
+  dueDate: z.coerce.date().optional(),
   ownerId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
   subcategoryId: z.string().min(1).optional(),
@@ -164,14 +165,14 @@ export type UpdateCommittedBillInput = z.infer<typeof updateCommittedBillSchema>
 export const createYearlyBillSchema = z.object({
   name: z.string().min(1).trim(),
   amount: z.number().positive(),
-  dueMonth: z.number().int().min(1).max(12),
+  dueDate: z.coerce.date(),
   sortOrder: z.number().int().optional(),
 });
 
 export const updateYearlyBillSchema = z.object({
   name: z.string().min(1).trim().optional(),
   amount: z.number().positive().optional(),
-  dueMonth: z.number().int().min(1).max(12).optional(),
+  dueDate: z.coerce.date().optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -269,7 +270,7 @@ export interface IncomeSourceRow {
   amount: number;
   frequency: IncomeFrequency;
   incomeType: IncomeType;
-  expectedMonth: number | null;
+  dueDate: Date;
   ownerId: string | null;
   sortOrder: number;
   lifecycleState: ItemLifecycleState;
@@ -293,7 +294,7 @@ export interface CommittedBillRow {
   spendType?: SpendType;
   subcategoryId?: string;
   notes?: string | null;
-  dueMonth?: number | null;
+  dueDate?: Date | null;
 }
 
 export interface YearlyBillRow {
@@ -301,7 +302,7 @@ export interface YearlyBillRow {
   householdId: string;
   name: string;
   amount: number;
-  dueMonth: number;
+  dueDate: Date;
   sortOrder: number;
   lastReviewedAt: Date;
   createdAt: Date;

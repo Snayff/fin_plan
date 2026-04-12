@@ -68,14 +68,14 @@ A dedicated **Assets** page in the main nav, following the established two-panel
 ### Growth rates (Accounts only)
 
 - [ ] Each Account has an optional growth rate override (percentage)
-- [ ] When the growth rate override is null, the account falls back to the applicable HouseholdSettings default: savingsRatePct (Savings), pensionRatePct (Pension), investmentRatePct (Stocks & Shares), null (Other)
+- [ ] When the growth rate override is null, the account falls back to the applicable HouseholdSettings default: currentRatePct (Current), savingsRatePct (Savings), pensionRatePct (Pension), investmentRatePct (Stocks & Shares), null (Other)
 - [ ] The Edit form for an account shows the growth rate field with placeholder or helper text indicating the effective household default when the override is empty
 - [ ] Asset types (Property, Vehicle, Other) do not expose a growth rate field anywhere
 
 ### HouseholdSettings — growth rate defaults
 
-- [ ] Settings page (owner/admin only) exposes four new fields under a "Growth Rates" section: Default savings rate (%), Default investment rate (%), Default pension rate (%), Inflation rate (%)
-- [ ] Inflation rate defaults to 2.5%; savings, investment, and pension rates default to null (blank until set)
+- [ ] Settings page (owner/admin only) exposes five fields under a "Growth Rates" section: Default current account rate (%), Default savings rate (%), Default investment rate (%), Default pension rate (%), Inflation rate (%)
+- [ ] Inflation rate defaults to 2.5%; current, savings, investment, and pension rates default to null (blank until set)
 - [ ] All four fields accept positive decimal percentages; negative values and values above 100 are rejected
 - [ ] All inputs are validated via Zod schemas in packages/shared before reaching the database
 
@@ -112,7 +112,7 @@ _None._
 - **AssetBalance**: assetId, value (positive Float), date (the date the value was observed — not a timestamp), note (nullable String). Many per Asset. Ordered by date descending for display. No deletion permitted — incorrect entries are corrected by recording a new entry.
 - **Account**: name, type (enum: Savings | Pension | StocksAndShares | Other), householdId, memberUserId (nullable String — same semantics as Asset.memberUserId), growthRatePct (nullable Float — overrides HouseholdSettings class default when set), lastReviewedAt, timestamps. Household-scoped.
 - **AccountBalance**: accountId, value (positive Float), date, note (nullable String). Same rules as AssetBalance.
-- **HouseholdSettings additions**: savingsRatePct (nullable Float), investmentRatePct (nullable Float), pensionRatePct (nullable Float), inflationRatePct (Float, default 2.5). All stored as percentage values (e.g. 4.5 = 4.5%).
+- **HouseholdSettings additions**: currentRatePct (nullable Float), savingsRatePct (nullable Float), investmentRatePct (nullable Float), pensionRatePct (nullable Float), inflationRatePct (Float, default 2.5). All stored as percentage values (e.g. 4.5 = 4.5%).
 - **HouseholdMember additions**: dateOfBirth (nullable Date), retirementYear (nullable Int).
 - **HouseholdSettings.stalenessThresholds** default JSON gains `asset_item: 12` and `account_item: 3`.
 
@@ -131,7 +131,7 @@ _None._
 - Record account balance (accountId, value, date, note?) — JWT-protected, household-scoped; appends AccountBalance; sets account.lastReviewedAt = now()
 - Confirm asset (assetId) — JWT-protected, household-scoped; sets lastReviewedAt = now() without adding a balance entry
 - Confirm account (accountId) — JWT-protected, household-scoped; same as above
-- Update HouseholdSettings growth rate defaults (savingsRatePct, investmentRatePct, pensionRatePct, inflationRatePct) — JWT-protected, owner/admin role required
+- Update HouseholdSettings growth rate defaults (currentRatePct, savingsRatePct, investmentRatePct, pensionRatePct, inflationRatePct) — JWT-protected, owner/admin role required
 - Update HouseholdMember retirement fields (dateOfBirth, retirementYear) — JWT-protected; a member may update their own fields; owner/admin may update any member's fields
 
 ### Components
@@ -149,7 +149,7 @@ _None._
 
 - **Current balance resolution:** The current balance for display is the AssetBalance / AccountBalance entry with the largest date value. If two entries share the same date, use the one with the most recent createdAt. If no entries exist, display £0 and "Never recorded".
 - **Balance entries are append-only:** No delete or edit operation is exposed for individual balance history entries. Users correct errors by recording a new entry with a corrected value and the same (or a later) date.
-- **Growth rate resolution for Accounts:** resolved rate = account.growthRatePct if set; else HouseholdSettings.savingsRatePct (Savings), HouseholdSettings.pensionRatePct (Pension), HouseholdSettings.investmentRatePct (Stocks & Shares), null (Other). The resolved rate is not computed on the Assets page — it is consumed by the Forecast page.
+- **Growth rate resolution for Accounts:** resolved rate = account.growthRatePct if set; else HouseholdSettings.currentRatePct (Current), HouseholdSettings.savingsRatePct (Savings), HouseholdSettings.pensionRatePct (Pension), HouseholdSettings.investmentRatePct (Stocks & Shares), null (Other). The resolved rate is not computed on the Assets page — it is consumed by the Forecast page.
 - **memberUserId semantics:** null = "Household" (joint/shared); any non-null value must resolve to a userId that is a current member of the same household. Display as the member's first name, or "Household" when null.
 - **Staleness thresholds migration:** The default value for HouseholdSettings.stalenessThresholds must be updated in the migration to include `asset_item: 12` and `account_item: 3`. Existing rows must also be backfilled.
 - **HouseholdMember composite key:** HouseholdMember uses a composite primary key [householdId, userId]; the new dateOfBirth and retirementYear fields are nullable additions to this model.

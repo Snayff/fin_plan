@@ -4,12 +4,13 @@ import { formatCurrency } from "@/utils/format";
 import { useSettings } from "@/hooks/useSettings";
 
 const ASSET_TYPES: AssetType[] = ["Property", "Vehicle", "Other"];
-const ACCOUNT_TYPES: AccountType[] = ["Savings", "Pension", "StocksAndShares", "Other"];
+const ACCOUNT_TYPES: AccountType[] = ["Current", "Savings", "Pension", "StocksAndShares", "Other"];
 
 const TYPE_LABELS: Record<AssetType | AccountType, string> = {
   Property: "Property",
   Vehicle: "Vehicle",
   Other: "Other",
+  Current: "Current",
   Savings: "Savings",
   Pension: "Pension",
   StocksAndShares: "Stocks & Shares",

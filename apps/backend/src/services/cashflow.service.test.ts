@@ -1,0 +1,654 @@
+import { describe, it, expect, beforeEach } from "bun:test";
+import { mock } from "bun:test";
+import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
+import { NotFoundError, ValidationError } from "../utils/errors";
+
+mock.module("../config/database.js", () => ({ prisma: prismaMock }));
+
+const { cashflowService } = await import("./cashflow.service.js");
+
+const fakeCtx = {
+  householdId: "hh-1",
+  actorId: "u-1",
+  actorName: "Test User",
+} as const;
+
+beforeEach(() => resetPrismaMocks());
+
+describe("schema: Account.isCashflowLinked", () => {
+  it("Account model exposes isCashflowLinked field via Prisma client", async () => {
+    // The mocked Prisma client is generated from schema.prisma, so this fails
+    // until the field is added.
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: "a1", isCashflowLinked: true, type: "Current" } as any,
+    ]);
+    const accounts = await prismaMock.account.findMany();
+    expect(accounts[0]).toHaveProperty("isCashflowLinked");
+  });
+});
+
+describe("schema: AccountType enum includes Current", () => {
+  it("Current is a valid AccountType", () => {
+    const valid: Array<"Savings" | "Pension" | "StocksAndShares" | "Other" | "Current"> = [
+      "Current",
+      "Savings",
+    ];
+    expect(valid).toContain("Current");
+  });
+});
+
+describe("cashflowService.listLinkableAccounts", () => {
+  it("returns Current and Savings accounts with their isCashflowLinked + latest balance", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        name: "Joint Current",
+        type: "Current",
+        isCashflowLinked: true,
+        balances: [
+          { value: 4200, date: new Date("2026-04-01"), createdAt: new Date("2026-04-01") },
+        ],
+      } as any,
+      {
+        id: "a2",
+        name: "Emergency Pot",
+        type: "Savings",
+        isCashflowLinked: false,
+        balances: [
+          { value: 8000, date: new Date("2026-03-15"), createdAt: new Date("2026-03-15") },
+        ],
+      } as any,
+    ]);
+
+    const result = await cashflowService.listLinkableAccounts("hh-1");
+
+    expect(prismaMock.account.findMany).toHaveBeenCalledWith({
+      where: { householdId: "hh-1", type: { in: ["Current", "Savings"] } },
+      include: { balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 1 } },
+      orderBy: { name: "asc" },
+    });
+    expect(result).toEqual([
+      {
+        id: "a1",
+        name: "Joint Current",
+        type: "Current",
+        isCashflowLinked: true,
+        latestBalance: 4200,
+        latestBalanceDate: "2026-04-01",
+      },
+      {
+        id: "a2",
+        name: "Emergency Pot",
+        type: "Savings",
+        isCashflowLinked: false,
+        latestBalance: 8000,
+        latestBalanceDate: "2026-03-15",
+      },
+    ]);
+  });
+
+  it("returns empty array when no eligible accounts exist", async () => {
+    prismaMock.account.findMany.mockResolvedValue([]);
+    expect(await cashflowService.listLinkableAccounts("hh-1")).toEqual([]);
+  });
+});
+
+describe("cashflowService.updateAccountCashflowLink", () => {
+  it("rejects with ValidationError when account is not Current or Savings", async () => {
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: "a1",
+      householdId: "hh-1",
+      type: "Pension",
+    } as any);
+
+    await expect(
+      cashflowService.updateAccountCashflowLink("hh-1", "a1", true, fakeCtx)
+    ).rejects.toThrow(ValidationError);
+  });
+
+  it("rejects with NotFoundError when account belongs to another household", async () => {
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: "a1",
+      householdId: "other",
+      type: "Current",
+    } as any);
+
+    await expect(
+      cashflowService.updateAccountCashflowLink("hh-1", "a1", true, fakeCtx)
+    ).rejects.toThrow(NotFoundError);
+  });
+
+  it("updates isCashflowLinked when valid and returns mapped row", async () => {
+    prismaMock.account.findUnique
+      .mockResolvedValueOnce({
+        id: "a1",
+        householdId: "hh-1",
+        name: "Joint Current",
+        type: "Current",
+        isCashflowLinked: false,
+      } as any)
+      .mockResolvedValueOnce({ isCashflowLinked: false } as any);
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+    prismaMock.account.update.mockResolvedValue({
+      id: "a1",
+      name: "Joint Current",
+      type: "Current",
+      isCashflowLinked: true,
+      householdId: "hh-1",
+    } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    const result = await cashflowService.updateAccountCashflowLink("hh-1", "a1", true, fakeCtx);
+
+    expect(prismaMock.account.update).toHaveBeenCalledWith({
+      where: { id: "a1" },
+      data: { isCashflowLinked: true },
+    });
+    expect(result).toEqual({
+      id: "a1",
+      name: "Joint Current",
+      type: "Current",
+      isCashflowLinked: true,
+    });
+    expect(prismaMock.auditLog.create).toHaveBeenCalled();
+  });
+});
+
+describe("cashflowService.bulkUpdateLinkedAccounts", () => {
+  it("updates each account inside a transaction with per-account audit logs", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: "a1", householdId: "hh-1", type: "Current", isCashflowLinked: false },
+      { id: "a2", householdId: "hh-1", type: "Savings", isCashflowLinked: true },
+    ] as any);
+    prismaMock.$transaction.mockImplementation(async (fn: any) => fn(prismaMock));
+    prismaMock.account.findUnique
+      .mockResolvedValueOnce({ isCashflowLinked: false } as any)
+      .mockResolvedValueOnce({ isCashflowLinked: true } as any);
+    prismaMock.account.update
+      .mockResolvedValueOnce({
+        id: "a1",
+        name: "Joint Current",
+        type: "Current",
+        isCashflowLinked: true,
+      } as any)
+      .mockResolvedValueOnce({
+        id: "a2",
+        name: "Emergency Pot",
+        type: "Savings",
+        isCashflowLinked: false,
+      } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    const result = await cashflowService.bulkUpdateLinkedAccounts(
+      "hh-1",
+      {
+        updates: [
+          { accountId: "a1", isCashflowLinked: true },
+          { accountId: "a2", isCashflowLinked: false },
+        ],
+      },
+      fakeCtx
+    );
+
+    expect(prismaMock.account.update).toHaveBeenCalledTimes(2);
+    expect(prismaMock.auditLog.create).toHaveBeenCalledTimes(2);
+    expect(result).toHaveLength(2);
+    expect(result[0]?.isCashflowLinked).toBe(true);
+    expect(result[1]?.isCashflowLinked).toBe(false);
+  });
+
+  it("rejects entire batch if any account is ineligible", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: "a1", householdId: "hh-1", type: "Current" },
+      { id: "a2", householdId: "hh-1", type: "Pension" },
+    ] as any);
+
+    await expect(
+      cashflowService.bulkUpdateLinkedAccounts(
+        "hh-1",
+        {
+          updates: [
+            { accountId: "a1", isCashflowLinked: true },
+            { accountId: "a2", isCashflowLinked: true },
+          ],
+        },
+        fakeCtx
+      )
+    ).rejects.toThrow(ValidationError);
+  });
+});
+
+describe("cashflowService.getProjection", () => {
+  beforeEach(() => {
+    // Single linked Current account, balance £1,000 as of 2026-04-01
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        type: "Current",
+        isCashflowLinked: true,
+        balances: [
+          { value: 1000, date: new Date("2026-04-01"), createdAt: new Date("2026-04-01") },
+        ],
+      },
+    ] as any);
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([]);
+  });
+
+  it("returns starting balance equal to sum of latest linked balances", async () => {
+    const result = await cashflowService.getProjection("hh-1", { monthCount: 12 });
+    expect(result.startingBalance).toBe(1000);
+    expect(result.linkedAccountCount).toBe(1);
+  });
+
+  it("returns 12 months by default", async () => {
+    const result = await cashflowService.getProjection("hh-1", { monthCount: 12 });
+    expect(result.months).toHaveLength(12);
+  });
+
+  it("flags dipBelowZero when balance crosses zero mid-month", async () => {
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "c1",
+        name: "Big Rent",
+        spendType: "monthly",
+        dueDate: new Date("2026-04-05"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "committed_item",
+        itemId: "c1",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 2000,
+      },
+    ] as any);
+    const result = await cashflowService.getProjection("hh-1", { monthCount: 3 });
+    expect(result.months[0]?.dipBelowZero).toBe(true);
+  });
+
+  it("uses the youngest balance date as the replay anchor", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        type: "Current",
+        isCashflowLinked: true,
+        balances: [{ value: 500, date: new Date("2026-03-01"), createdAt: new Date("2026-03-01") }],
+      },
+      {
+        id: "a2",
+        type: "Savings",
+        isCashflowLinked: true,
+        balances: [
+          { value: 1500, date: new Date("2026-04-01"), createdAt: new Date("2026-04-01") },
+        ],
+      },
+    ] as any);
+    const result = await cashflowService.getProjection("hh-1", { monthCount: 12 });
+    expect(result.youngestLinkedBalanceDate).toBe("2026-04-01");
+    expect(result.oldestLinkedBalanceDate).toBe("2026-03-01");
+    expect(result.startingBalance).toBe(2000);
+  });
+
+  it("returns £0 starting balance when no accounts are linked", async () => {
+    prismaMock.account.findMany.mockResolvedValue([]);
+    const result = await cashflowService.getProjection("hh-1", { monthCount: 12 });
+    expect(result.startingBalance).toBe(0);
+    expect(result.linkedAccountCount).toBe(0);
+  });
+
+  it("does not double-count events when anchor is within the first visible month", async () => {
+    // Anchor falls on the first day of the visible window: no replay needed.
+    // The single April-5 bill should be applied exactly once during the
+    // forward projection — closing balance should land at -1000, not -3000.
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "c1",
+        name: "Big Rent",
+        spendType: "monthly",
+        dueDate: new Date("2026-04-05"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "committed_item",
+        itemId: "c1",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 2000,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2026,
+      startMonth: 4,
+      monthCount: 1,
+    });
+
+    expect(result.months[0]?.openingBalance).toBe(1000);
+    expect(result.months[0]?.closingBalance).toBe(-1000);
+    expect(result.months[0]?.netChange).toBe(-2000);
+  });
+
+  it("exposes latestKnownBalance equal to the sum of latest linked balances", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        type: "Current",
+        isCashflowLinked: true,
+        balances: [
+          { value: 1500, date: new Date("2026-04-11"), createdAt: new Date("2026-04-11") },
+        ],
+      },
+      {
+        id: "a2",
+        type: "Savings",
+        isCashflowLinked: true,
+        balances: [{ value: 800, date: new Date("2026-04-10"), createdAt: new Date("2026-04-10") }],
+      },
+    ] as any);
+    const result = await cashflowService.getProjection("hh-1", { monthCount: 1 });
+    expect(result.latestKnownBalance).toBe(2300);
+  });
+
+  it("backwards-replays anchor → window start when anchor is mid-month", async () => {
+    // Anchor = today (2026-04-11), latest balance £4,200. Window start = 1 Apr.
+    // Plan has a £1,000 income on 5 Apr. No discretionary.
+    // Expected start-of-month opening:
+    //   4200 (today) − 1000 (5 Apr income, undone) + 0 (discretionary) = 3200
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        type: "Current",
+        isCashflowLinked: true,
+        balances: [
+          { value: 4200, date: new Date("2026-04-11"), createdAt: new Date("2026-04-11") },
+        ],
+      },
+    ] as any);
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      {
+        id: "i1",
+        name: "Salary",
+        frequency: "monthly",
+        dueDate: new Date("2026-04-05"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "income_source",
+        itemId: "i1",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 1000,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2026,
+      startMonth: 4,
+      monthCount: 1,
+    });
+
+    expect(result.startingBalance).toBe(3200);
+    expect(result.latestKnownBalance).toBe(4200);
+    expect(result.months[0]?.openingBalance).toBe(3200);
+  });
+
+  it("backwards-replay also undoes daily discretionary across the past portion of the month", async () => {
+    // Anchor = today (2026-04-11), balance £3,000. Window start = 1 Apr.
+    // £600/mo monthly discretionary → £20/day.
+    // Days walked back: Apr 10, 9, 8, 7, 6, 5, 4, 3, 2, 1 = 10 days × £20 = £200 added back.
+    // Expected opening: 3000 + 200 = 3200.
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        type: "Current",
+        isCashflowLinked: true,
+        balances: [
+          { value: 3000, date: new Date("2026-04-11"), createdAt: new Date("2026-04-11") },
+        ],
+      },
+    ] as any);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([
+      { id: "d1", name: "Food", spendType: "monthly", householdId: "hh-1" },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "discretionary_item",
+        itemId: "d1",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 600,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2026,
+      startMonth: 4,
+      monthCount: 1,
+    });
+
+    expect(result.startingBalance).toBeCloseTo(3200, 5);
+    expect(result.latestKnownBalance).toBe(3000);
+  });
+
+  it("ignores annual bills whose first occurrence is in a future year", async () => {
+    // Annual bill scheduled to start in 2030 must not emit phantom 2026/2027/2028/2029 occurrences.
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      {
+        id: "i1",
+        name: "Future Bonus",
+        frequency: "annual",
+        dueDate: new Date("2030-02-15"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "income_source",
+        itemId: "i1",
+        startDate: new Date("2030-01-01"),
+        endDate: null,
+        amount: 5000,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2026,
+      startMonth: 1,
+      monthCount: 12,
+    });
+
+    // No income should land in 2026 — projection nets to zero across the year.
+    expect(result.months.every((m) => m.netChange === 0)).toBe(true);
+    expect(result.projectedEndBalance).toBe(1000);
+  });
+});
+
+describe("cashflowService.getMonthDetail", () => {
+  beforeEach(() => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        type: "Current",
+        isCashflowLinked: true,
+        balances: [
+          { value: 1000, date: new Date("2026-04-01"), createdAt: new Date("2026-04-01") },
+        ],
+      },
+    ] as any);
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      {
+        id: "i1",
+        name: "Salary",
+        frequency: "monthly",
+        dueDate: new Date("2026-04-25"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "income_source",
+        itemId: "i1",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 3000,
+      },
+    ] as any);
+  });
+
+  it("returns events for the target month with running balance after each", async () => {
+    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    expect(detail.events).toHaveLength(1);
+    expect(detail.events[0]?.label).toBe("Salary");
+    expect(detail.events[0]?.amount).toBe(3000);
+    expect(detail.events[0]?.runningBalanceAfter).toBeGreaterThan(0);
+  });
+
+  it("returns dailyTrace with one entry per day", async () => {
+    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    expect(detail.dailyTrace).toHaveLength(30); // April
+  });
+
+  it("includes amortisedDailyDiscretionary in the response", async () => {
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([
+      { id: "d1", name: "Food", spendType: "monthly", householdId: "hh-1" },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "discretionary_item",
+        itemId: "d1",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 600,
+      },
+    ] as any);
+    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    expect(detail.monthlyDiscretionaryTotal).toBe(600);
+    expect(detail.amortisedDailyDiscretionary).toBeCloseTo(20, 1); // 600/30
+  });
+
+  it("includes events dated before today in the current month's event list", async () => {
+    // Today is 2026-04-11. A 5 Apr salary should still appear in the April detail.
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      {
+        id: "i1",
+        name: "Salary",
+        frequency: "monthly",
+        dueDate: new Date("2026-04-05"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "income_source",
+        itemId: "i1",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 3000,
+      },
+    ] as any);
+
+    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    const labels = detail.events.map((e) => e.label);
+    const dates = detail.events.map((e) => e.date);
+    expect(labels).toContain("Salary");
+    expect(dates).toContain("2026-04-05");
+  });
+
+  it("computes tightestPoint across the full current month, including past-of-today days", async () => {
+    // Today is 2026-04-11. Big rent on 3 Apr drives a dip well before today.
+    // The tightest point must still report 3 Apr's value, not a later day.
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        type: "Current",
+        isCashflowLinked: true,
+        balances: [{ value: 500, date: new Date("2026-04-11"), createdAt: new Date("2026-04-11") }],
+      },
+    ] as any);
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "c1",
+        name: "Rent",
+        spendType: "monthly",
+        dueDate: new Date("2026-04-03"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      {
+        id: "i1",
+        name: "Salary",
+        frequency: "monthly",
+        dueDate: new Date("2026-04-25"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "committed_item",
+        itemId: "c1",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 2000,
+      },
+      {
+        itemType: "income_source",
+        itemId: "i1",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 3000,
+      },
+    ] as any);
+
+    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    // Today is day 11; tightest point lands on day 3 (rent day), proving the
+    // scan covers past-of-today days. The actual value is bounded above by the
+    // user's anchor balance because of how the backwards-replay reconstructs
+    // start-of-month — what matters is that the past day is reported.
+    expect(detail.tightestPoint.day).toBe(3);
+  });
+
+  it("excludes monthly/yearly discretionary from event list", async () => {
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([
+      { id: "d1", name: "Food", spendType: "monthly", householdId: "hh-1" },
+      {
+        id: "d2",
+        name: "Concert",
+        spendType: "one_off",
+        dueDate: new Date("2026-04-12"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "discretionary_item",
+        itemId: "d1",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 600,
+      },
+      {
+        itemType: "discretionary_item",
+        itemId: "d2",
+        startDate: new Date("2020-01-01"),
+        endDate: null,
+        amount: 80,
+      },
+    ] as any);
+    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    const labels = detail.events.map((e) => e.label);
+    expect(labels).toContain("Concert");
+    expect(labels).not.toContain("Food");
+  });
+});

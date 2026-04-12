@@ -97,18 +97,23 @@ export function AssetAccountRow({
     item.lastReviewedAt != null ? isStale(item.lastReviewedAt, stalenessThresholdMonths) : false;
   const monthsAgo = stale && item.lastReviewedAt ? monthsElapsed(item.lastReviewedAt) : 0;
 
+  const isActive = isExpanded || isEditing;
+
   return (
-    <div
-      className={`border-b border-foreground/5 ${isExpanded || isEditing ? "bg-page-accent/[0.04] border-l-2 border-page-accent -mx-6 px-6" : ""}`}
-    >
+    <div className="border-b border-foreground/5">
       {/* Collapsed header — always shown */}
       <button
         onClick={() => {
           if (isEditing) return;
           onToggle();
         }}
-        aria-expanded={isExpanded || isEditing}
-        className="w-full flex items-center gap-2 py-3 text-left bg-transparent border-none cursor-pointer"
+        aria-expanded={isActive}
+        className={[
+          "w-full flex items-center gap-2 py-3 text-left bg-transparent cursor-pointer transition-colors",
+          isActive
+            ? "bg-page-accent/[0.04] border-l-2 border-page-accent pl-[6px]"
+            : "border-l-2 border-transparent pl-[6px]",
+        ].join(" ")}
       >
         {/* Stale dot — fixed-width left column */}
         <span className="w-2 shrink-0 flex items-center justify-center">
@@ -191,7 +196,7 @@ export function AssetAccountRow({
             <div
               className={[
                 "border-t border-foreground/5 bg-foreground/[0.02] py-2.5 pr-4",
-                "border-l-2 border-page-accent/40 pl-[30px]",
+                "border-l-2 border-page-accent pl-[30px]",
               ].join(" ")}
             >
               <div className="flex flex-col gap-2.5">

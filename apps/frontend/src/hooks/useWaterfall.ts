@@ -6,7 +6,6 @@ import type { CreatePeriodInput, UpdatePeriodInput } from "@finplan/shared";
 export const WATERFALL_KEYS = {
   summary: ["waterfall", "summary"] as const,
   financialSummary: ["waterfall", "financial-summary"] as const,
-  cashflow: (year: number) => ["waterfall", "cashflow", year] as const,
   history: (type: string, id: string) => ["waterfall", "history", type, id] as const,
   subcategories: (tier: string) => ["waterfall", "subcategories", tier] as const,
 };
@@ -22,14 +21,6 @@ export function useFinancialSummary() {
   return useQuery({
     queryKey: WATERFALL_KEYS.financialSummary,
     queryFn: waterfallService.getFinancialSummary,
-  });
-}
-
-export function useCashflow(year: number, options?: { enabled?: boolean }) {
-  return useQuery({
-    queryKey: WATERFALL_KEYS.cashflow(year),
-    queryFn: () => waterfallService.getCashflow(year),
-    enabled: options?.enabled ?? true,
   });
 }
 
@@ -229,6 +220,8 @@ export interface TierItemRow {
   spendType: "monthly" | "yearly" | "one_off";
   subcategoryId: string;
   notes: string | null;
+  /** Required for income/committed; nullable for discretionary (only set on one_off). */
+  dueDate: Date | null;
   lastReviewedAt: Date;
   createdAt: Date;
   sortOrder: number;
@@ -262,6 +255,7 @@ function mapTierItem(r: any, spendType: string): TierItemRow {
     spendType: spendType as "monthly" | "yearly" | "one_off",
     subcategoryId: r.subcategoryId ?? "",
     notes: r.notes ?? null,
+    dueDate: r.dueDate ? new Date(r.dueDate) : null,
     lastReviewedAt: new Date(r.lastReviewedAt),
     createdAt: new Date(r.createdAt),
     sortOrder: r.sortOrder ?? 0,
