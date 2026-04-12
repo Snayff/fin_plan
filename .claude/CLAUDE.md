@@ -60,6 +60,20 @@ docs/
 - **Linting:** ESLint zero warnings — always run `bun run lint` before committing
 - **Shared schemas:** Zod schemas live in `packages/shared/src/schemas/` — never duplicate between apps
 - **Database changes:** Always use `bun run db:migrate` (interactive Prisma migrations) — never edit schema without a migration
+- **No hardcoded colours:** Always use Tailwind design tokens — never hex values or `rgba()` in component code
+
+---
+
+## Panel Layout
+
+All pages use `TwoPanelLayout`. Panel headers follow strict patterns defined in `docs/2. design/design-system.md` § 3.1.
+
+- **Left panel headers** must use the `PageHeader` component — never inline markup
+- **Left panel content** (nav lists, summaries, selectors) uses `px-4` horizontal padding to align with `PageHeader`
+- **Left panel nav buttons:** `px-4 py-2.5`, accent indicator pattern (`bg-{accent}/14 border-l-2 border-{accent} rounded-r-sm`)
+- **Left panel footer:** `border-t border-foreground/10 px-4 py-3`
+- **Right panel headers:** `px-4 py-3 border-b border-foreground/5`, title in `<h2>` with `font-heading text-base font-bold text-foreground`
+- **Right panel add buttons:** use `GhostAddButton` pattern (`components/tier/GhostAddButton.tsx`) — never custom button styles
 
 ---
 
