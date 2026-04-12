@@ -233,8 +233,39 @@ export const giftsService = {
     if (input.cells.length === 0) return { count: 0 };
     for (const cell of input.cells) this._assertCurrentYear(cell.year);
 
-    const personIds = Array.from(new Set(input.cells.map((c) => c.personId)));
-    const eventIds = Array.from(new Set(input.cells.map((c) => c.eventId)));
+    // Auto-create GiftPerson records for household members referenced by member: prefix
+    const memberPrefixIds = new Set(
+      input.cells.map((c) => c.personId).filter((id) => id.startsWith("member:"))
+    );
+    const idMap = new Map<string, string>(); // member:xxx -> real GiftPerson id
+
+    if (memberPrefixIds.size > 0) {
+      const memberIds = [...memberPrefixIds].map((id) => id.slice("member:".length));
+      const members = await prisma.member.findMany({
+        where: { id: { in: memberIds }, householdId },
+        select: { id: true, name: true },
+      });
+      if (members.length !== memberIds.length)
+        throw new NotFoundError("Household member not found");
+
+      for (const m of members) {
+        const gp = await prisma.giftPerson.upsert({
+          where: { householdId_name: { householdId, name: m.name } },
+          create: { householdId, name: m.name, memberId: m.id },
+          update: { memberId: m.id },
+        });
+        idMap.set(`member:${m.id}`, gp.id);
+      }
+    }
+
+    // Resolve all person IDs (replace member: prefixes with real GiftPerson ids)
+    const resolvedCells = input.cells.map((c) => ({
+      ...c,
+      personId: idMap.get(c.personId) ?? c.personId,
+    }));
+
+    const personIds = Array.from(new Set(resolvedCells.map((c) => c.personId)));
+    const eventIds = Array.from(new Set(resolvedCells.map((c) => c.eventId)));
 
     const [persons, events] = await Promise.all([
       prisma.giftPerson.findMany({ where: { id: { in: personIds } } }),
@@ -248,7 +279,7 @@ export const giftsService = {
       if (e.householdId !== householdId) throw new NotFoundError("Gift event not found");
 
     await prisma.$transaction(async (tx) => {
-      for (const cell of input.cells) {
+      for (const cell of resolvedCells) {
         await tx.giftAllocation.upsert({
           where: {
             giftPersonId_giftEventId_year: {
@@ -268,7 +299,7 @@ export const giftsService = {
         });
       }
     });
-    return { count: input.cells.length };
+    return { count: resolvedCells.length };
   },
 
   // ─── Budget ─────────────────────────────────────────────────────────────────
@@ -378,17 +409,28 @@ export const giftsService = {
     const where: Record<string, unknown> = { householdId };
     if (filter === "household") where.memberId = { not: null };
     if (filter === "non-household") where.memberId = null;
-    const people = await prisma.giftPerson.findMany({
-      where,
-      include: {
-        allocations: {
-          where: { year },
-          select: { status: true },
+    const [giftPeople, members] = await Promise.all([
+      prisma.giftPerson.findMany({
+        where,
+        include: {
+          allocations: {
+            where: { year },
+            select: { status: true },
+          },
         },
-      },
-      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    });
-    return people.map((p) => ({
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      }),
+      // Only fetch members when they could be relevant (all or household filter)
+      filter !== "non-household"
+        ? prisma.member.findMany({
+            where: { householdId },
+            orderBy: [{ name: "asc" }],
+            select: { id: true, name: true },
+          })
+        : Promise.resolve([]),
+    ]);
+
+    const mapped = giftPeople.map((p) => ({
       id: p.id,
       name: p.name,
       notes: p.notes,
@@ -397,6 +439,73 @@ export const giftsService = {
       plannedCount: p.allocations.filter((a) => a.status === "planned").length,
       boughtCount: p.allocations.filter((a) => a.status === "bought").length,
     }));
+
+    // Merge household members that don't already have a GiftPerson record
+    const linkedMemberIds = new Set(giftPeople.filter((p) => p.memberId).map((p) => p.memberId!));
+    const missingMembers = members
+      .filter((m) => !linkedMemberIds.has(m.id))
+      .map((m) => ({
+        id: `member:${m.id}`,
+        name: m.name,
+        notes: null,
+        sortOrder: 999,
+        memberId: m.id,
+        plannedCount: 0,
+        boughtCount: 0,
+      }));
+
+    return [...mapped, ...missingMembers];
+  },
+
+  async getQuickAddMatrix(householdId: string, year: number) {
+    const [giftPeople, members, events, allocations, budgetRow] = await Promise.all([
+      prisma.giftPerson.findMany({
+        where: { householdId },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        select: { id: true, name: true, memberId: true },
+      }),
+      prisma.member.findMany({
+        where: { householdId },
+        orderBy: [{ name: "asc" }],
+        select: { id: true, name: true },
+      }),
+      prisma.giftEvent.findMany({
+        where: { householdId },
+        orderBy: [{ isLocked: "desc" }, { sortOrder: "asc" }, { name: "asc" }],
+        select: { id: true, name: true },
+      }),
+      prisma.giftAllocation.findMany({
+        where: { householdId, year },
+        select: { giftPersonId: true, giftEventId: true, planned: true },
+      }),
+      prisma.plannerYearBudget.findUnique({
+        where: { householdId_year: { householdId, year } },
+        select: { giftBudget: true },
+      }),
+    ]);
+
+    // Merge household members that don't already have a GiftPerson record
+    const linkedMemberIds = new Set(giftPeople.filter((p) => p.memberId).map((p) => p.memberId!));
+    const missingMembers = members
+      .filter((m) => !linkedMemberIds.has(m.id))
+      .map((m) => ({ id: `member:${m.id}`, name: m.name, memberId: m.id }));
+
+    const people = [...giftPeople, ...missingMembers];
+    const currentPlanned = allocations.reduce((s, a) => s + (a.planned ?? 0), 0);
+
+    return {
+      people,
+      events,
+      allocations: allocations.map((a) => ({
+        personId: a.giftPersonId,
+        eventId: a.giftEventId,
+        planned: a.planned ?? 0,
+      })),
+      budget: {
+        annual: budgetRow?.giftBudget ?? 0,
+        currentPlanned,
+      },
+    };
   },
 
   async listYearsWithData(householdId: string) {
@@ -409,7 +518,7 @@ export const giftsService = {
   },
 
   async getPlannerState(householdId: string, year: number, userId: string) {
-    const [settings, budgetRow, persons, allocations, dismissal] = await Promise.all([
+    const [settings, budgetRow, persons, allocations, dismissal, members] = await Promise.all([
       this.getOrCreateSettings(householdId),
       prisma.plannerYearBudget.findUnique({
         where: { householdId_year: { householdId, year } },
@@ -421,6 +530,11 @@ export const giftsService = {
       prisma.giftAllocation.findMany({ where: { householdId, year } }),
       prisma.giftRolloverDismissal.findUnique({
         where: { householdId_userId_year: { householdId, userId, year } },
+      }),
+      prisma.member.findMany({
+        where: { householdId },
+        orderBy: [{ name: "asc" }],
+        select: { id: true, name: true },
       }),
     ]);
 
@@ -458,6 +572,25 @@ export const giftsService = {
       };
     });
 
+    // Merge household members that don't already have a GiftPerson record
+    const linkedMemberIds = new Set(persons.filter((p) => p.memberId).map((p) => p.memberId!));
+    const missingMembers = members
+      .filter((m) => !linkedMemberIds.has(m.id))
+      .map((m) => ({
+        id: `member:${m.id}`,
+        name: m.name,
+        notes: null,
+        sortOrder: 999,
+        isHouseholdMember: true,
+        plannedCount: 0,
+        boughtCount: 0,
+        plannedTotal: 0,
+        spentTotal: 0,
+        hasOverspend: false,
+      }));
+
+    const allPeople = [...people, ...missingMembers];
+
     return {
       mode: settings.mode,
       year,
@@ -469,7 +602,7 @@ export const giftsService = {
         plannedOverBudgetBy: Math.max(0, plannedTotal - annualBudget),
         spentOverBudgetBy: Math.max(0, spentTotal - annualBudget),
       },
-      people,
+      people: allPeople,
       rolloverPending: dismissal === null && (await this._isRolloverPending(householdId, year)),
     };
   },

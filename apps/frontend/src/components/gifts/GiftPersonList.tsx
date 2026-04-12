@@ -4,10 +4,9 @@ import type { GiftPersonRow } from "@finplan/shared";
 type Props = {
   people: GiftPersonRow[];
   onSelect: (id: string) => void;
-  onNavigateToConfig?: () => void;
 };
 
-export function GiftPersonList({ people, onSelect, onNavigateToConfig }: Props) {
+export function GiftPersonList({ people, onSelect }: Props) {
   const plannedTotal = people.reduce((sum, p) => sum + p.plannedTotal, 0);
 
   if (people.length === 0) {
@@ -16,12 +15,10 @@ export function GiftPersonList({ people, onSelect, onNavigateToConfig }: Props) 
         <div className="px-4 py-3 flex items-center border-b border-foreground/5">
           <h2 className="font-heading text-base font-bold text-foreground">Gifts</h2>
         </div>
-        <div className="flex flex-1 items-center justify-center p-8">
+        <div className="flex-1 overflow-y-auto">
           <GhostedListEmpty
-            ctaHeading="Get started with gifts"
-            ctaText="Add the people you buy gifts for, then plan amounts for each event."
-            ctaButtonLabel="Go to Config"
-            onCtaClick={onNavigateToConfig}
+            showCta={false}
+            ctaText="Select a person to start planning their gifts."
           />
         </div>
       </div>

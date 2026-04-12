@@ -71,6 +71,13 @@ export async function giftsRoutes(fastify: FastifyInstance) {
     return reply.send(list);
   });
 
+  fastify.get("/config/quick-add-matrix", pre, async (req, reply) => {
+    const { year } = req.query as { year?: string };
+    const y = parseYear(year);
+    const matrix = await giftsService.getQuickAddMatrix(req.householdId!, y);
+    return reply.send(matrix);
+  });
+
   // ─── People mutations ───────────────────────────────────────────────────────
 
   fastify.post("/people", pre, async (req, reply) => {
