@@ -81,6 +81,7 @@ export function CashflowSectionPanel() {
       <CashflowHeader
         startingBalance={projection.latestKnownBalance}
         linkedCount={projection.linkedAccountCount}
+        oldestBalanceDate={projection.oldestLinkedBalanceDate}
       />
       <div className="flex flex-col gap-4 p-4">
         {showStale && (
