@@ -60,6 +60,7 @@ export interface CashflowProjectionMonth {
 
 export interface CashflowProjection {
   startingBalance: number;
+  latestKnownBalance: number;
   windowStart: { year: number; month: number };
   months: CashflowProjectionMonth[];
   projectedEndBalance: number;

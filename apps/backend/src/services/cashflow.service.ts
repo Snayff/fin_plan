@@ -327,10 +327,13 @@ export const cashflowService = {
     const startMonth = input.startMonth ?? today.getUTCMonth() + 1;
     const monthCount = input.monthCount;
 
-    // Replay anchor → start of visible window so the forward projection never
-    // re-applies events that already happened. If anchor is at or after the
-    // first visible month start, no replay is needed — the forward projection
-    // begins from the user's actual known balance.
+    // Replay anchor → start of visible window so month 1 always opens at the
+    // start-of-month balance. Two symmetric branches:
+    //   - anchor < window start: walk forward, applying events.
+    //   - anchor > window start: walk backward, inverting events. The user
+    //     just updated their balance mid-month, and we need to derive the
+    //     hypothetical 1st-of-month figure so the current month renders
+    //     identically to every other month.
     const visibleWindowStart = startOfMonth(startYear, startMonth);
     let balance = startingBalance;
     if (anchor < visibleWindowStart) {
@@ -355,6 +358,30 @@ export const cashflowService = {
         const baseline = computeMonthlyDiscretionaryBaseline(discretionary, periodsByKey, cursor);
         balance -= baseline / daysInMonth(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1);
         cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+    } else if (anchor > visibleWindowStart) {
+      const replayEvents = buildEvents(
+        visibleWindowStart,
+        anchor,
+        income,
+        committed,
+        discretionary,
+        periodsByKey
+      );
+      const eventsByDay = new Map<number, number>();
+      for (const e of replayEvents) {
+        const key = e.date.getTime();
+        eventsByDay.set(key, (eventsByDay.get(key) ?? 0) + e.amount);
+      }
+      const cursor = new Date(anchor);
+      while (cursor > visibleWindowStart) {
+        cursor.setUTCDate(cursor.getUTCDate() - 1);
+        const baseline = computeMonthlyDiscretionaryBaseline(discretionary, periodsByKey, cursor);
+        balance += baseline / daysInMonth(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1);
+        const evAmount = eventsByDay.get(cursor.getTime());
+        if (evAmount !== undefined) {
+          balance -= evAmount;
+        }
       }
     }
 
@@ -429,7 +456,8 @@ export const cashflowService = {
       months.length > 0 ? months.reduce((s, m) => s + m.netChange, 0) / months.length : 0;
 
     return {
-      startingBalance,
+      startingBalance: balance,
+      latestKnownBalance: startingBalance,
       windowStart: { year: startYear, month: startMonth },
       months,
       projectedEndBalance,
