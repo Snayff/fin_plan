@@ -39,7 +39,7 @@ export function UpcomingModePanel({ year, onNavigateToGifts }: Props) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="px-6 py-4 flex items-center justify-between border-b border-foreground/5">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-foreground/5">
         <div className="flex items-center gap-3">
           <h2 className="font-heading text-base font-bold text-foreground">Upcoming</h2>
           <span className="text-xs text-foreground/40">

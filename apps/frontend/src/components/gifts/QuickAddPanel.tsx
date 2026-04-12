@@ -32,10 +32,14 @@ export function QuickAddPanel({ year, readOnly }: Props) {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="px-6 py-4 flex items-center border-b border-foreground/5">
+      <div className="px-4 py-3 flex items-center border-b border-foreground/5">
         <h2 className="font-heading text-base font-bold text-foreground">Quick Add</h2>
       </div>
       <div className="flex-1 flex flex-col p-6">
+        <p className="mb-4 text-xs text-foreground/50">
+          Enter planned gift amounts for each person and event. Only cells with a value will be
+          saved.
+        </p>
         <div className="mb-3 overflow-x-auto">
           <table className="min-w-full border-separate border-spacing-1 text-xs">
             <thead>

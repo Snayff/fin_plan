@@ -14,15 +14,27 @@ export function ConfigModePanel({ currentMode, readOnly, year }: Props) {
   if (drill === "list") {
     return (
       <div className="flex h-full flex-col">
-        <div className="px-6 py-4 flex items-center border-b border-foreground/5">
+        <div className="px-4 py-3 flex items-center border-b border-foreground/5">
           <h2 className="font-heading text-base font-bold text-foreground">Config</h2>
         </div>
         <ul className="divide-y divide-foreground/5">
           {[
-            { id: "people" as Drill, label: "People" },
-            { id: "events" as Drill, label: "Events" },
-            { id: "mode" as Drill, label: "Mode" },
-            { id: "quickadd" as Drill, label: "Quick add" },
+            { id: "people" as Drill, label: "People", description: "Who you buy gifts for" },
+            {
+              id: "events" as Drill,
+              label: "Events",
+              description: "Occasions like birthdays and holidays",
+            },
+            {
+              id: "mode" as Drill,
+              label: "Mode",
+              description: "Whether the gift budget links to your waterfall",
+            },
+            {
+              id: "quickadd" as Drill,
+              label: "Quick add",
+              description: "Set planned amounts for everyone at once",
+            },
           ].map((row) => (
             <li
               key={row.id}
@@ -37,7 +49,8 @@ export function ConfigModePanel({ currentMode, readOnly, year }: Props) {
               }}
               className="cursor-pointer px-6 py-3 text-sm text-foreground hover:bg-foreground/5"
             >
-              {row.label}
+              <div>{row.label}</div>
+              <div className="text-[11px] text-foreground/40">{row.description}</div>
             </li>
           ))}
         </ul>

@@ -3,9 +3,14 @@ import { GiftPersonList } from "./GiftPersonList";
 import { GiftPersonDetail } from "./GiftPersonDetail";
 import type { GiftPersonRow } from "@finplan/shared";
 
-type Props = { people: GiftPersonRow[]; year: number; readOnly: boolean };
+type Props = {
+  people: GiftPersonRow[];
+  year: number;
+  readOnly: boolean;
+  onNavigateToConfig?: () => void;
+};
 
-export function GiftsModePanel({ people, year, readOnly }: Props) {
+export function GiftsModePanel({ people, year, readOnly, onNavigateToConfig }: Props) {
   const [activePersonId, setActivePersonId] = useState<string | null>(null);
   if (activePersonId) {
     return (
@@ -17,5 +22,11 @@ export function GiftsModePanel({ people, year, readOnly }: Props) {
       />
     );
   }
-  return <GiftPersonList people={people} onSelect={setActivePersonId} />;
+  return (
+    <GiftPersonList
+      people={people}
+      onSelect={setActivePersonId}
+      onNavigateToConfig={onNavigateToConfig}
+    />
+  );
 }

@@ -1,28 +1,35 @@
+import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import type { GiftPersonRow } from "@finplan/shared";
 
 type Props = {
   people: GiftPersonRow[];
   onSelect: (id: string) => void;
+  onNavigateToConfig?: () => void;
 };
 
-export function GiftPersonList({ people, onSelect }: Props) {
+export function GiftPersonList({ people, onSelect, onNavigateToConfig }: Props) {
   const plannedTotal = people.reduce((sum, p) => sum + p.plannedTotal, 0);
 
   if (people.length === 0) {
     return (
       <div className="flex h-full flex-col">
-        <div className="px-6 py-4 flex items-center border-b border-foreground/5">
+        <div className="px-4 py-3 flex items-center border-b border-foreground/5">
           <h2 className="font-heading text-base font-bold text-foreground">Gifts</h2>
         </div>
-        <div className="flex flex-1 items-center justify-center p-8 text-sm text-foreground/40">
-          No people yet — head to Config → Quick Add to start.
+        <div className="flex flex-1 items-center justify-center p-8">
+          <GhostedListEmpty
+            ctaHeading="Get started with gifts"
+            ctaText="Add the people you buy gifts for, then plan amounts for each event."
+            ctaButtonLabel="Go to Config"
+            onCtaClick={onNavigateToConfig}
+          />
         </div>
       </div>
     );
   }
   return (
     <div className="flex h-full flex-col">
-      <div className="px-6 py-4 flex items-center justify-between border-b border-foreground/5">
+      <div className="px-4 py-3 flex items-center justify-between border-b border-foreground/5">
         <div className="flex items-center gap-3">
           <h2 className="font-heading text-base font-bold text-foreground">Gifts</h2>
           <span className="text-xs text-foreground/40">

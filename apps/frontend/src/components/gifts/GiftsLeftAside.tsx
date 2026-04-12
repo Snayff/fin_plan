@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/common/PageHeader";
+import { NudgeCard } from "@/components/common/NudgeCard";
 import { GiftsBudgetSummary } from "./GiftsBudgetSummary";
 import type { GiftBudgetSummary } from "@finplan/shared";
 
@@ -12,6 +13,7 @@ type Props = {
   onModeChange: (mode: GiftsMode) => void;
   budget: GiftBudgetSummary;
   readOnly: boolean;
+  peopleCount: number;
 };
 
 const TABS: { id: GiftsMode; label: string }[] = [
@@ -28,11 +30,12 @@ export function GiftsLeftAside({
   onModeChange,
   budget,
   readOnly,
+  peopleCount,
 }: Props) {
   return (
     <div className="flex h-full flex-col">
       <PageHeader title="Gifts" />
-      <div className="flex items-center gap-2 px-6 pb-2">
+      <div className="flex items-center gap-2 px-4 pb-2">
         <label
           className="text-[11px] uppercase tracking-wide text-foreground/40"
           htmlFor="gifts-year"
@@ -54,6 +57,20 @@ export function GiftsLeftAside({
         </select>
       </div>
       <GiftsBudgetSummary budget={budget} readOnly={readOnly} />
+      {budget.annualBudget === 0 && peopleCount === 0 && (
+        <div className="px-4 pb-2">
+          <NudgeCard
+            message="Set up your gift plan in a few steps."
+            options={[
+              "Config → People — add the people you buy for",
+              "Config → Events — review or add occasions",
+              "Config → Quick add — set planned amounts in bulk",
+            ]}
+            actionLabel="Open Config"
+            onAction={() => onModeChange("config")}
+          />
+        </div>
+      )}
       <nav className="mt-2 flex flex-col">
         {TABS.map((tab) => {
           const isActive = mode === tab.id;
@@ -64,7 +81,7 @@ export function GiftsLeftAside({
               data-active={isActive}
               onClick={() => onModeChange(tab.id)}
               className={[
-                "relative flex w-full items-center px-6 py-2.5 text-left text-sm transition-colors",
+                "relative flex w-full items-center px-4 py-2.5 text-left text-sm transition-colors",
                 isActive
                   ? "font-medium text-tier-discretionary"
                   : "text-foreground/60 hover:bg-tier-discretionary/5",

@@ -50,12 +50,18 @@ export default function GiftsPage() {
             onModeChange={setMode}
             budget={state.budget}
             readOnly={state.isReadOnly}
+            peopleCount={state.people.length}
           />
         }
         right={
           <div className="flex h-full flex-col">
             {mode === "gifts" && (
-              <GiftsModePanel people={state.people} year={year} readOnly={state.isReadOnly} />
+              <GiftsModePanel
+                people={state.people}
+                year={year}
+                readOnly={state.isReadOnly}
+                onNavigateToConfig={() => setMode("config")}
+              />
             )}
             {mode === "upcoming" && (
               <UpcomingModePanel year={year} onNavigateToGifts={() => setMode("gifts")} />

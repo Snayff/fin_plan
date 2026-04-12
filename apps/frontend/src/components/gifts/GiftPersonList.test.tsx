@@ -57,7 +57,9 @@ describe("GiftPersonList", () => {
   });
 
   it("renders empty state when no people", () => {
-    render(<GiftPersonList people={[]} onSelect={() => {}} />);
-    expect(screen.getByText(/no people yet/i)).toBeInTheDocument();
+    const onConfig = mock(() => {});
+    render(<GiftPersonList people={[]} onSelect={() => {}} onNavigateToConfig={onConfig} />);
+    expect(screen.getByText(/get started with gifts/i)).toBeInTheDocument();
+    expect(screen.getByText(/go to config/i)).toBeInTheDocument();
   });
 });

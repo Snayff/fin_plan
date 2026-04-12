@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useGiftPerson, useUpsertAllocation } from "@/hooks/useGifts";
+import { InfoTip } from "@/components/ui/InfoTip";
 import type { GiftAllocationRow } from "@finplan/shared";
 
 type Props = { personId: string; year: number; onBack: () => void; readOnly: boolean };
@@ -70,7 +71,14 @@ function AllocationCard({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="text-sm text-foreground">{allocation.eventName}</span>
-          {needsDate && <span className="text-[11px] text-foreground/40">needs date</span>}
+          {needsDate && (
+            <InfoTip text="This is a personal-date event. Set the date for this person so it appears in the Upcoming timeline.">
+              <span className="inline-flex items-center gap-1 rounded bg-attention-bg px-1.5 py-0.5 text-[11px] text-attention border border-attention-border">
+                <span aria-hidden className="h-1 w-1 rounded-full bg-attention" />
+                needs date
+              </span>
+            </InfoTip>
+          )}
         </div>
         <span className="text-[11px] uppercase tracking-wide text-foreground/40">
           {allocation.status}

@@ -55,7 +55,7 @@ export function ConfigPeoplePanel({ readOnly, year }: Props) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-foreground/5">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/5">
         <div className="flex items-center gap-3">
           <h2 className="font-heading text-base font-bold text-foreground">People</h2>
           <span className="text-xs text-foreground/40">
@@ -66,9 +66,10 @@ export function ConfigPeoplePanel({ readOnly, year }: Props) {
           <button
             type="button"
             onClick={() => setShowAddInput(true)}
-            className="rounded border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-foreground/10"
+            disabled={showAddInput}
+            className="rounded-md border px-3 py-1 text-xs font-medium transition-all duration-150 border-foreground/20 text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            + Add person
+            + Add
           </button>
         )}
       </div>

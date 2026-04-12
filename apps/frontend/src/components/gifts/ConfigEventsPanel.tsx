@@ -7,6 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { InfoTip } from "@/components/ui/InfoTip";
 import type { GiftDateType } from "@finplan/shared";
 
 type Props = { readOnly: boolean };
@@ -79,7 +80,7 @@ export function ConfigEventsPanel({ readOnly }: Props) {
   return (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="px-6 py-4 flex items-center justify-between border-b border-foreground/5">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/5">
         <div className="flex items-center gap-3">
           <h2 className="font-heading text-base font-bold text-foreground">Events</h2>
           <span className="text-xs text-foreground/40">
@@ -90,7 +91,11 @@ export function ConfigEventsPanel({ readOnly }: Props) {
       <div className="flex-1 overflow-y-auto p-6">
         {/* Locked events */}
         <section>
-          <h3 className={labelClass}>Locked</h3>
+          <h3 className={labelClass}>
+            <InfoTip text="Built-in events that cannot be renamed or deleted. You can still choose not to plan gifts for them.">
+              Locked
+            </InfoTip>
+          </h3>
           <ul className="mt-2 divide-y divide-foreground/5">
             {locked.map((e: any) => (
               <li
@@ -105,7 +110,13 @@ export function ConfigEventsPanel({ readOnly }: Props) {
                   {e.name}
                 </span>
                 <span className="text-[11px] text-text-muted">
-                  {e.dateType === "shared" ? `${e.dateMonth}/${e.dateDay}` : "personal"}
+                  {e.dateType === "shared" ? (
+                    `${e.dateMonth}/${e.dateDay}`
+                  ) : (
+                    <InfoTip text="Date differs per person — set each person's date in the Gifts tab.">
+                      personal
+                    </InfoTip>
+                  )}
                 </span>
               </li>
             ))}
