@@ -13,7 +13,6 @@ import { WaterfallConnector } from "@/components/overview/WaterfallConnector";
 
 interface WaterfallLeftPanelProps {
   summary: WaterfallSummary;
-  onOpenCashflowCalendar: () => void;
   selectedItemId: string | null;
 }
 
@@ -87,7 +86,6 @@ function SectionHeader({
 
 export function WaterfallLeftPanel({
   summary,
-  onOpenCashflowCalendar,
   selectedItemId: _selectedItemId,
 }: WaterfallLeftPanelProps) {
   const navigate = useNavigate();
@@ -215,14 +213,14 @@ export function WaterfallLeftPanel({
             );
           })}
           {committed.monthlyAvg12 > 0 && (
-            <button
-              type="button"
-              className={cn(ROW_CLASS, "text-muted-foreground text-xs hover:text-foreground")}
-              onClick={() => onOpenCashflowCalendar()}
+            <div
+              className={cn(
+                "flex items-center justify-between py-1.5 px-2 text-[13px] text-muted-foreground text-xs"
+              )}
             >
               <span>incl. yearly ÷12</span>
               <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyAvg12)}</span>
-            </button>
+            </div>
           )}
         </div>
       </motion.div>

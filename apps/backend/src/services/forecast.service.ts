@@ -6,10 +6,17 @@ import type { ForecastProjection, ForecastHorizon } from "@finplan/shared";
 
 function accountEffectiveRate(
   account: { growthRatePct: number | null; type: string },
-  settings: { savingsRatePct: number; investmentRatePct: number; pensionRatePct: number }
+  settings: {
+    currentRatePct: number;
+    savingsRatePct: number;
+    investmentRatePct: number;
+    pensionRatePct: number;
+  }
 ): number {
   if (account.growthRatePct != null) return account.growthRatePct / 100;
   switch (account.type) {
+    case "Current":
+      return settings.currentRatePct / 100;
     case "Savings":
       return settings.savingsRatePct / 100;
     case "StocksAndShares":
@@ -53,7 +60,12 @@ type ProjectableAsset = {
 
 function sumAccountSeries(
   accounts: ProjectableAccount[],
-  settings: { savingsRatePct: number; investmentRatePct: number; pensionRatePct: number },
+  settings: {
+    currentRatePct: number;
+    savingsRatePct: number;
+    investmentRatePct: number;
+    pensionRatePct: number;
+  },
   years: number
 ): number[] {
   const sums = Array.from({ length: years + 1 }, () => 0);
@@ -80,6 +92,7 @@ function sumAssetSeries(assets: ProjectableAsset[], years: number): number[] {
 }
 
 const DEFAULT_SETTINGS = {
+  currentRatePct: 0,
   savingsRatePct: 4,
   investmentRatePct: 7,
   pensionRatePct: 6,
@@ -107,6 +120,7 @@ export const forecastService = {
     ]);
 
     const settings = {
+      currentRatePct: settingsRow?.currentRatePct ?? DEFAULT_SETTINGS.currentRatePct,
       savingsRatePct: settingsRow?.savingsRatePct ?? DEFAULT_SETTINGS.savingsRatePct,
       investmentRatePct: settingsRow?.investmentRatePct ?? DEFAULT_SETTINGS.investmentRatePct,
       pensionRatePct: settingsRow?.pensionRatePct ?? DEFAULT_SETTINGS.pensionRatePct,

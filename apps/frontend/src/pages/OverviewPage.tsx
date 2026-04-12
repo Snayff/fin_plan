@@ -8,7 +8,6 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { WaterfallLeftPanel } from "@/components/overview/WaterfallLeftPanel";
 import { ItemDetailPanel } from "@/components/overview/ItemDetailPanel";
-import { CashflowCalendar } from "@/components/overview/CashflowCalendar";
 import { IncomeTypePanel } from "@/components/overview/IncomeTypePanel";
 import { CommittedBillsPanel } from "@/components/overview/CommittedBillsPanel";
 import { SnapshotTimeline } from "@/components/overview/SnapshotTimeline";
@@ -29,13 +28,11 @@ interface SelectedItem {
 type RightPanelView =
   | { type: "none" }
   | { type: "item"; item: SelectedItem }
-  | { type: "cashflow" }
   | { type: "income_type"; incomeType: IncomeType; label: string }
   | { type: "committed_bills" };
 
 export default function OverviewPage() {
   const [view, setView] = useState<RightPanelView>({ type: "none" });
-  const [year] = useState(() => new Date().getFullYear());
   const [selectedSnapshotId, setSelectedSnapshotId] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showReviewWizard, setShowReviewWizard] = useState(false);
@@ -67,7 +64,6 @@ export default function OverviewPage() {
   ) : summary ? (
     <WaterfallLeftPanel
       summary={summary}
-      onOpenCashflowCalendar={() => setView({ type: "cashflow" })}
       selectedItemId={
         view.type === "item"
           ? view.item.id
@@ -95,11 +91,8 @@ export default function OverviewPage() {
         item={view.item}
         onBack={() => setView({ type: "none" })}
         snapshotDate={snapshotDate}
-        onViewCashflow={() => setView({ type: "cashflow" })}
       />
     );
-  } else if (view.type === "cashflow") {
-    right = <CashflowCalendar year={year} onBack={() => setView({ type: "none" })} />;
   } else if (view.type === "income_type" && summary) {
     const group = summary.income.byType.find((g) => g.type === view.incomeType);
     right = (

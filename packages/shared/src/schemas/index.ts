@@ -155,6 +155,9 @@ export {
   type ImportResult,
 } from "./export-import.schemas";
 
+// Cashflow schemas and types
+export * from "./cashflow.schemas";
+
 // Forecast schemas and types
 export {
   ForecastHorizonSchema,

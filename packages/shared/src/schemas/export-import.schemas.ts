@@ -23,7 +23,7 @@ const exportIncomeSourceSchema = z.object({
   name: z.string(),
   frequency: z.enum(["monthly", "annual", "one_off"]),
   incomeType: z.enum(["salary", "dividends", "freelance", "rental", "benefits", "other"]),
-  expectedMonth: z.number().int().nullable().optional(),
+  dueDate: z.coerce.date(),
   ownerName: z.string().nullable().optional(),
   sortOrder: z.number().int(),
   lastReviewedAt: z.string().datetime(),
@@ -43,7 +43,7 @@ const exportCommittedItemSchema = z.object({
   spendType: z.enum(["monthly", "yearly", "one_off"]),
   notes: z.string().nullable().optional(),
   ownerName: z.string().nullable().optional(),
-  dueMonth: z.number().int().nullable().optional(),
+  dueDate: z.coerce.date(),
   sortOrder: z.number().int(),
   lastReviewedAt: z.string().datetime(),
   periods: z.array(
@@ -60,6 +60,7 @@ const exportDiscretionaryItemSchema = z.object({
   name: z.string(),
   spendType: z.enum(["monthly", "yearly", "one_off"]),
   notes: z.string().nullable().optional(),
+  dueDate: z.coerce.date().nullable(),
   sortOrder: z.number().int(),
   lastReviewedAt: z.string().datetime(),
   periods: z.array(
@@ -103,10 +104,11 @@ const exportAssetSchema = z.object({
 
 const exportAccountSchema = z.object({
   name: z.string(),
-  type: z.enum(["Savings", "Pension", "StocksAndShares", "Other"]),
+  type: z.enum(["Current", "Savings", "Pension", "StocksAndShares", "Other"]),
   ownerName: z.string().nullable().optional(),
   growthRatePct: z.number().nullable().optional(),
   monthlyContribution: z.number(),
+  isCashflowLinked: z.boolean().default(false),
   lastReviewedAt: z.string().datetime().nullable().optional(),
   balances: z.array(
     z.object({
@@ -190,6 +192,7 @@ const exportSettingsSchema = z.object({
   isaYearStartMonth: z.number().int().optional(),
   isaYearStartDay: z.number().int().optional(),
   stalenessThresholds: stalenessThresholdsSchema.optional(),
+  currentRatePct: z.number().nullable().optional(),
   savingsRatePct: z.number().nullable().optional(),
   investmentRatePct: z.number().nullable().optional(),
   pensionRatePct: z.number().nullable().optional(),

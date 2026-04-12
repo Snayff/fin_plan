@@ -23,7 +23,6 @@ mock.module("@/hooks/useSettings", () => mockUseSettings);
 
 mock.module("@/hooks/useWaterfall", () => ({
   useWaterfallSummary: () => ({ data: undefined, isLoading: false, isError: false }),
-  useCashflow: () => ({ data: undefined, isLoading: false, isError: false }),
   useItemHistory: () => ({ data: undefined, isLoading: false, isError: false }),
   useConfirmItem: () => ({ mutate: () => {}, isPending: false }),
   useUpdateItem: () => ({ mutate: () => {}, isPending: false }),

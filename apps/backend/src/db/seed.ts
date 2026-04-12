@@ -168,11 +168,17 @@ async function main() {
     {
       name: "Home Insurance",
       spendType: "yearly" as const,
-      dueMonth: 9,
+      dueDate: new Date("2026-09-01"),
       sortOrder: 0,
       amount: 600,
     },
-    { name: "Car Tax", spendType: "yearly" as const, dueMonth: 3, sortOrder: 1, amount: 180 },
+    {
+      name: "Car Tax",
+      spendType: "yearly" as const,
+      dueDate: new Date("2026-03-01"),
+      sortOrder: 1,
+      amount: 180,
+    },
   ];
 
   for (const { amount, ...item } of committedYearly) {

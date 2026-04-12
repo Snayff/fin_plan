@@ -10,6 +10,13 @@ import { formatCurrency } from "@/utils/format";
 import type { TierConfig } from "./tierConfig";
 import type { SpendType } from "./formatAmount";
 
+function toDateInputValue(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 interface SubcategoryOption {
   id: string;
   name: string;
@@ -21,6 +28,8 @@ interface ItemData {
   spendType: SpendType;
   subcategoryId: string;
   notes: string | null;
+  /** Required for income/committed; null for discretionary unless one_off. */
+  dueDate: string | null;
 }
 
 interface ItemPeriod {
@@ -30,9 +39,10 @@ interface ItemPeriod {
   amount: number;
 }
 
-interface EditItem extends ItemData {
+interface EditItem extends Omit<ItemData, "dueDate"> {
   id: string;
   lastReviewedAt: Date;
+  dueDate: Date | null;
   periods?: ItemPeriod[];
 }
 
@@ -78,13 +88,23 @@ export default function ItemForm({
   onDeletePeriod,
   onAddPeriod,
 }: Props) {
+  const tier = config.tier;
   const [name, setName] = useState(item?.name ?? "");
   const [amount, setAmount] = useState(item?.amount?.toString() ?? "");
   const [spendType, setSpendType] = useState<SpendType>(item?.spendType ?? "monthly");
   const [subcategoryId, setSubcategoryId] = useState(item?.subcategoryId ?? initialSubcategoryId);
   const [notes, setNotes] = useState(item?.notes ?? "");
+  const [dueDate, setDueDate] = useState<string>(() => {
+    if (item?.dueDate) return toDateInputValue(item.dueDate);
+    return toDateInputValue(new Date());
+  });
   const [amountError, setAmountError] = useState<string | null>(null);
   const [amountFocused, setAmountFocused] = useState(false);
+
+  // Discretionary items only need a date for one-off purchases.
+  const dueDateRequired = tier === "income" || tier === "committed";
+  const showDueDate = dueDateRequired || spendType === "one_off";
+  const dueDateLabel = spendType === "monthly" || spendType === "yearly" ? "First payment" : "Date";
 
   const displayAmount =
     !amountFocused && amount
@@ -111,6 +131,7 @@ export default function ItemForm({
       spendType,
       subcategoryId,
       notes: notes.trim() || null,
+      dueDate: showDueDate ? dueDate : null,
     });
   }
 
@@ -186,6 +207,23 @@ export default function ItemForm({
             </SelectContent>
           </Select>
         </div>
+
+        {/* Due date */}
+        {showDueDate && (
+          <div className="col-span-2 flex flex-col gap-1">
+            <label className={labelClass}>
+              {dueDateLabel}
+              {dueDateRequired && <span className="text-text-muted"> *</span>}
+            </label>
+            <input
+              type="date"
+              value={dueDate}
+              onChange={(e) => setDueDate(e.target.value)}
+              aria-label={dueDateLabel}
+              className={inputClass}
+            />
+          </div>
+        )}
 
         {/* Category */}
         <div className="col-span-2 flex flex-col gap-1">

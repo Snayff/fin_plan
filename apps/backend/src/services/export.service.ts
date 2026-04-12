@@ -170,6 +170,7 @@ export const exportService = {
                   asset_item: number;
                   account_item: number;
                 },
+                currentRatePct: settings.currentRatePct,
                 savingsRatePct: settings.savingsRatePct,
                 investmentRatePct: settings.investmentRatePct,
                 pensionRatePct: settings.pensionRatePct,
@@ -195,7 +196,7 @@ export const exportService = {
             name: i.name,
             frequency: i.frequency,
             incomeType: i.incomeType,
-            expectedMonth: i.expectedMonth,
+            dueDate: i.dueDate,
             ownerName: i.ownerId ? (memberNameByMemberId.get(i.ownerId) ?? null) : null,
             sortOrder: i.sortOrder,
             lastReviewedAt: i.lastReviewedAt.toISOString(),
@@ -208,7 +209,7 @@ export const exportService = {
             spendType: i.spendType,
             notes: i.notes,
             ownerName: i.ownerId ? (memberNameByMemberId.get(i.ownerId) ?? null) : null,
-            dueMonth: i.dueMonth,
+            dueDate: i.dueDate,
             sortOrder: i.sortOrder,
             lastReviewedAt: i.lastReviewedAt.toISOString(),
             periods: mapPeriods(i.id),
@@ -218,6 +219,7 @@ export const exportService = {
             name: i.name,
             spendType: i.spendType,
             notes: i.notes,
+            dueDate: i.dueDate,
             sortOrder: i.sortOrder,
             lastReviewedAt: i.lastReviewedAt.toISOString(),
             periods: mapPeriods(i.id),
@@ -253,6 +255,7 @@ export const exportService = {
             ownerName: a.memberId ? (memberNameByMemberId.get(a.memberId) ?? null) : null,
             growthRatePct: a.growthRatePct,
             monthlyContribution: a.monthlyContribution,
+            isCashflowLinked: a.isCashflowLinked,
             lastReviewedAt: a.lastReviewedAt ? a.lastReviewedAt.toISOString() : null,
             balances: a.balances.map((b) => ({
               value: b.value,

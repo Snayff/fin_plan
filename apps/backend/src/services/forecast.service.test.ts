@@ -20,7 +20,7 @@ beforeEach(() => {
 // Helper to build a mock account with a latest balance
 function mockAccount(overrides: {
   id?: string;
-  type: "Savings" | "Pension" | "StocksAndShares" | "Other";
+  type: "Current" | "Savings" | "Pension" | "StocksAndShares" | "Other";
   balance: number;
   monthlyContribution?: number;
   growthRatePct?: number | null;
@@ -54,6 +54,7 @@ function mockAsset(overrides: {
 }
 
 const defaultSettings = {
+  currentRatePct: 0,
   savingsRatePct: 4,
   investmentRatePct: 7,
   pensionRatePct: 6,
@@ -131,6 +132,59 @@ describe("forecastService.getProjections — net worth", () => {
     expect(result.netWorth[1]!.nominal).toBe(17000);
   });
 
+  it("Current accounts use currentRatePct as default growth rate", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ type: "Current", balance: 5000 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      ...defaultSettings,
+      currentRatePct: 2,
+    } as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    // Year 1: 5000 * 1.02 (currentRatePct) = 5100
+    expect(result.netWorth[1]!.nominal).toBe(5100);
+  });
+
+  it("Current account growthRatePct override takes precedence over currentRatePct", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ type: "Current", balance: 5000, growthRatePct: 1 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      ...defaultSettings,
+      currentRatePct: 2,
+    } as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    // Year 1 with 1% override: 5000 * 1.01 = 5050
+    expect(result.netWorth[1]!.nominal).toBe(5050);
+  });
+
+  it("Current and Savings accounts use independent default rates", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ id: "c-1", type: "Current", balance: 1000 }),
+      mockAccount({ id: "s-1", type: "Savings", balance: 1000 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      ...defaultSettings,
+      currentRatePct: 1,
+      savingsRatePct: 5,
+    } as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    // Current: 1000 * 1.01 = 1010; Savings: 1000 * 1.05 = 1050; total = 2060
+    expect(result.netWorth[1]!.nominal).toBe(2060);
+  });
+
   it("uses per-account growthRatePct override over household default", async () => {
     prismaMock.account.findMany.mockResolvedValue([
       mockAccount({ type: "Savings", balance: 10000, growthRatePct: 10 }),
@@ -152,6 +206,7 @@ describe("forecastService.getProjections — net worth", () => {
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue({
       ...defaultSettings,
+      currentRatePct: 0,
       savingsRatePct: 0,
       investmentRatePct: 0,
       pensionRatePct: 0,

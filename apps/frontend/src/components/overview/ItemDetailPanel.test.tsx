@@ -21,7 +21,6 @@ mock.module("@/hooks/useWaterfall", () => ({
   useConfirmItem: () => ({ mutate: () => {}, isPending: false }),
   useUpdateItem: () => ({ mutate: () => {}, isPending: false }),
   useEndIncome: () => ({ mutate: () => {}, isPending: false }),
-  useCashflow: () => ({ data: undefined, isLoading: false, isError: false, refetch: () => {} }),
 }));
 
 mock.module("@/hooks/useSettings", () => ({
@@ -77,10 +76,9 @@ describe("ItemDetailPanel spacing", () => {
   });
 
   it("uses space-y-6 rhythm between sections", () => {
-    const { container } = renderWithProviders(
-      <ItemDetailPanel item={item} onBack={() => {}} />,
-      { initialEntries: ["/overview"] }
-    );
+    const { container } = renderWithProviders(<ItemDetailPanel item={item} onBack={() => {}} />, {
+      initialEntries: ["/overview"],
+    });
     expect(container.firstChild?.className ?? "").toContain("space-y-6");
   });
 });

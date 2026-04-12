@@ -17,6 +17,7 @@ import { formatCurrency } from "@/utils/format";
 import { useSettings } from "@/hooks/useSettings";
 
 const TYPE_LABELS: Record<AccountType, string> = {
+  Current: "Current",
   Savings: "Savings",
   Pension: "Pension",
   StocksAndShares: "Stocks & Shares",
@@ -124,13 +125,14 @@ export function AccountItemArea({ type }: Props) {
                 mode="add"
                 type={type}
                 isSaving={createAccount.isPending}
-                onSave={async ({ name, memberId, growthRatePct }) => {
+                onSave={async ({ name, memberId, growthRatePct, initialValue }) => {
                   try {
                     await createAccount.mutateAsync({
                       name,
                       type,
                       memberId: memberId ?? undefined,
                       growthRatePct: growthRatePct ?? undefined,
+                      initialValue,
                     });
                     setIsAddingItem(false);
                   } catch {

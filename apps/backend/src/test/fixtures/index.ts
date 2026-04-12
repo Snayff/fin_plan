@@ -106,7 +106,7 @@ export function buildCommittedItem(overrides: Record<string, any> = {}) {
     spendType: "monthly" as const,
     notes: null,
     ownerId: null,
-    dueMonth: null,
+    dueDate: new Date("2026-01-01"),
     sortOrder: 0,
     lastReviewedAt: new Date("2025-01-01T00:00:00Z"),
     createdAt: new Date("2025-01-01T00:00:00Z"),

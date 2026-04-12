@@ -96,7 +96,7 @@ describe("exportService.exportHousehold", () => {
         name: "Day job",
         frequency: "monthly",
         incomeType: "salary",
-        expectedMonth: null,
+        dueDate: new Date("2026-04-01"),
         ownerId: "member-alice",
         sortOrder: 0,
         lastReviewedAt: new Date("2026-01-01T00:00:00Z"),

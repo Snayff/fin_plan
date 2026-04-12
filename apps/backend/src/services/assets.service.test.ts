@@ -225,6 +225,73 @@ describe("assetsService.listAccountsByType", () => {
   });
 });
 
+describe("assetsService.createAccount", () => {
+  it("creates account and persists initialValue as opening balance", async () => {
+    prismaMock.account.create.mockResolvedValue({
+      id: ACCOUNT_ID,
+      name: "HSBC Current",
+      type: "Current",
+      householdId: HOUSEHOLD_ID,
+      memberId: null,
+      growthRatePct: null,
+      monthlyContribution: 0,
+      isCashflowLinked: false,
+      lastReviewedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+    prismaMock.accountBalance.create.mockResolvedValue({
+      id: "bal-1",
+      accountId: ACCOUNT_ID,
+      value: 1500,
+      date: new Date(),
+      note: null,
+      createdAt: new Date(),
+    } as any);
+
+    await assetsService.createAccount(
+      HOUSEHOLD_ID,
+      { name: "HSBC Current", type: "Current", initialValue: 1500 },
+      mockCtx
+    );
+
+    expect(prismaMock.account.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        householdId: HOUSEHOLD_ID,
+        name: "HSBC Current",
+        type: "Current",
+      }),
+    });
+    expect(prismaMock.accountBalance.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        accountId: ACCOUNT_ID,
+        value: 1500,
+      }),
+    });
+    // initialValue must NOT be passed to account.create — it's not a column
+    const accountCreateCall = prismaMock.account.create.mock.calls[0]?.[0] as { data: object };
+    expect(accountCreateCall.data).not.toHaveProperty("initialValue");
+  });
+
+  it("creates account without initialValue and skips balance insert", async () => {
+    prismaMock.account.create.mockResolvedValue({
+      id: ACCOUNT_ID,
+      name: "Empty Savings",
+      type: "Savings",
+      householdId: HOUSEHOLD_ID,
+    } as any);
+
+    await assetsService.createAccount(
+      HOUSEHOLD_ID,
+      { name: "Empty Savings", type: "Savings" },
+      mockCtx
+    );
+
+    expect(prismaMock.account.create).toHaveBeenCalled();
+    expect(prismaMock.accountBalance.create).not.toHaveBeenCalled();
+  });
+});
+
 describe("assetsService.deleteAccount", () => {
   it("deletes account owned by household", async () => {
     prismaMock.account.findUnique.mockResolvedValue({
