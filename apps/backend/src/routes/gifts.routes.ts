@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { giftsService } from "../services/gifts.service.js";
 import { actorCtx } from "../lib/actor-ctx.js";
+import { ValidationError } from "../utils/errors.js";
 import {
   createGiftPersonSchema,
   updateGiftPersonSchema,
@@ -13,6 +14,14 @@ import {
   setGiftPlannerModeSchema,
 } from "@finplan/shared";
 
+function parseYear(raw: string | undefined): number {
+  const y = raw ? parseInt(raw, 10) : new Date().getFullYear();
+  if (isNaN(y) || y < 2000 || y > 2100) {
+    throw new ValidationError("Invalid year");
+  }
+  return y;
+}
+
 export async function giftsRoutes(fastify: FastifyInstance) {
   const pre = { preHandler: [authMiddleware] };
 
@@ -20,7 +29,7 @@ export async function giftsRoutes(fastify: FastifyInstance) {
 
   fastify.get("/state", pre, async (req, reply) => {
     const { year } = req.query as { year?: string };
-    const y = year ? parseInt(year, 10) : new Date().getFullYear();
+    const y = parseYear(year);
     await giftsService.seedLockedEventsIfMissing(req.householdId!);
     await giftsService.runRolloverIfNeeded(req.householdId!, y);
     const state = await giftsService.getPlannerState(req.householdId!, y, req.user!.userId);
@@ -30,14 +39,14 @@ export async function giftsRoutes(fastify: FastifyInstance) {
   fastify.get("/people/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const { year } = req.query as { year?: string };
-    const y = year ? parseInt(year, 10) : new Date().getFullYear();
+    const y = parseYear(year);
     const detail = await giftsService.getPersonDetail(req.householdId!, id, y);
     return reply.send(detail);
   });
 
   fastify.get("/upcoming", pre, async (req, reply) => {
     const { year } = req.query as { year?: string };
-    const y = year ? parseInt(year, 10) : new Date().getFullYear();
+    const y = parseYear(year);
     const view = await giftsService.getUpcoming(req.householdId!, y);
     return reply.send(view);
   });
@@ -109,11 +118,12 @@ export async function giftsRoutes(fastify: FastifyInstance) {
       year: string;
     };
     const data = upsertGiftAllocationSchema.parse(req.body);
+    const y = parseYear(year);
     const result = await giftsService.upsertAllocation(
       req.householdId!,
       personId,
       eventId,
-      parseInt(year, 10),
+      y,
       data
     );
     return reply.send(result);
@@ -130,7 +140,8 @@ export async function giftsRoutes(fastify: FastifyInstance) {
   fastify.put("/budget/:year", pre, async (req, reply) => {
     const { year } = req.params as { year: string };
     const data = setGiftBudgetSchema.parse(req.body);
-    const result = await giftsService.setAnnualBudget(req.householdId!, parseInt(year, 10), data);
+    const y = parseYear(year);
+    const result = await giftsService.setAnnualBudget(req.householdId!, y, data);
     return reply.send(result);
   });
 
@@ -144,11 +155,8 @@ export async function giftsRoutes(fastify: FastifyInstance) {
 
   fastify.delete("/rollover-banner/:year", pre, async (req, reply) => {
     const { year } = req.params as { year: string };
-    await giftsService.dismissRolloverNotification(
-      req.householdId!,
-      req.user!.userId,
-      parseInt(year, 10)
-    );
+    const y = parseYear(year);
+    await giftsService.dismissRolloverNotification(req.householdId!, req.user!.userId, y);
     return reply.status(204).send();
   });
 }

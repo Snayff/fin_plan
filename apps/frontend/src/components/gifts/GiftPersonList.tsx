@@ -19,7 +19,15 @@ export function GiftPersonList({ people, onSelect }: Props) {
         <li
           key={p.id}
           data-testid={`person-row-${p.id}`}
+          role="button"
+          tabIndex={0}
           onClick={() => onSelect(p.id)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onSelect(p.id);
+            }
+          }}
           className="flex cursor-pointer items-center gap-4 px-6 py-3 transition-colors hover:bg-foreground/5"
         >
           <div className="flex-1">

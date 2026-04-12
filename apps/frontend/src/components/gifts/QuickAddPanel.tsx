@@ -54,6 +54,7 @@ export function QuickAddPanel({ year, readOnly }: Props) {
                       type="number"
                       min={0}
                       data-testid={`cell-${e.id}-${p.id}`}
+                      aria-label={`Planned amount for ${p.name} × ${e.name}`}
                       disabled={readOnly}
                       value={cells[`${e.id}-${p.id}`] ?? ""}
                       onChange={(ev) => set(e.id, p.id, ev.target.value)}

@@ -1,3 +1,4 @@
+// TODO(gifts): wrap mutations in audited() with actorCtx — tracked as follow-up
 import { prisma } from "../config/database.js";
 import { NotFoundError, ConflictError, ValidationError } from "../utils/errors.js";
 import type {

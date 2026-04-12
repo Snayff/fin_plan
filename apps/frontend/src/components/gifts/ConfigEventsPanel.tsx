@@ -106,12 +106,14 @@ export function ConfigEventsPanel({ readOnly }: Props) {
               <div className="flex gap-2">
                 <input
                   placeholder="Month"
+                  aria-label="Month"
                   value={month}
                   onChange={(e) => setMonth(e.target.value)}
                   className="w-20 rounded bg-foreground/5 px-2 py-1 text-sm text-foreground"
                 />
                 <input
                   placeholder="Day"
+                  aria-label="Day"
                   value={day}
                   onChange={(e) => setDay(e.target.value)}
                   className="w-20 rounded bg-foreground/5 px-2 py-1 text-sm text-foreground"

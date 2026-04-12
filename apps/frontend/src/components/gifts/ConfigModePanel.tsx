@@ -22,7 +22,15 @@ export function ConfigModePanel({ currentMode, readOnly, year }: Props) {
         ].map((row) => (
           <li
             key={row.id}
+            role="button"
+            tabIndex={0}
             onClick={() => setDrill(row.id)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                setDrill(row.id);
+              }
+            }}
             className="cursor-pointer px-6 py-3 text-sm text-foreground hover:bg-foreground/5"
           >
             {row.label}
