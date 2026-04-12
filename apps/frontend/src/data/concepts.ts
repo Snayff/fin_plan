@@ -3,7 +3,8 @@ export type ConceptVisualType =
   | "amortisation-comparison"
   | "net-worth-bar"
   | "isa-progress"
-  | "compound-interest-calculator";
+  | "compound-interest-calculator"
+  | "cashflow-calendar";
 
 export interface ConceptEntry {
   id: string;
@@ -57,6 +58,17 @@ export const CONCEPT_ENTRIES: ConceptEntry[] = [
       "finplan tracks ISA contributions on the Wealth page and shows a progress bar against the annual limit. The bar resets each tax year. This helps you avoid accidentally exceeding the allowance across multiple ISA accounts.",
     visualType: "isa-progress",
     relatedTermIds: ["isa", "isa-allowance", "tax-year", "held-on-behalf-of"],
+  },
+  {
+    id: "cashflow-forecasting",
+    title: "Cashflow Forecasting",
+    summary:
+      "Cashflow forecasting projects your bank balance forward month by month. It starts with today's balance from your linked accounts, then adds expected income and subtracts committed and discretionary spend for each future month.\n\nFor example: a starting balance of £3,000 + £5,000 income − £2,000 committed − £1,500 discretionary = £4,500 projected end-of-month balance. Yearly bills land in their due month rather than being spread, so your cashflow forecast may dip in months with large annual payments even though your waterfall looks healthy.",
+    whyItMatters:
+      "The waterfall tells you whether your monthly plan adds up on average. The cashflow forecast tells you whether your bank balance will actually stay positive in each specific month — especially when yearly bills cluster together. The headline cards show your starting balance, projected end balance, tightest dip (the lowest your balance is expected to reach), and average monthly surplus across the window.",
+    visualType: "cashflow-calendar",
+    relatedTermIds: ["cashflow", "linked-account", "tightest-dip", "amortised", "committed-spend"],
+    seeThisInFinplan: "/forecast",
   },
   {
     id: "compound-interest",

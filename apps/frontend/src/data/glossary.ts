@@ -44,6 +44,16 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     appearsIn: ["Income page", "Overview waterfall"],
   },
   {
+    id: "cashflow",
+    term: "Cashflow",
+    definition:
+      "A month-by-month projection of your bank balance — starting from today's balance in your linked accounts, then adding income and subtracting committed and discretionary spend for each future month. It shows when money arrives and leaves, not just monthly totals.",
+    tag: "finplan",
+    relatedConceptIds: ["cashflow-forecasting"],
+    relatedTermIds: ["linked-account", "surplus", "committed-spend"],
+    appearsIn: ["Forecast page", "Cashflow section header"],
+  },
+  {
     id: "committed-spend",
     term: "Committed Spend",
     definition:
@@ -94,6 +104,16 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     appearsIn: ["Config — Mode panel"],
   },
   {
+    id: "inflation-rate",
+    term: "Inflation Rate",
+    definition:
+      "The annual rate at which purchasing power is expected to erode over time. finplan uses this to calculate 'real terms' projections — showing what a future balance would be worth in today's money. Set in Settings → Growth rates.",
+    tag: "financial",
+    relatedConceptIds: ["compound-interest"],
+    relatedTermIds: ["real-terms", "projection"],
+    appearsIn: ["Settings — Growth rates", "Growth chart real-terms values"],
+  },
+  {
     id: "isa",
     term: "ISA",
     definition:
@@ -112,6 +132,16 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     relatedConceptIds: ["isa-allowances"],
     relatedTermIds: ["isa", "tax-year"],
     appearsIn: ["Wealth page", "ISA allowance progress bar"],
+  },
+  {
+    id: "linked-account",
+    term: "Linked Account",
+    definition:
+      "A Current or Savings account whose balance is included in your cashflow forecast. The sum of all linked account balances forms the starting balance for the projection. Select which accounts to link in the Cashflow header.",
+    tag: "finplan",
+    relatedConceptIds: ["cashflow-forecasting"],
+    relatedTermIds: ["cashflow"],
+    appearsIn: ["Cashflow header", "Linked Accounts popover"],
   },
   {
     id: "liquidity",
@@ -253,6 +283,16 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     appearsIn: ["Item rows", "Review Wizard", "Right panel detail view"],
   },
   {
+    id: "subcategory",
+    term: "Subcategory",
+    definition:
+      "A user-defined grouping within a waterfall tier — for example, Housing or Utilities within Committed Spend. Subcategories help you organise items without affecting the waterfall arithmetic. Manage them in Settings → Subcategories.",
+    tag: "finplan",
+    relatedConceptIds: ["waterfall"],
+    relatedTermIds: ["committed-spend", "discretionary-spend"],
+    appearsIn: ["Settings page", "Tier item groupings", "Item forms"],
+  },
+  {
     id: "surplus",
     term: "Surplus",
     definition:
@@ -261,6 +301,16 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     relatedConceptIds: ["waterfall"],
     relatedTermIds: ["committed-spend", "discretionary-spend"],
     appearsIn: ["Overview waterfall", "Surplus page"],
+  },
+  {
+    id: "surplus-benchmark",
+    term: "Surplus Benchmark",
+    definition:
+      "The minimum surplus percentage you're aiming for — typically 10% of net income. When your surplus falls below this threshold, an amber nudge appears on the Surplus page. Adjust the benchmark in Settings → Surplus benchmark.",
+    tag: "finplan",
+    relatedConceptIds: ["waterfall"],
+    relatedTermIds: ["surplus", "surplus-percentage", "net-income"],
+    appearsIn: ["Settings page", "Surplus page benchmark warning"],
   },
   {
     id: "surplus-percentage",
@@ -291,6 +341,16 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     relatedConceptIds: ["isa-allowances"],
     relatedTermIds: ["isa-allowance"],
     appearsIn: ["ISA allowance bar", "Settings"],
+  },
+  {
+    id: "tightest-dip",
+    term: "Tightest Dip",
+    definition:
+      "The lowest projected bank balance across your cashflow forecast window. If this figure is negative, it means your balance is projected to go below zero in that month — a signal to review upcoming outgoings or move funds.",
+    tag: "finplan",
+    relatedConceptIds: ["cashflow-forecasting"],
+    relatedTermIds: ["cashflow", "linked-account"],
+    appearsIn: ["Cashflow year view headline cards"],
   },
   {
     id: "waterfall",

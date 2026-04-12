@@ -14,6 +14,14 @@
 
 ---
 
+## Cashflow
+
+**Appears in**: Forecast page, Cashflow section header
+
+**Tooltip**: A month-by-month projection of your bank balance — starting from today's balance in your linked accounts, then adding income and subtracting committed and discretionary spend for each future month. It shows when money arrives and leaves, not just monthly totals.
+
+---
+
 ## Committed Spend
 
 **Appears in**: Overview waterfall (section label), Review Wizard step header, Waterfall Creation Wizard
@@ -70,6 +78,14 @@
 
 ---
 
+## Inflation Rate
+
+**Appears in**: Settings — Growth rates, Growth chart real-terms values
+
+**Tooltip**: The annual rate at which purchasing power is expected to erode over time. finplan uses this to calculate 'real terms' projections — showing what a future balance would be worth in today's money. Set in Settings → Growth rates.
+
+---
+
 ## ISA
 
 **Appears in**: Savings account form (ISA flag), Wealth page account list, ISA allowance bar
@@ -102,6 +118,14 @@
 
 ---
 
+## Linked Account
+
+**Appears in**: Cashflow header, Linked Accounts popover
+
+**Tooltip**: A Current or Savings account whose balance is included in your cashflow forecast. The sum of all linked account balances forms the starting balance for the projection. Select which accounts to link in the Cashflow header.
+
+---
+
 ## Liquidity
 
 **Appears in**: Wealth page summary (By liquidity breakdown labels)
@@ -131,6 +155,14 @@
 **Appears in**: Value history sparkline (expanded row), edit mode period list, scheduled change indicator ("→ £9 from Oct")
 
 **Tooltip**: A span of time during which an item has a specific planned amount. An item's value history is a sequence of periods, each with an effective date and amount. The current period determines the item's active amount; past periods form the historical record; future periods represent scheduled changes.
+
+---
+
+## Subcategory
+
+**Appears in**: Settings page, Tier item groupings, Item forms
+
+**Tooltip**: A user-defined grouping within a waterfall tier — for example, Housing or Utilities within Committed Spend. Subcategories help you organise items without affecting the waterfall arithmetic. Manage them in Settings → Subcategories.
 
 ---
 
@@ -206,11 +238,27 @@ _Note: the tooltip is dynamic — it shows the actual snapshot name and date on 
 
 ---
 
+## Surplus Benchmark
+
+**Appears in**: Settings page, Surplus page benchmark warning
+
+**Tooltip**: The minimum surplus percentage you're aiming for — typically 10% of net income. When your surplus falls below this threshold, an amber nudge appears on the Surplus page. Adjust the benchmark in Settings → Surplus benchmark.
+
+---
+
 ## Surplus Percentage
 
 **Appears in**: Surplus row in the waterfall left panel (alongside the absolute figure)
 
 **Tooltip**: Your surplus as a percentage of your total net income. A common benchmark is 10% or above, though the right level depends on your circumstances.
+
+---
+
+## Tightest Dip
+
+**Appears in**: Cashflow year view headline cards
+
+**Tooltip**: The lowest projected bank balance across your cashflow forecast window. If this figure is negative, it means your balance is projected to go below zero in that month — a signal to review upcoming outgoings or move funds.
 
 ---
 

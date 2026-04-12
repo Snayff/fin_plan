@@ -1,9 +1,9 @@
 import { describe, it, expect } from "bun:test";
-import { GLOSSARY_ENTRIES, getGlossaryEntry } from "./glossary";
+import { GLOSSARY_ENTRIES, getGlossaryEntry, type GlossaryTag } from "./glossary";
 
 describe("GLOSSARY_ENTRIES", () => {
-  it("contains all 29 canonical entries", () => {
-    expect(GLOSSARY_ENTRIES.length).toBe(29);
+  it("contains all 35 canonical entries", () => {
+    expect(GLOSSARY_ENTRIES.length).toBe(35);
   });
 
   it("each entry has required fields", () => {
@@ -20,6 +20,25 @@ describe("GLOSSARY_ENTRIES", () => {
     const terms = GLOSSARY_ENTRIES.map((e) => e.term);
     const sorted = [...terms].sort((a, b) => a.localeCompare(b));
     expect(terms).toEqual(sorted);
+  });
+
+  it("every entry has a valid tag", () => {
+    const validTags: GlossaryTag[] = ["financial", "finplan"];
+    for (const entry of GLOSSARY_ENTRIES) {
+      expect(validTags).toContain(entry.tag);
+    }
+  });
+
+  it("no entry references itself in relatedConceptIds", () => {
+    for (const entry of GLOSSARY_ENTRIES) {
+      expect(entry.relatedConceptIds).not.toContain(entry.id);
+    }
+  });
+
+  it("no entry references itself in relatedTermIds", () => {
+    for (const entry of GLOSSARY_ENTRIES) {
+      expect(entry.relatedTermIds).not.toContain(entry.id);
+    }
   });
 });
 
