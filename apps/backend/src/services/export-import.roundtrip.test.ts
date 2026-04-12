@@ -218,7 +218,17 @@ function setupExportMocks() {
     },
   ]);
 
-  // Gift persons (with events + yearRecords include)
+  // Gift planner settings
+  prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+    id: "gps-1",
+    householdId: HOUSEHOLD_ID,
+    mode: "synced",
+    syncedDiscretionaryItemId: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+
+  // Gift persons (flat, no nested events)
   prismaMock.giftPerson.findMany.mockResolvedValue([
     {
       id: "gp-1",
@@ -226,32 +236,42 @@ function setupExportMocks() {
       name: "Mum",
       notes: "Likes flowers",
       sortOrder: 0,
-      events: [
-        {
-          id: "ge-1",
-          giftPersonId: "gp-1",
-          householdId: HOUSEHOLD_ID,
-          eventType: "birthday",
-          customName: null,
-          dateMonth: 8,
-          dateDay: 20,
-          specificDate: null,
-          recurrence: "annual",
-          yearRecords: [
-            {
-              id: "gyr-1",
-              giftEventId: "ge-1",
-              year: 2026,
-              budget: 50,
-              notes: "Bouquet + card",
-              createdAt: new Date(),
-              updatedAt: new Date(),
-            },
-          ],
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        },
-      ],
+      memberId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ]);
+
+  // Gift events (flat, household-level)
+  prismaMock.giftEvent.findMany.mockResolvedValue([
+    {
+      id: "ge-1",
+      householdId: HOUSEHOLD_ID,
+      name: "Birthday",
+      dateType: "personal",
+      dateMonth: 8,
+      dateDay: 20,
+      isLocked: false,
+      sortOrder: 0,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ]);
+
+  // Gift allocations (person x event x year)
+  prismaMock.giftAllocation.findMany.mockResolvedValue([
+    {
+      id: "ga-1",
+      householdId: HOUSEHOLD_ID,
+      giftPersonId: "gp-1",
+      giftEventId: "ge-1",
+      year: 2026,
+      planned: 50,
+      spent: null,
+      status: "planned",
+      notes: "Bouquet + card",
+      dateMonth: 8,
+      dateDay: 20,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
@@ -403,6 +423,9 @@ function setupImportMocks() {
   // Planner year budget create
   prismaMock.plannerYearBudget.create.mockResolvedValue({ id: "new-pyb-1" });
 
+  // Gift planner settings upsert
+  prismaMock.giftPlannerSettings.upsert.mockResolvedValue({});
+
   // Gift person create
   prismaMock.giftPerson.create.mockResolvedValue({
     id: "new-gp-1",
@@ -413,11 +436,12 @@ function setupImportMocks() {
   // Gift event create
   prismaMock.giftEvent.create.mockResolvedValue({
     id: "new-ge-1",
-    giftPersonId: "new-gp-1",
+    householdId: NEW_HOUSEHOLD_ID,
+    name: "Birthday",
   });
 
-  // Gift year record create
-  prismaMock.giftYearRecord.create.mockResolvedValue({ id: "new-gyr-1" });
+  // Gift allocation create
+  prismaMock.giftAllocation.create.mockResolvedValue({ id: "new-ga-1" });
 }
 
 describe("export → import round-trip", () => {
@@ -434,7 +458,7 @@ describe("export → import round-trip", () => {
     expect(parseResult.success).toBe(true);
 
     // Quick structural sanity checks on the export
-    expect(envelope.schemaVersion).toBe(1);
+    expect(envelope.schemaVersion).toBe(2);
     expect(envelope.household.name).toBe("Test Household");
     expect(envelope.members).toHaveLength(2);
     expect(envelope.subcategories).toHaveLength(2);
@@ -445,9 +469,10 @@ describe("export → import round-trip", () => {
     expect(envelope.accounts).toHaveLength(1);
     expect(envelope.purchaseItems).toHaveLength(1);
     expect(envelope.plannerYearBudgets).toHaveLength(1);
-    expect(envelope.giftPersons).toHaveLength(1);
-    expect(envelope.giftPersons[0]!.events).toHaveLength(1);
-    expect(envelope.giftPersons[0]!.events[0]!.yearRecords).toHaveLength(1);
+    expect(envelope.gifts.settings.mode).toBe("synced");
+    expect(envelope.gifts.people).toHaveLength(1);
+    expect(envelope.gifts.events).toHaveLength(1);
+    expect(envelope.gifts.allocations).toHaveLength(1);
     expect(envelope.itemAmountPeriods).toHaveLength(2);
     expect(envelope.incomeSources[0]!.periods).toHaveLength(1);
     expect(envelope.committedItems[0]!.periods).toHaveLength(1);
@@ -650,6 +675,20 @@ describe("export → import round-trip", () => {
       }),
     });
 
+    // Gift planner settings upserted
+    expect(prismaMock.giftPlannerSettings.upsert).toHaveBeenCalledWith({
+      where: { householdId: NEW_HOUSEHOLD_ID },
+      create: expect.objectContaining({
+        householdId: NEW_HOUSEHOLD_ID,
+        mode: "synced",
+        syncedDiscretionaryItemId: null,
+      }),
+      update: expect.objectContaining({
+        mode: "synced",
+        syncedDiscretionaryItemId: null,
+      }),
+    });
+
     // Gift person created
     expect(prismaMock.giftPerson.create).toHaveBeenCalledTimes(1);
     expect(prismaMock.giftPerson.create).toHaveBeenCalledWith({
@@ -665,23 +704,29 @@ describe("export → import round-trip", () => {
     expect(prismaMock.giftEvent.create).toHaveBeenCalledTimes(1);
     expect(prismaMock.giftEvent.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
-        giftPersonId: "new-gp-1",
         householdId: NEW_HOUSEHOLD_ID,
-        eventType: "birthday",
+        name: "Birthday",
+        dateType: "personal",
         dateMonth: 8,
         dateDay: 20,
-        recurrence: "annual",
+        isLocked: false,
+        sortOrder: 0,
       }),
     });
 
-    // Gift year record created
-    expect(prismaMock.giftYearRecord.create).toHaveBeenCalledTimes(1);
-    expect(prismaMock.giftYearRecord.create).toHaveBeenCalledWith({
+    // Gift allocation created
+    expect(prismaMock.giftAllocation.create).toHaveBeenCalledTimes(1);
+    expect(prismaMock.giftAllocation.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
+        householdId: NEW_HOUSEHOLD_ID,
+        giftPersonId: "new-gp-1",
         giftEventId: "new-ge-1",
         year: 2026,
-        budget: 50,
+        planned: 50,
+        status: "planned",
         notes: "Bouquet + card",
+        dateMonth: 8,
+        dateDay: 20,
       }),
     });
   });

@@ -1,0 +1,856 @@
+<style>
+  :root {
+    --bg: #080a14;
+    --surface: #0d1120;
+    --surface-elev: #141b2e;
+    --surface-overlay: #1c2540;
+    --border: #1a1f35;
+    --border-elev: #222c45;
+    --text-primary: rgba(238, 242, 255, 0.92);
+    --text-secondary: rgba(238, 242, 255, 0.65);
+    --text-tertiary: rgba(238, 242, 255, 0.40);
+    --text-muted: rgba(238, 242, 255, 0.25);
+    --tier-discretionary: #a855f7;
+    --page-accent: #8b5cf6;
+    --attention: #f59e0b;
+    --action: #7c3aed;
+    --bought-tint: rgba(168, 85, 247, 0.85);
+    --planned-tint: rgba(238, 242, 255, 0.55);
+    --font-heading: 'Outfit', system-ui, sans-serif;
+    --font-body: 'Nunito Sans', system-ui, sans-serif;
+    --font-numeric: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .gm-frame {
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    margin-top: 16px;
+  }
+  .gm-grid {
+    display: grid;
+    grid-template-columns: 290px 1fr;
+    min-height: 560px;
+  }
+  .gm-left {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 22px 18px;
+  }
+  .gm-right {
+    padding: 22px 26px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .gm-pagetitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--page-accent);
+    margin: 0 0 14px 0;
+  }
+  .gm-budget-block {
+    background: var(--surface-elev);
+    border: 1px solid var(--border-elev);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .gm-label {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+  }
+  .gm-value {
+    font-family: var(--font-numeric);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .gm-sub-flex { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; }
+  .gm-sub-label { font-family: var(--font-body); font-size: 11px; color: var(--text-tertiary); }
+  .gm-sub-val { font-family: var(--font-numeric); font-size: 12px; color: var(--text-secondary); }
+  .gm-amber { color: var(--attention); }
+  .gm-amber-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--attention);
+    margin-right: 6px;
+  }
+  .gm-amber-line {
+    font-family: var(--font-numeric);
+    font-size: 11px;
+    margin-top: 10px;
+    line-height: 1.4;
+  }
+  .gm-vtabs { display: flex; flex-direction: column; gap: 4px; }
+  .gm-vtab {
+    width: 100%;
+    padding: 12px 14px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .gm-vtab:hover { background: rgba(255,255,255,0.03); color: var(--text-secondary); }
+  .gm-vtab.active {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.22);
+    color: var(--tier-discretionary);
+  }
+  .gm-vtab .count {
+    font-family: var(--font-numeric);
+    font-size: 11px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-tertiary);
+    opacity: 0.8;
+  }
+  .gm-vtab.active .count { color: var(--tier-discretionary); opacity: 1; }
+  /* breadcrumb */
+  .gm-breadcrumb {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--tier-discretionary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .gm-breadcrumb .back-arrow { color: var(--text-tertiary); cursor: pointer; font-size: 13px; }
+  .gm-breadcrumb .sep { color: var(--text-muted); }
+  .gm-breadcrumb .current {
+    color: var(--text-secondary);
+    text-transform: none;
+    letter-spacing: 0;
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .gm-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .gm-header-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .gm-right-title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .gm-right-count { font-family: var(--font-body); font-size: 13px; color: var(--text-tertiary); }
+  .gm-right-total { font-family: var(--font-numeric); font-size: 14px; color: var(--page-accent); }
+  .gm-btn {
+    font-family: var(--font-body);
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 6px;
+    background: var(--surface-elev);
+    border: 1px solid var(--border-elev);
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .gm-btn:hover { color: var(--text-primary); }
+  .gm-btn-primary {
+    background: rgba(124, 58, 237, 0.15);
+    border-color: rgba(124, 58, 237, 0.4);
+    color: #c4b5fd;
+  }
+  .gm-filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .gm-filter-tabs { display: flex; gap: 4px; }
+  .gm-filter-tab {
+    font-family: var(--font-body);
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    color: var(--text-tertiary);
+    cursor: pointer;
+  }
+  .gm-filter-tab.active {
+    background: var(--surface-elev);
+    color: var(--text-primary);
+    border: 1px solid var(--border-elev);
+    font-weight: 500;
+  }
+  .gm-filter-tab .count {
+    font-family: var(--font-numeric);
+    color: var(--text-tertiary);
+    margin-left: 4px;
+    font-size: 11px;
+  }
+  .gm-sort {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface);
+  }
+  /* item rows */
+  .gm-item-row {
+    padding: 14px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    border-bottom: 1px solid rgba(26, 31, 53, 0.5);
+    cursor: pointer;
+    transition: background 120ms ease-out;
+  }
+  .gm-item-row:hover { background: rgba(168, 85, 247, 0.04); }
+  .gm-item-name {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .gm-item-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+  /* planned / bought counts in sub line */
+  .gm-count-planned {
+    color: var(--planned-tint);
+    font-family: var(--font-numeric);
+    font-size: 11px;
+  }
+  .gm-count-bought {
+    color: var(--bought-tint);
+    font-family: var(--font-numeric);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .gm-count-sep {
+    color: var(--text-muted);
+    margin: 0 5px;
+  }
+  .gm-item-right { text-align: right; font-family: var(--font-numeric); }
+  .gm-item-amt { font-size: 13px; color: var(--text-primary); }
+  .gm-item-chevron { color: var(--text-muted); font-size: 16px; }
+  .gm-household-badge {
+    font-size: 9px;
+    font-family: var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(139, 92, 246, 0.12);
+    color: #b79bf6;
+    margin-left: 6px;
+  }
+  /* event card (gifts state 3) */
+  .gm-event-card {
+    padding: 14px 4px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 16px;
+    align-items: center;
+    border-bottom: 1px solid rgba(26, 31, 53, 0.5);
+  }
+  .gm-event-name { font-family: var(--font-body); font-size: 13px; color: var(--text-primary); font-weight: 500; }
+  .gm-event-sub { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+  .gm-event-right { text-align: right; font-family: var(--font-numeric); }
+  .gm-event-planned { font-size: 13px; color: var(--text-primary); }
+  .gm-event-spent { font-size: 11px; color: var(--text-tertiary); margin-top: 3px; }
+  /* upcoming */
+  .gm-callouts {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .gm-callout {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+  }
+  .gm-callout-label {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+  }
+  .gm-callout-val {
+    font-family: var(--font-numeric);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-top: 4px;
+  }
+  .gm-callout-count {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+  .gm-month-head {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    padding-bottom: 8px;
+    margin: 14px 0 4px 0;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+  }
+  .gm-month-total { font-family: var(--font-numeric); color: var(--text-secondary); font-weight: 400; }
+  /* upcoming event group row — recipients listed inline */
+  .gm-upc-event {
+    display: grid;
+    grid-template-columns: 70px 1fr auto;
+    gap: 14px;
+    padding: 14px 0;
+    align-items: start;
+    border-bottom: 1px solid rgba(26, 31, 53, 0.4);
+  }
+  .gm-upc-date {
+    font-family: var(--font-numeric);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    padding-top: 2px;
+  }
+  .gm-upc-event-name {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text-primary);
+  }
+  .gm-upc-recipients {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-top: 4px;
+  }
+  .gm-upc-recipient-more {
+    color: var(--text-tertiary);
+    font-style: italic;
+  }
+  .gm-upc-counts {
+    margin-top: 4px;
+    font-size: 11px;
+  }
+  .gm-upc-right-amt {
+    font-family: var(--font-numeric);
+    text-align: right;
+  }
+  .gm-upc-right-total {
+    font-size: 13px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .gm-upc-right-sub {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 3px;
+  }
+  .note {
+    font-family: var(--font-body);
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-style: italic;
+    margin-top: 4px;
+  }
+</style>
+
+<h2>Drill pattern — v2 with your corrections</h2>
+<p class="subtitle">Quick Add → Config. Gifts rows show planned/bought. Upcoming groups by event. Config Mode as drill target. "Non-household" label.</p>
+
+<!-- ============================================= -->
+<!-- GIFTS — STATE 2                               -->
+<!-- ============================================= -->
+
+<h3 style="margin-top: 28px;">Gifts · State 2 — People list</h3>
+
+<div class="gm-frame">
+  <div class="gm-grid">
+    <div class="gm-left">
+      <div class="gm-pagetitle">Gifts</div>
+      <div class="gm-budget-block">
+        <div class="gm-label">Annual budget · 2026</div>
+        <div class="gm-value">£2,400.00</div>
+        <div class="gm-sub-flex"><span class="gm-sub-label">Planned</span><span class="gm-sub-val">£2,523.54</span></div>
+        <div class="gm-sub-flex"><span class="gm-sub-label">Spent</span><span class="gm-sub-val">£450.29</span></div>
+        <div class="gm-amber gm-amber-line"><span class="gm-amber-dot"></span>planned more than budget by £123.54</div>
+      </div>
+      <div class="gm-vtabs">
+        <button class="gm-vtab active">Gifts <span class="count">7</span></button>
+        <button class="gm-vtab">Upcoming <span class="count">28</span></button>
+        <button class="gm-vtab">Config</button>
+      </div>
+    </div>
+
+    <div class="gm-right">
+      <div class="gm-header-row">
+        <div>
+          <div class="gm-breadcrumb">Gifts</div>
+          <div class="gm-header-title">
+            <span class="gm-right-title">People</span>
+            <span class="gm-right-count">7</span>
+            <span class="gm-right-total">£2,523.54</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="gm-filter-row">
+        <div class="gm-filter-tabs">
+          <div class="gm-filter-tab active">All <span class="count">7</span></div>
+        </div>
+        <select class="gm-sort">
+          <option>Name ↑</option>
+          <option>Planned ↓</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Cat</div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">1 planned</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£100.00</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Josh</div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£200.00</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Mum <span class="gm-household-badge">Household</span></div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+              <span class="gm-count-sep">·</span>
+              <span class="gm-count-bought">1 bought</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£325.00</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Dad <span class="gm-household-badge">Household</span></div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£150.00</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Nix</div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£85.95</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+      </div>
+      <p class="note">Row shows "N planned" always, plus "M bought" if any have been bought.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- UPCOMING — event-grouped timeline             -->
+<!-- ============================================= -->
+
+<h3 style="margin-top: 40px;">Upcoming · Timeline grouped by event</h3>
+
+<div class="gm-frame">
+  <div class="gm-grid">
+    <div class="gm-left">
+      <div class="gm-pagetitle">Gifts</div>
+      <div class="gm-budget-block">
+        <div class="gm-label">Annual budget · 2026</div>
+        <div class="gm-value">£2,400.00</div>
+        <div class="gm-sub-flex"><span class="gm-sub-label">Planned</span><span class="gm-sub-val">£2,523.54</span></div>
+        <div class="gm-amber gm-amber-line"><span class="gm-amber-dot"></span>planned more than budget by £123.54</div>
+      </div>
+      <div class="gm-vtabs">
+        <button class="gm-vtab">Gifts <span class="count">7</span></button>
+        <button class="gm-vtab active">Upcoming <span class="count">28</span></button>
+        <button class="gm-vtab">Config</button>
+      </div>
+    </div>
+
+    <div class="gm-right">
+      <div>
+        <div class="gm-breadcrumb">Upcoming</div>
+        <div class="gm-header-title">
+          <span class="gm-right-title">2026 timeline</span>
+          <span class="gm-right-count">28 gifts</span>
+          <span class="gm-right-total">£2,523.54</span>
+        </div>
+      </div>
+
+      <div class="gm-callouts">
+        <div class="gm-callout">
+          <div class="gm-callout-label">This month</div>
+          <div class="gm-callout-val">£115.00</div>
+          <div class="gm-callout-count">1 gift</div>
+        </div>
+        <div class="gm-callout">
+          <div class="gm-callout-label">Next 3 months</div>
+          <div class="gm-callout-val">£165.00</div>
+          <div class="gm-callout-count">2 gifts</div>
+        </div>
+        <div class="gm-callout">
+          <div class="gm-callout-label">Rest of 2026</div>
+          <div class="gm-callout-val">£1,260.00</div>
+          <div class="gm-callout-count">25 gifts</div>
+        </div>
+        <div class="gm-callout">
+          <div class="gm-callout-label">Dateless</div>
+          <div class="gm-callout-val">£1,148.29</div>
+          <div class="gm-callout-count">26 gifts</div>
+        </div>
+      </div>
+
+      <div class="gm-filter-row">
+        <div class="gm-filter-tabs">
+          <div class="gm-filter-tab active">All <span class="count">6</span></div>
+          <div class="gm-filter-tab">Planned <span class="count">5</span></div>
+          <div class="gm-filter-tab">Bought <span class="count">1</span></div>
+        </div>
+        <select class="gm-sort">
+          <option>Date ↑</option>
+        </select>
+      </div>
+
+      <div>
+        <!-- March -->
+        <div class="gm-month-head">
+          <span>March 2026</span>
+          <span class="gm-month-total">£115.00 · 1 event · 1 gift</span>
+        </div>
+        <div class="gm-upc-event">
+          <span class="gm-upc-date">15 Mar</span>
+          <div>
+            <div class="gm-upc-event-name">Mothers Day</div>
+            <div class="gm-upc-recipients">Mum</div>
+            <div class="gm-upc-counts">
+              <span class="gm-count-bought">1 bought</span>
+            </div>
+          </div>
+          <div class="gm-upc-right-amt">
+            <div class="gm-upc-right-total">£115.00</div>
+            <div class="gm-upc-right-sub">spent £115.00</div>
+          </div>
+        </div>
+
+        <!-- June -->
+        <div class="gm-month-head">
+          <span>June 2026</span>
+          <span class="gm-month-total">£50.00 · 1 event · 1 gift</span>
+        </div>
+        <div class="gm-upc-event">
+          <span class="gm-upc-date">15 Jun</span>
+          <div>
+            <div class="gm-upc-event-name">Fathers Day</div>
+            <div class="gm-upc-recipients">Dad</div>
+            <div class="gm-upc-counts">
+              <span class="gm-count-planned">1 planned</span>
+            </div>
+          </div>
+          <div class="gm-upc-right-amt">
+            <div class="gm-upc-right-total">£50.00</div>
+          </div>
+        </div>
+
+        <!-- October — person-specific birthday -->
+        <div class="gm-month-head">
+          <span>October 2026</span>
+          <span class="gm-month-total">£160.00 · 1 event · 1 gift</span>
+        </div>
+        <div class="gm-upc-event">
+          <span class="gm-upc-date">12 Oct</span>
+          <div>
+            <div class="gm-upc-event-name">Mum's Birthday</div>
+            <div class="gm-upc-recipients">Mum</div>
+            <div class="gm-upc-counts">
+              <span class="gm-count-planned">1 planned</span>
+            </div>
+          </div>
+          <div class="gm-upc-right-amt">
+            <div class="gm-upc-right-total">£160.00</div>
+          </div>
+        </div>
+
+        <!-- December — Christmas grouped -->
+        <div class="gm-month-head">
+          <span>December 2026</span>
+          <span class="gm-month-total">£1,260.00 · 1 event · 26 gifts</span>
+        </div>
+        <div class="gm-upc-event">
+          <span class="gm-upc-date">25 Dec</span>
+          <div>
+            <div class="gm-upc-event-name">Christmas</div>
+            <div class="gm-upc-recipients">
+              Josh, Mum, Dad, Cat, Nix, Jake, Andy
+              <span class="gm-upc-recipient-more">· +19 more</span>
+            </div>
+            <div class="gm-upc-counts">
+              <span class="gm-count-planned">26 planned</span>
+            </div>
+          </div>
+          <div class="gm-upc-right-amt">
+            <div class="gm-upc-right-total">£1,260.00</div>
+          </div>
+        </div>
+
+        <!-- Dateless -->
+        <div class="gm-month-head" style="color: var(--text-muted);">
+          <span>Dateless</span>
+          <span class="gm-month-total">£1,148.29 · 26 gifts</span>
+        </div>
+        <div class="gm-upc-event">
+          <span class="gm-upc-date" style="color: var(--text-muted);">—</span>
+          <div>
+            <div class="gm-upc-event-name">Birthday · needs date</div>
+            <div class="gm-upc-recipients">
+              Josh, Dad, Nix, Jake, Andy
+              <span class="gm-upc-recipient-more">· +21 more</span>
+            </div>
+            <div class="gm-upc-counts">
+              <span class="gm-count-planned">26 planned</span>
+            </div>
+          </div>
+          <div class="gm-upc-right-amt">
+            <div class="gm-upc-right-total">£1,148.29</div>
+          </div>
+        </div>
+      </div>
+      <p class="note">Shared-date events (Christmas, Mothers Day…) group recipients on one row. Birthdays are per-person since dates differ, but grouped as "Dateless Birthdays" when dates aren't set.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- CONFIG — STATE 2                              -->
+<!-- ============================================= -->
+
+<h3 style="margin-top: 40px;">Config · State 2 — Landing (with Mode + Quick Add)</h3>
+
+<div class="gm-frame">
+  <div class="gm-grid">
+    <div class="gm-left">
+      <div class="gm-pagetitle">Gifts</div>
+      <div class="gm-budget-block">
+        <div class="gm-label">Annual budget · 2026</div>
+        <div class="gm-value">£2,400.00</div>
+        <div class="gm-sub-flex"><span class="gm-sub-label">Planned</span><span class="gm-sub-val">£2,523.54</span></div>
+        <div class="gm-amber gm-amber-line"><span class="gm-amber-dot"></span>planned more than budget by £123.54</div>
+      </div>
+      <div class="gm-vtabs">
+        <button class="gm-vtab">Gifts <span class="count">7</span></button>
+        <button class="gm-vtab">Upcoming <span class="count">28</span></button>
+        <button class="gm-vtab active">Config</button>
+      </div>
+    </div>
+
+    <div class="gm-right">
+      <div class="gm-header-row">
+        <div>
+          <div class="gm-breadcrumb">Config</div>
+          <div class="gm-header-title">
+            <span class="gm-right-title">Configure gifts</span>
+          </div>
+        </div>
+        <button class="gm-btn gm-btn-primary" style="align-self: center;">Quick add</button>
+      </div>
+
+      <div style="margin-top: 8px;">
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">People</div>
+            <div class="gm-item-sub">Manage the list of people you buy gifts for</div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">7</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Events</div>
+            <div class="gm-item-sub">Manage the events you give gifts for (Birthday, Christmas, …)</div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">5</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Mode</div>
+            <div class="gm-item-sub">Synced — Gifts planner owns the waterfall gift item</div>
+          </div>
+          <div class="gm-item-right" style="color: var(--text-tertiary); font-size: 11px; font-family: var(--font-body); text-transform: uppercase; letter-spacing: 0.08em;">Synced</div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+      </div>
+      <p class="note">Quick add launches a bulk entry flow (people + events + allocations). Click Mode to drill in and switch between Synced / Independent.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================= -->
+<!-- CONFIG → PEOPLE                               -->
+<!-- ============================================= -->
+
+<h3 style="margin-top: 40px;">Config · State 3 — People (filter renamed)</h3>
+
+<div class="gm-frame">
+  <div class="gm-grid">
+    <div class="gm-left">
+      <div class="gm-pagetitle">Gifts</div>
+      <div class="gm-budget-block">
+        <div class="gm-label">Annual budget · 2026</div>
+        <div class="gm-value">£2,400.00</div>
+        <div class="gm-sub-flex"><span class="gm-sub-label">Planned</span><span class="gm-sub-val">£2,523.54</span></div>
+        <div class="gm-amber gm-amber-line"><span class="gm-amber-dot"></span>planned more than budget by £123.54</div>
+      </div>
+      <div class="gm-vtabs">
+        <button class="gm-vtab">Gifts <span class="count">7</span></button>
+        <button class="gm-vtab">Upcoming <span class="count">28</span></button>
+        <button class="gm-vtab active">Config</button>
+      </div>
+    </div>
+
+    <div class="gm-right">
+      <div class="gm-header-row">
+        <div>
+          <div class="gm-breadcrumb">
+            <span class="back-arrow">←</span>
+            <span>Config</span>
+            <span class="sep">/</span>
+            <span class="current">People</span>
+          </div>
+          <div class="gm-header-title">
+            <span class="gm-right-title">People</span>
+            <span class="gm-right-count">7 people</span>
+          </div>
+        </div>
+        <button class="gm-btn" style="align-self: center;">+ Add person</button>
+      </div>
+
+      <div class="gm-filter-row">
+        <div class="gm-filter-tabs">
+          <div class="gm-filter-tab active">All <span class="count">7</span></div>
+          <div class="gm-filter-tab">Household <span class="count">2</span></div>
+          <div class="gm-filter-tab">Non-household <span class="count">5</span></div>
+        </div>
+        <select class="gm-sort"><option>Name ↑</option></select>
+      </div>
+
+      <div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Cat</div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">1 planned</span>
+            </div>
+          </div>
+          <div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Mum <span class="gm-household-badge">Household</span></div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+              <span class="gm-count-sep">·</span>
+              <span class="gm-count-bought">1 bought</span>
+            </div>
+          </div>
+          <div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Dad <span class="gm-household-badge">Household</span></div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+            </div>
+          </div>
+          <div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 32px;">
+  <h3>Colour coding — design-anchor check</h3>
+  <p class="subtitle" style="font-size: 13px;">I'm using subtle purple tint for "bought" counts, muted text-tertiary for "planned" counts. This avoids red/green (Anchor #10 — non-judgemental) and stays calm. <strong>Flag:</strong> the purple is close to the discretionary tier colour — tier colours are meant to be semantically protected (§1.2 of design-system). Two options:</p>
+  <ul style="color: var(--text-secondary); font-size: 13px; line-height: 1.8; margin-top: 10px;">
+    <li><strong>a)</strong> Keep as-is — the purple tint is subtle enough that it reads as "count that matters" rather than "this is a tier colour". Document as a scoped exception.</li>
+    <li><strong>b)</strong> Use weight/opacity only — bought is text-primary with weight 500, planned is text-tertiary with weight 400. No colour hue difference. Purely monochromatic distinction.</li>
+    <li><strong>c)</strong> Use a checkmark icon on bought, no colour — add a small ✓ symbol next to the bought count. Icon conveys state, text stays monochromatic.</li>
+  </ul>
+  <p class="subtitle" style="font-size: 12px; margin-top: 10px;">My recommendation: <strong>b)</strong> — safest with the anchors, still visually distinct. Let me know and I'll update.</p>
+</div>
+
+<div class="options" style="margin-top: 20px;">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Looks right</h3>
+      <p>Move on to Quick Add flow and remaining areas</p>
+    </div>
+  </div>
+  <div class="option" data-choice="tweak" onclick="toggleSelect(this)">
+    <div class="letter">~</div>
+    <div class="content">
+      <h3>Tweak</h3>
+      <p>Tell me what to change</p>
+    </div>
+  </div>
+</div>

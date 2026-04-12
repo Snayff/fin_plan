@@ -1,7 +1,9 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 GlobalRegistrator.register();
 
-import { afterAll, afterEach, beforeAll } from "bun:test";
+import { afterAll, afterEach, beforeAll, expect } from "bun:test";
+import * as matchers from "@testing-library/jest-dom/matchers";
+expect.extend(matchers);
 import pkg from "../../../../package.json";
 import { server } from "./msw/server";
 

@@ -17,6 +17,7 @@ import { setupRoutes } from "./routes/setup-session.routes";
 import { auditLogRoutes } from "./routes/audit-log.routes";
 import { assetsRoutes } from "./routes/assets.routes";
 import { forecastRoutes } from "./routes/forecast.routes";
+import { giftsRoutes } from "./routes/gifts.routes";
 import { exportImportRoutes } from "./routes/export-import.routes.js";
 import { cashflowRoutes } from "./routes/cashflow.routes";
 import { errorHandler } from "./middleware/errorHandler";
@@ -91,6 +92,7 @@ async function start() {
     server.register(auditLogRoutes, { prefix: "/api" });
     server.register(assetsRoutes, { prefix: "/api/assets" });
     server.register(forecastRoutes, { prefix: "/api/forecast" });
+    server.register(giftsRoutes, { prefix: "/api/gifts" });
     server.register(cashflowRoutes, { prefix: "/api/cashflow" });
 
     // Start server

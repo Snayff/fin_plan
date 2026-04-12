@@ -215,6 +215,7 @@ model Subcategory {
   sortOrder   Int           @default(0)
   isLocked    Boolean       @default(false)
   isDefault   Boolean       @default(true)
+  lockedByPlanner Boolean   @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -272,6 +273,7 @@ model DiscretionaryItem {
   dueDate        DateTime?   @db.Date
   sortOrder      Int         @default(0)
   lastReviewedAt DateTime    @default(now())
+  isPlannerOwned Boolean     @default(false)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
@@ -435,63 +437,94 @@ model PlannerYearBudget {
   @@unique([householdId, year])
 }
 
-enum GiftEventType {
-  birthday
-  christmas
-  mothers_day
-  fathers_day
-  valentines_day
-  anniversary
-  custom
+enum GiftDateType {
+  shared
+  personal
 }
 
-enum GiftRecurrence {
-  annual
-  one_off
+enum GiftAllocationStatus {
+  planned
+  bought
+  skipped
+}
+
+enum GiftPlannerMode {
+  synced
+  independent
+}
+
+model GiftPlannerSettings {
+  id                          String          @id @default(cuid())
+  householdId                 String          @unique
+  mode                        GiftPlannerMode @default(synced)
+  syncedDiscretionaryItemId   String?
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
 }
 
 model GiftPerson {
-  id          String      @id @default(cuid())
+  id          String           @id @default(cuid())
   householdId String
   name        String
   notes       String?
-  sortOrder   Int         @default(0)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  events      GiftEvent[]
+  sortOrder   Int              @default(0)
+  memberId    String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  allocations GiftAllocation[]
 
+  @@unique([householdId, name])
   @@index([householdId])
+  @@index([memberId])
 }
 
 model GiftEvent {
-  id           String          @id @default(cuid())
-  giftPersonId String
-  householdId  String
-  eventType    GiftEventType
-  customName   String?
-  dateMonth    Int?
-  dateDay      Int?
-  specificDate DateTime?
-  recurrence   GiftRecurrence  @default(annual)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  giftPerson   GiftPerson      @relation(fields: [giftPersonId], references: [id])
-  yearRecords  GiftYearRecord[]
+  id          String           @id @default(cuid())
+  householdId String
+  name        String
+  dateType    GiftDateType
+  dateMonth   Int?
+  dateDay     Int?
+  isLocked    Boolean          @default(false)
+  sortOrder   Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  allocations GiftAllocation[]
 
+  @@unique([householdId, name])
   @@index([householdId])
 }
 
-model GiftYearRecord {
-  id          String    @id @default(cuid())
-  giftEventId String
-  year        Int
-  budget      Float     @default(0)
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  giftEvent   GiftEvent @relation(fields: [giftEventId], references: [id])
+model GiftAllocation {
+  id           String               @id @default(cuid())
+  householdId  String
+  giftPersonId String
+  giftEventId  String
+  year         Int
+  planned      Float                @default(0)
+  spent        Float?
+  status       GiftAllocationStatus @default(planned)
+  notes        String?
+  dateMonth    Int?
+  dateDay      Int?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  giftPerson   GiftPerson           @relation(fields: [giftPersonId], references: [id], onDelete: Cascade)
+  giftEvent    GiftEvent            @relation(fields: [giftEventId], references: [id], onDelete: Cascade)
 
-  @@unique([giftEventId, year])
+  @@unique([giftPersonId, giftEventId, year])
+  @@index([householdId, year])
+  @@index([giftEventId, year])
+}
+
+model GiftRolloverDismissal {
+  id          String   @id @default(cuid())
+  householdId String
+  userId      String
+  year        Int
+  createdAt   DateTime @default(now())
+
+  @@unique([householdId, userId, year])
 }
 
 // ─── Snapshots ────────────────────────────────────────────────────────────────

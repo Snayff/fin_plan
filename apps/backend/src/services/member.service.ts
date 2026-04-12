@@ -22,7 +22,7 @@ export const memberService = {
     await assertCallerIsOwner(householdId, callerUserId);
 
     try {
-      return await prisma.member.create({
+      const created = await prisma.member.create({
         data: {
           householdId,
           userId: null,
@@ -32,6 +32,16 @@ export const memberService = {
           role: "member",
         },
       });
+
+      try {
+        await prisma.giftPerson.create({
+          data: { householdId, name: created.name, memberId: created.id },
+        });
+      } catch (gpErr: unknown) {
+        if ((gpErr as { code?: string })?.code !== "P2002") throw gpErr;
+      }
+
+      return created;
     } catch (err: any) {
       if (err?.code === "P2002") {
         throw new ConflictError("A member with that name already exists in this household");
@@ -143,6 +153,11 @@ export const memberService = {
           }),
         ]);
       }
+
+      await tx.giftPerson.updateMany({
+        where: { householdId, memberId },
+        data: { memberId: null },
+      });
 
       await tx.member.delete({ where: { id: memberId } });
     });

@@ -962,3 +962,50 @@ describe("waterfallService.createIncome with audited()", () => {
     expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
   });
 });
+
+describe("waterfallService discretionary guards (planner-owned)", () => {
+  it("createDiscretionary rejects items in a planner-locked subcategory", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({
+      id: "sub-gifts",
+      householdId: "hh-1",
+      tier: "discretionary",
+      name: "Gifts",
+      lockedByPlanner: true,
+    } as any);
+    await expect(
+      waterfallService.createDiscretionary("hh-1", { subcategoryId: "sub-gifts", name: "X" } as any)
+    ).rejects.toMatchObject({ name: "ValidationError" });
+  });
+
+  it("updateDiscretionary rejects edits to planner-owned items", async () => {
+    prismaMock.discretionaryItem.findUnique.mockResolvedValue({
+      id: "d1",
+      householdId: "hh-1",
+      isPlannerOwned: true,
+    } as any);
+    await expect(
+      waterfallService.updateDiscretionary("hh-1", "d1", { name: "Renamed" } as any)
+    ).rejects.toMatchObject({ name: "ValidationError" });
+  });
+
+  it("deleteDiscretionary rejects planner-owned items", async () => {
+    prismaMock.discretionaryItem.findUnique.mockResolvedValue({
+      id: "d1",
+      householdId: "hh-1",
+      isPlannerOwned: true,
+    } as any);
+    await expect(waterfallService.deleteDiscretionary("hh-1", "d1")).rejects.toMatchObject({
+      name: "ValidationError",
+    });
+  });
+});
+
+describe("waterfallService staleness exclusion", () => {
+  it("getDiscretionaryItems excludes planner-owned items from staleness aggregation", async () => {
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([] as any);
+    await waterfallService.listDiscretionaryStale("hh-1");
+    const call = (prismaMock.discretionaryItem.findMany.mock.calls[0] as any)[0];
+    expect(call.where).toMatchObject({ householdId: "hh-1", isPlannerOwned: false });
+  });
+});

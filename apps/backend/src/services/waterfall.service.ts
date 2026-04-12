@@ -1,5 +1,5 @@
 import { prisma } from "../config/database.js";
-import { NotFoundError } from "../utils/errors.js";
+import { NotFoundError, ValidationError } from "../utils/errors.js";
 import { subcategoryService } from "./subcategory.service.js";
 import { toGBP } from "@finplan/shared";
 import { audited } from "./audit.service.js";
@@ -37,6 +37,22 @@ async function validateSubcategoryOwnership(
     where: { id: subcategoryId, householdId, tier },
   });
   if (!sub) throw new NotFoundError("Subcategory not found");
+}
+
+async function validateSubcategoryNotPlannerLocked(householdId: string, subcategoryId: string) {
+  const sub = await prisma.subcategory.findFirst({
+    where: { id: subcategoryId, householdId, tier: "discretionary" },
+  });
+  if (!sub) throw new NotFoundError("Subcategory not found");
+  if ((sub as any).lockedByPlanner) {
+    throw new ValidationError("This subcategory is managed by the Gifts planner");
+  }
+}
+
+function assertNotPlannerOwned(item: { isPlannerOwned?: boolean } | null) {
+  if (item && (item as any).isPlannerOwned) {
+    throw new ValidationError("This item is managed by the Gifts planner");
+  }
 }
 
 async function validateMemberOwnership(householdId: string, memberId: string) {
@@ -700,12 +716,21 @@ export const waterfallService = {
     return enrichItemsWithPeriods(items, "discretionary_item");
   },
 
+  async listDiscretionaryStale(householdId: string) {
+    const items = await prisma.discretionaryItem.findMany({
+      where: { householdId, isPlannerOwned: false },
+      orderBy: { sortOrder: "asc" },
+    });
+    return enrichItemsWithPeriods(items, "discretionary_item");
+  },
+
   async createDiscretionary(
     householdId: string,
     data: CreateDiscretionaryItemInput,
     ctx?: ActorCtx
   ) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
+    await validateSubcategoryNotPlannerLocked(householdId, data.subcategoryId);
     const { amount: _amount, startDate: _startDate, endDate: _endDate, ...itemData } = data as any;
     if (ctx) {
       return audited({
@@ -747,6 +772,7 @@ export const waterfallService = {
   ) {
     const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Discretionary item");
+    assertNotPlannerOwned(existing as any);
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
     }
@@ -784,6 +810,7 @@ export const waterfallService = {
   async deleteDiscretionary(householdId: string, id: string, ctx?: ActorCtx) {
     const existing = await prisma.discretionaryItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Discretionary item");
+    assertNotPlannerOwned(existing as any);
     if (ctx) {
       await audited({
         db: prisma,

@@ -104,88 +104,7 @@ describe("plannerService.getYearBudget", () => {
   });
 });
 
-// ─── Gift persons ─────────────────────────────────────────────────────────────
-
-describe("plannerService.createGiftPerson", () => {
-  it("creates with householdId", async () => {
-    prismaMock.giftPerson.create.mockResolvedValue({ id: "gp-1" } as any);
-
-    await plannerService.createGiftPerson("hh-1", { name: "Mum" });
-
-    expect(prismaMock.giftPerson.create).toHaveBeenCalledWith({
-      data: { name: "Mum", householdId: "hh-1" },
-    });
-  });
-});
-
-describe("plannerService.deleteGiftPerson", () => {
-  it("cascades: deletes year records, then events, then person", async () => {
-    prismaMock.giftPerson.findUnique.mockResolvedValue({
-      id: "gp-1",
-      householdId: "hh-1",
-    } as any);
-    prismaMock.giftEvent.findMany.mockResolvedValue([{ id: "ev-1" }, { id: "ev-2" }] as any);
-    prismaMock.giftYearRecord.deleteMany.mockResolvedValue({ count: 2 } as any);
-    prismaMock.giftEvent.deleteMany.mockResolvedValue({ count: 2 } as any);
-    prismaMock.giftPerson.delete.mockResolvedValue({} as any);
-
-    await plannerService.deleteGiftPerson("hh-1", "gp-1");
-
-    expect(prismaMock.giftYearRecord.deleteMany).toHaveBeenCalledWith({
-      where: { giftEventId: { in: ["ev-1", "ev-2"] } },
-    });
-    expect(prismaMock.giftEvent.deleteMany).toHaveBeenCalledWith({
-      where: { giftPersonId: "gp-1" },
-    });
-    expect(prismaMock.giftPerson.delete).toHaveBeenCalledWith({ where: { id: "gp-1" } });
-  });
-});
-
-// ─── Gift events ──────────────────────────────────────────────────────────────
-
-describe("plannerService.createGiftEvent", () => {
-  it("throws when person not found", async () => {
-    prismaMock.giftPerson.findUnique.mockResolvedValue(null);
-
-    await expect(
-      plannerService.createGiftEvent("hh-1", "gp-1", { eventType: "birthday" })
-    ).rejects.toThrow("Gift person not found");
-  });
-
-  it("creates event with personId and householdId", async () => {
-    prismaMock.giftPerson.findUnique.mockResolvedValue({
-      id: "gp-1",
-      householdId: "hh-1",
-    } as any);
-    prismaMock.giftEvent.create.mockResolvedValue({ id: "ev-1" } as any);
-
-    await plannerService.createGiftEvent("hh-1", "gp-1", { eventType: "birthday" });
-
-    expect(prismaMock.giftEvent.create).toHaveBeenCalledWith({
-      data: { eventType: "birthday", giftPersonId: "gp-1", householdId: "hh-1" },
-    });
-  });
-});
-
-describe("plannerService.deleteGiftEvent", () => {
-  it("deletes year records then event", async () => {
-    prismaMock.giftEvent.findUnique.mockResolvedValue({
-      id: "ev-1",
-      householdId: "hh-1",
-    } as any);
-    prismaMock.giftYearRecord.deleteMany.mockResolvedValue({ count: 1 } as any);
-    prismaMock.giftEvent.delete.mockResolvedValue({} as any);
-
-    await plannerService.deleteGiftEvent("hh-1", "ev-1");
-
-    expect(prismaMock.giftYearRecord.deleteMany).toHaveBeenCalledWith({
-      where: { giftEventId: "ev-1" },
-    });
-    expect(prismaMock.giftEvent.delete).toHaveBeenCalledWith({ where: { id: "ev-1" } });
-  });
-});
-
-// ─── Upcoming gifts ───────────────────────────────────────────────────────────
+// ─── Audit logging ────────────────────────────────────────────────────────────
 
 describe("plannerService.createPurchase with audited()", () => {
   const actor = {
@@ -220,91 +139,14 @@ describe("plannerService.createPurchase with audited()", () => {
   });
 });
 
-describe("plannerService.getUpcomingGifts", () => {
-  it("returns events sorted by nextDate with done flag", async () => {
-    const now = new Date();
-    const futureDate = new Date(now.getFullYear(), 11, 25); // Dec 25
-    const pastDate = new Date(now.getFullYear(), 1, 14); // Feb 14 (likely past)
+// ─── Gift API removal ─────────────────────────────────────────────────────────
 
-    prismaMock.giftEvent.findMany.mockResolvedValue([
-      {
-        id: "ev-1",
-        householdId: "hh-1",
-        eventType: "christmas",
-        recurrence: "annual",
-        specificDate: null,
-        dateMonth: null,
-        dateDay: null,
-        giftPerson: { id: "gp-1", name: "Mum" },
-        yearRecords: [],
-      },
-      {
-        id: "ev-2",
-        householdId: "hh-1",
-        eventType: "valentines_day",
-        recurrence: "annual",
-        specificDate: null,
-        dateMonth: null,
-        dateDay: null,
-        giftPerson: { id: "gp-1", name: "Mum" },
-        yearRecords: [{ budget: 50, notes: null }],
-      },
-    ] as any);
-
-    const result = await plannerService.getUpcomingGifts("hh-1", now.getFullYear());
-
-    expect(result).toHaveLength(2);
-    // Christmas should come after Valentine's when sorted chronologically in current year
-    // Valentine's (Feb 14) < Christmas (Dec 25)
-    expect(result[0].eventType).toBe("valentines_day");
-    expect(result[1].eventType).toBe("christmas");
-
-    const valentines = result[0];
-    expect(valentines.done).toBe(new Date(now.getFullYear(), 1, 14) < now);
-    expect(valentines.yearRecord).toEqual({ budget: 50, notes: null });
-
-    const christmas = result[1];
-    expect(christmas.done).toBe(futureDate < now);
-    expect(christmas.yearRecord).toBeNull();
-  });
-});
-
-describe("plannerService.getUpcomingGifts — DI clock", () => {
-  it("marks past events as done based on injected now", async () => {
-    const now = new Date("2026-07-01");
-
-    prismaMock.giftEvent.findMany.mockResolvedValue([
-      {
-        id: "ge-1",
-        householdId: "hh-1",
-        giftPersonId: "gp-1",
-        eventType: "birthday",
-        recurrence: "annual",
-        dateMonth: 3, // March — before July
-        dateDay: 15,
-        specificDate: null,
-        giftPerson: { id: "gp-1", name: "Alice", householdId: "hh-1" },
-        yearRecords: [],
-      },
-      {
-        id: "ge-2",
-        householdId: "hh-1",
-        giftPersonId: "gp-1",
-        eventType: "birthday",
-        recurrence: "annual",
-        dateMonth: 12, // December — after July
-        dateDay: 25,
-        specificDate: null,
-        giftPerson: { id: "gp-1", name: "Bob", householdId: "hh-1" },
-        yearRecords: [],
-      },
-    ] as any);
-
-    const result = await plannerService.getUpcomingGifts("hh-1", 2026, now);
-
-    const marchEvent = result.find((e) => e.id === "ge-1");
-    const decEvent = result.find((e) => e.id === "ge-2");
-    expect(marchEvent!.done).toBe(true); // March 15 < July 1
-    expect(decEvent!.done).toBe(false); // Dec 25 > July 1
+describe("plannerService gift API removal", () => {
+  it("no longer exposes gift methods", async () => {
+    const { plannerService } = await import("./planner.service.js");
+    expect((plannerService as any).listGiftPersons).toBeUndefined();
+    expect((plannerService as any).createGiftPerson).toBeUndefined();
+    expect((plannerService as any).getUpcomingGifts).toBeUndefined();
+    expect((plannerService as any).upsertGiftYearRecord).toBeUndefined();
   });
 });

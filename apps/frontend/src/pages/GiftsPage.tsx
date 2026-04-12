@@ -1,7 +1,34 @@
+import { useState } from "react";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
-import { PageHeader } from "@/components/common/PageHeader";
+import { GiftsLeftAside, type GiftsMode } from "@/components/gifts/GiftsLeftAside";
+import { GiftsModePanel } from "@/components/gifts/GiftsModePanel";
+import { UpcomingModePanel } from "@/components/gifts/UpcomingModePanel";
+import { ConfigModePanel } from "@/components/gifts/ConfigModePanel";
+import { YearRolloverBanner } from "@/components/gifts/YearRolloverBanner";
+import { useGiftsState, useGiftsYears } from "@/hooks/useGifts";
 
 export default function GiftsPage() {
+  const currentYear = new Date().getFullYear();
+  const [year, setYear] = useState(currentYear);
+  const [mode, setMode] = useState<GiftsMode>("gifts");
+
+  const stateQuery = useGiftsState(year);
+  const yearsQuery = useGiftsYears();
+
+  if (stateQuery.isLoading || !stateQuery.data) {
+    return (
+      <div
+        data-testid="gifts-page"
+        className="flex h-screen items-center justify-center text-sm text-foreground/40"
+      >
+        Loading…
+      </div>
+    );
+  }
+
+  const state = stateQuery.data;
+  const years = yearsQuery.data ?? [year];
+
   return (
     <div data-testid="gifts-page" className="relative min-h-screen">
       <div
@@ -12,19 +39,28 @@ export default function GiftsPage() {
             "radial-gradient(ellipse 60% 40% at 20% 20%, rgba(139,92,246,0.08) 0%, transparent 70%)",
         }}
       />
+      <YearRolloverBanner year={year} pending={state.rolloverPending} />
       <TwoPanelLayout
         left={
-          <div className="flex flex-col h-full">
-            <PageHeader title="Gifts" />
-            <div className="flex-1 overflow-y-auto p-6" />
-          </div>
+          <GiftsLeftAside
+            year={year}
+            years={years}
+            onYearChange={setYear}
+            mode={mode}
+            onModeChange={setMode}
+            budget={state.budget}
+            readOnly={state.isReadOnly}
+          />
         }
         right={
-          <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-center">
-            <p className="text-sm font-medium text-foreground/50">Coming soon</p>
-            <p className="max-w-xs text-xs text-foreground/30">
-              Gift budget planning will be available in a future update.
-            </p>
+          <div className="flex h-full flex-col">
+            {mode === "gifts" && (
+              <GiftsModePanel people={state.people} year={year} readOnly={state.isReadOnly} />
+            )}
+            {mode === "upcoming" && <UpcomingModePanel year={year} />}
+            {mode === "config" && (
+              <ConfigModePanel currentMode={state.mode} readOnly={state.isReadOnly} year={year} />
+            )}
           </div>
         }
       />

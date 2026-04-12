@@ -212,24 +212,11 @@ export const importService = {
           await tx.purchaseItem.deleteMany({ where: { householdId } });
           await tx.plannerYearBudget.deleteMany({ where: { householdId } });
 
-          // Gift persons: purge year records + events first (no cascade in schema)
-          const existingPersons = await tx.giftPerson.findMany({
-            where: { householdId },
-            select: { id: true },
-          });
-          const personIds = existingPersons.map((p) => p.id);
-          if (personIds.length > 0) {
-            const existingEvents = await tx.giftEvent.findMany({
-              where: { giftPersonId: { in: personIds } },
-              select: { id: true },
-            });
-            const eventIds = existingEvents.map((e) => e.id);
-            if (eventIds.length > 0) {
-              await tx.giftYearRecord.deleteMany({ where: { giftEventId: { in: eventIds } } });
-              await tx.giftEvent.deleteMany({ where: { id: { in: eventIds } } });
-            }
-            await tx.giftPerson.deleteMany({ where: { id: { in: personIds } } });
-          }
+          // Gift data: allocations → events → people → settings (respect FK order)
+          await tx.giftAllocation.deleteMany({ where: { householdId } });
+          await tx.giftEvent.deleteMany({ where: { householdId } });
+          await tx.giftPerson.deleteMany({ where: { householdId } });
+          await tx.giftPlannerSettings.deleteMany({ where: { householdId } });
 
           // Subcategories are referenced by waterfall items (already deleted) — safe now
           await tx.subcategory.deleteMany({ where: { householdId } });
@@ -545,45 +532,98 @@ export const importService = {
           }
         }
 
-        // === GIFT PERSONS / EVENTS / YEAR RECORDS ===
-        for (const [idx, gp] of data.giftPersons.entries()) {
-          try {
-            const createdPerson = await tx.giftPerson.create({
-              data: {
-                householdId,
-                name: gp.name,
-                notes: gp.notes ?? null,
-                sortOrder: gp.sortOrder,
-              },
-            });
-            for (const e of gp.events) {
-              const createdEvent = await tx.giftEvent.create({
+        // === GIFT PLANNER SETTINGS ===
+        if (data.gifts) {
+          await tx.giftPlannerSettings.upsert({
+            where: { householdId },
+            create: {
+              householdId,
+              mode: data.gifts.settings.mode,
+              syncedDiscretionaryItemId: data.gifts.settings.syncedDiscretionaryItemId,
+            },
+            update: {
+              mode: data.gifts.settings.mode,
+              syncedDiscretionaryItemId: data.gifts.settings.syncedDiscretionaryItemId,
+            },
+          });
+
+          // === GIFT PEOPLE ===
+          const giftPersonNameToId = new Map<string, string>();
+          for (const [idx, gp] of data.gifts.people.entries()) {
+            try {
+              const created = await tx.giftPerson.create({
                 data: {
-                  giftPersonId: createdPerson.id,
                   householdId,
-                  eventType: e.eventType,
-                  customName: e.customName ?? null,
-                  dateMonth: e.dateMonth ?? null,
-                  dateDay: e.dateDay ?? null,
-                  specificDate: e.specificDate ? new Date(e.specificDate) : null,
-                  recurrence: e.recurrence,
+                  name: gp.name,
+                  notes: gp.notes ?? null,
+                  sortOrder: gp.sortOrder,
                 },
               });
-              for (const yr of e.yearRecords) {
-                await tx.giftYearRecord.create({
-                  data: {
-                    giftEventId: createdEvent.id,
-                    year: yr.year,
-                    budget: yr.budget,
-                    notes: yr.notes ?? null,
-                  },
-                });
-              }
+              giftPersonNameToId.set(gp.name, created.id);
+            } catch (err) {
+              throw new ValidationError(
+                `Failed to import gift person '${gp.name}' (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+              );
             }
-          } catch (err) {
-            throw new ValidationError(
-              `Failed to import gift person '${gp.name}' (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
-            );
+          }
+
+          // === GIFT EVENTS ===
+          const giftEventNameToId = new Map<string, string>();
+          for (const [idx, ge] of data.gifts.events.entries()) {
+            try {
+              const created = await tx.giftEvent.create({
+                data: {
+                  householdId,
+                  name: ge.name,
+                  dateType: ge.dateType,
+                  dateMonth: ge.dateMonth ?? null,
+                  dateDay: ge.dateDay ?? null,
+                  isLocked: ge.isLocked,
+                  sortOrder: ge.sortOrder,
+                },
+              });
+              giftEventNameToId.set(ge.name, created.id);
+            } catch (err) {
+              throw new ValidationError(
+                `Failed to import gift event '${ge.name}' (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+              );
+            }
+          }
+
+          // === GIFT ALLOCATIONS ===
+          for (const [idx, ga] of data.gifts.allocations.entries()) {
+            const personId = giftPersonNameToId.get(ga.personName);
+            const eventId = giftEventNameToId.get(ga.eventName);
+            if (!personId) {
+              throw new ValidationError(
+                `Failed to import gift allocation (index ${idx}): unknown person '${ga.personName}'`
+              );
+            }
+            if (!eventId) {
+              throw new ValidationError(
+                `Failed to import gift allocation (index ${idx}): unknown event '${ga.eventName}'`
+              );
+            }
+            try {
+              await tx.giftAllocation.create({
+                data: {
+                  householdId,
+                  giftPersonId: personId,
+                  giftEventId: eventId,
+                  year: ga.year,
+                  planned: ga.planned,
+                  spent: ga.spent ?? null,
+                  status: ga.status,
+                  notes: ga.notes ?? null,
+                  dateMonth: ga.dateMonth ?? null,
+                  dateDay: ga.dateDay ?? null,
+                },
+              });
+            } catch (err) {
+              throw new ValidationError(
+                `Failed to import gift allocation (index ${idx}): ${err instanceof Error ? err.message : String(err)}`
+              );
+            }
           }
         }
 

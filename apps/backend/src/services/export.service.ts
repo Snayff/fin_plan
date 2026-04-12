@@ -58,7 +58,10 @@ export const exportService = {
           accounts,
           purchaseItems,
           plannerYearBudgets,
-          giftPersons,
+          giftPlannerSettings,
+          giftPeople,
+          giftEvents,
+          giftAllocations,
         ] = await Promise.all([
           tx.householdSettings.findUnique({ where: { householdId } }),
           tx.member.findMany({ where: { householdId }, orderBy: { joinedAt: "asc" } }),
@@ -79,10 +82,10 @@ export const exportService = {
           tx.account.findMany({ where: { householdId }, include: { balances: true } }),
           tx.purchaseItem.findMany({ where: { householdId } }),
           tx.plannerYearBudget.findMany({ where: { householdId } }),
-          tx.giftPerson.findMany({
-            where: { householdId },
-            include: { events: { include: { yearRecords: true } } },
-          }),
+          tx.giftPlannerSettings.findUnique({ where: { householdId } }),
+          tx.giftPerson.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } }),
+          tx.giftEvent.findMany({ where: { householdId }, orderBy: { sortOrder: "asc" } }),
+          tx.giftAllocation.findMany({ where: { householdId } }),
         ]);
 
         // Build lookup map keyed by Member.id. Both waterfall item ownerId and
@@ -277,24 +280,43 @@ export const exportService = {
             purchaseBudget: b.purchaseBudget,
             giftBudget: b.giftBudget,
           })),
-          giftPersons: giftPersons.map((gp) => ({
-            name: gp.name,
-            notes: gp.notes,
-            sortOrder: gp.sortOrder,
-            events: gp.events.map((e) => ({
-              eventType: e.eventType,
-              customName: e.customName,
-              dateMonth: e.dateMonth,
-              dateDay: e.dateDay,
-              specificDate: e.specificDate ? e.specificDate.toISOString() : null,
-              recurrence: e.recurrence,
-              yearRecords: e.yearRecords.map((yr) => ({
-                year: yr.year,
-                budget: yr.budget,
-                notes: yr.notes,
-              })),
+          gifts: {
+            settings: giftPlannerSettings
+              ? {
+                  mode: giftPlannerSettings.mode,
+                  syncedDiscretionaryItemId: giftPlannerSettings.syncedDiscretionaryItemId,
+                }
+              : { mode: "synced" as const, syncedDiscretionaryItemId: null },
+            people: giftPeople.map((gp) => ({
+              name: gp.name,
+              notes: gp.notes,
+              sortOrder: gp.sortOrder,
+              isHouseholdMember: gp.memberId != null,
             })),
-          })),
+            events: giftEvents.map((ge) => ({
+              name: ge.name,
+              dateType: ge.dateType,
+              dateMonth: ge.dateMonth,
+              dateDay: ge.dateDay,
+              isLocked: ge.isLocked,
+              sortOrder: ge.sortOrder,
+            })),
+            allocations: giftAllocations.map((ga) => {
+              const personName = giftPeople.find((p) => p.id === ga.giftPersonId)?.name ?? "";
+              const eventName = giftEvents.find((e) => e.id === ga.giftEventId)?.name ?? "";
+              return {
+                personName,
+                eventName,
+                year: ga.year,
+                planned: ga.planned,
+                spent: ga.spent,
+                status: ga.status,
+                notes: ga.notes,
+                dateMonth: ga.dateMonth,
+                dateDay: ga.dateDay,
+              };
+            }),
+          },
         };
         return householdExportSchema.parse(envelope);
       },
