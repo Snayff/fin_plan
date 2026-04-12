@@ -178,3 +178,53 @@ export {
 
 // Gifts schemas and types
 export * from "./gifts.schemas";
+
+// Response schemas and types (contracts + security allowlists for API responses)
+export {
+  // Auth
+  userPreferencesResponseSchema,
+  userResponseSchema,
+  authLoginResponseSchema,
+  authMeResponseSchema,
+  authRefreshResponseSchema,
+  csrfTokenResponseSchema,
+  type UserResponse,
+  type AuthLoginResponse,
+  type AuthMeResponse,
+  type AuthRefreshResponse,
+  type CsrfTokenResponse,
+  // Household
+  householdCoreResponseSchema,
+  householdWithCountResponseSchema,
+  householdMembershipResponseSchema,
+  householdResponseSchema,
+  householdListResponseSchema,
+  householdDetailResponseSchema,
+  type HouseholdCoreResponse,
+  type HouseholdMembershipResponse,
+  type HouseholdResponse,
+  type HouseholdListResponse,
+  type HouseholdDetailResponse,
+  // Invite
+  inviteCreateResponseSchema,
+  inviteDetailResponseSchema,
+  inviteAcceptResponseSchema,
+  type InviteCreateResponse,
+  type InviteDetailResponse,
+  type InviteAcceptResponse,
+  // Waterfall items
+  incomeSourceResponseSchema,
+  committedItemResponseSchema,
+  discretionaryItemResponseSchema,
+  type IncomeSourceResponse,
+  type CommittedItemResponse,
+  type DiscretionaryItemResponse,
+  type PeriodResponse,
+  // Generic
+  successResponseSchema,
+  messageResponseSchema,
+  errorResponseSchema,
+  type SuccessResponse,
+  type MessageResponse,
+  type ErrorResponse,
+} from "./responses";
