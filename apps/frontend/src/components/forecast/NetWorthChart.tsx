@@ -9,6 +9,8 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/utils/format";
 import { usePrefersReducedMotion } from "@/utils/motion";
+import { InfoTip } from "@/components/ui/InfoTip";
+import { getGlossaryEntry } from "@/data/glossary";
 import type { NetWorthPoint } from "@finplan/shared";
 
 interface RetirementMarker {
@@ -72,7 +74,7 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
               <Tooltip
                 formatter={(value: number, name: string) => [
                   formatCurrency(value),
-                  name === "nominal" ? "Nominal" : "Real",
+                  name === "nominal" ? "Ignoring Inflation" : "Real Terms",
                 ]}
                 contentStyle={{
                   background: "#141b2e",
@@ -130,13 +132,16 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
             </p>
           </div>
           <div>
-            <span className="text-xs text-text-tertiary">Nominal ({last.year})</span>
+            <span className="text-xs text-text-tertiary">Ignoring Inflation ({last.year})</span>
             <p className="font-numeric text-sm text-page-accent tabular-nums">
               {formatCurrency(last.nominal)}
             </p>
           </div>
           <div>
-            <span className="text-xs text-text-tertiary">Real ({last.year})</span>
+            <span className="text-xs text-text-tertiary">
+              <InfoTip text={getGlossaryEntry("real-terms")?.definition ?? ""}>Real Terms</InfoTip>{" "}
+              ({last.year})
+            </span>
             <p className="font-numeric text-sm text-text-secondary tabular-nums">
               {formatCurrency(last.real)}
             </p>
