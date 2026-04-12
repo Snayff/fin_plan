@@ -16,11 +16,7 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
       "An annual amount spread evenly across 12 months. finplan uses this so your monthly waterfall reflects a fair share of bills or income that don't land every month.",
     relatedConceptIds: ["amortisation"],
     relatedTermIds: ["annual-income"],
-    appearsIn: [
-      "Committed Spend waterfall",
-      "Annual Income entries",
-      "Cashflow calendar",
-    ],
+    appearsIn: ["Committed Spend waterfall", "Annual Income entries", "Cashflow calendar"],
   },
   {
     id: "annual-income",
@@ -120,6 +116,15 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     relatedConceptIds: ["waterfall"],
     relatedTermIds: ["net-income", "annual-income"],
     appearsIn: ["Income page", "Overview waterfall"],
+  },
+  {
+    id: "real-terms",
+    term: "Real Terms",
+    definition:
+      "A value adjusted for inflation — showing what a future amount would be worth in today's purchasing power. If your net worth is projected at £150,000 but £120,000 in real terms, the difference reflects the expected erosion of purchasing power over time.",
+    relatedConceptIds: ["compound-interest"],
+    relatedTermIds: ["net-worth", "projection"],
+    appearsIn: ["Growth chart"],
   },
   {
     id: "projection",

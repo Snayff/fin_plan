@@ -158,6 +158,14 @@
 
 ---
 
+## Real Terms
+
+**Appears in**: Growth chart (Net Worth stat row)
+
+**Tooltip**: A value adjusted for inflation — showing what a future amount would be worth in today's purchasing power. If your net worth is projected at £150,000 but £120,000 in real terms, the difference reflects the expected erosion of purchasing power over time.
+
+---
+
 # Functional Icon Tooltips
 
 > These tooltips appear on hover over icon-only UI elements — icons that carry meaning but are not accompanied by visible label text. They explain what tapping or clicking the icon does (or what it represents), in plain English.
@@ -219,3 +227,71 @@ _Note: the tooltip is dynamic — it shows the actual snapshot name and date on 
 **Appears in**: Wealth page trust savings section (account row badge)
 
 **Tooltip**: This account is managed by your household but is owned by [name]. It is excluded from your household net worth.
+
+---
+
+# Gift Planner
+
+---
+
+## Annual Budget (Gifts)
+
+**Appears in**: Gift planner left aside, budget summary
+
+**Tooltip**: The total amount set aside for gift-giving this year. In Synced mode this flows into the waterfall as a Discretionary item; in Independent mode it is tracked here only.
+
+---
+
+## Planned (Gifts)
+
+**Appears in**: Gift planner budget summary, allocation cards
+
+**Tooltip**: The sum of all planned gift amounts across every person and event this year. Compare against your annual budget to see whether your plan fits.
+
+---
+
+## Spent (Gifts)
+
+**Appears in**: Gift planner budget summary, allocation cards
+
+**Tooltip**: The sum of amounts actually spent on gifts so far this year.
+
+---
+
+## Synced Mode
+
+**Appears in**: Config → Mode panel
+
+**Tooltip**: The gift planner creates and manages a "Gifts" item in your Discretionary waterfall tier. Your annual gift budget is deducted from your surplus automatically.
+
+---
+
+## Independent Mode
+
+**Appears in**: Config → Mode panel
+
+**Tooltip**: The gift planner runs standalone with no connection to your waterfall. Useful if you track gifts separately or haven't set up a waterfall yet.
+
+---
+
+## Locked Event
+
+**Appears in**: Config → Events panel
+
+**Tooltip**: A built-in event (like Birthday or Christmas) that cannot be renamed or deleted. You can still choose not to plan gifts for it.
+
+---
+
+## Personal Date Type
+
+**Appears in**: Config → Events panel, Add Event form
+
+**Tooltip**: The date differs for each person — for example, each person has their own birthday. You set the date per person in the Gifts tab.
+
+---
+
+## Shared Date Type
+
+**Appears in**: Config → Events panel, Add Event form
+
+**Tooltip**: The same date for everyone — for example, Christmas is always 25 December regardless of the recipient.
