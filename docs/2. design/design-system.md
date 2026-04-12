@@ -165,15 +165,15 @@ Gradient text is reserved for **callout words** — special engagement phrases, 
 
 Six levels in the left panel, each a clear visual step:
 
-| Level                | Size | Weight | Font           | Colour                        | Context                                                                                                               |
-| -------------------- | ---- | ------ | -------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| Hero amount | text-hero (30px) | font-numeric font-extrabold | Colour by context: text-primary (waterfall items), text-foreground (wealth), text-tier-surplus (surplus page) |
-| Page title           | 18px | 700    | `font-heading` | `text-tier-*` / `page-accent` | Fixed at top of left panel (uppercase, 0.09em spacing). Tier pages use tier colour; non-tier pages use `page-accent`. |
-| Tier total           | 15px | 600    | `font-numeric` | `text-tier-*`                 | Sum next to each tier heading, in tier colour                                                                         |
-| Tier heading         | 13px | 600    | `font-heading` | `text-tier-*`                 | `INCOME`, `COMMITTED`, etc. (uppercase, 0.09em spacing)                                                               |
-| Item name            | 13px | 400    | `font-body`    | `text-secondary` (#94a3b8)    | Label for each line item — dimmed to recede                                                                           |
-| Item amount          | 13px | 400    | `font-numeric` | `#cbd5e1`                     | Value for each line item — subtle but readable                                                                        |
-| Metadata             | 12px | 500    | `font-body`    | varies                        | Staleness age, dates, helper text                                                                                     |
+| Level        | Size             | Weight                      | Font                                                                                                          | Colour                        | Context                                                                                                               |
+| ------------ | ---------------- | --------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Hero amount  | text-hero (30px) | font-numeric font-extrabold | Colour by context: text-primary (waterfall items), text-foreground (wealth), text-tier-surplus (surplus page) |
+| Page title   | 18px             | 700                         | `font-heading`                                                                                                | `text-tier-*` / `page-accent` | Fixed at top of left panel (uppercase, 0.09em spacing). Tier pages use tier colour; non-tier pages use `page-accent`. |
+| Tier total   | 15px             | 600                         | `font-numeric`                                                                                                | `text-tier-*`                 | Sum next to each tier heading, in tier colour                                                                         |
+| Tier heading | 13px             | 600                         | `font-heading`                                                                                                | `text-tier-*`                 | `INCOME`, `COMMITTED`, etc. (uppercase, 0.09em spacing)                                                               |
+| Item name    | 13px             | 400                         | `font-body`                                                                                                   | `text-secondary` (#94a3b8)    | Label for each line item — dimmed to recede                                                                           |
+| Item amount  | 13px             | 400                         | `font-numeric`                                                                                                | `#cbd5e1`                     | Value for each line item — subtle but readable                                                                        |
+| Metadata     | 12px             | 500                         | `font-body`                                                                                                   | varies                        | Staleness age, dates, helper text                                                                                     |
 
 Tier headings and totals use the same colour as their tier (`text-tier-income`, `text-tier-committed`, `text-tier-discretionary`, `text-tier-surplus`). Surplus is treated identically to other tiers — same size, same weight, just teal.
 
@@ -825,6 +825,66 @@ Applies to: Overview, Wealth, Planner. Exempt: Review Wizard, Waterfall Creation
 - Updates based on left panel selection
 - Supports one level of internal depth (tier list → item detail), navigated via breadcrumb
 - Never triggers a full page navigation
+
+#### Left Panel Header Anatomy
+
+Every left panel header uses the shared `PageHeader` component (`components/common/PageHeader.tsx`) — never inline markup. No exceptions.
+
+```
+Container:  shrink-0 px-4 pt-4 pb-3
+Title:      <h1> font-heading text-lg font-bold uppercase tracking-tier + colorClass
+Total:      font-numeric text-lg font-semibold + totalColorClass (optional)
+```
+
+- `colorClass` defaults to `text-page-accent`; tier pages pass their tier colour
+- Content below the header (nav lists, summaries, year selectors) uses `px-4` horizontal padding to align with the header
+
+#### Left Panel Navigation Anatomy
+
+Tab-style navigation lists (subcategory lists, forecast sections, gift modes) follow a single pattern:
+
+```
+Button:     relative flex w-full items-center px-4 py-2.5 text-left text-sm transition-colors
+Active:     font-medium text-{accent}
+Inactive:   text-foreground/60 hover:bg-{accent}/5
+Indicator:  absolute inset-0 bg-{accent}/14 border-l-2 border-{accent} rounded-r-sm
+Value:      relative z-10 font-numeric text-xs text-foreground/50
+```
+
+Where `{accent}` is `page-accent` (default), `tier-{name}` (waterfall pages), or `tier-discretionary` (gifts).
+
+#### Left Panel Footer Anatomy
+
+Optional total footer pinned to the bottom of the left panel:
+
+```
+Container:  border-t border-foreground/10 px-4 py-3 flex justify-between text-sm
+Label:      text-foreground/50
+Value:      font-numeric font-semibold + accent colour class
+```
+
+#### Right Panel Header Anatomy
+
+Every right panel begins with a header bar. The structure is fixed:
+
+```
+Container:  flex items-center justify-between px-4 py-3 border-b border-foreground/5
+Title:      <h2> font-heading text-base font-bold text-foreground
+Count:      text-xs text-foreground/40               (optional — "{n} items")
+Total:      font-numeric text-sm text-page-accent    (optional — tier pages use config.textClass)
+Add button: GhostAddButton pattern                   (optional)
+```
+
+**GhostAddButton pattern** (for all add buttons in panel headers):
+
+```
+rounded-md border px-3 py-1 text-xs font-medium transition-all duration-150
+border-foreground/20 text-foreground/60
+hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80
+disabled:cursor-not-allowed disabled:opacity-40
+```
+
+Reference implementation: `components/tier/GhostAddButton.tsx`.
 
 ---
 
