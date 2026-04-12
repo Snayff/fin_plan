@@ -189,7 +189,7 @@ function CashflowMonthChart({
       aria-label="Daily projected balance trace. Detailed values are listed in the events below."
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+        <LineChart data={chartData} margin={{ top: 20, right: 12, bottom: 0, left: 0 }}>
           <XAxis
             dataKey="day"
             type="number"
@@ -225,11 +225,13 @@ function CashflowMonthChart({
               stroke="hsl(var(--attention))"
               strokeDasharray="4 4"
               strokeWidth={1.5}
-              label={{
-                value: "today",
-                position: "top",
-                fill: "hsl(var(--attention))",
-                fontSize: 10,
+              label={({ viewBox }) => {
+                const { x } = viewBox as { x: number };
+                return (
+                  <text x={x} y={12} textAnchor="middle" fill="hsl(var(--attention))" fontSize={11}>
+                    today
+                  </text>
+                );
               }}
             />
           )}
