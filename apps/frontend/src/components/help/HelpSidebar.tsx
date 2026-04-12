@@ -26,7 +26,10 @@ export function HelpSidebar({ selectedId, onSelect }: Props) {
     if (!debouncedQuery) return GLOSSARY_ENTRIES;
     const q = debouncedQuery.toLowerCase();
     return GLOSSARY_ENTRIES.filter(
-      (e) => e.term.toLowerCase().includes(q) || e.definition.toLowerCase().includes(q)
+      (e) =>
+        e.term.toLowerCase().includes(q) ||
+        e.definition.toLowerCase().includes(q) ||
+        e.tag.toLowerCase().includes(q)
     );
   }, [debouncedQuery]);
 

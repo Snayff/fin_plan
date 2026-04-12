@@ -24,12 +24,7 @@ export const CONCEPT_ENTRIES: ConceptEntry[] = [
     whyItMatters:
       "The waterfall is finplan's core model. Every page in the app is built around this cascade — income feeds it, committed and discretionary pages let you edit each tier, and the surplus page shows what you have left to allocate. The Overview page shows all four tiers together.",
     visualType: "waterfall-diagram",
-    relatedTermIds: [
-      "committed-spend",
-      "discretionary-spend",
-      "surplus",
-      "net-income",
-    ],
+    relatedTermIds: ["committed-spend", "discretionary-spend", "surplus", "net-income"],
     seeThisInFinplan: "/overview",
   },
   {
@@ -51,12 +46,7 @@ export const CONCEPT_ENTRIES: ConceptEntry[] = [
     whyItMatters:
       "Net worth gives you a snapshot of overall financial health that goes beyond monthly cashflow. finplan calculates it from the assets and liabilities recorded on the Wealth page. Held-on-behalf-of accounts are excluded — they belong to someone else.",
     visualType: "net-worth-bar",
-    relatedTermIds: [
-      "net-worth",
-      "equity-value",
-      "liquidity",
-      "held-on-behalf-of",
-    ],
+    relatedTermIds: ["equity-value", "liquidity", "held-on-behalf-of"],
   },
   {
     id: "isa-allowances",

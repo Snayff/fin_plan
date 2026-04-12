@@ -127,24 +127,26 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
             </p>
             <p className="text-xs text-muted-foreground leading-relaxed">{entry.definition}</p>
 
-            {entry.relatedConceptIds.length > 0 && (
+            {entry.relatedConceptIds.filter((id) => id !== entryId).length > 0 && (
               <div className="mt-2 pt-2 border-t">
                 <p className="text-[11px] text-muted-foreground/70 mb-1">Related Concepts</p>
                 <div className="flex flex-wrap gap-1">
-                  {entry.relatedConceptIds.map((conceptId) => {
-                    const concept = getConceptEntry(conceptId);
-                    if (!concept) return null;
-                    return (
-                      <Link
-                        key={conceptId}
-                        to={`/help?entry=${conceptId}`}
-                        className="text-[11px] text-foreground/60 hover:text-foreground underline transition-colors"
-                        onClick={closePopover}
-                      >
-                        {concept.title}
-                      </Link>
-                    );
-                  })}
+                  {entry.relatedConceptIds
+                    .filter((id) => id !== entryId)
+                    .map((conceptId) => {
+                      const concept = getConceptEntry(conceptId);
+                      if (!concept) return null;
+                      return (
+                        <Link
+                          key={conceptId}
+                          to={`/help?entry=${conceptId}`}
+                          className="text-[11px] text-foreground/60 hover:text-foreground underline transition-colors"
+                          onClick={closePopover}
+                        >
+                          {concept.title}
+                        </Link>
+                      );
+                    })}
                 </div>
               </div>
             )}

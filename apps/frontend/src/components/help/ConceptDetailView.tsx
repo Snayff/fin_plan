@@ -9,18 +9,30 @@ interface Props {
   onNavigate: (id: string) => void;
 }
 
-export function ConceptDetailView({
-  conceptId,
-  onNavigate: _onNavigate,
-}: Props) {
+export function ConceptDetailView({ conceptId, onNavigate }: Props) {
   const concept = getConceptEntry(conceptId);
   if (!concept) return null;
 
+  const matchingGlossary = getGlossaryEntry(conceptId);
+  const filteredTermIds = concept.relatedTermIds.filter((id) => id !== conceptId);
+
   return (
     <div className="p-6 max-w-2xl space-y-0">
-      <h1 className="font-heading text-2xl font-bold text-foreground mb-4">
-        {concept.title}
-      </h1>
+      <h1 className="font-heading text-2xl font-bold text-foreground mb-1">{concept.title}</h1>
+
+      {matchingGlossary && (
+        <p className="mb-4">
+          <button
+            type="button"
+            onClick={() => onNavigate(conceptId)}
+            className="text-xs text-foreground/50 hover:text-foreground/70 transition-colors underline"
+          >
+            See glossary definition →
+          </button>
+        </p>
+      )}
+
+      {!matchingGlossary && <div className="mb-4" />}
 
       <div className="text-sm text-foreground/80 leading-relaxed whitespace-pre-line">
         {concept.summary}
@@ -36,9 +48,7 @@ export function ConceptDetailView({
         <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">
           Why it matters in finplan
         </p>
-        <p className="text-sm text-foreground/80 leading-relaxed">
-          {concept.whyItMatters}
-        </p>
+        <p className="text-sm text-foreground/80 leading-relaxed">{concept.whyItMatters}</p>
       </div>
 
       {concept.seeThisInFinplan && (
@@ -58,7 +68,7 @@ export function ConceptDetailView({
         </>
       )}
 
-      {concept.relatedTermIds.length > 0 && (
+      {filteredTermIds.length > 0 && (
         <>
           <hr className="my-6 border-border" />
           <div>
@@ -66,7 +76,7 @@ export function ConceptDetailView({
               Related terms
             </p>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
-              {concept.relatedTermIds.map((termId) => {
+              {filteredTermIds.map((termId) => {
                 const term = getGlossaryEntry(termId);
                 if (!term) return null;
                 return (
