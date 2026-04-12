@@ -76,9 +76,9 @@ export function AssetItemArea({ type }: Props) {
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="px-6 py-4 flex justify-between items-center border-b border-foreground/5">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/5">
         <div className="flex items-center gap-3">
-          <span className="font-heading text-base font-bold text-foreground">{label}</span>
+          <h2 className="font-heading text-base font-bold text-foreground">{label}</h2>
           <span className="text-xs text-foreground/40">
             {items?.length ?? 0} {(items?.length ?? 0) === 1 ? "item" : "items"}
           </span>
@@ -87,13 +87,14 @@ export function AssetItemArea({ type }: Props) {
           </span>
         </div>
         <button
+          type="button"
           onClick={() => {
             setIsAddingItem(true);
             setExpandedId(null);
             setEditingId(null);
           }}
           disabled={isAddingItem}
-          className="bg-transparent border border-foreground/20 rounded-md px-3.5 py-1.5 text-foreground/75 text-xs cursor-pointer hover:border-foreground/40 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          className="rounded-md border px-3 py-1 text-xs font-medium transition-all duration-150 border-foreground/20 text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 disabled:cursor-not-allowed disabled:opacity-40"
         >
           + Add
         </button>
