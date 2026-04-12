@@ -819,6 +819,14 @@ export const waterfallService = {
     return enrichItemsWithPeriods(items, "discretionary_item");
   },
 
+  async listDiscretionaryStale(householdId: string) {
+    const items = await prisma.discretionaryItem.findMany({
+      where: { householdId, isPlannerOwned: false },
+      orderBy: { sortOrder: "asc" },
+    });
+    return enrichItemsWithPeriods(items, "discretionary_item");
+  },
+
   async createDiscretionary(
     householdId: string,
     data: CreateDiscretionaryItemInput,

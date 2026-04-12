@@ -1000,3 +1000,13 @@ describe("waterfallService discretionary guards (planner-owned)", () => {
     });
   });
 });
+
+describe("waterfallService staleness exclusion", () => {
+  it("getDiscretionaryItems excludes planner-owned items from staleness aggregation", async () => {
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([] as any);
+    await waterfallService.listDiscretionaryStale("hh-1");
+    const call = (prismaMock.discretionaryItem.findMany.mock.calls[0] as any)[0];
+    expect(call.where).toMatchObject({ householdId: "hh-1", isPlannerOwned: false });
+  });
+});
