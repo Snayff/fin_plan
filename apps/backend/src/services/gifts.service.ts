@@ -64,6 +64,9 @@ export const giftsService = {
   async deletePerson(householdId: string, id: string) {
     const existing = await prisma.giftPerson.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Gift person");
+    if (existing!.memberId) {
+      throw new ValidationError("Household members cannot be deleted from the gift planner");
+    }
     await prisma.giftPerson.delete({ where: { id } });
   },
 

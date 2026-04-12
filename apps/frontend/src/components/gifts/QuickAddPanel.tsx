@@ -63,6 +63,7 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
   const [eventDateType, setEventDateType] = useState<GiftDateType>("personal");
   const [eventMonth, setEventMonth] = useState("");
   const [eventDay, setEventDay] = useState("");
+  const [personNameError, setPersonNameError] = useState("");
 
   // Pre-populate cells from existing allocations once data loads
   useEffect(() => {
@@ -166,10 +167,19 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
   };
 
   // Add person
+  const isPersonDuplicate = (n: string) =>
+    people.some((p) => p.name.toLowerCase() === n.toLowerCase());
+
   const submitPerson = () => {
-    if (!personName.trim()) return;
-    createPerson.mutate({ name: personName.trim() });
+    const trimmed = personName.trim();
+    if (!trimmed) return;
+    if (isPersonDuplicate(trimmed)) {
+      setPersonNameError("A person with that name already exists");
+      return;
+    }
+    createPerson.mutate({ name: trimmed });
     setPersonName("");
+    setPersonNameError("");
     setAddForm(null);
   };
 
@@ -191,6 +201,7 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
 
   const cancelAddForm = () => {
     setPersonName("");
+    setPersonNameError("");
     setEventName("");
     setEventDateType("personal");
     setEventMonth("");
@@ -198,11 +209,11 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
     setAddForm(null);
   };
 
-  const labelClass = "text-foreground/40 uppercase tracking-[0.07em] text-[10px]";
+  const labelClass = "text-text-muted uppercase tracking-[0.07em] text-[10px]";
   const inputClass =
-    "rounded-md border border-foreground/10 bg-foreground/[0.04] px-3 py-1.5 text-sm text-foreground placeholder:italic placeholder:text-foreground/30 focus:outline-none focus:border-violet-500/60";
+    "rounded-md border border-foreground/10 bg-foreground/[0.04] px-3 py-1.5 text-sm text-text-secondary placeholder:italic placeholder:text-text-muted focus:outline-none focus:border-page-accent/60";
   const selectTriggerClass =
-    "h-auto rounded-md border-foreground/10 bg-foreground/[0.04] py-1.5 text-sm focus:ring-violet-500/40";
+    "h-auto rounded-md border-foreground/10 bg-foreground/[0.04] py-1.5 text-sm focus:ring-page-accent/40";
 
   if (matrix.isLoading || !matrix.data) {
     return <div className="p-6 text-sm text-foreground/40">Loading…</div>;
@@ -250,39 +261,57 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
 
             {/* Add person form */}
             {addForm === "person" && (
-              <div className="flex gap-2">
-                <input
-                  autoFocus
-                  placeholder="Person name…"
-                  value={personName}
-                  onChange={(e) => setPersonName(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") submitPerson();
-                    if (e.key === "Escape") cancelAddForm();
-                  }}
-                  className="flex-1 rounded border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
-                />
-                <button
-                  type="button"
-                  onClick={submitPerson}
-                  disabled={!personName.trim()}
-                  className="rounded bg-violet-600/20 px-3 py-1.5 text-xs font-medium text-violet-300 transition-colors hover:bg-violet-600/30 disabled:opacity-40"
-                >
-                  Add
-                </button>
-                <button
-                  type="button"
-                  onClick={cancelAddForm}
-                  className="rounded px-2 py-1.5 text-xs text-foreground/40 transition-colors hover:text-foreground"
-                >
-                  Cancel
-                </button>
+              <div className="border-t border-foreground/5 bg-foreground/[0.02] py-3 pr-4 flex flex-col gap-3 border-l-2 border-tier-discretionary pl-[30px]">
+                <div className="flex flex-col gap-1">
+                  <label className={labelClass}>
+                    Name <span className="text-foreground/30">*</span>
+                  </label>
+                  <input
+                    autoFocus
+                    type="text"
+                    placeholder="e.g. Mum, Best friend"
+                    value={personName}
+                    onChange={(e) => {
+                      setPersonName(e.target.value);
+                      setPersonNameError("");
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") submitPerson();
+                      if (e.key === "Escape") cancelAddForm();
+                    }}
+                    className={[
+                      "rounded-md border bg-foreground/[0.04] px-3 py-1.5 text-sm text-text-secondary placeholder:italic placeholder:text-text-muted focus:outline-none focus:border-page-accent/60",
+                      personNameError ? "border-attention/60" : "border-foreground/10",
+                    ].join(" ")}
+                  />
+                  {personNameError && (
+                    <p className="text-[11px] text-attention">{personNameError}</p>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={cancelAddForm}
+                    className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-text-tertiary hover:bg-foreground/5 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <span className="flex-1" />
+                  <button
+                    type="button"
+                    onClick={submitPerson}
+                    disabled={!personName.trim()}
+                    className="rounded-md px-3 py-1 text-xs font-medium bg-page-accent/20 text-page-accent hover:bg-page-accent/30 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                  >
+                    Save
+                  </button>
+                </div>
               </div>
             )}
 
             {/* Add event form */}
             {addForm === "event" && (
-              <div className="rounded-md border border-foreground/10 bg-foreground/[0.02] p-3 flex flex-col gap-3">
+              <div className="border-t border-foreground/5 bg-foreground/[0.02] py-3 pr-4 flex flex-col gap-3 border-l-2 border-tier-discretionary pl-[30px]">
                 <div className="grid grid-cols-2 gap-3">
                   <div className="col-span-2 flex flex-col gap-1">
                     <label className={labelClass}>
@@ -362,7 +391,7 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
                   <button
                     type="button"
                     onClick={cancelAddForm}
-                    className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-foreground/40 hover:bg-foreground/5 transition-colors"
+                    className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-text-tertiary hover:bg-foreground/5 transition-colors"
                   >
                     Cancel
                   </button>
@@ -371,9 +400,9 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
                     type="button"
                     onClick={submitEvent}
                     disabled={!eventName.trim()}
-                    className="rounded-md px-3 py-1 text-xs font-medium bg-violet-600/20 text-violet-300 hover:bg-violet-600/30 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+                    className="rounded-md px-3 py-1 text-xs font-medium bg-page-accent/20 text-page-accent hover:bg-page-accent/30 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
                   >
-                    Add event
+                    Save
                   </button>
                 </div>
               </div>

@@ -153,7 +153,7 @@ export function ConfigEventsPanel({ readOnly }: Props) {
           )}
 
           {!readOnly && showForm && (
-            <div className="mt-3 border-t border-foreground/5 bg-foreground/[0.02] py-3 flex flex-col gap-3">
+            <div className="mt-3 border-t border-foreground/5 bg-foreground/[0.02] py-3 pr-4 flex flex-col gap-3 border-l-2 border-tier-discretionary pl-[30px]">
               <div className="grid grid-cols-2 gap-3">
                 {/* Event name */}
                 <div className="col-span-2 flex flex-col gap-1">
@@ -238,7 +238,7 @@ export function ConfigEventsPanel({ readOnly }: Props) {
                   disabled={!name.trim()}
                   className="rounded-md px-3 py-1 text-xs font-medium bg-page-accent/20 text-page-accent hover:bg-page-accent/30 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
                 >
-                  Add event
+                  Save
                 </button>
               </div>
             </div>

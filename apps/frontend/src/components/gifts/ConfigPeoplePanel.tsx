@@ -19,6 +19,7 @@ export function ConfigPeoplePanel({ readOnly, year }: Props) {
   const [filter, setFilter] = useState<Filter>("all");
   const [showAddInput, setShowAddInput] = useState(false);
   const [name, setName] = useState("");
+  const [nameError, setNameError] = useState("");
   const { data: rawData, isLoading } = useConfigPeople("all", year);
   const create = useCreateGiftPerson();
   const remove = useDeleteGiftPerson();
@@ -39,10 +40,19 @@ export function ConfigPeoplePanel({ readOnly, year }: Props) {
     return allPeople;
   }, [allPeople, filter]);
 
+  const isDuplicate = (n: string) =>
+    allPeople.some((p) => p.name.toLowerCase() === n.toLowerCase());
+
   const submit = () => {
-    if (!name.trim()) return;
-    create.mutate({ name: name.trim() });
+    const trimmed = name.trim();
+    if (!trimmed) return;
+    if (isDuplicate(trimmed)) {
+      setNameError("A person with that name already exists");
+      return;
+    }
+    create.mutate({ name: trimmed });
     setName("");
+    setNameError("");
     setShowAddInput(false);
   };
 
@@ -74,41 +84,59 @@ export function ConfigPeoplePanel({ readOnly, year }: Props) {
         )}
       </div>
       <div className="flex flex-1 flex-col gap-4 overflow-y-auto p-6">
-        {/* Inline add input */}
+        {/* Inline add form */}
         {!readOnly && showAddInput && (
-          <div className="flex gap-2">
-            <input
-              autoFocus
-              placeholder="Person name…"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") submit();
-                if (e.key === "Escape") {
+          <div className="border-t border-foreground/5 bg-foreground/[0.02] py-3 pr-4 flex flex-col gap-3 border-l-2 border-tier-discretionary pl-[30px]">
+            <div className="flex flex-col gap-1">
+              <label className="text-text-muted uppercase tracking-[0.07em] text-[10px]">
+                Name <span className="text-text-muted">*</span>
+              </label>
+              <input
+                autoFocus
+                type="text"
+                placeholder="e.g. Mum, Best friend"
+                value={name}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setNameError("");
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") submit();
+                  if (e.key === "Escape") {
+                    setShowAddInput(false);
+                    setName("");
+                    setNameError("");
+                  }
+                }}
+                className={[
+                  "rounded-md border bg-foreground/[0.04] px-3 py-1.5 text-sm text-text-secondary placeholder:italic placeholder:text-text-muted focus:outline-none focus:border-page-accent/60",
+                  nameError ? "border-attention/60" : "border-foreground/10",
+                ].join(" ")}
+              />
+              {nameError && <p className="text-[11px] text-attention">{nameError}</p>}
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => {
                   setShowAddInput(false);
                   setName("");
-                }
-              }}
-              className="flex-1 rounded border border-foreground/10 bg-foreground/5 px-3 py-1.5 text-sm text-foreground placeholder:text-foreground/30"
-            />
-            <button
-              type="button"
-              onClick={submit}
-              disabled={!name.trim()}
-              className="rounded bg-tier-discretionary/20 px-3 py-1.5 text-xs font-medium text-tier-discretionary transition-colors hover:bg-tier-discretionary/30 disabled:opacity-40"
-            >
-              Add
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setShowAddInput(false);
-                setName("");
-              }}
-              className="rounded px-2 py-1.5 text-xs text-foreground/40 transition-colors hover:text-foreground"
-            >
-              Cancel
-            </button>
+                  setNameError("");
+                }}
+                className="rounded-md border border-foreground/10 px-3 py-1 text-xs text-text-tertiary hover:bg-foreground/5 transition-colors"
+              >
+                Cancel
+              </button>
+              <span className="flex-1" />
+              <button
+                type="button"
+                onClick={submit}
+                disabled={!name.trim()}
+                className="rounded-md px-3 py-1 text-xs font-medium bg-page-accent/20 text-page-accent hover:bg-page-accent/30 disabled:cursor-not-allowed disabled:opacity-40 transition-colors"
+              >
+                Save
+              </button>
+            </div>
           </div>
         )}
 
@@ -170,7 +198,7 @@ export function ConfigPeoplePanel({ readOnly, year }: Props) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {!readOnly && (
+                  {!readOnly && p.memberId === null && (
                     <button
                       type="button"
                       onClick={() => remove.mutate(p.id)}
