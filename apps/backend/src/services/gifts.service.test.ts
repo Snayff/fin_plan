@@ -311,3 +311,53 @@ describe("giftsService.bulkUpsertAllocations", () => {
     ).rejects.toMatchObject({ name: "NotFoundError" });
   });
 });
+
+describe("giftsService.setAnnualBudget", () => {
+  it("rejects past years", async () => {
+    const lastYear = new Date().getFullYear() - 1;
+    await expect(
+      giftsService.setAnnualBudget("hh-1", lastYear, { annualBudget: 1500 })
+    ).rejects.toMatchObject({ name: "ValidationError" });
+  });
+
+  it("upserts the per-year planner budget", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+      id: "s1",
+      householdId: "hh-1",
+      mode: "independent",
+      syncedDiscretionaryItemId: null,
+    } as any);
+    prismaMock.plannerYearBudget.upsert.mockResolvedValue({} as any);
+
+    await giftsService.setAnnualBudget("hh-1", year, { annualBudget: 1500 });
+
+    expect(prismaMock.plannerYearBudget.upsert).toHaveBeenCalledWith({
+      where: { householdId_year: { householdId: "hh-1", year } },
+      create: { householdId: "hh-1", year, giftBudget: 1500 },
+      update: { giftBudget: 1500 },
+    });
+  });
+
+  it("in synced mode also upserts ItemAmountPeriod for the planner-owned item", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+      id: "s1",
+      householdId: "hh-1",
+      mode: "synced",
+      syncedDiscretionaryItemId: "d1",
+    } as any);
+    prismaMock.plannerYearBudget.upsert.mockResolvedValue({} as any);
+    prismaMock.itemAmountPeriod.upsert.mockResolvedValue({} as any);
+
+    await giftsService.setAnnualBudget("hh-1", year, { annualBudget: 1500 });
+
+    expect(prismaMock.itemAmountPeriod.upsert).toHaveBeenCalledTimes(1);
+    const call = (prismaMock.itemAmountPeriod.upsert.mock.calls[0] as any)[0];
+    expect(call.where.itemType_itemId_startDate).toMatchObject({
+      itemType: "discretionary_item",
+      itemId: "d1",
+    });
+    expect(call.update.amount).toBe(1500);
+  });
+});

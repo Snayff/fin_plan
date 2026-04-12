@@ -7,6 +7,7 @@ import type {
   UpdateGiftEventInput,
   UpsertGiftAllocationInput,
   BulkUpsertAllocationsInput,
+  SetGiftBudgetInput,
 } from "@finplan/shared";
 
 function assertOwned(item: { householdId: string } | null, householdId: string, label: string) {
@@ -265,5 +266,39 @@ export const giftsService = {
       }
     });
     return { count: input.cells.length };
+  },
+
+  // ─── Budget ─────────────────────────────────────────────────────────────────
+  async setAnnualBudget(householdId: string, year: number, input: SetGiftBudgetInput) {
+    this._assertCurrentYear(year);
+    const settings = await this.getOrCreateSettings(householdId);
+    await prisma.plannerYearBudget.upsert({
+      where: { householdId_year: { householdId, year } },
+      create: { householdId, year, giftBudget: input.annualBudget },
+      update: { giftBudget: input.annualBudget },
+    });
+
+    if (settings.mode === "synced" && settings.syncedDiscretionaryItemId) {
+      const startDate = new Date(Date.UTC(year, 0, 1));
+      await prisma.itemAmountPeriod.upsert({
+        where: {
+          itemType_itemId_startDate: {
+            itemType: "discretionary_item",
+            itemId: settings.syncedDiscretionaryItemId,
+            startDate,
+          },
+        },
+        create: {
+          itemType: "discretionary_item",
+          itemId: settings.syncedDiscretionaryItemId,
+          startDate,
+          endDate: null,
+          amount: input.annualBudget,
+        },
+        update: { amount: input.annualBudget },
+      });
+    }
+
+    return { annualBudget: input.annualBudget };
   },
 };
