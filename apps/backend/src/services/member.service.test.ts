@@ -43,6 +43,78 @@ describe("memberService.listMembers", () => {
   });
 });
 
+describe("memberService.createMember gifts integration", () => {
+  it("creates a matching GiftPerson row with memberId link", async () => {
+    prismaMock.member.findFirst.mockResolvedValue({
+      id: "owner",
+      role: "owner",
+      householdId: "hh-1",
+    } as any);
+    prismaMock.member.create.mockResolvedValue({
+      id: "m-new",
+      householdId: "hh-1",
+      name: "Sis",
+    } as any);
+    prismaMock.giftPerson.create.mockResolvedValue({} as any);
+
+    await memberService.createMember("hh-1", "owner-user", { name: "Sis" } as any);
+
+    expect(prismaMock.giftPerson.create).toHaveBeenCalledWith({
+      data: {
+        householdId: "hh-1",
+        name: "Sis",
+        memberId: "m-new",
+      },
+    });
+  });
+
+  it("does not throw if a GiftPerson with that name already exists (P2002)", async () => {
+    prismaMock.member.findFirst.mockResolvedValue({
+      id: "owner",
+      role: "owner",
+      householdId: "hh-1",
+    } as any);
+    prismaMock.member.create.mockResolvedValue({
+      id: "m-new",
+      householdId: "hh-1",
+      name: "Sis",
+    } as any);
+    prismaMock.giftPerson.create.mockRejectedValue({ code: "P2002" });
+
+    await expect(
+      memberService.createMember("hh-1", "owner-user", { name: "Sis" } as any)
+    ).resolves.toBeDefined();
+  });
+});
+
+describe("memberService.deleteMember gifts integration", () => {
+  it("nullifies GiftPerson.memberId before deleting the member", async () => {
+    prismaMock.member.findFirst.mockResolvedValue({
+      id: "owner",
+      role: "owner",
+      householdId: "hh-1",
+    } as any);
+    prismaMock.member.findUnique.mockResolvedValue({
+      id: "m-1",
+      householdId: "hh-1",
+      userId: null,
+    } as any);
+    prismaMock.incomeSource.count.mockResolvedValue(0);
+    prismaMock.committedItem.count.mockResolvedValue(0);
+    prismaMock.asset.count.mockResolvedValue(0);
+    prismaMock.account.count.mockResolvedValue(0);
+    prismaMock.giftPerson.updateMany.mockResolvedValue({ count: 1 } as any);
+    prismaMock.member.delete.mockResolvedValue({} as any);
+
+    await memberService.deleteMember("hh-1", "owner-user", "m-1");
+
+    expect(prismaMock.giftPerson.updateMany).toHaveBeenCalledWith({
+      where: { householdId: "hh-1", memberId: "m-1" },
+      data: { memberId: null },
+    });
+  });
+});
+
 describe("memberService.updateMember", () => {
   it("updates member name", async () => {
     const member = buildMember({ name: "Alice" });
