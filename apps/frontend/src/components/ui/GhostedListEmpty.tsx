@@ -8,6 +8,7 @@ interface GhostedListEmptyProps {
   rowCount?: number;
   ctaHeading?: string;
   ctaText: string;
+  ctaSteps?: string[];
   ctaButtonLabel?: string;
   onCtaClick?: () => void;
   showCta?: boolean;
@@ -17,6 +18,7 @@ export function GhostedListEmpty({
   rowCount = 3,
   ctaHeading,
   ctaText,
+  ctaSteps,
   ctaButtonLabel = "+ Add",
   onCtaClick,
   showCta = true,
@@ -63,15 +65,31 @@ export function GhostedListEmpty({
             border: "1px solid rgba(99, 102, 241, 0.1)",
           }}
         >
-          <div className="flex flex-col gap-0.5 min-w-0">
+          <div className="flex flex-col gap-1 min-w-0">
             {ctaHeading && (
               <span className="text-xs font-medium text-foreground/80 leading-snug">
                 {ctaHeading}
               </span>
             )}
             <span className="text-xs text-muted-foreground leading-snug">{ctaText}</span>
+            {ctaSteps && ctaSteps.length > 0 && (
+              <ul className="mt-1.5 space-y-1">
+                {ctaSteps.map((step) => (
+                  <li
+                    key={step}
+                    className="flex items-start gap-1.5 text-xs text-foreground/50 leading-snug"
+                  >
+                    <span
+                      className="mt-[3px] h-1 w-1 shrink-0 rounded-full bg-foreground/30"
+                      aria-hidden
+                    />
+                    {step}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
-          <Button size="sm" type="button" onClick={onCtaClick} className="shrink-0">
+          <Button size="sm" type="button" onClick={onCtaClick} className="shrink-0 self-start">
             {ctaButtonLabel}
           </Button>
         </motion.div>
