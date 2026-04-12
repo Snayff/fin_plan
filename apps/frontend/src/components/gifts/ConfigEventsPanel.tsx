@@ -7,7 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { InfoTip } from "@/components/ui/InfoTip";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import type { GiftDateType } from "@finplan/shared";
 
 type Props = { readOnly: boolean };
@@ -91,11 +91,7 @@ export function ConfigEventsPanel({ readOnly }: Props) {
       <div className="flex-1 overflow-y-auto p-6">
         {/* Locked events */}
         <section>
-          <h3 className={labelClass}>
-            <InfoTip text="Built-in events that cannot be renamed or deleted. You can still choose not to plan gifts for them.">
-              Locked
-            </InfoTip>
-          </h3>
+          <h3 className={labelClass}>Locked</h3>
           <ul className="mt-2 divide-y divide-foreground/5">
             {locked.map((e: any) => (
               <li
@@ -111,11 +107,9 @@ export function ConfigEventsPanel({ readOnly }: Props) {
                 </span>
                 <span className="text-[11px] text-text-muted">
                   {e.dateType === "shared" ? (
-                    `${e.dateMonth}/${e.dateDay}`
+                    <GlossaryTermMarker entryId="gifts-shared-date">{`${e.dateMonth}/${e.dateDay}`}</GlossaryTermMarker>
                   ) : (
-                    <InfoTip text="Date differs per person — set each person's date in the Gifts tab.">
-                      personal
-                    </InfoTip>
+                    <GlossaryTermMarker entryId="gifts-personal-date">personal</GlossaryTermMarker>
                   )}
                 </span>
               </li>

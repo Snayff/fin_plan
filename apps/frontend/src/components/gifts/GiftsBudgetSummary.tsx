@@ -1,5 +1,5 @@
 import { OverBudgetSignal } from "./OverBudgetSignal";
-import { InfoTip } from "@/components/ui/InfoTip";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import type { GiftBudgetSummary } from "@finplan/shared";
 
 type Props = { budget: GiftBudgetSummary; readOnly: boolean };
@@ -9,9 +9,7 @@ export function GiftsBudgetSummary({ budget }: Props) {
     <div className="space-y-3 px-4 py-4">
       <div>
         <div className="text-[11px] uppercase tracking-wide text-foreground/55">
-          <InfoTip text="The total amount set aside for gift-giving this year. In Synced mode this flows into the waterfall as a Discretionary item; in Independent mode it is tracked here only.">
-            Annual budget
-          </InfoTip>
+          <GlossaryTermMarker entryId="gifts-annual-budget">Annual budget</GlossaryTermMarker>
         </div>
         <div
           data-testid="gifts-budget-annual"
@@ -19,18 +17,11 @@ export function GiftsBudgetSummary({ budget }: Props) {
         >
           £{budget.annualBudget.toLocaleString()}
         </div>
-        {budget.annualBudget === 0 && (
-          <div className="text-[11px] text-foreground/30">
-            Set via Config → Mode to link to your waterfall, or enter a standalone amount.
-          </div>
-        )}
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
           <div className="text-[11px] uppercase tracking-wide text-foreground/55">
-            <InfoTip text="The sum of all planned gift amounts across every person and event this year. Compare against your annual budget to see whether your plan fits.">
-              Planned
-            </InfoTip>
+            <GlossaryTermMarker entryId="gifts-planned">Planned</GlossaryTermMarker>
           </div>
           <div
             data-testid="gifts-budget-planned"
@@ -41,9 +32,7 @@ export function GiftsBudgetSummary({ budget }: Props) {
         </div>
         <div>
           <div className="text-[11px] uppercase tracking-wide text-foreground/55">
-            <InfoTip text="The sum of amounts actually spent on gifts so far this year.">
-              Spent
-            </InfoTip>
+            <GlossaryTermMarker entryId="gifts-spent">Spent</GlossaryTermMarker>
           </div>
           <div
             data-testid="gifts-budget-spent"

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useSetGiftMode } from "@/hooks/useGifts";
 import { ModeSwitchConfirmDialog } from "./ModeSwitchConfirmDialog";
-import { InfoTip } from "@/components/ui/InfoTip";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import type { GiftPlannerMode } from "@finplan/shared";
 
 type Props = { currentMode: GiftPlannerMode; readOnly: boolean };
@@ -30,10 +30,8 @@ export function ConfigPlannerModePanel({ currentMode, readOnly }: Props) {
               disabled={readOnly}
               onChange={() => choose("synced")}
             />
-            <InfoTip text="The gift planner creates and manages a 'Gifts' item in your Discretionary waterfall tier. Your annual gift budget is deducted from your surplus automatically.">
-              Synced
-            </InfoTip>{" "}
-            — annual budget flows into the waterfall
+            <GlossaryTermMarker entryId="gifts-synced-mode">Synced</GlossaryTermMarker> — annual
+            budget flows into the waterfall
           </label>
           <label className="flex items-center gap-2">
             <input
@@ -43,10 +41,8 @@ export function ConfigPlannerModePanel({ currentMode, readOnly }: Props) {
               disabled={readOnly}
               onChange={() => choose("independent")}
             />
-            <InfoTip text="The gift planner runs standalone with no connection to your waterfall. Useful if you track gifts separately or haven't set up a waterfall yet.">
-              Independent
-            </InfoTip>{" "}
-            — planner runs standalone, no waterfall link
+            <GlossaryTermMarker entryId="gifts-independent-mode">Independent</GlossaryTermMarker> —
+            planner runs standalone, no waterfall link
           </label>
         </fieldset>
         {pending && (

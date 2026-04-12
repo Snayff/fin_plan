@@ -9,8 +9,7 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/utils/format";
 import { usePrefersReducedMotion } from "@/utils/motion";
-import { InfoTip } from "@/components/ui/InfoTip";
-import { getGlossaryEntry } from "@/data/glossary";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import type { NetWorthPoint } from "@finplan/shared";
 
 interface RetirementMarker {
@@ -139,8 +138,7 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
           </div>
           <div>
             <span className="text-xs text-text-tertiary">
-              <InfoTip text={getGlossaryEntry("real-terms")?.definition ?? ""}>Real Terms</InfoTip>{" "}
-              ({last.year})
+              <GlossaryTermMarker entryId="real-terms">Real Terms</GlossaryTermMarker> ({last.year})
             </span>
             <p className="font-numeric text-sm text-text-secondary tabular-nums">
               {formatCurrency(last.real)}
