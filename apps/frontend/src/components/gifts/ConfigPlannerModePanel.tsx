@@ -1,0 +1,54 @@
+import { useState } from "react";
+import { useSetGiftMode } from "@/hooks/useGifts";
+import { ModeSwitchConfirmDialog } from "./ModeSwitchConfirmDialog";
+import type { GiftPlannerMode } from "@finplan/shared";
+
+type Props = { currentMode: GiftPlannerMode; readOnly: boolean };
+
+export function ConfigPlannerModePanel({ currentMode, readOnly }: Props) {
+  const [pending, setPending] = useState<GiftPlannerMode | null>(null);
+  const setMode = useSetGiftMode();
+
+  const choose = (mode: GiftPlannerMode) => {
+    if (mode === currentMode) return;
+    setPending(mode);
+  };
+
+  return (
+    <div className="flex h-full flex-col p-6">
+      <fieldset className="flex flex-col gap-2 text-sm text-foreground">
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="planner-mode"
+            checked={currentMode === "synced"}
+            disabled={readOnly}
+            onChange={() => choose("synced")}
+          />
+          Synced — annual budget flows into the waterfall
+        </label>
+        <label className="flex items-center gap-2">
+          <input
+            type="radio"
+            name="planner-mode"
+            checked={currentMode === "independent"}
+            disabled={readOnly}
+            onChange={() => choose("independent")}
+          />
+          Independent — planner runs standalone, no waterfall link
+        </label>
+      </fieldset>
+      {pending && (
+        <ModeSwitchConfirmDialog
+          fromMode={currentMode}
+          toMode={pending}
+          onCancel={() => setPending(null)}
+          onConfirm={() => {
+            setMode.mutate({ mode: pending });
+            setPending(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
