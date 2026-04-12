@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-const CURRENT_SCHEMA_VERSION = 1;
+const CURRENT_SCHEMA_VERSION = 2;
 
 const exportMemberSchema = z.object({
   name: z.string(),
@@ -136,35 +136,44 @@ const exportPlannerYearBudgetSchema = z.object({
   giftBudget: z.number(),
 });
 
-const exportGiftEventSchema = z.object({
-  eventType: z.enum([
-    "birthday",
-    "christmas",
-    "mothers_day",
-    "fathers_day",
-    "valentines_day",
-    "anniversary",
-    "custom",
-  ]),
-  customName: z.string().nullable().optional(),
-  dateMonth: z.number().int().nullable().optional(),
-  dateDay: z.number().int().nullable().optional(),
-  specificDate: z.string().datetime().nullable().optional(),
-  recurrence: z.enum(["annual", "one_off"]),
-  yearRecords: z.array(
-    z.object({
-      year: z.number().int(),
-      budget: z.number(),
-      notes: z.string().nullable().optional(),
-    })
-  ),
-});
-
-const exportGiftPersonSchema = z.object({
+const exportGiftPersonSchemaV2 = z.object({
   name: z.string(),
   notes: z.string().nullable().optional(),
   sortOrder: z.number().int(),
-  events: z.array(exportGiftEventSchema),
+  isHouseholdMember: z.boolean(),
+});
+
+const exportGiftEventSchemaV2 = z.object({
+  name: z.string(),
+  dateType: z.enum(["shared", "personal"]),
+  dateMonth: z.number().int().nullable().optional(),
+  dateDay: z.number().int().nullable().optional(),
+  isLocked: z.boolean(),
+  sortOrder: z.number().int(),
+});
+
+const exportGiftAllocationSchemaV2 = z.object({
+  personName: z.string(),
+  eventName: z.string(),
+  year: z.number().int(),
+  planned: z.number(),
+  spent: z.number().nullable().optional(),
+  status: z.enum(["planned", "bought", "skipped"]),
+  notes: z.string().nullable().optional(),
+  dateMonth: z.number().int().nullable().optional(),
+  dateDay: z.number().int().nullable().optional(),
+});
+
+const exportGiftPlannerSettingsSchemaV2 = z.object({
+  mode: z.enum(["synced", "independent"]),
+  syncedDiscretionaryItemId: z.string().nullable(),
+});
+
+const exportGiftsSectionSchema = z.object({
+  settings: exportGiftPlannerSettingsSchemaV2,
+  people: z.array(exportGiftPersonSchemaV2),
+  events: z.array(exportGiftEventSchemaV2),
+  allocations: z.array(exportGiftAllocationSchemaV2),
 });
 
 const stalenessThresholdsSchema = z.object({
@@ -204,7 +213,7 @@ export const householdExportSchema = z.object({
   accounts: z.array(exportAccountSchema),
   purchaseItems: z.array(exportPurchaseItemSchema),
   plannerYearBudgets: z.array(exportPlannerYearBudgetSchema),
-  giftPersons: z.array(exportGiftPersonSchema),
+  gifts: exportGiftsSectionSchema,
 });
 
 export const importOptionsSchema = z.object({

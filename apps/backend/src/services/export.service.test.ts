@@ -36,13 +36,16 @@ describe("exportService.exportHousehold", () => {
     prismaMock.account.findMany.mockResolvedValue([]);
     prismaMock.purchaseItem.findMany.mockResolvedValue([]);
     prismaMock.plannerYearBudget.findMany.mockResolvedValue([]);
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue(null);
     prismaMock.giftPerson.findMany.mockResolvedValue([]);
+    prismaMock.giftEvent.findMany.mockResolvedValue([]);
+    prismaMock.giftAllocation.findMany.mockResolvedValue([]);
     prismaMock.itemAmountPeriod.findMany.mockResolvedValue([]);
     prismaMock.waterfallHistory.findMany.mockResolvedValue([]);
 
     const result = await exportService.exportHousehold("household-1", "user-1");
 
-    expect(result.schemaVersion).toBe(1);
+    expect(result.schemaVersion).toBe(2);
     expect(result.household.name).toBe("Test Household");
     expect(result.members).toEqual([]);
     expect(result.subcategories).toEqual([]);
@@ -64,7 +67,10 @@ describe("exportService.exportHousehold", () => {
     prismaMock.account.findMany.mockResolvedValue([]);
     prismaMock.purchaseItem.findMany.mockResolvedValue([]);
     prismaMock.plannerYearBudget.findMany.mockResolvedValue([]);
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue(null);
     prismaMock.giftPerson.findMany.mockResolvedValue([]);
+    prismaMock.giftEvent.findMany.mockResolvedValue([]);
+    prismaMock.giftAllocation.findMany.mockResolvedValue([]);
     prismaMock.itemAmountPeriod.findMany.mockResolvedValue([]);
     prismaMock.waterfallHistory.findMany.mockResolvedValue([]);
 
@@ -104,7 +110,10 @@ describe("exportService.exportHousehold", () => {
     prismaMock.account.findMany.mockResolvedValue([]);
     prismaMock.purchaseItem.findMany.mockResolvedValue([]);
     prismaMock.plannerYearBudget.findMany.mockResolvedValue([]);
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue(null);
     prismaMock.giftPerson.findMany.mockResolvedValue([]);
+    prismaMock.giftEvent.findMany.mockResolvedValue([]);
+    prismaMock.giftAllocation.findMany.mockResolvedValue([]);
     prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
       {
         id: "period-1",

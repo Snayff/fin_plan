@@ -7,7 +7,7 @@ mock.module("./export.service", () => ({
   exportService: {
     exportHousehold: mock(() =>
       Promise.resolve({
-        schemaVersion: 1,
+        schemaVersion: 2,
         exportedAt: "2026-01-01T00:00:00.000Z",
         household: { name: "Backup" },
         settings: {},
@@ -22,7 +22,12 @@ mock.module("./export.service", () => ({
         accounts: [],
         purchaseItems: [],
         plannerYearBudgets: [],
-        giftPersons: [],
+        gifts: {
+          settings: { mode: "synced", syncedDiscretionaryItemId: null },
+          people: [],
+          events: [],
+          allocations: [],
+        },
       })
     ),
   },
@@ -34,7 +39,7 @@ import { AuthorizationError, ValidationError } from "../utils/errors";
 beforeEach(() => resetPrismaMocks());
 
 const minimalExport = {
-  schemaVersion: 1,
+  schemaVersion: 2,
   exportedAt: "2026-01-01T00:00:00.000Z",
   household: { name: "Imported Household" },
   settings: {},
@@ -49,7 +54,12 @@ const minimalExport = {
   accounts: [],
   purchaseItems: [],
   plannerYearBudgets: [],
-  giftPersons: [],
+  gifts: {
+    settings: { mode: "synced", syncedDiscretionaryItemId: null },
+    people: [],
+    events: [],
+    allocations: [],
+  },
 };
 
 describe("importService.validateImportData", () => {
@@ -65,7 +75,7 @@ describe("importService.validateImportData", () => {
   });
 
   it("rejects unsupported future schema version", () => {
-    const result = importService.validateImportData({ ...minimalExport, schemaVersion: 2 });
+    const result = importService.validateImportData({ ...minimalExport, schemaVersion: 3 });
     expect(result.valid).toBe(false);
     expect(result.errors?.join(" ")).toMatch(/schema version/i);
   });
@@ -83,7 +93,7 @@ describe("importService.importHousehold", () => {
       importService.importHousehold(
         "h1",
         "u1",
-        { ...minimalExport, schemaVersion: 2 },
+        { ...minimalExport, schemaVersion: 3 },
         "create_new"
       )
     ).rejects.toThrow(ValidationError);
@@ -327,8 +337,6 @@ describe("importService.importHousehold", () => {
     prismaMock.incomeSource.findMany.mockResolvedValue([]);
     prismaMock.committedItem.findMany.mockResolvedValue([]);
     prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
-    prismaMock.giftPerson.findMany.mockResolvedValue([]);
-    prismaMock.giftEvent.findMany.mockResolvedValue([]);
 
     const deleteManyResult = { count: 0 };
     prismaMock.auditLog.deleteMany.mockResolvedValue(deleteManyResult);
@@ -345,9 +353,10 @@ describe("importService.importHousehold", () => {
     prismaMock.account.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.purchaseItem.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.plannerYearBudget.deleteMany.mockResolvedValue(deleteManyResult);
-    prismaMock.giftYearRecord.deleteMany.mockResolvedValue(deleteManyResult);
+    prismaMock.giftAllocation.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.giftEvent.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.giftPerson.deleteMany.mockResolvedValue(deleteManyResult);
+    prismaMock.giftPlannerSettings.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.subcategory.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.householdSettings.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.member.deleteMany.mockResolvedValue(deleteManyResult);
@@ -364,6 +373,7 @@ describe("importService.importHousehold", () => {
     );
 
     prismaMock.householdSettings.upsert.mockResolvedValue({});
+    prismaMock.giftPlannerSettings.upsert.mockResolvedValue({});
     prismaMock.member.findMany.mockResolvedValue([
       buildMember({
         id: "member-bob",
