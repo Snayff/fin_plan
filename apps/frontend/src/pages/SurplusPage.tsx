@@ -29,7 +29,7 @@ export default function SurplusPage() {
               totalColorClass="text-tier-surplus"
             />
             <div className="flex-1 overflow-y-auto">
-              <div className="flex flex-col gap-6 px-6 pb-6">
+              <div className="flex flex-col gap-6 px-4 pb-4">
                 {!isLoading && (
                   <>
                     <div className="flex flex-col divide-y divide-foreground/[0.07]">
