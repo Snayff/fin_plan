@@ -8,7 +8,9 @@ import type {
   UpsertGiftAllocationInput,
   BulkUpsertAllocationsInput,
   SetGiftBudgetInput,
+  GiftPlannerMode,
 } from "@finplan/shared";
+import type { ActorCtx } from "./audit.service.js";
 
 function assertOwned(item: { householdId: string } | null, householdId: string, label: string) {
   if (!item) throw new NotFoundError(`${label} not found`);
@@ -300,5 +302,85 @@ export const giftsService = {
     }
 
     return { annualBudget: input.annualBudget };
+  },
+
+  // ─── Mode switch ────────────────────────────────────────────────────────────
+  async setMode(householdId: string, input: { mode: GiftPlannerMode }, _ctx?: ActorCtx) {
+    const settings = await this.getOrCreateSettings(householdId);
+    if (settings.mode === input.mode) return settings;
+
+    const giftsSubcategory = await prisma.subcategory.findFirst({
+      where: { householdId, tier: "discretionary", name: "Gifts" },
+    });
+    if (!giftsSubcategory) throw new NotFoundError("Gifts subcategory not found");
+
+    if (settings.mode === "synced" && input.mode === "independent") {
+      const itemId = settings.syncedDiscretionaryItemId;
+      await prisma.$transaction(async (tx) => {
+        if (itemId) {
+          await tx.itemAmountPeriod.deleteMany({
+            where: { itemType: "discretionary_item", itemId },
+          });
+          await tx.discretionaryItem.delete({ where: { id: itemId } });
+        }
+        await tx.subcategory.update({
+          where: { id: giftsSubcategory.id },
+          data: { lockedByPlanner: false },
+        });
+        await tx.giftPlannerSettings.update({
+          where: { id: settings.id },
+          data: { mode: "independent", syncedDiscretionaryItemId: null },
+        });
+      });
+      return { ...settings, mode: "independent" as const, syncedDiscretionaryItemId: null };
+    }
+
+    // independent → synced
+    const year = new Date().getFullYear();
+    const yearBudget = await prisma.plannerYearBudget.findUnique({
+      where: { householdId_year: { householdId, year } },
+    });
+    const annualBudget = yearBudget?.giftBudget ?? 0;
+    const startDate = new Date(Date.UTC(year, 0, 1));
+
+    const result = await prisma.$transaction(async (tx) => {
+      const created = await tx.discretionaryItem.create({
+        data: {
+          householdId,
+          subcategoryId: giftsSubcategory.id,
+          name: "Gifts",
+          spendType: "monthly",
+          isPlannerOwned: true,
+          lastReviewedAt: new Date(),
+        },
+      });
+      await tx.itemAmountPeriod.upsert({
+        where: {
+          itemType_itemId_startDate: {
+            itemType: "discretionary_item",
+            itemId: created.id,
+            startDate,
+          },
+        },
+        create: {
+          itemType: "discretionary_item",
+          itemId: created.id,
+          startDate,
+          endDate: null,
+          amount: annualBudget,
+        },
+        update: { amount: annualBudget },
+      });
+      await tx.subcategory.update({
+        where: { id: giftsSubcategory.id },
+        data: { lockedByPlanner: true },
+      });
+      await tx.giftPlannerSettings.update({
+        where: { id: settings.id },
+        data: { mode: "synced", syncedDiscretionaryItemId: created.id },
+      });
+      return created;
+    });
+    return { ...settings, mode: "synced" as const, syncedDiscretionaryItemId: result.id };
   },
 };

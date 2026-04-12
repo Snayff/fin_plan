@@ -361,3 +361,93 @@ describe("giftsService.setAnnualBudget", () => {
     expect(call.update.amount).toBe(1500);
   });
 });
+
+describe("giftsService.setMode", () => {
+  it("synced→independent deletes the planner-owned item, periods, clears flags", async () => {
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+      id: "s1",
+      householdId: "hh-1",
+      mode: "synced",
+      syncedDiscretionaryItemId: "d1",
+    } as any);
+    prismaMock.subcategory.findFirst.mockResolvedValue({
+      id: "sub-gifts",
+      householdId: "hh-1",
+      tier: "discretionary",
+      name: "Gifts",
+    } as any);
+    prismaMock.itemAmountPeriod.deleteMany.mockResolvedValue({ count: 1 } as any);
+    prismaMock.discretionaryItem.delete.mockResolvedValue({} as any);
+    prismaMock.subcategory.update.mockResolvedValue({} as any);
+    prismaMock.giftPlannerSettings.update.mockResolvedValue({} as any);
+
+    await giftsService.setMode("hh-1", { mode: "independent" });
+
+    expect(prismaMock.itemAmountPeriod.deleteMany).toHaveBeenCalledWith({
+      where: { itemType: "discretionary_item", itemId: "d1" },
+    });
+    expect(prismaMock.discretionaryItem.delete).toHaveBeenCalledWith({ where: { id: "d1" } });
+    expect(prismaMock.subcategory.update).toHaveBeenCalledWith({
+      where: { id: "sub-gifts" },
+      data: { lockedByPlanner: false },
+    });
+    expect(prismaMock.giftPlannerSettings.update).toHaveBeenCalledWith({
+      where: { id: "s1" },
+      data: { mode: "independent", syncedDiscretionaryItemId: null },
+    });
+  });
+
+  it("independent→synced creates planner-owned item, sets flags, writes ItemAmountPeriod", async () => {
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+      id: "s1",
+      householdId: "hh-1",
+      mode: "independent",
+      syncedDiscretionaryItemId: null,
+    } as any);
+    prismaMock.subcategory.findFirst.mockResolvedValue({
+      id: "sub-gifts",
+      householdId: "hh-1",
+      tier: "discretionary",
+      name: "Gifts",
+    } as any);
+    prismaMock.discretionaryItem.create.mockResolvedValue({ id: "d-new" } as any);
+    prismaMock.plannerYearBudget.findUnique.mockResolvedValue({ giftBudget: 800 } as any);
+    prismaMock.itemAmountPeriod.upsert.mockResolvedValue({} as any);
+    prismaMock.subcategory.update.mockResolvedValue({} as any);
+    prismaMock.giftPlannerSettings.update.mockResolvedValue({} as any);
+
+    await giftsService.setMode("hh-1", { mode: "synced" });
+
+    expect(prismaMock.discretionaryItem.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        householdId: "hh-1",
+        subcategoryId: "sub-gifts",
+        name: "Gifts",
+        spendType: "monthly",
+        isPlannerOwned: true,
+      }),
+    });
+    expect(prismaMock.subcategory.update).toHaveBeenCalledWith({
+      where: { id: "sub-gifts" },
+      data: { lockedByPlanner: true },
+    });
+    const periodCall = (prismaMock.itemAmountPeriod.upsert.mock.calls[0] as any)[0];
+    expect(periodCall.create.amount).toBe(800);
+    expect(prismaMock.giftPlannerSettings.update).toHaveBeenCalledWith({
+      where: { id: "s1" },
+      data: { mode: "synced", syncedDiscretionaryItemId: "d-new" },
+    });
+  });
+
+  it("noop when target mode already matches current mode", async () => {
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+      id: "s1",
+      householdId: "hh-1",
+      mode: "synced",
+      syncedDiscretionaryItemId: "d1",
+    } as any);
+    await giftsService.setMode("hh-1", { mode: "synced" });
+    expect(prismaMock.discretionaryItem.create).not.toHaveBeenCalled();
+    expect(prismaMock.discretionaryItem.delete).not.toHaveBeenCalled();
+  });
+});
