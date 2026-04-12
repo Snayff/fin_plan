@@ -32,37 +32,37 @@ export function GrowthSectionPanel() {
     }));
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <h2 className="font-heading text-base uppercase tracking-widest text-page-accent">
-          Growth
-        </h2>
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/5">
+        <h2 className="font-heading text-base font-bold text-foreground">Growth</h2>
         <TimeHorizonSelector value={horizon} onChange={setHorizon} />
       </div>
-      {isLoading ? (
-        CHART_SKELETON
-      ) : isError ? (
-        CHART_ERROR
-      ) : (
-        <NetWorthChart data={data?.netWorth ?? []} retirementMarkers={retirementMarkers} />
-      )}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="flex flex-col gap-4 p-4">
         {isLoading ? (
-          <>
-            {CHART_SKELETON}
-            {CHART_SKELETON}
-          </>
+          CHART_SKELETON
         ) : isError ? (
-          <>
-            {CHART_ERROR}
-            {CHART_ERROR}
-          </>
+          CHART_ERROR
         ) : (
-          <>
-            <SurplusAccumulationChart data={data?.surplus ?? []} />
-            <RetirementChart members={data?.retirement ?? []} horizonEndYear={horizonEndYear} />
-          </>
+          <NetWorthChart data={data?.netWorth ?? []} retirementMarkers={retirementMarkers} />
         )}
+        <div className="grid grid-cols-2 gap-4">
+          {isLoading ? (
+            <>
+              {CHART_SKELETON}
+              {CHART_SKELETON}
+            </>
+          ) : isError ? (
+            <>
+              {CHART_ERROR}
+              {CHART_ERROR}
+            </>
+          ) : (
+            <>
+              <SurplusAccumulationChart data={data?.surplus ?? []} />
+              <RetirementChart members={data?.retirement ?? []} horizonEndYear={horizonEndYear} />
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

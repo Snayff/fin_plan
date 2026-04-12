@@ -21,23 +21,21 @@ export function LinkedAccountsButton({
       onClick={onClick}
       aria-expanded={isOpen}
       className={cn(
-        "flex flex-col items-start gap-0.5 rounded-md border border-border bg-card px-4 py-2.5 transition-colors",
+        "flex items-center gap-2 rounded-md border border-border bg-card px-3 py-1 transition-colors",
         "hover:border-page-accent focus-visible:border-page-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent"
       )}
     >
       {empty ? (
-        <span className="text-sm text-text-secondary">Link accounts to anchor your cashflow ▸</span>
+        <span className="text-xs text-text-secondary">Link accounts to anchor your cashflow ▸</span>
       ) : (
         <>
           <span className="text-[10px] uppercase tracking-widest text-text-tertiary font-heading">
             Starting balance
           </span>
-          <span className="flex items-center gap-2">
-            <span className="font-numeric text-base text-foreground">
-              {formatCurrency(startingBalance)}
-            </span>
-            <span className="text-xs text-text-tertiary">{linkedCount} linked accounts ▾</span>
+          <span className="font-numeric text-sm text-foreground">
+            {formatCurrency(startingBalance)}
           </span>
+          <span className="text-[11px] text-text-tertiary">{linkedCount} linked accounts ▾</span>
         </>
       )}
     </button>

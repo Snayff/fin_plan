@@ -17,6 +17,12 @@ export default defineConfig({
   server: {
     port: 3000,
     host: "0.0.0.0", // Listen on all interfaces for Docker
+    watch: {
+      // Polling required: inotify events do not propagate from Windows host
+      // through Docker Desktop's filesystem layer into the Linux container.
+      usePolling: true,
+      interval: 300,
+    },
     hmr: {
       host: "localhost",
       clientPort: 3000,

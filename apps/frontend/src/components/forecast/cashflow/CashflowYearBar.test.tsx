@@ -13,11 +13,11 @@ describe("CashflowYearBar", () => {
     tightestPoint: { value: 1000, day: 1 },
   };
 
-  it("uses default tier colour when no dip", () => {
+  it("uses page-accent violet when no dip", () => {
     render(<CashflowYearBar month={month} maxAbsNet={1000} onClick={() => {}} />);
     const bar = screen.getByRole("button");
-    expect(bar.className).toMatch(/tier-/);
-    expect(bar.className).not.toMatch(/attention/);
+    expect(bar.className).toMatch(/page-accent/);
+    expect(bar.className).not.toMatch(/bg-attention/);
   });
 
   it("uses amber when dipBelowZero", () => {
