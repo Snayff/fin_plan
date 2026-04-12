@@ -469,6 +469,133 @@ export const giftsService = {
     return prior !== null;
   },
 
+  // ─── Upcoming view ──────────────────────────────────────────────────────────
+  async getUpcoming(householdId: string, year: number) {
+    const allocations = await prisma.giftAllocation.findMany({
+      where: { householdId, year, status: { not: "skipped" } },
+      include: { giftPerson: true, giftEvent: true },
+    });
+
+    type Row = {
+      eventId: string;
+      eventName: string;
+      eventDateType: "shared" | "personal";
+      day: number | null;
+      month: number;
+      recipients: Array<{
+        personId: string;
+        personName: string;
+        planned: number;
+        spent: number | null;
+      }>;
+      plannedTotal: number;
+      spentTotal: number | null;
+    };
+    const groups = new Map<number, Map<string, Row>>();
+    const datelessRows: Row[] = [];
+    const callouts = {
+      thisMonth: { count: 0, total: 0 },
+      nextThreeMonths: { count: 0, total: 0 },
+      restOfYear: { count: 0, total: 0 },
+      dateless: { count: 0, total: 0 },
+    };
+    const currentMonth = new Date().getMonth() + 1;
+
+    for (const a of allocations) {
+      const event = (a as any).giftEvent;
+      const person = (a as any).giftPerson;
+      const month =
+        event.dateType === "shared"
+          ? (a.dateMonth ?? event.dateMonth ?? null)
+          : (a.dateMonth ?? null);
+      const day =
+        event.dateType === "shared" ? (a.dateDay ?? event.dateDay ?? null) : (a.dateDay ?? null);
+
+      if (month === null) {
+        callouts.dateless.count += 1;
+        callouts.dateless.total += a.planned ?? 0;
+        datelessRows.push({
+          eventId: event.id,
+          eventName: event.name,
+          eventDateType: event.dateType,
+          day: null,
+          month: 0,
+          recipients: [
+            {
+              personId: person.id,
+              personName: person.name,
+              planned: a.planned,
+              spent: a.spent,
+            },
+          ],
+          plannedTotal: a.planned,
+          spentTotal: a.spent,
+        });
+        continue;
+      }
+
+      if (month === currentMonth) {
+        callouts.thisMonth.count += 1;
+        callouts.thisMonth.total += a.planned ?? 0;
+      } else if (month > currentMonth && month <= currentMonth + 3) {
+        callouts.nextThreeMonths.count += 1;
+        callouts.nextThreeMonths.total += a.planned ?? 0;
+      } else if (month > currentMonth + 3) {
+        callouts.restOfYear.count += 1;
+        callouts.restOfYear.total += a.planned ?? 0;
+      }
+
+      const monthMap = groups.get(month) ?? new Map<string, Row>();
+      const key =
+        event.dateType === "shared"
+          ? `${event.id}-${month}-${day ?? "x"}`
+          : `${event.id}-${person.id}-${day ?? "x"}`;
+      const existing = monthMap.get(key);
+      if (existing) {
+        existing.recipients.push({
+          personId: person.id,
+          personName: person.name,
+          planned: a.planned,
+          spent: a.spent,
+        });
+        existing.plannedTotal += a.planned ?? 0;
+        existing.spentTotal = (existing.spentTotal ?? 0) + (a.spent ?? 0);
+      } else {
+        monthMap.set(key, {
+          eventId: event.id,
+          eventName: event.name,
+          eventDateType: event.dateType,
+          day,
+          month,
+          recipients: [
+            {
+              personId: person.id,
+              personName: person.name,
+              planned: a.planned,
+              spent: a.spent,
+            },
+          ],
+          plannedTotal: a.planned,
+          spentTotal: a.spent,
+        });
+      }
+      groups.set(month, monthMap);
+    }
+
+    const groupedArr = Array.from(groups.entries())
+      .sort(([a], [b]) => a - b)
+      .map(([month, rowMap]) => ({
+        month,
+        rows: Array.from(rowMap.values()).sort((a, b) => (a.day ?? 99) - (b.day ?? 99)),
+      }));
+
+    if (datelessRows.length > 0) {
+      groupedArr.push({ month: 0, rows: datelessRows });
+    }
+
+    return { callouts, groups: groupedArr };
+  },
+
   // ─── Mode switch ────────────────────────────────────────────────────────────
   async setMode(householdId: string, input: { mode: GiftPlannerMode }, _ctx?: ActorCtx) {
     const settings = await this.getOrCreateSettings(householdId);

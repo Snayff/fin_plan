@@ -584,3 +584,140 @@ describe("giftsService.getPersonDetail", () => {
     expect(virtual.planned).toBe(0);
   });
 });
+
+describe("giftsService.getUpcoming", () => {
+  it("collapses shared-date events into one row per event-month-day", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftAllocation.findMany.mockResolvedValue([
+      {
+        giftPersonId: "p1",
+        giftEventId: "e1",
+        planned: 50,
+        spent: null,
+        dateMonth: null,
+        dateDay: null,
+        giftPerson: { id: "p1", name: "Mum" },
+        giftEvent: {
+          id: "e1",
+          name: "Christmas",
+          dateType: "shared",
+          dateMonth: 12,
+          dateDay: 25,
+          isLocked: true,
+        },
+      },
+      {
+        giftPersonId: "p2",
+        giftEventId: "e1",
+        planned: 30,
+        spent: 25,
+        dateMonth: null,
+        dateDay: null,
+        giftPerson: { id: "p2", name: "Dad" },
+        giftEvent: {
+          id: "e1",
+          name: "Christmas",
+          dateType: "shared",
+          dateMonth: 12,
+          dateDay: 25,
+          isLocked: true,
+        },
+      },
+      {
+        giftPersonId: "p1",
+        giftEventId: "e2",
+        planned: 40,
+        spent: null,
+        dateMonth: 4,
+        dateDay: 12,
+        giftPerson: { id: "p1", name: "Mum" },
+        giftEvent: {
+          id: "e2",
+          name: "Birthday",
+          dateType: "personal",
+          dateMonth: null,
+          dateDay: null,
+          isLocked: true,
+        },
+      },
+      {
+        giftPersonId: "p3",
+        giftEventId: "e3",
+        planned: 20,
+        spent: null,
+        dateMonth: null,
+        dateDay: null,
+        giftPerson: { id: "p3", name: "Friend" },
+        giftEvent: {
+          id: "e3",
+          name: "Wedding",
+          dateType: "personal",
+          dateMonth: null,
+          dateDay: null,
+          isLocked: false,
+        },
+      },
+    ] as any);
+
+    const view = await giftsService.getUpcoming("hh-1", year);
+
+    const december = view.groups.find((g) => g.month === 12);
+    expect(december).toBeDefined();
+    const xmas = december!.rows.find((r) => r.eventId === "e1")!;
+    expect(xmas.recipients).toHaveLength(2);
+    expect(xmas.plannedTotal).toBe(80);
+
+    const april = view.groups.find((g) => g.month === 4);
+    const birthday = april!.rows.find((r) => r.eventId === "e2")!;
+    expect(birthday.recipients).toHaveLength(1);
+
+    const dateless = view.groups.find((g) => g.month === 0);
+    expect(dateless).toBeDefined();
+    expect(dateless!.rows[0].eventId).toBe("e3");
+  });
+
+  it("computes the four callout totals", async () => {
+    const year = new Date().getFullYear();
+    const thisMonth = new Date().getMonth() + 1;
+    prismaMock.giftAllocation.findMany.mockResolvedValue([
+      {
+        giftPersonId: "p1",
+        giftEventId: "e1",
+        planned: 100,
+        spent: null,
+        dateMonth: null,
+        dateDay: null,
+        giftPerson: { id: "p1", name: "Mum" },
+        giftEvent: {
+          id: "e1",
+          name: "X",
+          dateType: "shared",
+          dateMonth: thisMonth,
+          dateDay: 15,
+          isLocked: false,
+        },
+      },
+      {
+        giftPersonId: "p1",
+        giftEventId: "e2",
+        planned: 50,
+        spent: null,
+        dateMonth: null,
+        dateDay: null,
+        giftPerson: { id: "p1", name: "Mum" },
+        giftEvent: {
+          id: "e2",
+          name: "Y",
+          dateType: "personal",
+          dateMonth: null,
+          dateDay: null,
+          isLocked: false,
+        },
+      },
+    ] as any);
+
+    const view = await giftsService.getUpcoming("hh-1", year);
+    expect(view.callouts.thisMonth.total).toBe(100);
+    expect(view.callouts.dateless.total).toBe(50);
+  });
+});
