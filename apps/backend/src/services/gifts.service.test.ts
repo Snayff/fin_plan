@@ -529,3 +529,58 @@ describe("giftsService.getPlannerState", () => {
     expect(state.isReadOnly).toBe(true);
   });
 });
+
+describe("giftsService.getPersonDetail", () => {
+  it("returns event-joined allocations for a person in a year", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftPerson.findUnique.mockResolvedValue({
+      id: "p1",
+      householdId: "hh-1",
+      name: "Mum",
+      notes: null,
+      sortOrder: 0,
+      memberId: null,
+    } as any);
+    prismaMock.giftEvent.findMany.mockResolvedValue([
+      {
+        id: "e1",
+        name: "Christmas",
+        dateType: "shared",
+        dateMonth: 12,
+        dateDay: 25,
+        isLocked: true,
+      },
+      {
+        id: "e2",
+        name: "Birthday",
+        dateType: "personal",
+        dateMonth: null,
+        dateDay: null,
+        isLocked: true,
+      },
+    ] as any);
+    prismaMock.giftAllocation.findMany.mockResolvedValue([
+      {
+        id: "a1",
+        giftPersonId: "p1",
+        giftEventId: "e1",
+        year,
+        planned: 50,
+        spent: 60,
+        status: "bought",
+        notes: null,
+        dateMonth: null,
+        dateDay: null,
+      },
+    ] as any);
+
+    const detail = await giftsService.getPersonDetail("hh-1", "p1", year);
+    expect(detail.allocations).toHaveLength(2);
+    const existing = detail.allocations.find((a) => a.giftEventId === "e1")!;
+    expect(existing.eventName).toBe("Christmas");
+    expect(existing.resolvedMonth).toBe(12);
+    const virtual = detail.allocations.find((a) => a.giftEventId === "e2")!;
+    expect(virtual.id).toBe(null);
+    expect(virtual.planned).toBe(0);
+  });
+});

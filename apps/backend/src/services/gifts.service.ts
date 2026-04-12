@@ -305,6 +305,92 @@ export const giftsService = {
   },
 
   // ─── Reads ──────────────────────────────────────────────────────────────────
+  async getPersonDetail(householdId: string, personId: string, year: number) {
+    const person = await prisma.giftPerson.findUnique({ where: { id: personId } });
+    assertOwned(person, householdId, "Gift person");
+    const [events, allocations] = await Promise.all([
+      prisma.giftEvent.findMany({
+        where: { householdId },
+        orderBy: [{ isLocked: "desc" }, { sortOrder: "asc" }],
+      }),
+      prisma.giftAllocation.findMany({
+        where: { householdId, giftPersonId: personId, year },
+      }),
+    ]);
+
+    const allocByEventId = new Map(allocations.map((a) => [a.giftEventId, a]));
+    const rows = events.map((e) => {
+      const a = allocByEventId.get(e.id);
+      const dateMonth = a?.dateMonth ?? null;
+      const dateDay = a?.dateDay ?? null;
+      const resolvedMonth =
+        e.dateType === "shared" ? (dateMonth ?? e.dateMonth ?? null) : dateMonth;
+      const resolvedDay = e.dateType === "shared" ? (dateDay ?? e.dateDay ?? null) : dateDay;
+      return {
+        id: a?.id ?? null,
+        giftPersonId: personId,
+        giftEventId: e.id,
+        eventName: e.name,
+        eventDateType: e.dateType,
+        eventIsLocked: e.isLocked,
+        year,
+        planned: a?.planned ?? 0,
+        spent: a?.spent ?? null,
+        status: a?.status ?? "planned",
+        notes: a?.notes ?? null,
+        dateMonth,
+        dateDay,
+        resolvedMonth,
+        resolvedDay,
+      };
+    });
+
+    return {
+      person: {
+        id: person!.id,
+        name: person!.name,
+        notes: person!.notes,
+        sortOrder: person!.sortOrder,
+        isHouseholdMember: person!.memberId !== null,
+        plannedCount: rows.filter((r) => r.status === "planned" && r.id !== null).length,
+        boughtCount: rows.filter((r) => r.status === "bought").length,
+        plannedTotal: rows.reduce((s, r) => s + r.planned, 0),
+        spentTotal: rows.reduce((s, r) => s + (r.spent ?? 0), 0),
+        hasOverspend: rows.some((r) => r.spent !== null && r.spent > r.planned),
+      },
+      allocations: rows,
+    };
+  },
+
+  async listEventsForConfig(householdId: string) {
+    return prisma.giftEvent.findMany({
+      where: { householdId },
+      orderBy: [{ isLocked: "desc" }, { sortOrder: "asc" }, { name: "asc" }],
+    });
+  },
+
+  async listPeopleForConfig(
+    householdId: string,
+    filter: "all" | "household" | "non-household" = "all"
+  ) {
+    const where: Record<string, unknown> = { householdId };
+    if (filter === "household") where.memberId = { not: null };
+    if (filter === "non-household") where.memberId = null;
+    return prisma.giftPerson.findMany({
+      where,
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    });
+  },
+
+  async listYearsWithData(householdId: string) {
+    const rows = await prisma.plannerYearBudget.findMany({
+      where: { householdId },
+      orderBy: { year: "desc" },
+      select: { year: true },
+    });
+    return rows.map((r) => r.year);
+  },
+
   async getPlannerState(householdId: string, year: number, userId: string) {
     const [settings, budgetRow, persons, allocations, dismissal] = await Promise.all([
       this.getOrCreateSettings(householdId),
