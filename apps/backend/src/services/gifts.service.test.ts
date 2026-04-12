@@ -721,3 +721,74 @@ describe("giftsService.getUpcoming", () => {
     expect(view.callouts.dateless.total).toBe(50);
   });
 });
+
+describe("giftsService.runRolloverIfNeeded", () => {
+  it("creates current-year budget by copying prior year and duplicating allocations", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.plannerYearBudget.findUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ giftBudget: 700 } as any);
+    prismaMock.giftAllocation.findMany.mockResolvedValue([
+      {
+        giftPersonId: "p1",
+        giftEventId: "e1",
+        planned: 25,
+        notes: "books",
+        dateMonth: 4,
+        dateDay: 12,
+      },
+      {
+        giftPersonId: "p1",
+        giftEventId: "e2",
+        planned: 50,
+        notes: null,
+        dateMonth: null,
+        dateDay: null,
+      },
+    ] as any);
+    prismaMock.plannerYearBudget.create.mockResolvedValue({} as any);
+    prismaMock.giftAllocation.createMany.mockResolvedValue({ count: 2 } as any);
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+      mode: "independent",
+      syncedDiscretionaryItemId: null,
+    } as any);
+
+    const created = await giftsService.runRolloverIfNeeded("hh-1", year);
+    expect(created).toBe(true);
+    expect(prismaMock.plannerYearBudget.create).toHaveBeenCalledWith({
+      data: { householdId: "hh-1", year, giftBudget: 700 },
+    });
+    const cmCall = (prismaMock.giftAllocation.createMany.mock.calls[0] as any)[0];
+    expect(cmCall.data).toHaveLength(2);
+    expect(cmCall.data[0]).toMatchObject({
+      giftPersonId: "p1",
+      giftEventId: "e1",
+      year,
+      planned: 25,
+      spent: null,
+      status: "planned",
+      notes: "books",
+      dateMonth: 4,
+      dateDay: 12,
+    });
+  });
+
+  it("does nothing if current-year budget already exists", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.plannerYearBudget.findUnique.mockResolvedValue({ giftBudget: 0 } as any);
+    const created = await giftsService.runRolloverIfNeeded("hh-1", year);
+    expect(created).toBe(false);
+    expect(prismaMock.plannerYearBudget.create).not.toHaveBeenCalled();
+  });
+
+  it("dismissRolloverNotification persists per-user record", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftRolloverDismissal.upsert.mockResolvedValue({} as any);
+    await giftsService.dismissRolloverNotification("hh-1", "user-1", year);
+    expect(prismaMock.giftRolloverDismissal.upsert).toHaveBeenCalledWith({
+      where: { householdId_userId_year: { householdId: "hh-1", userId: "user-1", year } },
+      create: { householdId: "hh-1", userId: "user-1", year },
+      update: {},
+    });
+  });
+});

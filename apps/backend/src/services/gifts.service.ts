@@ -596,6 +596,75 @@ export const giftsService = {
     return { callouts, groups: groupedArr };
   },
 
+  // ─── Year rollover (lazy) ───────────────────────────────────────────────────
+  async runRolloverIfNeeded(householdId: string, year: number): Promise<boolean> {
+    if (year !== new Date().getFullYear()) return false;
+    const current = await prisma.plannerYearBudget.findUnique({
+      where: { householdId_year: { householdId, year } },
+    });
+    if (current) return false;
+    const prior = await prisma.plannerYearBudget.findUnique({
+      where: { householdId_year: { householdId, year: year - 1 } },
+    });
+    if (!prior) return false;
+
+    const priorAllocations = await prisma.giftAllocation.findMany({
+      where: { householdId, year: year - 1 },
+    });
+
+    await prisma.plannerYearBudget.create({
+      data: { householdId, year, giftBudget: prior.giftBudget },
+    });
+
+    if (priorAllocations.length > 0) {
+      await prisma.giftAllocation.createMany({
+        data: priorAllocations.map((a) => ({
+          householdId,
+          giftPersonId: a.giftPersonId,
+          giftEventId: a.giftEventId,
+          year,
+          planned: a.planned,
+          spent: null,
+          status: "planned" as const,
+          notes: a.notes,
+          dateMonth: a.dateMonth,
+          dateDay: a.dateDay,
+        })),
+      });
+    }
+
+    const settings = await this.getOrCreateSettings(householdId);
+    if (settings.mode === "synced" && settings.syncedDiscretionaryItemId) {
+      await prisma.itemAmountPeriod.upsert({
+        where: {
+          itemType_itemId_startDate: {
+            itemType: "discretionary_item",
+            itemId: settings.syncedDiscretionaryItemId,
+            startDate: new Date(Date.UTC(year, 0, 1)),
+          },
+        },
+        create: {
+          itemType: "discretionary_item",
+          itemId: settings.syncedDiscretionaryItemId,
+          startDate: new Date(Date.UTC(year, 0, 1)),
+          endDate: null,
+          amount: prior.giftBudget,
+        },
+        update: { amount: prior.giftBudget },
+      });
+    }
+
+    return true;
+  },
+
+  async dismissRolloverNotification(householdId: string, userId: string, year: number) {
+    await prisma.giftRolloverDismissal.upsert({
+      where: { householdId_userId_year: { householdId, userId, year } },
+      create: { householdId, userId, year },
+      update: {},
+    });
+  },
+
   // ─── Mode switch ────────────────────────────────────────────────────────────
   async setMode(householdId: string, input: { mode: GiftPlannerMode }, _ctx?: ActorCtx) {
     const settings = await this.getOrCreateSettings(householdId);
