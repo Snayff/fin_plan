@@ -13,30 +13,35 @@ export function ConfigModePanel({ currentMode, readOnly, year }: Props) {
 
   if (drill === "list") {
     return (
-      <ul className="divide-y divide-foreground/5">
-        {[
-          { id: "people" as Drill, label: "People" },
-          { id: "events" as Drill, label: "Events" },
-          { id: "mode" as Drill, label: "Mode" },
-          { id: "quickadd" as Drill, label: "Quick add" },
-        ].map((row) => (
-          <li
-            key={row.id}
-            role="button"
-            tabIndex={0}
-            onClick={() => setDrill(row.id)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                setDrill(row.id);
-              }
-            }}
-            className="cursor-pointer px-6 py-3 text-sm text-foreground hover:bg-foreground/5"
-          >
-            {row.label}
-          </li>
-        ))}
-      </ul>
+      <div className="flex h-full flex-col">
+        <div className="px-6 py-4 flex items-center border-b border-foreground/5">
+          <h2 className="font-heading text-base font-bold text-foreground">Config</h2>
+        </div>
+        <ul className="divide-y divide-foreground/5">
+          {[
+            { id: "people" as Drill, label: "People" },
+            { id: "events" as Drill, label: "Events" },
+            { id: "mode" as Drill, label: "Mode" },
+            { id: "quickadd" as Drill, label: "Quick add" },
+          ].map((row) => (
+            <li
+              key={row.id}
+              role="button"
+              tabIndex={0}
+              onClick={() => setDrill(row.id)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  setDrill(row.id);
+                }
+              }}
+              className="cursor-pointer px-6 py-3 text-sm text-foreground hover:bg-foreground/5"
+            >
+              {row.label}
+            </li>
+          ))}
+        </ul>
+      </div>
     );
   }
 
@@ -49,7 +54,7 @@ export function ConfigModePanel({ currentMode, readOnly, year }: Props) {
       >
         ← Config / {labelFor(drill)}
       </button>
-      {drill === "people" && <ConfigPeoplePanel readOnly={readOnly} />}
+      {drill === "people" && <ConfigPeoplePanel readOnly={readOnly} year={year} />}
       {drill === "events" && <ConfigEventsPanel readOnly={readOnly} />}
       {drill === "mode" && <ConfigPlannerModePanel currentMode={currentMode} readOnly={readOnly} />}
       {drill === "quickadd" && <QuickAddPanel year={year} readOnly={readOnly} />}

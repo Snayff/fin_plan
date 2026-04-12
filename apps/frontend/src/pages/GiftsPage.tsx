@@ -57,7 +57,9 @@ export default function GiftsPage() {
             {mode === "gifts" && (
               <GiftsModePanel people={state.people} year={year} readOnly={state.isReadOnly} />
             )}
-            {mode === "upcoming" && <UpcomingModePanel year={year} />}
+            {mode === "upcoming" && (
+              <UpcomingModePanel year={year} onNavigateToGifts={() => setMode("gifts")} />
+            )}
             {mode === "config" && (
               <ConfigModePanel currentMode={state.mode} readOnly={state.isReadOnly} year={year} />
             )}

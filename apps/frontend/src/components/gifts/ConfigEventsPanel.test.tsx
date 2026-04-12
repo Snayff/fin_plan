@@ -44,17 +44,44 @@ describe("ConfigEventsPanel", () => {
     expect(xmasRow.querySelector("button")).toBeNull();
   });
 
-  it("create form requires date for shared-date events", () => {
+  it("shows add form when + Add event is clicked", () => {
     render(<ConfigEventsPanel readOnly={false} />);
-    fireEvent.change(screen.getByPlaceholderText(/event name/i), {
+    expect(screen.queryByLabelText(/event name/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /add event/i }));
+    expect(screen.getByLabelText(/event name/i)).toBeInTheDocument();
+  });
+
+  it("create form submits with correct data for shared-date events", () => {
+    render(<ConfigEventsPanel readOnly={false} />);
+    // Open the form
+    fireEvent.click(screen.getByRole("button", { name: /add event/i }));
+
+    // Fill in the name
+    fireEvent.change(screen.getByLabelText(/event name/i), {
       target: { value: "Halloween" },
     });
-    fireEvent.click(screen.getByLabelText(/same date every year/i));
-    fireEvent.change(screen.getByPlaceholderText(/month/i), { target: { value: "10" } });
-    fireEvent.change(screen.getByPlaceholderText(/day/i), { target: { value: "31" } });
+
+    // Change date type to shared via the Select trigger
+    fireEvent.click(screen.getByLabelText(/date type/i));
+    fireEvent.click(screen.getByText(/same date every year/i));
+
+    // Select month
+    fireEvent.click(screen.getByLabelText(/month/i));
+    fireEvent.click(screen.getByText("October"));
+
+    // Select day
+    fireEvent.click(screen.getByLabelText(/day/i));
+    fireEvent.click(screen.getByText("31"));
+
+    // Submit
     fireEvent.click(screen.getByRole("button", { name: /add event/i }));
     expect(createMock).toHaveBeenCalledWith(
-      expect.objectContaining({ name: "Halloween", dateType: "shared", dateMonth: 10, dateDay: 31 })
+      expect.objectContaining({
+        name: "Halloween",
+        dateType: "shared",
+        dateMonth: 10,
+        dateDay: 31,
+      })
     );
   });
 });

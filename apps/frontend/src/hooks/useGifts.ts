@@ -7,7 +7,7 @@ export const GIFTS_KEYS = {
   person: (id: string, year: number) => ["gifts", "person", id, year] as const,
   upcoming: (year: number) => ["gifts", "upcoming", year] as const,
   years: () => ["gifts", "years"] as const,
-  configPeople: (filter: string) => ["gifts", "configPeople", filter] as const,
+  configPeople: (filter: string, year: number) => ["gifts", "configPeople", filter, year] as const,
   configEvents: () => ["gifts", "configEvents"] as const,
 };
 
@@ -42,10 +42,10 @@ export function useGiftsYears() {
   });
 }
 
-export function useConfigPeople(filter: "all" | "household" | "non-household") {
+export function useConfigPeople(filter: "all" | "household" | "non-household", year: number) {
   return useQuery({
-    queryKey: GIFTS_KEYS.configPeople(filter),
-    queryFn: () => giftsApi.listConfigPeople(filter),
+    queryKey: GIFTS_KEYS.configPeople(filter, year),
+    queryFn: () => giftsApi.listConfigPeople(filter, year),
   });
 }
 

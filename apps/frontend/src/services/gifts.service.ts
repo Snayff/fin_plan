@@ -26,8 +26,8 @@ export const giftsApi = {
 
   listYears: () => apiClient.get<number[]>(`/api/gifts/years`),
 
-  listConfigPeople: (filter: "all" | "household" | "non-household") =>
-    apiClient.get<any[]>(`/api/gifts/config/people?filter=${filter}`),
+  listConfigPeople: (filter: "all" | "household" | "non-household", year: number) =>
+    apiClient.get<any[]>(`/api/gifts/config/people?filter=${filter}&year=${year}`),
 
   listConfigEvents: () => apiClient.get<any[]>(`/api/gifts/config/events`),
 

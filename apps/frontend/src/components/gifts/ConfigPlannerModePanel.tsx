@@ -15,40 +15,45 @@ export function ConfigPlannerModePanel({ currentMode, readOnly }: Props) {
   };
 
   return (
-    <div className="flex h-full flex-col p-6">
-      <fieldset className="flex flex-col gap-2 text-sm text-foreground">
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="planner-mode"
-            checked={currentMode === "synced"}
-            disabled={readOnly}
-            onChange={() => choose("synced")}
+    <div className="flex h-full flex-col">
+      <div className="px-6 py-4 flex items-center border-b border-foreground/5">
+        <h2 className="font-heading text-base font-bold text-foreground">Mode</h2>
+      </div>
+      <div className="flex-1 p-6">
+        <fieldset className="flex flex-col gap-2 text-sm text-foreground">
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="planner-mode"
+              checked={currentMode === "synced"}
+              disabled={readOnly}
+              onChange={() => choose("synced")}
+            />
+            Synced — annual budget flows into the waterfall
+          </label>
+          <label className="flex items-center gap-2">
+            <input
+              type="radio"
+              name="planner-mode"
+              checked={currentMode === "independent"}
+              disabled={readOnly}
+              onChange={() => choose("independent")}
+            />
+            Independent — planner runs standalone, no waterfall link
+          </label>
+        </fieldset>
+        {pending && (
+          <ModeSwitchConfirmDialog
+            fromMode={currentMode}
+            toMode={pending}
+            onCancel={() => setPending(null)}
+            onConfirm={() => {
+              setMode.mutate({ mode: pending });
+              setPending(null);
+            }}
           />
-          Synced — annual budget flows into the waterfall
-        </label>
-        <label className="flex items-center gap-2">
-          <input
-            type="radio"
-            name="planner-mode"
-            checked={currentMode === "independent"}
-            disabled={readOnly}
-            onChange={() => choose("independent")}
-          />
-          Independent — planner runs standalone, no waterfall link
-        </label>
-      </fieldset>
-      {pending && (
-        <ModeSwitchConfirmDialog
-          fromMode={currentMode}
-          toMode={pending}
-          onCancel={() => setPending(null)}
-          onConfirm={() => {
-            setMode.mutate({ mode: pending });
-            setPending(null);
-          }}
-        />
-      )}
+        )}
+      </div>
     </div>
   );
 }
