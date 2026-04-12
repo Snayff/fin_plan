@@ -30,19 +30,19 @@ ALTER TABLE "CommittedItem" DROP COLUMN "dueMonth";
 ALTER TABLE "DiscretionaryItem" ADD COLUMN "dueDate" DATE;
 
 -- CreateIndex: add missing indexes already declared in schema
-CREATE INDEX "CommittedItem_householdId_idx" ON "CommittedItem"("householdId");
+CREATE INDEX IF NOT EXISTS "CommittedItem_householdId_idx" ON "CommittedItem"("householdId");
 
 -- CreateIndex
-CREATE INDEX "DiscretionaryItem_householdId_idx" ON "DiscretionaryItem"("householdId");
+CREATE INDEX IF NOT EXISTS "DiscretionaryItem_householdId_idx" ON "DiscretionaryItem"("householdId");
 
 -- CreateIndex
-CREATE INDEX "GiftEvent_householdId_idx" ON "GiftEvent"("householdId");
+CREATE INDEX IF NOT EXISTS "GiftEvent_householdId_idx" ON "GiftEvent"("householdId");
 
 -- CreateIndex
-CREATE INDEX "GiftPerson_householdId_idx" ON "GiftPerson"("householdId");
+CREATE INDEX IF NOT EXISTS "GiftPerson_householdId_idx" ON "GiftPerson"("householdId");
 
 -- CreateIndex
-CREATE INDEX "IncomeSource_householdId_idx" ON "IncomeSource"("householdId");
+CREATE INDEX IF NOT EXISTS "IncomeSource_householdId_idx" ON "IncomeSource"("householdId");
 
 -- CreateIndex
-CREATE INDEX "PurchaseItem_householdId_idx" ON "PurchaseItem"("householdId");
+CREATE INDEX IF NOT EXISTS "PurchaseItem_householdId_idx" ON "PurchaseItem"("householdId");
