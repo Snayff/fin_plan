@@ -21,6 +21,14 @@ export function CashflowSectionPanel() {
   const startMonth = ((today.getMonth() + windowOffset) % 12) + 1;
   const startYear = today.getFullYear() + Math.floor((today.getMonth() + windowOffset) / 12);
 
+  // Inclusive bounds of the projection window: current calendar month → +23 months.
+  const windowStart = { year: today.getFullYear(), month: today.getMonth() + 1 };
+  const windowEndMonthIdx = today.getMonth() + 23;
+  const windowEnd = {
+    year: today.getFullYear() + Math.floor(windowEndMonthIdx / 12),
+    month: (windowEndMonthIdx % 12) + 1,
+  };
+
   const { data: projection, isLoading } = useCashflowProjection({
     monthCount: 12,
     startYear,
@@ -45,9 +53,11 @@ export function CashflowSectionPanel() {
 
   if (isLoading || !projection) {
     return (
-      <div className="flex flex-col gap-4">
-        <CashflowHeader startingBalance={0} linkedCount={0} />
-        <div className="h-64 bg-card border border-border rounded-md animate-pulse" />
+      <div className="flex flex-col h-full">
+        <CashflowHeader startingBalance={0} linkedCount={0} oldestBalanceDate={null} />
+        <div className="p-4">
+          <div className="h-64 bg-card border border-border rounded-md animate-pulse" />
+        </div>
       </div>
     );
   }
@@ -67,63 +77,67 @@ export function CashflowSectionPanel() {
   }
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col h-full">
       <CashflowHeader
-        startingBalance={projection.startingBalance}
+        startingBalance={projection.latestKnownBalance}
         linkedCount={projection.linkedAccountCount}
       />
-      {showStale && (
-        <CashflowStaleBanner
-          oldestMonths={oldestMonths}
-          youngestMonths={youngestMonths}
-          onRefresh={() => {}}
-        />
-      )}
-      {projection.linkedAccountCount === 0 && <CashflowEmptyCallout variant="no-accounts" />}
+      <div className="flex flex-col gap-4 p-4">
+        {showStale && (
+          <CashflowStaleBanner
+            oldestMonths={oldestMonths}
+            youngestMonths={youngestMonths}
+            onRefresh={() => {}}
+          />
+        )}
+        {projection.linkedAccountCount === 0 && <CashflowEmptyCallout variant="no-accounts" />}
 
-      <AnimatePresence mode="wait" custom={view.kind === "year" ? -1 : 1}>
-        {view.kind === "year" && (
-          <motion.div
-            key="year"
-            custom={-1}
-            variants={slide}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            <CashflowYearView
-              projection={projection}
-              onSelectMonth={selectMonth}
-              onShiftWindow={(d) => {
-                if (d === 0) {
-                  setWindowOffset(0);
-                  setView({ kind: "year" });
-                } else {
-                  setWindowOffset(windowOffset + d);
-                }
-              }}
-              canShiftBack={windowOffset > 0}
-            />
-          </motion.div>
-        )}
-        {view.kind === "month" && monthQuery.data && (
-          <motion.div
-            key={`month-${view.year}-${view.month}`}
-            custom={1}
-            variants={slide}
-            initial="initial"
-            animate="animate"
-            exit="exit"
-          >
-            <CashflowMonthView
-              detail={monthQuery.data}
-              amberMonths={amberMonths}
-              onBack={() => setView({ kind: "year" })}
-              onSelectMonth={(m) => setView({ kind: "month", year: view.year, month: m })}
-            />
-          </motion.div>
-        )}
-      </AnimatePresence>
+        <AnimatePresence mode="wait" custom={view.kind === "year" ? -1 : 1}>
+          {view.kind === "year" && (
+            <motion.div
+              key="year"
+              custom={-1}
+              variants={slide}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <CashflowYearView
+                projection={projection}
+                onSelectMonth={selectMonth}
+                onShiftWindow={(d) => {
+                  if (d === 0) {
+                    setWindowOffset(0);
+                    setView({ kind: "year" });
+                  } else {
+                    setWindowOffset(windowOffset + d);
+                  }
+                }}
+                canShiftBack={windowOffset > 0}
+              />
+            </motion.div>
+          )}
+          {view.kind === "month" && monthQuery.data && (
+            <motion.div
+              key={`month-${view.year}-${view.month}`}
+              custom={1}
+              variants={slide}
+              initial="initial"
+              animate="animate"
+              exit="exit"
+            >
+              <CashflowMonthView
+                detail={monthQuery.data}
+                amberMonths={amberMonths}
+                windowStart={windowStart}
+                windowEnd={windowEnd}
+                onBack={() => setView({ kind: "year" })}
+                onSelectMonth={(m) => setView({ kind: "month", year: view.year, month: m })}
+              />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

@@ -43,7 +43,7 @@ export function CashflowYearView({
   onShiftWindow,
   canShiftBack,
 }: CashflowYearViewProps) {
-  const { months, startingBalance, projectedEndBalance, tightestDip, avgMonthlySurplus } =
+  const { months, latestKnownBalance, projectedEndBalance, tightestDip, avgMonthlySurplus } =
     projection;
   const maxAbsNet = Math.max(1, ...months.map((m) => Math.abs(m.netChange)));
   const first = months[0]!;
@@ -52,11 +52,17 @@ export function CashflowYearView({
     new Date(last.year, last.month - 1, 1),
     "MMM yyyy"
   )}`;
+  const today = new Date();
+  const todayLabel = format(today, "d MMM yyyy");
 
   return (
     <div className="flex flex-col gap-4">
       <div className="grid grid-cols-4 gap-3">
-        <HeadlineCard label="Starting balance" value={formatCurrency(startingBalance)} />
+        <HeadlineCard
+          label="Starting balance"
+          value={formatCurrency(latestKnownBalance)}
+          sub={`as of ${todayLabel}`}
+        />
         <HeadlineCard label="Projected end" value={formatCurrency(projectedEndBalance)} />
         <HeadlineCard
           label="Tightest dip"
@@ -67,42 +73,52 @@ export function CashflowYearView({
         <HeadlineCard label="Average monthly surplus" value={formatCurrency(avgMonthlySurplus)} />
       </div>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            disabled={!canShiftBack}
-            onClick={() => onShiftWindow(-1)}
-            aria-label="Shift window one month earlier"
-            className="px-2 py-1 text-xs disabled:opacity-30 hover:text-page-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent rounded"
-          >
-            ←
-          </button>
-          <span className="text-xs text-text-tertiary">{range}</span>
-          <button
-            type="button"
-            onClick={() => onShiftWindow(1)}
-            aria-label="Shift window one month later"
-            className="px-2 py-1 text-xs hover:text-page-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent rounded"
-          >
-            →
-          </button>
-        </div>
+      <div className="flex items-center gap-2">
         <button
           type="button"
+          disabled={!canShiftBack}
+          onClick={() => onShiftWindow(-1)}
+          aria-label="Shift window one month earlier"
+          className="px-2 py-1 text-xs disabled:opacity-30 hover:text-page-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent rounded"
+        >
+          ←
+        </button>
+        <span className="text-xs text-text-tertiary">{range}</span>
+        <button
+          type="button"
+          onClick={() => onShiftWindow(1)}
+          aria-label="Shift window one month later"
+          className="px-2 py-1 text-xs hover:text-page-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent rounded"
+        >
+          →
+        </button>
+        <button
+          type="button"
+          disabled={!canShiftBack}
           onClick={() => onShiftWindow(0)}
-          className="text-xs uppercase tracking-widest text-text-secondary hover:text-page-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent rounded px-2 py-1"
+          className="ml-2 border border-foreground/10 rounded px-2 py-0.5 text-[10px] uppercase tracking-widest text-text-secondary disabled:opacity-30 hover:text-page-accent hover:border-page-accent focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent transition-colors"
         >
           Today
         </button>
       </div>
 
       <div className="h-48 flex items-end gap-2 pb-6">
-        {months.map((m) => (
-          <div key={`${m.year}-${m.month}`} className="flex-1 h-full flex items-end">
-            <CashflowYearBar month={m} maxAbsNet={maxAbsNet} onClick={onSelectMonth} />
-          </div>
-        ))}
+        {months.map((m) => {
+          const isCurrent = m.year === today.getFullYear() && m.month === today.getMonth() + 1;
+          const todayDayProportion = isCurrent
+            ? today.getDate() / new Date(m.year, m.month, 0).getDate()
+            : undefined;
+          return (
+            <div key={`${m.year}-${m.month}`} className="flex-1 h-full flex items-end">
+              <CashflowYearBar
+                month={m}
+                maxAbsNet={maxAbsNet}
+                onClick={onSelectMonth}
+                todayDayProportion={todayDayProportion}
+              />
+            </div>
+          );
+        })}
       </div>
     </div>
   );

@@ -17,6 +17,8 @@ import { CashflowEventList } from "./CashflowEventList";
 interface CashflowMonthViewProps {
   detail: CashflowMonthDetail;
   amberMonths: Set<number>;
+  windowStart: { year: number; month: number };
+  windowEnd: { year: number; month: number };
   onBack: () => void;
   onSelectMonth: (month: number) => void;
 }
@@ -24,13 +26,27 @@ interface CashflowMonthViewProps {
 const STRIP = ["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"];
 const FULL = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+function monthKey(year: number, month: number): number {
+  return year * 12 + (month - 1);
+}
+
 export function CashflowMonthView({
   detail,
   amberMonths,
+  windowStart,
+  windowEnd,
   onBack,
   onSelectMonth,
 }: CashflowMonthViewProps) {
   const monthLabel = format(new Date(detail.year, detail.month - 1, 1), "MMMM yyyy");
+  const openingDateLabel = format(new Date(detail.year, detail.month - 1, 1), "d MMM yyyy");
+  const startKey = monthKey(windowStart.year, windowStart.month);
+  const endKey = monthKey(windowEnd.year, windowEnd.month);
+
+  const today = new Date();
+  const isCurrentMonth =
+    detail.year === today.getFullYear() && detail.month === today.getMonth() + 1;
+  const todayDay = isCurrentMonth ? today.getDate() : null;
 
   return (
     <div className="flex flex-col gap-4">
@@ -47,18 +63,24 @@ export function CashflowMonthView({
           const m = idx + 1;
           const active = m === detail.month;
           const amber = amberMonths.has(m);
+          const letterKey = monthKey(detail.year, m);
+          const inWindow = letterKey >= startKey && letterKey <= endKey;
           return (
             <button
               key={`${letter}-${idx}`}
               type="button"
-              onClick={() => onSelectMonth(m)}
+              onClick={inWindow ? () => onSelectMonth(m) : undefined}
+              disabled={!inWindow}
+              aria-disabled={!inWindow}
               aria-label={FULL[idx]}
               aria-current={active ? "true" : undefined}
+              title={inWindow ? undefined : "Outside the 24-month projection window"}
               className={cn(
                 "w-7 h-7 rounded text-[10px] font-heading uppercase focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent",
-                active && "bg-page-accent text-background",
-                !active && amber && "bg-attention/20 text-attention",
-                !active && !amber && "text-text-tertiary hover:text-foreground"
+                !inWindow && "opacity-30 cursor-not-allowed",
+                inWindow && active && "bg-page-accent text-background",
+                inWindow && !active && amber && "bg-attention/20 text-attention",
+                inWindow && !active && !amber && "text-text-tertiary hover:text-foreground"
               )}
             >
               {letter}
@@ -68,7 +90,11 @@ export function CashflowMonthView({
       </div>
 
       <div className="grid grid-cols-4 gap-3">
-        <StatCard label="Starting balance" value={formatCurrency(detail.startingBalance)} />
+        <StatCard
+          label="Opening balance"
+          value={formatCurrency(detail.startingBalance)}
+          sub={openingDateLabel}
+        />
         <StatCard label="End balance" value={formatCurrency(detail.endBalance)} />
         <StatCard
           label="Tightest point"
@@ -83,14 +109,24 @@ export function CashflowMonthView({
         the month
       </div>
 
-      <CashflowMonthChart detail={detail} />
+      <CashflowMonthChart detail={detail} todayDay={todayDay} />
 
       <CashflowEventList events={detail.events} />
     </div>
   );
 }
 
-function StatCard({ label, value, amber }: { label: string; value: string; amber?: boolean }) {
+function StatCard({
+  label,
+  value,
+  amber,
+  sub,
+}: {
+  label: string;
+  value: string;
+  amber?: boolean;
+  sub?: string;
+}) {
   return (
     <div className="rounded-md border border-border bg-card px-4 py-3">
       <div className="text-[10px] uppercase tracking-widest text-text-tertiary font-heading">
@@ -101,6 +137,7 @@ function StatCard({ label, value, amber }: { label: string; value: string; amber
       >
         {value}
       </div>
+      {sub && <div className="text-[10px] text-text-tertiary mt-0.5">{sub}</div>}
     </div>
   );
 }
@@ -111,7 +148,13 @@ interface ChartPoint {
   eventBalance: number | null;
 }
 
-function CashflowMonthChart({ detail }: { detail: CashflowMonthDetail }) {
+function CashflowMonthChart({
+  detail,
+  todayDay,
+}: {
+  detail: CashflowMonthDetail;
+  todayDay: number | null;
+}) {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   if (detail.dailyTrace.length === 0) return null;
@@ -174,6 +217,20 @@ function CashflowMonthChart({ detail }: { detail: CashflowMonthDetail }) {
               stroke="hsl(var(--attention))"
               strokeOpacity={0.4}
               strokeDasharray="2 2"
+            />
+          )}
+          {todayDay !== null && (
+            <ReferenceLine
+              x={todayDay}
+              stroke="hsl(var(--attention))"
+              strokeDasharray="4 4"
+              strokeWidth={1.5}
+              label={{
+                value: "today",
+                position: "top",
+                fill: "hsl(var(--attention))",
+                fontSize: 10,
+              }}
             />
           )}
           <Tooltip

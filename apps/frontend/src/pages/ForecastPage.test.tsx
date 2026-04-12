@@ -7,6 +7,7 @@ import ForecastPage from "./ForecastPage";
 
 const projectionFixture = {
   startingBalance: 1000,
+  latestKnownBalance: 1000,
   windowStart: { year: 2026, month: 4 },
   months: Array.from({ length: 12 }, (_, i) => ({
     year: 2026,

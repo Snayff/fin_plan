@@ -24,12 +24,18 @@ const detail: CashflowMonthDetail = {
   ],
 };
 
+// April 2026 → March 2028 inclusive: matches the runtime "today" of 2026-04-11.
+const windowStart = { year: 2026, month: 4 };
+const windowEnd = { year: 2028, month: 3 };
+
 describe("CashflowMonthView", () => {
   it("renders breadcrumb back to Cashflow", () => {
     render(
       <CashflowMonthView
         detail={detail}
         amberMonths={new Set()}
+        windowStart={windowStart}
+        windowEnd={windowEnd}
         onBack={() => {}}
         onSelectMonth={() => {}}
       />
@@ -43,6 +49,8 @@ describe("CashflowMonthView", () => {
       <CashflowMonthView
         detail={detail}
         amberMonths={new Set()}
+        windowStart={windowStart}
+        windowEnd={windowEnd}
         onBack={() => {}}
         onSelectMonth={() => {}}
       />
@@ -56,6 +64,8 @@ describe("CashflowMonthView", () => {
       <CashflowMonthView
         detail={detail}
         amberMonths={new Set()}
+        windowStart={windowStart}
+        windowEnd={windowEnd}
         onBack={handler}
         onSelectMonth={() => {}}
       />
@@ -69,11 +79,68 @@ describe("CashflowMonthView", () => {
       <CashflowMonthView
         detail={detail}
         amberMonths={new Set([6, 9])}
+        windowStart={windowStart}
+        windowEnd={windowEnd}
         onBack={() => {}}
         onSelectMonth={() => {}}
       />
     );
     const jun = screen.getByRole("button", { name: /jun/i });
     expect(jun.className).toMatch(/attention/);
+  });
+
+  it("renders Opening balance label with the first-of-month sub-line", () => {
+    render(
+      <CashflowMonthView
+        detail={detail}
+        amberMonths={new Set()}
+        windowStart={windowStart}
+        windowEnd={windowEnd}
+        onBack={() => {}}
+        onSelectMonth={() => {}}
+      />
+    );
+    expect(screen.getByText(/opening balance/i)).toBeTruthy();
+    expect(screen.getByText(/1 apr 2026/i)).toBeTruthy();
+  });
+
+  it("disables strip months earlier than the projection window and exposes the title tooltip", () => {
+    const handler = mock(() => {});
+    render(
+      <CashflowMonthView
+        detail={detail}
+        amberMonths={new Set()}
+        windowStart={windowStart}
+        windowEnd={windowEnd}
+        onBack={() => {}}
+        onSelectMonth={handler}
+      />
+    );
+    // March is before April (windowStart), so it must be disabled.
+    const mar = screen.getByRole("button", { name: /mar/i });
+    expect(mar.hasAttribute("disabled")).toBe(true);
+    expect(mar.getAttribute("aria-disabled")).toBe("true");
+    expect(mar.getAttribute("title")).toMatch(/outside the 24-month projection window/i);
+    fireEvent.click(mar);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it("keeps in-window strip months clickable", () => {
+    const handler = mock(() => {});
+    render(
+      <CashflowMonthView
+        detail={detail}
+        amberMonths={new Set()}
+        windowStart={windowStart}
+        windowEnd={windowEnd}
+        onBack={() => {}}
+        onSelectMonth={handler}
+      />
+    );
+    // May 2026 is well inside the April 2026 → March 2028 window.
+    const may = screen.getByRole("button", { name: /may/i });
+    expect(may.hasAttribute("disabled")).toBe(false);
+    fireEvent.click(may);
+    expect(handler).toHaveBeenCalledWith(5);
   });
 });

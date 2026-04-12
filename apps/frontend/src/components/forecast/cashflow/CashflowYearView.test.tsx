@@ -5,6 +5,7 @@ import type { CashflowProjection } from "@finplan/shared";
 
 const fixture: CashflowProjection = {
   startingBalance: 1000,
+  latestKnownBalance: 4200,
   windowStart: { year: 2026, month: 4 },
   months: Array.from({ length: 12 }, (_, i) => ({
     year: 2026,
@@ -76,5 +77,34 @@ describe("CashflowYearView", () => {
     );
     const dip = screen.getByText(/-£200/);
     expect(dip.className).toMatch(/attention/);
+  });
+
+  it("renders the headline using latestKnownBalance with an as-of sub-line", () => {
+    render(
+      <CashflowYearView
+        projection={fixture}
+        onSelectMonth={() => {}}
+        onShiftWindow={() => {}}
+        canShiftBack={false}
+      />
+    );
+    // latestKnownBalance is 4200, startingBalance (window opening) is 1000.
+    expect(screen.getByText(/£4,200/)).toBeTruthy();
+    expect(screen.queryByText(/^£1,000$/)).toBeNull();
+    expect(screen.getByText(/^as of /i)).toBeTruthy();
+  });
+
+  it("renders a today marker on the bar matching the current calendar month", () => {
+    render(
+      <CashflowYearView
+        projection={fixture}
+        onSelectMonth={() => {}}
+        onShiftWindow={() => {}}
+        canShiftBack={false}
+      />
+    );
+    // Today is 2026-04-11; the fixture's first month (April 2026) should carry the marker.
+    const markers = screen.getAllByTestId("today-marker");
+    expect(markers).toHaveLength(1);
   });
 });
