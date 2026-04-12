@@ -372,15 +372,31 @@ export const giftsService = {
 
   async listPeopleForConfig(
     householdId: string,
-    filter: "all" | "household" | "non-household" = "all"
+    filter: "all" | "household" | "non-household" = "all",
+    year: number = new Date().getFullYear()
   ) {
     const where: Record<string, unknown> = { householdId };
     if (filter === "household") where.memberId = { not: null };
     if (filter === "non-household") where.memberId = null;
-    return prisma.giftPerson.findMany({
+    const people = await prisma.giftPerson.findMany({
       where,
+      include: {
+        allocations: {
+          where: { year },
+          select: { status: true },
+        },
+      },
       orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
     });
+    return people.map((p) => ({
+      id: p.id,
+      name: p.name,
+      notes: p.notes,
+      sortOrder: p.sortOrder,
+      memberId: p.memberId,
+      plannedCount: p.allocations.filter((a) => a.status === "planned").length,
+      boughtCount: p.allocations.filter((a) => a.status === "bought").length,
+    }));
   },
 
   async listYearsWithData(householdId: string) {

@@ -57,8 +57,12 @@ export async function giftsRoutes(fastify: FastifyInstance) {
   });
 
   fastify.get("/config/people", pre, async (req, reply) => {
-    const { filter } = req.query as { filter?: "all" | "household" | "non-household" };
-    const list = await giftsService.listPeopleForConfig(req.householdId!, filter ?? "all");
+    const { filter, year } = req.query as {
+      filter?: "all" | "household" | "non-household";
+      year?: string;
+    };
+    const y = parseYear(year);
+    const list = await giftsService.listPeopleForConfig(req.householdId!, filter ?? "all", y);
     return reply.send(list);
   });
 
