@@ -71,10 +71,10 @@ describe("ConfigPeoplePanel", () => {
     expect(screen.getByText("1 bought")).toBeInTheDocument();
   });
 
-  it("shows + Add person button and invokes create on submit", () => {
+  it("shows + Add button and invokes create on submit", () => {
     render(<ConfigPeoplePanel readOnly={false} year={2026} />);
-    fireEvent.click(screen.getByRole("button", { name: /add person/i }));
-    const input = screen.getByPlaceholderText(/person name/i);
+    fireEvent.click(screen.getByRole("button", { name: /\+ Add/i }));
+    const input = screen.getByPlaceholderText(/e\.g\. Mum/i);
     fireEvent.change(input, { target: { value: "Sis" } });
     fireEvent.keyDown(input, { key: "Enter" });
     expect(createMock).toHaveBeenCalledWith({ name: "Sis" });
@@ -82,7 +82,7 @@ describe("ConfigPeoplePanel", () => {
 
   it("hides add button and delete in readOnly mode", () => {
     render(<ConfigPeoplePanel readOnly={true} year={2026} />);
-    expect(screen.queryByRole("button", { name: /add person/i })).toBeNull();
+    expect(screen.queryByRole("button", { name: /\+ Add/i })).toBeNull();
     expect(screen.queryByText("Delete")).toBeNull();
   });
 });

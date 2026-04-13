@@ -24,15 +24,15 @@ describe("ConfigModePanel", () => {
     expect(screen.getByText(/quick add/i)).toBeInTheDocument();
   });
 
-  it("drills into people panel", () => {
+  it("drills into people panel", async () => {
     render(<ConfigModePanel currentMode="synced" readOnly={false} year={2026} />);
     fireEvent.click(screen.getByText(/people/i));
-    expect(screen.getByTestId("people-panel")).toBeInTheDocument();
+    expect(await screen.findByTestId("people-panel")).toBeInTheDocument();
   });
 
-  it("drills into mode panel", () => {
+  it("drills into mode panel", async () => {
     render(<ConfigModePanel currentMode="synced" readOnly={false} year={2026} />);
     fireEvent.click(screen.getByText(/^mode$/i));
-    expect(screen.getByTestId("mode-panel")).toBeInTheDocument();
+    expect(await screen.findByTestId("mode-panel")).toBeInTheDocument();
   });
 });

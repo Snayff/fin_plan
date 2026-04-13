@@ -28,9 +28,9 @@ describe("GiftsModePanel", () => {
     expect(screen.queryByTestId("detail")).toBeNull();
   });
 
-  it("drills into detail on row click (state 3)", () => {
+  it("drills into detail on row click (state 3)", async () => {
     render(<GiftsModePanel people={people} year={2026} readOnly={false} />);
     fireEvent.click(screen.getByTestId("row-p1"));
-    expect(screen.getByTestId("detail")).toHaveTextContent("detail-p1");
+    expect(await screen.findByTestId("detail")).toHaveTextContent("detail-p1");
   });
 });

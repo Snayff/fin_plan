@@ -74,7 +74,7 @@ describe("ConfigEventsPanel", () => {
     fireEvent.click(screen.getByText("31"));
 
     // Submit
-    fireEvent.click(screen.getByRole("button", { name: /add event/i }));
+    fireEvent.click(screen.getByRole("button", { name: /save/i }));
     expect(createMock).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Halloween",
