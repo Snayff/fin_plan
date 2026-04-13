@@ -43,7 +43,7 @@ export default function GiftsPage() {
   const state = stateQuery.data;
 
   return (
-    <div data-testid="gifts-page" className="relative min-h-screen">
+    <div data-testid="gifts-page" className="relative h-full">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"

@@ -69,6 +69,7 @@ docs/
 All pages use `TwoPanelLayout`. Panel headers follow strict patterns defined in `docs/2. design/design-system.md` § 3.1.
 
 - **Left panel headers** must use the `PageHeader` component — never inline markup
+- **Left panel scroll structure:** Every left panel must use `flex flex-col h-full` with `PageHeader` as the first child and a `<div className="flex-1 overflow-y-auto">` wrapping all scrollable content below it. Page wrappers must use `h-full` (never `min-h-screen`) to maintain the height constraint chain.
 - **Left panel content** (nav lists, summaries, selectors) uses `px-4` horizontal padding to align with `PageHeader`
 - **Left panel nav buttons:** `px-4 py-2.5`, accent indicator pattern (`bg-{accent}/14 border-l-2 border-{accent} rounded-r-sm`)
 - **Left panel footer:** `border-t border-foreground/10 px-4 py-3`

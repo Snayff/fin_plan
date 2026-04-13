@@ -229,7 +229,7 @@ text-xs font-medium uppercase tracking-wider text-muted-foreground
 
 **Rule: left panel never scrolls horizontally.** Long labels truncate with an ellipsis.
 
-**Rule: both panels are vertically scrollable.** The left panel is _designed_ to never require scrolling — its content is intentionally minimal. The right panel routinely scrolls for long detail views.
+**Rule: both panels are vertically scrollable.** The left panel uses `flex-1 overflow-y-auto` below the pinned `PageHeader` so content scrolls gracefully if it exceeds the viewport. The right panel routinely scrolls for long detail views.
 
 **Spacing — grouping rule:** proximity signals relatedness; distance signals separation.
 
@@ -817,7 +817,7 @@ Applies to: Overview, Wealth, Planner. Exempt: Review Wizard, Waterfall Creation
 - Always visible; never replaced or navigated away from
 - Contains only tier headings and summary totals — no individual items
 - Clicking a tier selects it (selected state: left border accent + ~14% tier colour background)
-- Designed to never require vertical scrolling — content is intentionally minimal
+- Content below `PageHeader` is wrapped in `flex-1 overflow-y-auto` — scrolls automatically when content exceeds viewport height
 
 **Right panel rules:**
 

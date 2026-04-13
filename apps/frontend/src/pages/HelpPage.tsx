@@ -31,7 +31,7 @@ export default function HelpPage() {
 
   return (
     <GlossaryPopoverProvider>
-      <div className="relative min-h-screen">
+      <div className="relative h-full">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 -z-10"

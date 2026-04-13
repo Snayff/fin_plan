@@ -21,31 +21,33 @@ export function GiftsLeftAside({ mode, onModeChange, budget, readOnly }: Props) 
   return (
     <div className="flex h-full flex-col">
       <PageHeader title="Gifts" />
-      <GiftsBudgetSummary budget={budget} readOnly={readOnly} />
-      <nav className="mt-2 flex flex-col">
-        {TABS.map((tab) => {
-          const isActive = mode === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              data-active={isActive}
-              onClick={() => onModeChange(tab.id)}
-              className={[
-                "relative flex w-full items-center px-4 py-2.5 text-left text-sm transition-colors",
-                isActive
-                  ? "font-medium text-tier-discretionary"
-                  : "text-foreground/60 hover:bg-tier-discretionary/5",
-              ].join(" ")}
-            >
-              {isActive && (
-                <div className="absolute inset-0 bg-tier-discretionary/14 border-l-2 border-tier-discretionary rounded-r-sm" />
-              )}
-              <span className="relative z-10">{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
+      <div className="flex-1 overflow-y-auto">
+        <GiftsBudgetSummary budget={budget} readOnly={readOnly} />
+        <nav className="mt-2 flex flex-col">
+          {TABS.map((tab) => {
+            const isActive = mode === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                data-active={isActive}
+                onClick={() => onModeChange(tab.id)}
+                className={[
+                  "relative flex w-full items-center px-4 py-2.5 text-left text-sm transition-colors",
+                  isActive
+                    ? "font-medium text-tier-discretionary"
+                    : "text-foreground/60 hover:bg-tier-discretionary/5",
+                ].join(" ")}
+              >
+                {isActive && (
+                  <div className="absolute inset-0 bg-tier-discretionary/14 border-l-2 border-tier-discretionary rounded-r-sm" />
+                )}
+                <span className="relative z-10">{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
     </div>
   );
 }

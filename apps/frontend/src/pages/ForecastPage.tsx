@@ -14,7 +14,9 @@ export default function ForecastPage() {
   const left = (
     <div className="flex flex-col h-full">
       <PageHeader title="Forecast" />
-      <ForecastSectionNavigator selected={section} onSelect={setSection} />
+      <div className="flex-1 overflow-y-auto">
+        <ForecastSectionNavigator selected={section} onSelect={setSection} />
+      </div>
     </div>
   );
 

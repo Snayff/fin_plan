@@ -45,7 +45,7 @@ export function TwoPanelLayout({
       </a>
       <aside
         aria-label="Waterfall overview"
-        className="w-[360px] min-w-[360px] border-r overflow-hidden shrink-0"
+        className="w-[360px] min-w-[360px] border-r overflow-hidden shrink-0 flex flex-col"
       >
         {left}
       </aside>
