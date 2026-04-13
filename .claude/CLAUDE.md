@@ -38,7 +38,7 @@ bun run build          # full monorepo build via Turbo
 
 ```
 apps/
-  backend/    # Fastify + Prisma + tRPC + Redis + JWT auth
+  backend/    # Fastify + Prisma + tRPC + JWT auth
   frontend/   # React 18 + Vite + Tailwind + TanStack Query + Zustand + RxDB
 packages/
   shared/     # Zod schemas and TypeScript types — imported by both apps
@@ -124,7 +124,7 @@ Before implementing any feature, read the relevant specs in `docs/`:
 
 ## CI/CD
 
-GitHub Actions (`.github/workflows/ci.yml`): lint + type-check → test (real postgres + redis services) → build → deploy to Coolify (webhook on push to main).
+GitHub Actions (`.github/workflows/ci.yml`): lint + type-check → test (real postgres service) → build → deploy to Coolify (webhook on push to main).
 
 ---
 

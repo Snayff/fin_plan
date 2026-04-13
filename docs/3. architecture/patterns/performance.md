@@ -37,46 +37,7 @@ Always ensure `Transaction` has `@@index([accountId, date])`. Every balance calc
 
 ---
 
-## 2. Redis Caching Layer
-
-Redis is installed (`ioredis`) and available in the Docker environment. Use it for expensive dashboard aggregates.
-
-### Cache Service Contract
-
-The cache service (`apps/backend/src/services/cache.service.ts`) wraps ioredis:
-
-```typescript
-get<T>(key: string): Promise<T | null>          // null on miss or Redis error
-set(key: string, value: unknown, ttlSeconds: number): Promise<void>
-invalidate(...keys: string[]): Promise<void>
-invalidatePattern(pattern: string): Promise<void> // glob pattern
-```
-
-All methods catch Redis errors silently — **Redis failure must never break the app**. Always fall back to live computation.
-
-### Cache Key Patterns
-
-| Endpoint                                  | Key                                           | TTL   |
-| ----------------------------------------- | --------------------------------------------- | ----- |
-| `GET /api/dashboard/summary`              | `dashboard:summary:{householdId}:{yearMonth}` | 2 min |
-| `GET /api/dashboard/net-worth-trend`      | `dashboard:nwt:{householdId}:{months}`        | 5 min |
-| `GET /api/dashboard/income-expense-trend` | `dashboard:iet:{householdId}:{months}`        | 5 min |
-
-Include `yearMonth` in the summary key so custom date range requests don't collide with the default view.
-
-### Cache Invalidation
-
-Invalidate `dashboard:*:{householdId}:*` after any write to data that feeds the dashboard. Use fire-and-forget (do not `await` — invalidation must not affect response time).
-
-| Write operation                     | Invalidate                    |
-| ----------------------------------- | ----------------------------- |
-| `POST/PUT/DELETE /api/transactions` | All three dashboard keys      |
-| `POST/PUT/DELETE /api/assets`       | `summary` + `net-worth-trend` |
-| `POST/PUT/DELETE /api/liabilities`  | `summary` + `net-worth-trend` |
-
----
-
-## 3. Frontend Code Splitting
+## 2. Frontend Code Splitting
 
 ### The Problem
 
