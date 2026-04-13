@@ -44,6 +44,25 @@ describe("Auth Journey", () => {
     return { cookie: cookieValue, token: body.csrfToken as string };
   }
 
+  /**
+   * Creates a household so the user has an activeHouseholdId (required by authMiddleware).
+   */
+  async function createHousehold(accessToken: string, name: string): Promise<void> {
+    const csrf = await getCsrfToken();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/households",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${accessToken}`,
+        "x-csrf-token": csrf.token,
+        cookie: csrf.cookie,
+      },
+      payload: { name },
+    });
+    expect(res.statusCode).toBe(201);
+  }
+
   const TEST_USER = {
     email: "journey@test.com",
     password: "SecurePass123!",
@@ -76,6 +95,9 @@ describe("Auth Journey", () => {
     expect(registerBody.refreshToken).toBeString();
     // Sensitive fields must not leak
     expect(registerBody.user.passwordHash).toBeUndefined();
+
+    // Create a household so authMiddleware passes on subsequent requests
+    await createHousehold(registerBody.accessToken as string, "Auth Test Household");
 
     // ── Login ──
     const csrfLogin = await getCsrfToken();
@@ -153,6 +175,10 @@ describe("Auth Journey", () => {
     });
 
     expect(registerRes.statusCode).toBe(201);
+
+    // Create a household so authMiddleware passes on subsequent requests
+    const regBody = JSON.parse(registerRes.body);
+    await createHousehold(regBody.accessToken as string, "Refresh Test Household");
 
     // Extract refreshToken cookie from the register response
     const rawCookies = registerRes.headers["set-cookie"];
@@ -292,6 +318,9 @@ describe("Auth Journey", () => {
     expect(user.passwordHash).toBeUndefined();
     expect(user.twoFactorSecret).toBeUndefined();
     expect(user.twoFactorEnabled).toBeUndefined();
+
+    // Create a household so authMiddleware passes on /me
+    await createHousehold(registerBody.accessToken as string, "Sensitive Fields Household");
 
     // Also verify via /me
     const meRes = await app.inject({

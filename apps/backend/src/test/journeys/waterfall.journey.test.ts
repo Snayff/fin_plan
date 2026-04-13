@@ -70,6 +70,22 @@ describe("Waterfall Journey", () => {
     };
   }
 
+  async function createHousehold(accessToken: string, name: string): Promise<void> {
+    const csrf = await getCsrfToken();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/households",
+      headers: {
+        "content-type": "application/json",
+        authorization: `Bearer ${accessToken}`,
+        "x-csrf-token": csrf.token,
+        cookie: csrf.cookie,
+      },
+      payload: { name },
+    });
+    expect(res.statusCode).toBe(201);
+  }
+
   /** Fetch default subcategories for a tier — the API auto-creates them. */
   async function getDefaultSubcategoryId(
     accessToken: string,
@@ -91,6 +107,7 @@ describe("Waterfall Journey", () => {
 
   it("register → create items → verify waterfall summary arithmetic", async () => {
     const { accessToken } = await registerUser("waterfall@test.com", "Waterfall User");
+    await createHousehold(accessToken, "Waterfall Household");
 
     // ── Empty summary ──
     const emptyRes = await app.inject({
@@ -203,6 +220,7 @@ describe("Waterfall Journey", () => {
 
   it("create → list → update amount via period → delete income source", async () => {
     const { accessToken } = await registerUser("crud@test.com", "CRUD User");
+    await createHousehold(accessToken, "CRUD Household");
     const incomeSubId = await getDefaultSubcategoryId(accessToken, "income");
 
     // ── Create ──
@@ -280,11 +298,15 @@ describe("Waterfall Journey", () => {
     expect(summary.income.total).toBe(2500);
 
     // ── Delete ──
-    const deleteHeaders = await authedMutationHeaders(accessToken);
+    const csrfDelete = await getCsrfToken();
     const deleteRes = await app.inject({
       method: "DELETE",
       url: `/api/waterfall/income/${incomeId}`,
-      headers: deleteHeaders,
+      headers: {
+        authorization: `Bearer ${accessToken}`,
+        "x-csrf-token": csrfDelete.token,
+        cookie: csrfDelete.cookie,
+      },
     });
     expect(deleteRes.statusCode).toBe(204);
 
@@ -304,7 +326,9 @@ describe("Waterfall Journey", () => {
   it("user B cannot see user A's waterfall items", async () => {
     // ── Register two separate users (each gets their own household) ──
     const userA = await registerUser("usera@test.com", "User A");
+    await createHousehold(userA.accessToken, "Household A");
     const userB = await registerUser("userb@test.com", "User B");
+    await createHousehold(userB.accessToken, "Household B");
 
     // ── User A creates an income source ──
     const subIdA = await getDefaultSubcategoryId(userA.accessToken, "income");

@@ -283,6 +283,7 @@ describe("Household Journey", () => {
 
     // Register user B with the same email the invite was sent to
     const userB = await registerUser(inviteeEmail, "Invitee");
+    await createHousehold(userB.accessToken, "Invitee Household");
 
     // User B joins via invite token
     const csrfJoin = await getCsrfToken();
@@ -290,7 +291,6 @@ describe("Household Journey", () => {
       method: "POST",
       url: `/api/auth/invite/${inviteToken}/join`,
       headers: {
-        "content-type": "application/json",
         authorization: `Bearer ${userB.accessToken}`,
         "x-csrf-token": csrfJoin.token,
         cookie: csrfJoin.cookie,
@@ -387,6 +387,7 @@ describe("Household Journey", () => {
 
     // Register user B with matching email
     const userB = await registerUser(inviteeEmail, "Removable Member");
+    await createHousehold(userB.accessToken, "Removable Member Household");
 
     // User B joins
     const csrfJoin = await getCsrfToken();
@@ -394,7 +395,6 @@ describe("Household Journey", () => {
       method: "POST",
       url: `/api/auth/invite/${inviteToken}/join`,
       headers: {
-        "content-type": "application/json",
         authorization: `Bearer ${userB.accessToken}`,
         "x-csrf-token": csrfJoin.token,
         cookie: csrfJoin.cookie,
@@ -443,16 +443,28 @@ describe("Household Journey", () => {
 
     expect(removeRes.statusCode).toBe(200);
 
-    // User B attempts to access waterfall — should fail
-    // The auth middleware detects stale activeHouseholdId and rejects
+    // User B can no longer switch back to household A
+    const csrfSwitch = await getCsrfToken();
+    const switchRes = await app.inject({
+      method: "POST",
+      url: `/api/households/${hhA}/switch`,
+      headers: {
+        authorization: `Bearer ${userB.accessToken}`,
+        "x-csrf-token": csrfSwitch.token,
+        cookie: csrfSwitch.cookie,
+      },
+    });
+    expect(switchRes.statusCode).toBeGreaterThanOrEqual(400);
+
+    // User B's waterfall still works (falls back to their own household)
+    // but must not contain data from household A
     const waterfallAfterRes = await app.inject({
       method: "GET",
       url: "/api/waterfall/income",
       headers: { authorization: `Bearer ${userB.accessToken}` },
     });
-
-    // Should be 401 — "No longer a member of this household" or
-    // "No active household" if activeHouseholdId was cleared
-    expect(waterfallAfterRes.statusCode).toBe(401);
+    expect(waterfallAfterRes.statusCode).toBe(200);
+    const incomeAfter = JSON.parse(waterfallAfterRes.body) as Array<{ id: string }>;
+    expect(incomeAfter).toHaveLength(0);
   });
 });
