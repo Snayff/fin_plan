@@ -1,8 +1,6 @@
 import { describe, it, expect } from "bun:test";
 import {
   GiftDateTypeEnum,
-  GiftAllocationStatusEnum,
-  GiftPlannerModeEnum,
   createGiftPersonSchema,
   createGiftEventSchema,
   upsertGiftAllocationSchema,

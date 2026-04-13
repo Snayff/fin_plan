@@ -4,6 +4,7 @@ import { useWaterfallSummary } from "@/hooks/useWaterfall";
 import { useSettings } from "@/hooks/useSettings";
 import { toGBP } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 
 export default function SurplusPage() {
   const { data, isLoading } = useWaterfallSummary();
@@ -29,7 +30,7 @@ export default function SurplusPage() {
               totalColorClass="text-tier-surplus"
             />
             <div className="flex-1 overflow-y-auto">
-              <div className="flex flex-col gap-6 px-6 pb-6">
+              <div className="flex flex-col gap-6 px-4 pb-4">
                 {!isLoading && (
                   <>
                     <div className="flex flex-col divide-y divide-foreground/[0.07]">
@@ -146,7 +147,8 @@ export default function SurplusPage() {
                 </p>
                 <p className="text-sm text-foreground/50">left over.</p>
                 <p className="mt-1 text-xs text-foreground/30">
-                  {surplusPct.toFixed(1)}% surplus rate
+                  {surplusPct.toFixed(1)}%{" "}
+                  <GlossaryTermMarker entryId="surplus-percentage">surplus rate</GlossaryTermMarker>
                 </p>
               </>
             )}

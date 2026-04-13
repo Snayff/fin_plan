@@ -209,9 +209,7 @@ describe("POST /api/auth/login", () => {
   });
 
   it("returns 401 for invalid credentials", async () => {
-    (authService.login as any).mockRejectedValue(
-      new AuthenticationError("Invalid email or password")
-    );
+    (authService.login as any).mockRejectedValue(new AuthenticationError("Invalid credentials"));
 
     const response = await app.inject({
       method: "POST",

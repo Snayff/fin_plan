@@ -211,7 +211,7 @@ it("computes correct tax year boundary", async () => {
 
 | File                                       | Purpose                                                                                                                            |
 | ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
-| `apps/backend/src/test/setup.ts`           | Sets env vars before test imports: test DB URL, JWT secrets, Redis URL, `NODE_ENV=test`                                            |
+| `apps/backend/src/test/setup.ts`           | Sets env vars before test imports: test DB URL, JWT secrets, `NODE_ENV=test`                                                       |
 | `apps/backend/src/test/fixtures/index.ts`  | Builder functions: `buildUser()`, `buildHousehold()`, `buildHouseholdMember()`, `buildHouseholdInvite()` + `resetFixtureCounter()` |
 | `apps/backend/src/test/mocks/prisma.ts`    | `prismaMock` (all models mocked), `resetPrismaMocks()` (call in `beforeEach`)                                                      |
 | `apps/backend/src/test/helpers/fastify.ts` | `buildTestApp()` — minimal Fastify instance for route tests (cookie plugin only)                                                   |

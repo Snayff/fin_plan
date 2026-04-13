@@ -57,7 +57,7 @@ async function assertMemberInHousehold(householdId: string, memberId: string) {
 }
 
 const ASSET_TYPES: AssetType[] = ["Property", "Vehicle", "Other"];
-const ACCOUNT_TYPES: AccountType[] = ["Savings", "Pension", "StocksAndShares", "Other"];
+const ACCOUNT_TYPES: AccountType[] = ["Current", "Savings", "Pension", "StocksAndShares", "Other"];
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 

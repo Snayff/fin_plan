@@ -15,7 +15,7 @@ Do **not** use Layer F for individual component behaviour — that belongs in La
 The app must be running before any user journey test:
 
 ```bash
-bun run start   # starts postgres, redis, backend:3001, frontend:3000 via Docker Compose
+bun run start   # starts postgres, backend:3001, frontend:3000 via Docker Compose
 ```
 
 ## Tool

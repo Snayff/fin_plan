@@ -12,20 +12,11 @@ const sampleBudget = {
 };
 
 describe("GiftsLeftAside", () => {
-  it("renders title, year selector, and three mode tabs", () => {
+  it("renders title and three mode tabs", () => {
     render(
-      <GiftsLeftAside
-        year={2026}
-        years={[2024, 2025, 2026]}
-        onYearChange={() => {}}
-        mode="gifts"
-        onModeChange={() => {}}
-        budget={sampleBudget}
-        readOnly={false}
-      />
+      <GiftsLeftAside mode="gifts" onModeChange={() => {}} budget={sampleBudget} readOnly={false} />
     );
     expect(screen.getByRole("heading", { name: /gifts/i })).toBeInTheDocument();
-    expect(screen.getByRole("combobox", { name: /year/i })).toHaveValue("2026");
     expect(screen.getByRole("button", { name: /^gifts$/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /upcoming/i })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /config/i })).toBeInTheDocument();
@@ -35,9 +26,6 @@ describe("GiftsLeftAside", () => {
     const onModeChange = mock(() => {});
     render(
       <GiftsLeftAside
-        year={2026}
-        years={[2026]}
-        onYearChange={() => {}}
         mode="gifts"
         onModeChange={onModeChange}
         budget={sampleBudget}
@@ -46,24 +34,5 @@ describe("GiftsLeftAside", () => {
     );
     fireEvent.click(screen.getByRole("button", { name: /upcoming/i }));
     expect(onModeChange).toHaveBeenCalledWith("upcoming");
-  });
-
-  it("invokes onYearChange when year selector changes", () => {
-    const onYearChange = mock(() => {});
-    render(
-      <GiftsLeftAside
-        year={2026}
-        years={[2024, 2025, 2026]}
-        onYearChange={onYearChange}
-        mode="gifts"
-        onModeChange={() => {}}
-        budget={sampleBudget}
-        readOnly={false}
-      />
-    );
-    fireEvent.change(screen.getByRole("combobox", { name: /year/i }), {
-      target: { value: "2025" },
-    });
-    expect(onYearChange).toHaveBeenCalledWith(2025);
   });
 });

@@ -7,8 +7,9 @@ export const GIFTS_KEYS = {
   person: (id: string, year: number) => ["gifts", "person", id, year] as const,
   upcoming: (year: number) => ["gifts", "upcoming", year] as const,
   years: () => ["gifts", "years"] as const,
-  configPeople: (filter: string) => ["gifts", "configPeople", filter] as const,
+  configPeople: (filter: string, year: number) => ["gifts", "configPeople", filter, year] as const,
   configEvents: () => ["gifts", "configEvents"] as const,
+  quickAddMatrix: (year: number) => ["gifts", "quickAddMatrix", year] as const,
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -42,10 +43,10 @@ export function useGiftsYears() {
   });
 }
 
-export function useConfigPeople(filter: "all" | "household" | "non-household") {
+export function useConfigPeople(filter: "all" | "household" | "non-household", year: number) {
   return useQuery({
-    queryKey: GIFTS_KEYS.configPeople(filter),
-    queryFn: () => giftsApi.listConfigPeople(filter),
+    queryKey: GIFTS_KEYS.configPeople(filter, year),
+    queryFn: () => giftsApi.listConfigPeople(filter, year),
   });
 }
 
@@ -53,6 +54,13 @@ export function useConfigEvents() {
   return useQuery({
     queryKey: GIFTS_KEYS.configEvents(),
     queryFn: () => giftsApi.listConfigEvents(),
+  });
+}
+
+export function useQuickAddMatrix(year: number) {
+  return useQuery({
+    queryKey: GIFTS_KEYS.quickAddMatrix(year),
+    queryFn: () => giftsApi.getQuickAddMatrix(year),
   });
 }
 

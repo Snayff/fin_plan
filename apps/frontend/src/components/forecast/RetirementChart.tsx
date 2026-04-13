@@ -17,9 +17,7 @@ export function RetirementChart({ members, horizonEndYear }: RetirementChartProp
   if (members.length === 0) {
     return (
       <div className="bg-surface border border-surface-elevated rounded-xl p-5">
-        <span className="text-xs font-heading font-semibold uppercase tracking-widest text-text-tertiary">
-          Retirement
-        </span>
+        <span className="label-chart">Retirement</span>
         <div className="h-40 flex items-center justify-center">
           <p className="text-sm text-text-tertiary">No household members found</p>
         </div>
@@ -31,9 +29,7 @@ export function RetirementChart({ members, horizonEndYear }: RetirementChartProp
     <div className="bg-surface border border-surface-elevated rounded-xl overflow-hidden">
       <Tabs.Root defaultValue={members[0]!.memberId}>
         <div className="px-5 pt-4 pb-0 flex items-center justify-between">
-          <span className="text-xs font-heading font-semibold uppercase tracking-widest text-text-tertiary">
-            Retirement
-          </span>
+          <span className="label-chart">Retirement</span>
           <Tabs.List className="flex gap-0.5" aria-label="Household members">
             {members.map((m) => (
               <Tabs.Trigger

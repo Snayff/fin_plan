@@ -472,6 +472,7 @@ describe("giftsService.getPlannerState", () => {
       { giftPersonId: "p2", planned: 200, spent: 250, status: "bought" },
     ] as any);
     prismaMock.giftRolloverDismissal.findUnique.mockResolvedValue(null);
+    prismaMock.member.findMany.mockResolvedValue([{ id: "m1", name: "Dad" }] as any);
 
     const state = await giftsService.getPlannerState("hh-1", year, "user-1");
 
@@ -508,6 +509,7 @@ describe("giftsService.getPlannerState", () => {
       { giftPersonId: "p1", planned: 150, spent: 200, status: "bought" },
     ] as any);
     prismaMock.giftRolloverDismissal.findUnique.mockResolvedValue(null);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
 
     const state = await giftsService.getPlannerState("hh-1", year, "user-1");
     expect(state.budget.plannedOverBudgetBy).toBe(50);
@@ -524,6 +526,7 @@ describe("giftsService.getPlannerState", () => {
     prismaMock.giftPerson.findMany.mockResolvedValue([] as any);
     prismaMock.giftAllocation.findMany.mockResolvedValue([] as any);
     prismaMock.giftRolloverDismissal.findUnique.mockResolvedValue(null);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
 
     const state = await giftsService.getPlannerState("hh-1", lastYear, "user-1");
     expect(state.isReadOnly).toBe(true);

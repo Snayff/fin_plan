@@ -218,7 +218,7 @@ export function WaterfallLeftPanel({
                 "flex items-center justify-between py-1.5 px-2 text-[13px] text-muted-foreground text-xs"
               )}
             >
-              <span>incl. yearly ÷12</span>
+              <GlossaryTermMarker entryId="amortised">incl. yearly ÷12</GlossaryTermMarker>
               <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyAvg12)}</span>
             </div>
           )}

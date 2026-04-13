@@ -38,7 +38,7 @@ bun run build          # full monorepo build via Turbo
 
 ```
 apps/
-  backend/    # Fastify + Prisma + tRPC + Redis + JWT auth
+  backend/    # Fastify + Prisma + tRPC + JWT auth
   frontend/   # React 18 + Vite + Tailwind + TanStack Query + Zustand + RxDB
 packages/
   shared/     # Zod schemas and TypeScript types — imported by both apps
@@ -60,6 +60,22 @@ docs/
 - **Linting:** ESLint zero warnings — always run `bun run lint` before committing
 - **Shared schemas:** Zod schemas live in `packages/shared/src/schemas/` — never duplicate between apps
 - **Database changes:** Always use `bun run db:migrate` (interactive Prisma migrations) — never edit schema without a migration
+- **No hardcoded colours:** Always use Tailwind design tokens — never hex values or `rgba()` in component code
+- **No dashed borders:** Never use `border-dashed` in component code. The design system uses solid borders exclusively. Only two exceptions exist: `SnapshotDot` (auto vs manual distinction) and `CashflowYearBar` (today marker). All add/ghost buttons must follow the `GhostAddButton` pattern with solid borders.
+
+---
+
+## Panel Layout
+
+All pages use `TwoPanelLayout`. Panel headers follow strict patterns defined in `docs/2. design/design-system.md` § 3.1.
+
+- **Left panel headers** must use the `PageHeader` component — never inline markup
+- **Left panel scroll structure:** Every left panel must use `flex flex-col h-full` with `PageHeader` as the first child and a `<div className="flex-1 overflow-y-auto">` wrapping all scrollable content below it. Page wrappers must use `h-full` (never `min-h-screen`) to maintain the height constraint chain.
+- **Left panel content** (nav lists, summaries, selectors) uses `px-4` horizontal padding to align with `PageHeader`
+- **Left panel nav buttons:** `px-4 py-2.5`, accent indicator pattern (`bg-{accent}/14 border-l-2 border-{accent} rounded-r-sm`)
+- **Left panel footer:** `border-t border-foreground/10 px-4 py-3`
+- **Right panel headers:** `px-4 py-3 border-b border-foreground/5`, title in `<h2>` with `font-heading text-base font-bold text-foreground`
+- **Right panel add buttons:** use `GhostAddButton` pattern (`components/tier/GhostAddButton.tsx`) — never custom button styles
 
 ---
 
@@ -110,7 +126,7 @@ Before implementing any feature, read the relevant specs in `docs/`:
 
 ## CI/CD
 
-GitHub Actions (`.github/workflows/ci.yml`): lint + type-check → test (real postgres + redis services) → build → deploy to Coolify (webhook on push to main).
+GitHub Actions (`.github/workflows/ci.yml`): lint + type-check → test (real postgres service) → build → deploy to Coolify (webhook on push to main).
 
 ---
 

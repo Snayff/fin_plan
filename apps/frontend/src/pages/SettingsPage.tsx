@@ -89,22 +89,25 @@ export default function SettingsPage() {
   return (
     <div data-page="settings" className="relative flex h-full overflow-hidden">
       {/* Left nav */}
-      <aside className="w-48 shrink-0 border-r p-4 space-y-1 overflow-y-auto">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-          Settings
+      <aside className="flex flex-col w-48 shrink-0 border-r p-4 overflow-y-auto">
+        <p className="label-section mb-3">Settings</p>
+        <div className="space-y-1">
+          {SECTIONS.filter(canSeeSection).map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              className={`w-full text-left text-sm px-2 py-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+                activeSection === s.id ? "bg-accent text-accent-foreground" : "hover:bg-accent"
+              }`}
+              onClick={() => scrollTo(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-auto border-t border-foreground/10 px-2 py-3 text-xs text-muted-foreground">
+          finplan v{import.meta.env.VITE_APP_VERSION}
         </p>
-        {SECTIONS.filter(canSeeSection).map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            className={`w-full text-left text-sm px-2 py-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
-              activeSection === s.id ? "bg-accent text-accent-foreground" : "hover:bg-accent"
-            }`}
-            onClick={() => scrollTo(s.id)}
-          >
-            {s.label}
-          </button>
-        ))}
       </aside>
 
       {/* Content */}
@@ -116,9 +119,6 @@ export default function SettingsPage() {
           <PanelError variant="right" onRetry={refetch} message="Could not load settings" />
         ) : (
           <div className="max-w-2xl space-y-12">
-            <p className="text-xs text-muted-foreground">
-              finplan v{import.meta.env.VITE_APP_VERSION}
-            </p>
             <div ref={setRef("profile")} data-section-id="profile">
               <ProfileSection />
             </div>

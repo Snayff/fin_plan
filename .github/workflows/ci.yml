@@ -71,19 +71,8 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
       DATABASE_URL: postgresql://finplan:finplan_dev_password@localhost:5432/finplan_test
-      REDIS_URL: redis://localhost:6379
       NODE_ENV: test
       JWT_SECRET: test-jwt-secret-that-is-at-least-32-characters-long-for-testing
       JWT_REFRESH_SECRET: test-jwt-refresh-secret-that-is-at-least-32-characters-long-for-testing
@@ -152,7 +141,6 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://finplan:unused@localhost:5432/unused
-      REDIS_URL: redis://localhost:6379
 
     steps:
       - uses: actions/checkout@v4

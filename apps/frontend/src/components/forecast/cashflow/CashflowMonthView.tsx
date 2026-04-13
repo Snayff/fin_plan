@@ -129,9 +129,7 @@ function StatCard({
 }) {
   return (
     <div className="rounded-md border border-border bg-card px-4 py-3">
-      <div className="text-[10px] uppercase tracking-widest text-text-tertiary font-heading">
-        {label}
-      </div>
+      <div className="label-chart">{label}</div>
       <div
         className={cn("font-numeric text-base mt-1", amber ? "text-attention" : "text-foreground")}
       >
@@ -189,7 +187,7 @@ function CashflowMonthChart({
       aria-label="Daily projected balance trace. Detailed values are listed in the events below."
     >
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 8, right: 12, bottom: 0, left: 0 }}>
+        <LineChart data={chartData} margin={{ top: 20, right: 12, bottom: 0, left: 0 }}>
           <XAxis
             dataKey="day"
             type="number"
@@ -225,11 +223,13 @@ function CashflowMonthChart({
               stroke="hsl(var(--attention))"
               strokeDasharray="4 4"
               strokeWidth={1.5}
-              label={{
-                value: "today",
-                position: "top",
-                fill: "hsl(var(--attention))",
-                fontSize: 10,
+              label={({ viewBox }) => {
+                const { x } = viewBox as { x: number };
+                return (
+                  <text x={x} y={12} textAnchor="middle" fill="hsl(var(--attention))" fontSize={11}>
+                    today
+                  </text>
+                );
               }}
             />
           )}
@@ -299,9 +299,7 @@ function CashflowChartTooltip({ point, year, month, eventsByDay }: CashflowChart
 
   return (
     <div className="rounded-md border border-border bg-card px-3 py-2 text-xs shadow-lg min-w-[140px]">
-      <div className="font-heading text-text-tertiary uppercase tracking-widest text-[10px]">
-        {label}
-      </div>
+      <div className="label-chart">{label}</div>
       <div className="font-numeric text-foreground mt-1">{formatCurrency(point.balance)}</div>
       {dayEvents.length > 0 && (
         <div className="mt-2 space-y-0.5 border-t border-border pt-2">

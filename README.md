@@ -83,7 +83,7 @@ cp apps/backend/.env.example apps/backend/.env
 # Edit apps/backend/.env — replace the JWT, cookie, and CSRF secrets at minimum
 # Generate secrets with: openssl rand -base64 64
 
-# 3. Build and start all services (Postgres, Redis, backend, frontend)
+# 3. Build and start all services (Postgres, backend, frontend)
 bun run docker:build
 bun run start
 
@@ -128,11 +128,11 @@ For full development context — architecture decisions, testing approach, conve
 
 ### Architecture
 
-Full-stack TypeScript monorepo with a Fastify + Prisma + tRPC backend, React 18 + Vite + TanStack Query frontend, and shared Zod schemas in a `packages/shared` layer consumed by both apps. The Docker Compose environment provides Postgres and Redis; the backend runs on port 3001, the frontend on 3000.
+Full-stack TypeScript monorepo with a Fastify + Prisma + tRPC backend, React 18 + Vite + TanStack Query frontend, and shared Zod schemas in a `packages/shared` layer consumed by both apps. The Docker Compose environment provides Postgres; the backend runs on port 3001, the frontend on 3000.
 
 ```
 apps/
-  backend/    # Fastify · Prisma · tRPC · Redis · JWT auth
+  backend/    # Fastify · Prisma · tRPC · JWT auth
   frontend/   # React 18 · Vite · Tailwind · TanStack Query · Zustand · RxDB
 packages/
   shared/     # Zod schemas and TypeScript types
@@ -142,7 +142,7 @@ packages/
 
 ## Tech Stack
 
-TypeScript · React 18 · Vite · Tailwind CSS · Fastify · Prisma · tRPC · Bun · PostgreSQL · Redis · Docker
+TypeScript · React 18 · Vite · Tailwind CSS · Fastify · Prisma · tRPC · Bun · PostgreSQL · Docker
 
 ---
 

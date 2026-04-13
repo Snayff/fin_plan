@@ -166,7 +166,7 @@ describe("authService.login", () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
     await expect(
       authService.login({ email: "unknown@test.com", password: "pass123456789" })
-    ).rejects.toThrow("Invalid email or password");
+    ).rejects.toThrow("Invalid credentials");
   });
 
   it("throws AuthenticationError for wrong password", async () => {
@@ -174,7 +174,7 @@ describe("authService.login", () => {
     (verifyPassword as any).mockResolvedValue(false);
     await expect(
       authService.login({ email: "test@test.com", password: "wrongpassword" })
-    ).rejects.toThrow("Invalid email or password");
+    ).rejects.toThrow("Invalid credentials");
   });
 
   it("throws ValidationError for missing fields", async () => {

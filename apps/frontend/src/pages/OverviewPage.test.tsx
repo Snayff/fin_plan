@@ -39,8 +39,8 @@ describe("OverviewPage", () => {
     expect(screen.getByText("Overview")).toBeTruthy();
   });
 
-  it("shows timeline strip with Now button", () => {
+  it("shows financial summary panel", () => {
     renderWithProviders(<OverviewPage />);
-    expect(screen.getByText("Now")).toBeTruthy();
+    expect(screen.getByTestId("financial-summary-panel")).toBeTruthy();
   });
 });

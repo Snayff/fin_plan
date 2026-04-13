@@ -14,6 +14,14 @@
 
 ---
 
+## Cashflow
+
+**Appears in**: Forecast page, Cashflow section header
+
+**Tooltip**: A month-by-month projection of your bank balance — starting from today's balance in your linked accounts, then adding income and subtracting committed and discretionary spend for each future month. It shows when money arrives and leaves, not just monthly totals.
+
+---
+
 ## Committed Spend
 
 **Appears in**: Overview waterfall (section label), Review Wizard step header, Waterfall Creation Wizard
@@ -70,6 +78,14 @@
 
 ---
 
+## Inflation Rate
+
+**Appears in**: Settings — Growth rates, Growth chart real-terms values
+
+**Tooltip**: The annual rate at which purchasing power is expected to erode over time. finplan uses this to calculate 'real terms' projections — showing what a future balance would be worth in today's money. Set in Settings → Growth rates.
+
+---
+
 ## ISA
 
 **Appears in**: Savings account form (ISA flag), Wealth page account list, ISA allowance bar
@@ -99,6 +115,14 @@
 **Appears in**: Property, Vehicles, and Other asset class forms (balance/value field label)
 
 **Tooltip**: The portion of an asset you own outright — the market value minus any outstanding debt secured against it. For example, a property worth £300,000 with a £200,000 mortgage has an equity value of £100,000.
+
+---
+
+## Linked Account
+
+**Appears in**: Cashflow header, Linked Accounts popover
+
+**Tooltip**: A Current or Savings account whose balance is included in your cashflow forecast. The sum of all linked account balances forms the starting balance for the projection. Select which accounts to link in the Cashflow header.
 
 ---
 
@@ -134,6 +158,14 @@
 
 ---
 
+## Subcategory
+
+**Appears in**: Settings page, Tier item groupings, Item forms
+
+**Tooltip**: A user-defined grouping within a waterfall tier — for example, Housing or Utilities within Committed Spend. Subcategories help you organise items without affecting the waterfall arithmetic. Manage them in Settings → Subcategories.
+
+---
+
 ## Staleness
 
 **Appears in**: Staleness indicator (amber dot tooltip), Review Wizard card header, right panel detail view ("Last reviewed" label)
@@ -155,6 +187,14 @@
 **Appears in**: Wealth page account detail (projected balance label), savings account list
 
 **Tooltip**: An estimated future balance calculated from the current value plus the linked monthly contribution, compounded at the recorded interest rate. Projections are illustrative only.
+
+---
+
+## Real Terms
+
+**Appears in**: Growth chart (Net Worth stat row)
+
+**Tooltip**: A value adjusted for inflation — showing what a future amount would be worth in today's purchasing power. If your net worth is projected at £150,000 but £120,000 in real terms, the difference reflects the expected erosion of purchasing power over time.
 
 ---
 
@@ -198,11 +238,27 @@ _Note: the tooltip is dynamic — it shows the actual snapshot name and date on 
 
 ---
 
+## Surplus Benchmark
+
+**Appears in**: Settings page, Surplus page benchmark warning
+
+**Tooltip**: The minimum surplus percentage you're aiming for — typically 10% of net income. When your surplus falls below this threshold, an amber nudge appears on the Surplus page. Adjust the benchmark in Settings → Surplus benchmark.
+
+---
+
 ## Surplus Percentage
 
 **Appears in**: Surplus row in the waterfall left panel (alongside the absolute figure)
 
 **Tooltip**: Your surplus as a percentage of your total net income. A common benchmark is 10% or above, though the right level depends on your circumstances.
+
+---
+
+## Tightest Dip
+
+**Appears in**: Cashflow year view headline cards
+
+**Tooltip**: The lowest projected bank balance across your cashflow forecast window. If this figure is negative, it means your balance is projected to go below zero in that month — a signal to review upcoming outgoings or move funds.
 
 ---
 
@@ -219,3 +275,71 @@ _Note: the tooltip is dynamic — it shows the actual snapshot name and date on 
 **Appears in**: Wealth page trust savings section (account row badge)
 
 **Tooltip**: This account is managed by your household but is owned by [name]. It is excluded from your household net worth.
+
+---
+
+# Gift Planner
+
+---
+
+## Annual Budget (Gifts)
+
+**Appears in**: Gift planner left aside, budget summary
+
+**Tooltip**: The total amount set aside for gift-giving this year. In Synced mode this flows into the waterfall as a Discretionary item; in Independent mode it is tracked here only.
+
+---
+
+## Planned (Gifts)
+
+**Appears in**: Gift planner budget summary, allocation cards
+
+**Tooltip**: The sum of all planned gift amounts across every person and event this year. Compare against your annual budget to see whether your plan fits.
+
+---
+
+## Spent (Gifts)
+
+**Appears in**: Gift planner budget summary, allocation cards
+
+**Tooltip**: The sum of amounts actually spent on gifts so far this year.
+
+---
+
+## Synced Mode
+
+**Appears in**: Config → Mode panel
+
+**Tooltip**: The gift planner creates and manages a "Gifts" item in your Discretionary waterfall tier. Your annual gift budget is deducted from your surplus automatically.
+
+---
+
+## Independent Mode
+
+**Appears in**: Config → Mode panel
+
+**Tooltip**: The gift planner runs standalone with no connection to your waterfall. Useful if you track gifts separately or haven't set up a waterfall yet.
+
+---
+
+## Locked Event
+
+**Appears in**: Config → Events panel
+
+**Tooltip**: A built-in event (like Birthday or Christmas) that cannot be renamed or deleted. You can still choose not to plan gifts for it.
+
+---
+
+## Personal Date Type
+
+**Appears in**: Config → Events panel, Add Event form
+
+**Tooltip**: The date differs for each person — for example, each person has their own birthday. You set the date per person in the Gifts tab.
+
+---
+
+## Shared Date Type
+
+**Appears in**: Config → Events panel, Add Event form
+
+**Tooltip**: The same date for everyone — for example, Christmas is always 25 December regardless of the recipient.

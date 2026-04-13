@@ -58,6 +58,6 @@ describe("GiftPersonList", () => {
 
   it("renders empty state when no people", () => {
     render(<GiftPersonList people={[]} onSelect={() => {}} />);
-    expect(screen.getByText(/no people yet/i)).toBeInTheDocument();
+    expect(screen.getByText(/select a person to start planning/i)).toBeInTheDocument();
   });
 });

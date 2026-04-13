@@ -26,10 +26,18 @@ export const giftsApi = {
 
   listYears: () => apiClient.get<number[]>(`/api/gifts/years`),
 
-  listConfigPeople: (filter: "all" | "household" | "non-household") =>
-    apiClient.get<any[]>(`/api/gifts/config/people?filter=${filter}`),
+  listConfigPeople: (filter: "all" | "household" | "non-household", year: number) =>
+    apiClient.get<any[]>(`/api/gifts/config/people?filter=${filter}&year=${year}`),
 
   listConfigEvents: () => apiClient.get<any[]>(`/api/gifts/config/events`),
+
+  getQuickAddMatrix: (year: number) =>
+    apiClient.get<{
+      people: { id: string; name: string; memberId: string | null }[];
+      events: { id: string; name: string }[];
+      allocations: { personId: string; eventId: string; planned: number }[];
+      budget: { annual: number; currentPlanned: number };
+    }>(`/api/gifts/config/quick-add-matrix?year=${year}`),
 
   // ─── Person mutations ───────────────────────────────────────────────────────
   createPerson: (data: CreateGiftPersonInput) => apiClient.post<any>(`/api/gifts/people`, data),
