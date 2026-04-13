@@ -46,15 +46,6 @@ COPY --from=builder --chown=nginx:nginx /workspace/apps/frontend/dist /usr/share
 # Replace default nginx config with ours (proxy rules + SPA fallback)
 COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
 
-# Create nginx cache directories and set ownership so nginx user can write
-RUN mkdir -p /var/cache/nginx/client_temp /var/cache/nginx/proxy_temp \
-             /var/cache/nginx/fastcgi_temp /var/cache/nginx/uwsgi_temp \
-             /var/cache/nginx/scgi_temp && \
-    chown -R nginx:nginx /var/cache/nginx && \
-    # Remove 'user nginx;' from main config — not needed when running as nginx
-    sed -i 's/^user  nginx;/# user nginx;/' /etc/nginx/nginx.conf
-
-USER nginx
 
 EXPOSE 3000
 
