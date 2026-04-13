@@ -36,11 +36,15 @@ RUN bun run build
 # Switch to backend dir for remaining COPY steps
 WORKDIR /workspace/apps/backend
 
-# Copy backend source code
+# Copy backend source code and scripts
 COPY apps/backend/src ./src/
+COPY apps/backend/scripts ./scripts/
 COPY apps/backend/tsconfig.json ./
+
+RUN addgroup -g 1001 finplan && adduser -D -u 1001 -G finplan finplan
+RUN chown -R finplan:finplan /workspace
+USER finplan
 
 EXPOSE 3001
 
-# At startup: migrate the database (idempotent), then start the server
-CMD ["sh", "-c", "bunx prisma migrate deploy && bun src/db/seed.ts && bun src/server.ts"]
+CMD ["bun", "src/server.ts"]

@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { formatCurrency } from "@/utils/format";
 import { usePrefersReducedMotion } from "@/utils/motion";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import type { NetWorthPoint } from "@finplan/shared";
 
 interface RetirementMarker {
@@ -31,9 +32,7 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
   return (
     <div className="bg-surface border border-surface-elevated rounded-xl overflow-hidden">
       <div className="px-5 pt-4 pb-2">
-        <span className="text-xs font-heading font-semibold uppercase tracking-widest text-text-tertiary">
-          Net Worth
-        </span>
+        <span className="label-chart">Net Worth</span>
       </div>
 
       {isEmpty ? (
@@ -72,7 +71,7 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
               <Tooltip
                 formatter={(value: number, name: string) => [
                   formatCurrency(value),
-                  name === "nominal" ? "Nominal" : "Real",
+                  name === "nominal" ? "Ignoring Inflation" : "Real Terms",
                 ]}
                 contentStyle={{
                   background: "#141b2e",
@@ -130,13 +129,15 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
             </p>
           </div>
           <div>
-            <span className="text-xs text-text-tertiary">Nominal ({last.year})</span>
+            <span className="text-xs text-text-tertiary">Ignoring Inflation ({last.year})</span>
             <p className="font-numeric text-sm text-page-accent tabular-nums">
               {formatCurrency(last.nominal)}
             </p>
           </div>
           <div>
-            <span className="text-xs text-text-tertiary">Real ({last.year})</span>
+            <span className="text-xs text-text-tertiary">
+              <GlossaryTermMarker entryId="real-terms">Real Terms</GlossaryTermMarker> ({last.year})
+            </span>
             <p className="font-numeric text-sm text-text-secondary tabular-nums">
               {formatCurrency(last.real)}
             </p>

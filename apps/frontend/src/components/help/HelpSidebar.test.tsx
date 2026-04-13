@@ -4,10 +4,9 @@ import { renderWithProviders } from "@/test/helpers/render";
 import { HelpSidebar } from "./HelpSidebar";
 
 function renderSidebar(selectedId = "waterfall", onSelect = () => {}) {
-  return renderWithProviders(
-    <HelpSidebar selectedId={selectedId} onSelect={onSelect} />,
-    { initialEntries: ["/help"] }
-  );
+  return renderWithProviders(<HelpSidebar selectedId={selectedId} onSelect={onSelect} />, {
+    initialEntries: ["/help"],
+  });
 }
 
 describe("HelpSidebar", () => {
@@ -17,11 +16,13 @@ describe("HelpSidebar", () => {
     expect(screen.getByText("Concepts")).toBeTruthy();
   });
 
-  it("renders all 17 glossary entries", () => {
+  it("renders glossary entries including new additions", () => {
     renderSidebar();
     expect(screen.getByText("Waterfall")).toBeTruthy();
     expect(screen.getByText("Surplus")).toBeTruthy();
     expect(screen.getByText("ISA Allowance")).toBeTruthy();
+    expect(screen.getByText("Period")).toBeTruthy();
+    expect(screen.getByText("Staleness")).toBeTruthy();
   });
 
   it("renders all 5 concept entries", () => {
@@ -38,9 +39,9 @@ describe("HelpSidebar", () => {
 
   it("marks the selected entry", () => {
     renderSidebar("waterfall");
-    const selected = screen.getAllByRole("button").find(
-      (btn) => btn.getAttribute("aria-current") === "true"
-    );
+    const selected = screen
+      .getAllByRole("button")
+      .find((btn) => btn.getAttribute("aria-current") === "true");
     expect(selected).toBeTruthy();
   });
 

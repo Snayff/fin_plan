@@ -8,6 +8,7 @@ import { AuditLogSection } from "@/components/settings/AuditLogSection";
 import { GrowthRatesSection } from "@/components/settings/GrowthRatesSection";
 import { DisplaySection } from "@/components/settings/DisplaySection";
 import { SubcategoriesSection } from "@/components/settings/SubcategoriesSection";
+import { DataSection } from "@/components/settings/DataSection";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
 import { useSettings } from "@/hooks/useSettings";
@@ -22,6 +23,7 @@ const SECTIONS = [
   { id: "surplus", label: "Surplus benchmark" },
   { id: "isa", label: "ISA settings" },
   { id: "household", label: "Household" },
+  { id: "data", label: "Data", roles: ["owner"] as string[] },
   { id: "growth-rates", label: "Growth rates", roles: ["owner", "admin"] as string[] },
   { id: "audit-log", label: "Audit log", roles: ["owner", "admin"] as string[] },
 ] as const;
@@ -34,9 +36,14 @@ export default function SettingsPage() {
   const user = useAuthStore((s) => s.user);
   const householdId = user?.activeHouseholdId ?? "";
   const { data: householdData } = useHouseholdDetails(householdId);
-  const currentMember = householdData?.household?.members.find((m) => m.userId === user?.id);
+  const currentMember = householdData?.household?.memberProfiles.find((m) => m.userId === user?.id);
   const callerRole = currentMember?.role ?? "member";
   const canSeeAuditLog = callerRole === "owner" || callerRole === "admin";
+  const isOwner = callerRole === "owner";
+  const canSeeSection = (section: (typeof SECTIONS)[number]) => {
+    if (!("roles" in section)) return true;
+    return section.roles.includes(callerRole);
+  };
 
   const handleIntersection = useCallback((entries: IntersectionObserverEntry[]) => {
     const visible = entries
@@ -82,22 +89,25 @@ export default function SettingsPage() {
   return (
     <div data-page="settings" className="relative flex h-full overflow-hidden">
       {/* Left nav */}
-      <aside className="w-48 shrink-0 border-r p-4 space-y-1 overflow-y-auto">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-          Settings
+      <aside className="flex flex-col w-48 shrink-0 border-r p-4 overflow-y-auto">
+        <p className="label-section mb-3">Settings</p>
+        <div className="space-y-1">
+          {SECTIONS.filter(canSeeSection).map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              className={`w-full text-left text-sm px-2 py-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
+                activeSection === s.id ? "bg-accent text-accent-foreground" : "hover:bg-accent"
+              }`}
+              onClick={() => scrollTo(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-auto border-t border-foreground/10 px-2 py-3 text-xs text-muted-foreground">
+          finplan v{import.meta.env.VITE_APP_VERSION}
         </p>
-        {SECTIONS.filter((s) => !("roles" in s) || canSeeAuditLog).map((s) => (
-          <button
-            key={s.id}
-            type="button"
-            className={`w-full text-left text-sm px-2 py-1.5 rounded transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring ${
-              activeSection === s.id ? "bg-accent text-accent-foreground" : "hover:bg-accent"
-            }`}
-            onClick={() => scrollTo(s.id)}
-          >
-            {s.label}
-          </button>
-        ))}
       </aside>
 
       {/* Content */}
@@ -130,6 +140,11 @@ export default function SettingsPage() {
             <div ref={setRef("household")} data-section-id="household">
               <HouseholdSection />
             </div>
+            {isOwner && (
+              <div ref={setRef("data")} data-section-id="data">
+                <DataSection />
+              </div>
+            )}
             {canSeeAuditLog && (
               <div ref={setRef("growth-rates")} data-section-id="growth-rates">
                 <GrowthRatesSection />

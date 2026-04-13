@@ -41,6 +41,8 @@ Avoid:
 
 Actual discretionary spend is not tracked in the waterfall. Users reconcile actual spending through their bank app. finplan holds the plan.
 
+**Exception — the Gifts planner.** The Gifts planner is the only place in finplan that records actuals. Within it, "spent" is the correct word for an amount recorded against a planned gift. This exception is deliberate and narrowly scoped: it exists because gift-giving is a bounded, discrete, plan-and-reconcile activity that most households already track by hand. It does not open the door to transaction tracking anywhere else in the app, and it does not apply to the waterfall — the waterfall always shows the annual gift _budget_, never the sum of actuals.
+
 ### 3. Non-Advisory Guidance
 
 finplan must not provide financial advice. It can — and should — surface useful information, benchmarks, and mechanical options. The distinction is:

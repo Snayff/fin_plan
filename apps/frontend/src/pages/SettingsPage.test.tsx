@@ -14,7 +14,7 @@ const mockUseSettings = {
   useUpdateProfile: () => ({ mutate: () => {}, isPending: false }),
   useHousehold: () => ({ data: undefined, isLoading: false }),
   useHouseholdDetails: () => ({ data: undefined, isLoading: false }),
-  useHouseholdMembers: () => ({ data: undefined, isLoading: false }),
+  useHouseholdMembers: () => ({ data: [] }),
   useInviteMember: () => ({ mutate: () => {}, isPending: false }),
   useRemoveMember: () => ({ mutate: () => {}, isPending: false }),
 };
@@ -23,7 +23,6 @@ mock.module("@/hooks/useSettings", () => mockUseSettings);
 
 mock.module("@/hooks/useWaterfall", () => ({
   useWaterfallSummary: () => ({ data: undefined, isLoading: false, isError: false }),
-  useCashflow: () => ({ data: undefined, isLoading: false, isError: false }),
   useItemHistory: () => ({ data: undefined, isLoading: false, isError: false }),
   useConfirmItem: () => ({ mutate: () => {}, isPending: false }),
   useUpdateItem: () => ({ mutate: () => {}, isPending: false }),

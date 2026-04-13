@@ -12,7 +12,7 @@ const { assetsService } = await import("./assets.service.js");
 
 const HOUSEHOLD_ID = "hh-1";
 const USER_ID = "user-1";
-const MEMBER_USER_ID = "member-1";
+const MEMBER_ID = "member-1";
 const ASSET_ID = "asset-1";
 const ACCOUNT_ID = "account-1";
 
@@ -66,7 +66,7 @@ describe("assetsService.listAssetsByType", () => {
         name: "My House",
         type: "Property",
         householdId: HOUSEHOLD_ID,
-        memberUserId: null,
+        memberId: null,
         lastReviewedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -101,9 +101,9 @@ describe("assetsService.listAssetsByType", () => {
 });
 
 describe("assetsService.createAsset", () => {
-  it("creates asset with valid memberUserId", async () => {
-    prismaMock.householdMember.findUnique.mockResolvedValue({
-      userId: MEMBER_USER_ID,
+  it("creates asset with valid memberId", async () => {
+    prismaMock.member.findUnique.mockResolvedValue({
+      id: MEMBER_ID,
       householdId: HOUSEHOLD_ID,
     } as any);
     prismaMock.asset.create.mockResolvedValue({
@@ -111,7 +111,7 @@ describe("assetsService.createAsset", () => {
       name: "Test House",
       type: "Property",
       householdId: HOUSEHOLD_ID,
-      memberUserId: MEMBER_USER_ID,
+      memberId: MEMBER_ID,
       lastReviewedAt: null,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -119,23 +119,27 @@ describe("assetsService.createAsset", () => {
 
     const result = await assetsService.createAsset(
       HOUSEHOLD_ID,
-      { name: "Test House", type: "Property", memberUserId: MEMBER_USER_ID },
+      { name: "Test House", type: "Property", memberId: MEMBER_ID },
       mockCtx
     );
 
     expect(result.name).toBe("Test House");
-    expect(prismaMock.householdMember.findUnique).toHaveBeenCalledWith({
-      where: { householdId_userId: { householdId: HOUSEHOLD_ID, userId: MEMBER_USER_ID } },
+    expect(prismaMock.member.findUnique).toHaveBeenCalledWith({
+      where: { id: MEMBER_ID },
+      select: { id: true, householdId: true },
     });
   });
 
-  it("throws AuthorizationError when memberUserId is from another household", async () => {
-    prismaMock.householdMember.findUnique.mockResolvedValue(null);
+  it("throws ValidationError when memberId is from another household", async () => {
+    prismaMock.member.findUnique.mockResolvedValue({
+      id: "foreign-member",
+      householdId: "other-household",
+    } as any);
 
     await expect(
       assetsService.createAsset(
         HOUSEHOLD_ID,
-        { name: "Test House", type: "Property", memberUserId: "foreign-user" },
+        { name: "Test House", type: "Property", memberId: "foreign-member" },
         mockCtx
       )
     ).rejects.toThrow("Member not found in household");
@@ -196,7 +200,7 @@ describe("assetsService.listAccountsByType", () => {
         name: "SIPP",
         type: "Pension",
         householdId: HOUSEHOLD_ID,
-        memberUserId: USER_ID,
+        memberId: USER_ID,
         growthRatePct: null,
         lastReviewedAt: null,
         createdAt: new Date(),
@@ -218,6 +222,73 @@ describe("assetsService.listAccountsByType", () => {
 
     expect(result[0]!.currentBalance).toBe(42100);
     expect(result[0]!.balances).toHaveLength(1);
+  });
+});
+
+describe("assetsService.createAccount", () => {
+  it("creates account and persists initialValue as opening balance", async () => {
+    prismaMock.account.create.mockResolvedValue({
+      id: ACCOUNT_ID,
+      name: "HSBC Current",
+      type: "Current",
+      householdId: HOUSEHOLD_ID,
+      memberId: null,
+      growthRatePct: null,
+      monthlyContribution: 0,
+      isCashflowLinked: false,
+      lastReviewedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+    prismaMock.accountBalance.create.mockResolvedValue({
+      id: "bal-1",
+      accountId: ACCOUNT_ID,
+      value: 1500,
+      date: new Date(),
+      note: null,
+      createdAt: new Date(),
+    } as any);
+
+    await assetsService.createAccount(
+      HOUSEHOLD_ID,
+      { name: "HSBC Current", type: "Current", initialValue: 1500 },
+      mockCtx
+    );
+
+    expect(prismaMock.account.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        householdId: HOUSEHOLD_ID,
+        name: "HSBC Current",
+        type: "Current",
+      }),
+    });
+    expect(prismaMock.accountBalance.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        accountId: ACCOUNT_ID,
+        value: 1500,
+      }),
+    });
+    // initialValue must NOT be passed to account.create — it's not a column
+    const accountCreateCall = prismaMock.account.create.mock.calls[0]?.[0] as { data: object };
+    expect(accountCreateCall.data).not.toHaveProperty("initialValue");
+  });
+
+  it("creates account without initialValue and skips balance insert", async () => {
+    prismaMock.account.create.mockResolvedValue({
+      id: ACCOUNT_ID,
+      name: "Empty Savings",
+      type: "Savings",
+      householdId: HOUSEHOLD_ID,
+    } as any);
+
+    await assetsService.createAccount(
+      HOUSEHOLD_ID,
+      { name: "Empty Savings", type: "Savings" },
+      mockCtx
+    );
+
+    expect(prismaMock.account.create).toHaveBeenCalled();
+    expect(prismaMock.accountBalance.create).not.toHaveBeenCalled();
   });
 });
 

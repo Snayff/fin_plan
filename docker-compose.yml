@@ -1,14 +1,31 @@
 services:
+  # One-shot migration runner — runs before backend starts
+  migrate:
+    build:
+      context: .
+      dockerfile: apps/backend/Dockerfile
+    command: ["sh", "scripts/migrate.sh"]
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      NODE_ENV: production
+    networks:
+      - coolify
+    restart: "no"
+
   # Backend API -- not exposed to host; Traefik proxies to frontend which proxies to it internally
   backend:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     environment:
       DATABASE_URL: ${DATABASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
       COOKIE_SECRET: ${COOKIE_SECRET}
+      CSRF_SECRET: ${CSRF_SECRET}
       CORS_ORIGIN: ${CORS_ORIGIN}
       NODE_ENV: production
     networks:

@@ -2,6 +2,7 @@ import type { IncomeSourceRow } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/lib/utils";
 import { StalenessIndicator } from "@/components/common/StalenessIndicator";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { useSettings } from "@/hooks/useSettings";
 
 const ROW_CLASS =
@@ -78,7 +79,11 @@ export function IncomeTypePanel({
                     thresholdMonths={threshold}
                   />
                   <div className="flex items-center gap-1 font-numeric text-foreground/60">
-                    {isAnnual && <span className="text-xs text-muted-foreground">÷12</span>}
+                    {isAnnual && (
+                      <span className="text-xs text-muted-foreground">
+                        <GlossaryTermMarker entryId="amortised">÷12</GlossaryTermMarker>
+                      </span>
+                    )}
                     <span>{formatCurrency(displayAmount)}</span>
                   </div>
                 </div>

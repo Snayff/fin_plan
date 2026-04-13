@@ -197,7 +197,7 @@ export class ApiClient {
         return accessToken;
       } catch (error) {
         // Refresh failed - clear client auth state and force login.
-        console.error("Token refresh failed:", error);
+        if (import.meta.env.DEV) console.error("Token refresh failed:", error);
         const { useAuthStore } = await import("../stores/authStore");
         useAuthStore.getState().setUnauthenticated();
 
@@ -220,7 +220,7 @@ export class ApiClient {
     });
   }
 
-  async post<T>(endpoint: string, data?: any, token?: string): Promise<T> {
+  async post<T>(endpoint: string, data?: unknown, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -228,7 +228,7 @@ export class ApiClient {
     });
   }
 
-  async put<T>(endpoint: string, data?: any, token?: string): Promise<T> {
+  async put<T>(endpoint: string, data?: unknown, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
       method: "PUT",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -236,7 +236,7 @@ export class ApiClient {
     });
   }
 
-  async patch<T>(endpoint: string, data?: any, token?: string): Promise<T> {
+  async patch<T>(endpoint: string, data?: unknown, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
       method: "PATCH",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
@@ -244,7 +244,7 @@ export class ApiClient {
     });
   }
 
-  async delete<T>(endpoint: string, data?: any, token?: string): Promise<T> {
+  async delete<T>(endpoint: string, data?: unknown, token?: string): Promise<T> {
     return this.request<T>(endpoint, {
       method: "DELETE",
       headers: token ? { Authorization: `Bearer ${token}` } : {},

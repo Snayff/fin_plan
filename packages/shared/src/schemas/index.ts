@@ -9,11 +9,17 @@ export {
   createHouseholdInviteSchema,
   acceptInviteSchema,
   updateMemberRoleSchema,
+  createMemberSchema,
+  updateMemberSchema,
+  deleteMemberSchema,
   type CreateHouseholdInput,
   type RenameHouseholdInput,
   type CreateHouseholdInviteInput,
   type AcceptInviteInput,
   type UpdateMemberRoleInput,
+  type CreateMemberInput,
+  type UpdateMemberInput,
+  type DeleteMemberInput,
 } from "./household.schemas";
 
 // Waterfall schemas and types
@@ -128,29 +134,29 @@ export * from "./audit.schemas";
 export {
   PurchasePriorityEnum,
   PurchaseStatusEnum,
-  GiftEventTypeEnum,
-  GiftRecurrenceEnum,
   createPurchaseSchema,
   updatePurchaseSchema,
   upsertYearBudgetSchema,
-  createGiftPersonSchema,
-  updateGiftPersonSchema,
-  createGiftEventSchema,
-  updateGiftEventSchema,
-  upsertGiftYearRecordSchema,
   type PurchasePriority,
   type PurchaseStatus,
-  type GiftEventType,
-  type GiftRecurrence,
   type CreatePurchaseInput,
   type UpdatePurchaseInput,
   type UpsertYearBudgetInput,
-  type CreateGiftPersonInput,
-  type UpdateGiftPersonInput,
-  type CreateGiftEventInput,
-  type UpdateGiftEventInput,
-  type UpsertGiftYearRecordInput,
 } from "./planner.schemas";
+
+// Export/Import schemas and types
+export {
+  householdExportSchema,
+  importOptionsSchema,
+  importResultSchema,
+  CURRENT_EXPORT_SCHEMA_VERSION,
+  type HouseholdExport,
+  type ImportOptions,
+  type ImportResult,
+} from "./export-import.schemas";
+
+// Cashflow schemas and types
+export * from "./cashflow.schemas";
 
 // Forecast schemas and types
 export {
@@ -169,3 +175,56 @@ export {
   type RetirementMemberProjection,
   type ForecastProjection,
 } from "./forecast.schemas";
+
+// Gifts schemas and types
+export * from "./gifts.schemas";
+
+// Response schemas and types (contracts + security allowlists for API responses)
+export {
+  // Auth
+  userPreferencesResponseSchema,
+  userResponseSchema,
+  authLoginResponseSchema,
+  authMeResponseSchema,
+  authRefreshResponseSchema,
+  csrfTokenResponseSchema,
+  type UserResponse,
+  type AuthLoginResponse,
+  type AuthMeResponse,
+  type AuthRefreshResponse,
+  type CsrfTokenResponse,
+  // Household
+  householdCoreResponseSchema,
+  householdWithCountResponseSchema,
+  householdMembershipResponseSchema,
+  householdResponseSchema,
+  householdListResponseSchema,
+  householdDetailResponseSchema,
+  type HouseholdCoreResponse,
+  type HouseholdMembershipResponse,
+  type HouseholdResponse,
+  type HouseholdListResponse,
+  type HouseholdDetailResponse,
+  // Invite
+  inviteCreateResponseSchema,
+  inviteDetailResponseSchema,
+  inviteAcceptResponseSchema,
+  type InviteCreateResponse,
+  type InviteDetailResponse,
+  type InviteAcceptResponse,
+  // Waterfall items
+  incomeSourceResponseSchema,
+  committedItemResponseSchema,
+  discretionaryItemResponseSchema,
+  type IncomeSourceResponse,
+  type CommittedItemResponse,
+  type DiscretionaryItemResponse,
+  type PeriodResponse,
+  // Generic
+  successResponseSchema,
+  messageResponseSchema,
+  errorResponseSchema,
+  type SuccessResponse,
+  type MessageResponse,
+  type ErrorResponse,
+} from "./responses";

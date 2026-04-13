@@ -2,8 +2,8 @@ import { describe, it, expect } from "bun:test";
 import { CONCEPT_ENTRIES, getConceptEntry } from "./concepts";
 
 describe("CONCEPT_ENTRIES", () => {
-  it("contains exactly 5 concepts", () => {
-    expect(CONCEPT_ENTRIES.length).toBe(5);
+  it("contains exactly 6 concepts", () => {
+    expect(CONCEPT_ENTRIES.length).toBe(6);
   });
 
   it("each entry has required fields", () => {
@@ -25,6 +25,12 @@ describe("CONCEPT_ENTRIES", () => {
   it("waterfall concept has a seeThisInFinplan route", () => {
     const waterfall = getConceptEntry("waterfall");
     expect(waterfall?.seeThisInFinplan).toBe("/overview");
+  });
+
+  it("no concept references itself in relatedTermIds", () => {
+    for (const entry of CONCEPT_ENTRIES) {
+      expect(entry.relatedTermIds).not.toContain(entry.id);
+    }
   });
 });
 

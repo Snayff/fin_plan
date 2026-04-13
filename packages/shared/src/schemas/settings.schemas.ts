@@ -14,9 +14,10 @@ export const updateSettingsSchema = z.object({
   isaYearStartMonth: z.number().int().min(1).max(12).optional(),
   isaYearStartDay: z.number().int().min(1).max(31).optional(),
   stalenessThresholds: stalenessThresholdsSchema.optional(),
-  savingsRatePct: z.number().min(0).max(100).nullable().optional(),
-  investmentRatePct: z.number().min(0).max(100).nullable().optional(),
-  pensionRatePct: z.number().min(0).max(100).nullable().optional(),
+  currentRatePct: z.number().min(0).max(100).optional(),
+  savingsRatePct: z.number().min(0).max(100).optional(),
+  investmentRatePct: z.number().min(0).max(100).optional(),
+  pensionRatePct: z.number().min(0).max(100).optional(),
   inflationRatePct: z.number().min(0).max(100).optional(),
   showPence: z.boolean().optional(),
 });

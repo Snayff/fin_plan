@@ -1,0 +1,379 @@
+<style>
+  :root {
+    --bg: #080a14;
+    --surface: #0d1120;
+    --surface-elev: #141b2e;
+    --border: #1a1f35;
+    --border-elev: #222c45;
+    --text-primary: rgba(238, 242, 255, 0.92);
+    --text-secondary: rgba(238, 242, 255, 0.65);
+    --text-tertiary: rgba(238, 242, 255, 0.40);
+    --text-muted: rgba(238, 242, 255, 0.25);
+    --tier-discretionary: #a855f7;
+    --page-accent: #8b5cf6;
+    --attention: #f59e0b;
+    --font-heading: 'Outfit', system-ui, sans-serif;
+    --font-body: 'Nunito Sans', system-ui, sans-serif;
+    --font-numeric: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  .gm-frame {
+    background: var(--bg);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+    font-family: var(--font-body);
+    color: var(--text-primary);
+    margin-top: 16px;
+  }
+  .gm-grid {
+    display: grid;
+    grid-template-columns: 290px 1fr;
+    min-height: 560px;
+  }
+  .gm-left {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    padding: 22px 18px;
+  }
+  .gm-right {
+    padding: 22px 26px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .gm-pagetitle {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--page-accent);
+    margin: 0 0 14px 0;
+  }
+  .gm-budget-block {
+    background: var(--surface-elev);
+    border: 1px solid var(--border-elev);
+    border-radius: 8px;
+    padding: 14px;
+    margin-bottom: 16px;
+  }
+  .gm-label {
+    font-size: 10.5px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin-bottom: 4px;
+  }
+  .gm-value {
+    font-family: var(--font-numeric);
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .gm-sub-flex { display: flex; justify-content: space-between; align-items: baseline; margin-top: 6px; }
+  .gm-sub-label { font-family: var(--font-body); font-size: 11px; color: var(--text-tertiary); }
+  .gm-sub-val { font-family: var(--font-numeric); font-size: 12px; color: var(--text-secondary); }
+  .gm-amber { color: var(--attention); }
+  .gm-amber-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: var(--attention);
+    margin-right: 6px;
+  }
+  .gm-amber-line {
+    font-family: var(--font-numeric);
+    font-size: 11px;
+    margin-top: 10px;
+    line-height: 1.4;
+  }
+  .gm-vtabs { display: flex; flex-direction: column; gap: 4px; }
+  .gm-vtab {
+    width: 100%;
+    padding: 12px 14px;
+    font-family: var(--font-heading);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--text-tertiary);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .gm-vtab.active {
+    background: rgba(168, 85, 247, 0.1);
+    border-color: rgba(168, 85, 247, 0.22);
+    color: var(--tier-discretionary);
+  }
+  .gm-vtab .count {
+    font-family: var(--font-numeric);
+    font-size: 11px;
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+    color: var(--text-tertiary);
+    opacity: 0.8;
+  }
+  .gm-vtab.active .count { color: var(--tier-discretionary); opacity: 1; }
+  .gm-breadcrumb {
+    font-family: var(--font-heading);
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: var(--tier-discretionary);
+  }
+  .gm-header-title {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-top: 8px;
+  }
+  .gm-right-title {
+    font-family: var(--font-heading);
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--text-primary);
+  }
+  .gm-right-count { font-family: var(--font-body); font-size: 13px; color: var(--text-tertiary); }
+  .gm-right-total { font-family: var(--font-numeric); font-size: 14px; color: var(--page-accent); }
+  .gm-filter-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+  .gm-filter-tab {
+    font-family: var(--font-body);
+    font-size: 12px;
+    padding: 5px 12px;
+    border-radius: 6px;
+    color: var(--text-tertiary);
+  }
+  .gm-filter-tab.active {
+    background: var(--surface-elev);
+    color: var(--text-primary);
+    border: 1px solid var(--border-elev);
+    font-weight: 500;
+  }
+  .gm-filter-tab .count {
+    font-family: var(--font-numeric);
+    color: var(--text-tertiary);
+    margin-left: 4px;
+    font-size: 11px;
+  }
+  .gm-sort {
+    font-family: var(--font-body);
+    font-size: 12px;
+    color: var(--text-secondary);
+    padding: 5px 10px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--surface);
+  }
+  .gm-item-row {
+    padding: 14px 14px;
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 16px;
+    align-items: center;
+    border-bottom: 1px solid rgba(26, 31, 53, 0.5);
+    cursor: pointer;
+  }
+  .gm-item-row:hover { background: rgba(168, 85, 247, 0.04); }
+  .gm-item-name {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .gm-item-sub { font-size: 11px; margin-top: 3px; }
+  .gm-count-planned {
+    color: var(--text-tertiary);
+    font-family: var(--font-numeric);
+    font-size: 11px;
+  }
+  .gm-count-bought {
+    color: var(--text-secondary);
+    font-family: var(--font-numeric);
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .gm-count-sep { color: var(--text-muted); margin: 0 5px; }
+  .gm-item-right { text-align: right; font-family: var(--font-numeric); }
+  .gm-item-amt { font-size: 13px; color: var(--text-primary); }
+  .gm-item-chevron { color: var(--text-muted); font-size: 16px; }
+  .gm-household-badge {
+    font-size: 9px;
+    font-family: var(--font-body);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(139, 92, 246, 0.12);
+    color: #b79bf6;
+    margin-left: 6px;
+  }
+</style>
+
+<h2>Gifts · State 2 — planned = text-tertiary, bought = text-secondary</h2>
+<p class="subtitle">Both existing tokens. No new token needed. Subtle brightness step only.</p>
+
+<div class="gm-frame">
+  <div class="gm-grid">
+    <div class="gm-left">
+      <div class="gm-pagetitle">Gifts</div>
+      <div class="gm-budget-block">
+        <div class="gm-label">Annual budget · 2026</div>
+        <div class="gm-value">£2,400.00</div>
+        <div class="gm-sub-flex"><span class="gm-sub-label">Planned</span><span class="gm-sub-val">£2,523.54</span></div>
+        <div class="gm-sub-flex"><span class="gm-sub-label">Spent</span><span class="gm-sub-val">£450.29</span></div>
+        <div class="gm-amber gm-amber-line"><span class="gm-amber-dot"></span>planned more than budget by £123.54</div>
+      </div>
+      <div class="gm-vtabs">
+        <button class="gm-vtab active">Gifts <span class="count">7</span></button>
+        <button class="gm-vtab">Upcoming <span class="count">28</span></button>
+        <button class="gm-vtab">Config</button>
+      </div>
+    </div>
+
+    <div class="gm-right">
+      <div>
+        <div class="gm-breadcrumb">Gifts</div>
+        <div class="gm-header-title">
+          <span class="gm-right-title">People</span>
+          <span class="gm-right-count">7</span>
+          <span class="gm-right-total">£2,523.54</span>
+        </div>
+      </div>
+
+      <div class="gm-filter-row">
+        <div style="display: flex; gap: 4px;">
+          <div class="gm-filter-tab active">All <span class="count">7</span></div>
+        </div>
+        <select class="gm-sort">
+          <option>Name ↑</option>
+          <option>Planned ↓</option>
+        </select>
+      </div>
+
+      <div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Cat</div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">1 planned</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£100.00</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Josh</div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£200.00</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Mum <span class="gm-household-badge">Household</span></div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+              <span class="gm-count-sep">·</span>
+              <span class="gm-count-bought">1 bought</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£325.00</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Dad <span class="gm-household-badge">Household</span></div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£150.00</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Nix</div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+              <span class="gm-count-sep">·</span>
+              <span class="gm-count-bought">2 bought</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£85.95</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Jake</div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+              <span class="gm-count-sep">·</span>
+              <span class="gm-count-bought">1 bought</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£61.95</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+        <div class="gm-item-row">
+          <div>
+            <div class="gm-item-name">Andy</div>
+            <div class="gm-item-sub">
+              <span class="gm-count-planned">2 planned</span>
+            </div>
+          </div>
+          <div class="gm-item-right"><div class="gm-item-amt">£47.00</div></div>
+          <span class="gm-item-chevron">›</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 24px;">
+  <h3>Notes</h3>
+  <ul style="color: var(--text-secondary); font-size: 13px; line-height: 1.8;">
+    <li><strong>Planned</strong> = <code>text-tertiary</code> at 40% opacity — metadata-level, sits quietly beside the person name</li>
+    <li><strong>Bought</strong> = <code>text-secondary</code> at 65% opacity — one step brighter, same cool-white hue</li>
+    <li><strong>Both tokens exist today</strong> — no new token required. Drop <code>text-recorded</code>.</li>
+    <li><strong>Brightness step of 25 percentage points</strong> — enough to read as distinct on a quick scan, not enough to feel like "bought" is celebrated</li>
+    <li><strong>Design-anchor neutrality preserved</strong> — no new hue, no elevation in the hierarchy, no implication that bought is "better"</li>
+  </ul>
+</div>
+
+<div class="options" style="margin-top: 20px;">
+  <div class="option" data-choice="approve" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>This works</h3>
+      <p>No new token; drop text-recorded from the queue</p>
+    </div>
+  </div>
+  <div class="option" data-choice="keep-recorded" onclick="toggleSelect(this)">
+    <div class="letter">R</div>
+    <div class="content">
+      <h3>Still want text-recorded</h3>
+      <p>The secondary/tertiary step isn't enough</p>
+    </div>
+  </div>
+</div>

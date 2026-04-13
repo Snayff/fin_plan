@@ -13,11 +13,10 @@ import {
   useRenameHousehold,
   useInviteMember,
   useCancelInvite,
-  useRemoveMember,
   useLeaveHousehold,
-  useUpdateMemberRole,
 } from "@/hooks/useSettings";
 import { Section } from "./Section";
+import { MemberManagementSection } from "./MemberManagementSection";
 
 export function HouseholdSection() {
   const user = useAuthStore((s) => s.user);
@@ -30,9 +29,7 @@ export function HouseholdSection() {
   const renameHousehold = useRenameHousehold();
   const inviteMember = useInviteMember();
   const cancelInvite = useCancelInvite();
-  const removeMember = useRemoveMember();
   const leaveHousehold = useLeaveHousehold();
-  const updateMemberRole = useUpdateMemberRole(householdId);
 
   const [editName, setEditName] = useState("");
   const [editingName, setEditingName] = useState(false);
@@ -44,10 +41,9 @@ export function HouseholdSection() {
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
 
   const currentUserId = user?.id;
-  const currentMember = household?.members.find((m) => m.userId === currentUserId);
+  const currentMember = household?.memberProfiles.find((m) => m.userId === currentUserId);
   const isOwner = currentMember?.role === "owner";
-  const isAdmin = currentMember?.role === "admin";
-  const ownerCount = household?.members.filter((m) => m.role === "owner").length ?? 0;
+  const ownerCount = household?.memberProfiles.filter((m) => m.role === "owner").length ?? 0;
   const isSoleOwner = isOwner && ownerCount <= 1;
 
   function startRename() {
@@ -131,67 +127,7 @@ export function HouseholdSection() {
         )}
       </div>
 
-      {/* Members list */}
-      <div className="space-y-1">
-        <p className="text-sm font-medium">Members</p>
-        {(household?.members ?? []).map((member) => (
-          <div
-            key={member.userId}
-            className="flex items-center justify-between py-1.5 border-b last:border-b-0"
-          >
-            <div>
-              <p className="text-sm font-medium">{member.user.name}</p>
-              <p className="text-xs text-muted-foreground">
-                {member.user.email} · {member.role}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {/* Role promotion/demotion: owner can change any non-owner; admin can promote/demote members only */}
-              {member.userId !== currentUserId &&
-                member.role !== "owner" &&
-                (isOwner || (isAdmin && member.role === "member")) && (
-                  <button
-                    type="button"
-                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                    disabled={updateMemberRole.isPending}
-                    onClick={() =>
-                      updateMemberRole.mutate(
-                        {
-                          targetUserId: member.userId,
-                          role: member.role === "admin" ? "member" : "admin",
-                        },
-                        {
-                          onSuccess: () =>
-                            toast.success(
-                              member.role === "admin"
-                                ? "Role changed to member"
-                                : "Role changed to admin"
-                            ),
-                        }
-                      )
-                    }
-                  >
-                    {member.role === "admin" ? "Make member" : "Make admin"}
-                  </button>
-                )}
-              {isOwner && member.userId !== currentUserId && (
-                <button
-                  type="button"
-                  className="text-xs text-muted-foreground hover:text-destructive transition-colors"
-                  onClick={() =>
-                    removeMember.mutate(
-                      { householdId, userId: member.userId },
-                      { onSuccess: () => toast.success("Member removed") }
-                    )
-                  }
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      <MemberManagementSection />
 
       {!isSoleOwner && currentMember && (
         <>
@@ -265,9 +201,7 @@ export function HouseholdSection() {
           {/* Pending invites */}
           {(household?.invites ?? []).length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                Pending invites
-              </p>
+              <p className="label-section">Pending invites</p>
               {(household?.invites ?? []).map((invite) => (
                 <div
                   key={invite.id}

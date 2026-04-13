@@ -20,7 +20,7 @@ model User {
   twoFactorSecret      String?           @map("two_factor_secret")
   activeHouseholdId    String?           @map("active_household_id")
   activeHousehold      Household?        @relation("UserActiveHousehold", fields: [activeHouseholdId], references: [id])
-  householdMemberships HouseholdMember[]
+  memberProfiles       Member[]          @relation("MemberUser")
   createdInvites       HouseholdInvite[]
   devices              Device[]
   refreshTokens        RefreshToken[]
@@ -35,29 +35,38 @@ model Household {
   name           String
   createdAt      DateTime          @default(now()) @map("created_at")
   updatedAt      DateTime          @updatedAt @map("updated_at")
-  members        HouseholdMember[]
+  memberProfiles Member[]
   invites        HouseholdInvite[]
   activeForUsers User[]            @relation("UserActiveHousehold")
   auditLogs      AuditLog[]
   assets         Asset[]
   accounts       Account[]
+  importBackups  ImportBackup[]
 
   @@map("households")
 }
 
-model HouseholdMember {
+model Member {
+  id             String        @id @default(cuid())
   householdId    String        @map("household_id")
-  userId         String        @map("user_id")
+  userId         String?       @map("user_id")
+  name           String
   role           HouseholdRole @default(member)
+  dateOfBirth    DateTime?     @map("date_of_birth")
+  retirementYear Int?          @map("retirement_year")
   joinedAt       DateTime      @default(now()) @map("joined_at")
-  dateOfBirth    DateTime?
-  retirementYear Int?
+  createdAt      DateTime      @default(now()) @map("created_at")
+  updatedAt      DateTime      @updatedAt @map("updated_at")
   household      Household     @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user           User?         @relation("MemberUser", fields: [userId], references: [id], onDelete: SetNull)
+  assets         Asset[]
+  accounts       Account[]
 
-  @@id([householdId, userId])
+  @@unique([householdId, userId])
+  @@unique([householdId, name])
+  @@index([householdId])
   @@index([userId])
-  @@map("household_members")
+  @@map("members")
 }
 
 model HouseholdInvite {
@@ -159,9 +168,10 @@ model HouseholdSettings {
   isaYearStartMonth   Int      @default(4)
   isaYearStartDay     Int      @default(6)
   stalenessThresholds Json     @default("{\"income_source\":12,\"committed_item\":6,\"discretionary_item\":12,\"asset_item\":12,\"account_item\":3}")
-  savingsRatePct      Float?
-  investmentRatePct   Float?
-  pensionRatePct      Float?
+  currentRatePct      Float    @default(0)
+  savingsRatePct      Float    @default(4)
+  investmentRatePct   Float    @default(7)
+  pensionRatePct      Float    @default(6)
   inflationRatePct    Float    @default(2.5)
   showPence           Boolean  @default(false)
   createdAt           DateTime @default(now())
@@ -205,6 +215,7 @@ model Subcategory {
   sortOrder   Int           @default(0)
   isLocked    Boolean       @default(false)
   isDefault   Boolean       @default(true)
+  lockedByPlanner Boolean   @default(false)
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
 
@@ -222,7 +233,7 @@ model IncomeSource {
   name           String
   frequency      IncomeFrequency
   incomeType     IncomeType      @default(other)
-  expectedMonth  Int?
+  dueDate        DateTime        @db.Date
   ownerId        String?
   sortOrder      Int             @default(0)
   lastReviewedAt DateTime        @default(now())
@@ -230,6 +241,8 @@ model IncomeSource {
   updatedAt      DateTime        @updatedAt
   notes          String?
   subcategory    Subcategory     @relation(fields: [subcategoryId], references: [id])
+
+  @@index([householdId])
 }
 
 model CommittedItem {
@@ -240,12 +253,14 @@ model CommittedItem {
   spendType      SpendType   @default(monthly)
   notes          String?
   ownerId        String?
-  dueMonth       Int?
+  dueDate        DateTime    @db.Date
   sortOrder      Int         @default(0)
   lastReviewedAt DateTime    @default(now())
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
+
+  @@index([householdId])
 }
 
 model DiscretionaryItem {
@@ -255,11 +270,15 @@ model DiscretionaryItem {
   name           String
   spendType      SpendType   @default(monthly)
   notes          String?
+  dueDate        DateTime?   @db.Date
   sortOrder      Int         @default(0)
   lastReviewedAt DateTime    @default(now())
+  isPlannerOwned Boolean     @default(false)
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
+
+  @@index([householdId])
 }
 
 enum WaterfallItemType {
@@ -298,7 +317,7 @@ model ItemAmountPeriod {
 model Asset {
   id             String         @id @default(cuid())
   householdId    String
-  memberUserId   String?
+  memberId       String?
   name           String
   type           AssetType
   growthRatePct  Float?
@@ -306,9 +325,11 @@ model Asset {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   household      Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member         Member?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
   balances       AssetBalance[]
 
   @@index([householdId])
+  @@index([memberId])
 }
 
 model AssetBalance {
@@ -326,18 +347,21 @@ model AssetBalance {
 model Account {
   id                  String           @id @default(cuid())
   householdId         String
-  memberUserId        String?
+  memberId            String?
   name                String
   type                AccountType
   growthRatePct       Float?
   monthlyContribution Float            @default(0)
+  isCashflowLinked    Boolean          @default(false)
   lastReviewedAt      DateTime?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
   household           Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member              Member?          @relation(fields: [memberId], references: [id], onDelete: SetNull)
   balances            AccountBalance[]
 
   @@index([householdId])
+  @@index([memberId])
 }
 
 model AccountBalance {
@@ -359,6 +383,7 @@ enum AssetType {
 }
 
 enum AccountType {
+  Current
   Savings
   Pension
   StocksAndShares
@@ -396,6 +421,8 @@ model PurchaseItem {
   addedAt           DateTime         @default(now())
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
+
+  @@index([householdId])
 }
 
 model PlannerYearBudget {
@@ -410,59 +437,94 @@ model PlannerYearBudget {
   @@unique([householdId, year])
 }
 
-enum GiftEventType {
-  birthday
-  christmas
-  mothers_day
-  fathers_day
-  valentines_day
-  anniversary
-  custom
+enum GiftDateType {
+  shared
+  personal
 }
 
-enum GiftRecurrence {
-  annual
-  one_off
+enum GiftAllocationStatus {
+  planned
+  bought
+  skipped
+}
+
+enum GiftPlannerMode {
+  synced
+  independent
+}
+
+model GiftPlannerSettings {
+  id                          String          @id @default(cuid())
+  householdId                 String          @unique
+  mode                        GiftPlannerMode @default(synced)
+  syncedDiscretionaryItemId   String?
+  createdAt                   DateTime        @default(now())
+  updatedAt                   DateTime        @updatedAt
 }
 
 model GiftPerson {
-  id          String      @id @default(cuid())
+  id          String           @id @default(cuid())
   householdId String
   name        String
   notes       String?
-  sortOrder   Int         @default(0)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  events      GiftEvent[]
+  sortOrder   Int              @default(0)
+  memberId    String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  allocations GiftAllocation[]
+
+  @@unique([householdId, name])
+  @@index([householdId])
+  @@index([memberId])
 }
 
 model GiftEvent {
-  id           String          @id @default(cuid())
-  giftPersonId String
-  householdId  String
-  eventType    GiftEventType
-  customName   String?
-  dateMonth    Int?
-  dateDay      Int?
-  specificDate DateTime?
-  recurrence   GiftRecurrence  @default(annual)
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
-  giftPerson   GiftPerson      @relation(fields: [giftPersonId], references: [id])
-  yearRecords  GiftYearRecord[]
+  id          String           @id @default(cuid())
+  householdId String
+  name        String
+  dateType    GiftDateType
+  dateMonth   Int?
+  dateDay     Int?
+  isLocked    Boolean          @default(false)
+  sortOrder   Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  allocations GiftAllocation[]
+
+  @@unique([householdId, name])
+  @@index([householdId])
 }
 
-model GiftYearRecord {
-  id          String    @id @default(cuid())
-  giftEventId String
-  year        Int
-  budget      Float     @default(0)
-  notes       String?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  giftEvent   GiftEvent @relation(fields: [giftEventId], references: [id])
+model GiftAllocation {
+  id           String               @id @default(cuid())
+  householdId  String
+  giftPersonId String
+  giftEventId  String
+  year         Int
+  planned      Float                @default(0)
+  spent        Float?
+  status       GiftAllocationStatus @default(planned)
+  notes        String?
+  dateMonth    Int?
+  dateDay      Int?
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  giftPerson   GiftPerson           @relation(fields: [giftPersonId], references: [id], onDelete: Cascade)
+  giftEvent    GiftEvent            @relation(fields: [giftEventId], references: [id], onDelete: Cascade)
 
-  @@unique([giftEventId, year])
+  @@unique([giftPersonId, giftEventId, year])
+  @@index([householdId, year])
+  @@index([giftEventId, year])
+}
+
+model GiftRolloverDismissal {
+  id          String   @id @default(cuid())
+  householdId String
+  userId      String
+  year        Int
+  createdAt   DateTime @default(now())
+
+  @@unique([householdId, userId, year])
 }
 
 // ─── Snapshots ────────────────────────────────────────────────────────────────
@@ -476,6 +538,20 @@ model Snapshot {
   createdAt   DateTime @default(now())
 
   @@unique([householdId, name])
+}
+
+model ImportBackup {
+  id          String    @id @default(cuid())
+  householdId String
+  data        Json
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+
+  household   Household @relation(fields: [householdId], references: [id], onDelete: Cascade)
+
+  @@index([householdId])
+  @@index([expiresAt])
+  @@map("import_backups")
 }
 
 // ─── Wizard Sessions ──────────────────────────────────────────────────────────

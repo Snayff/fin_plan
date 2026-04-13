@@ -1,0 +1,596 @@
+<style>
+  :root {
+    --bg: #080a14;
+    --surface: #0d1120;
+    --surface-elev: #141b2e;
+    --border: #1a1f35;
+    --border-strong: #222c45;
+    --text-primary: rgba(238, 242, 255, 0.92);
+    --text-secondary: rgba(238, 242, 255, 0.65);
+    --text-tertiary: rgba(238, 242, 255, 0.40);
+    --text-muted: rgba(238, 242, 255, 0.25);
+    --tier-income: #0ea5e9;
+    --tier-committed: #6366f1;
+    --tier-discretionary: #a855f7;
+    --tier-surplus: #4adcd0;
+    --page-accent: #8b5cf6;
+    --attention: #f59e0b;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    padding: 32px;
+    margin: 0;
+    position: relative;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 100% 0%, rgba(139, 92, 246, 0.09) 0%, transparent 25%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at 0% 100%, rgba(74, 220, 208, 0.05) 0%, transparent 25%);
+    pointer-events: none;
+    z-index: 0;
+  }
+  body > * { position: relative; z-index: 1; }
+  h1 {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 22px;
+    font-weight: 600;
+    margin: 0 0 6px;
+  }
+  .lead {
+    color: var(--text-tertiary);
+    font-size: 13px;
+    margin-bottom: 24px;
+  }
+  .state-label {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--page-accent);
+    margin: 28px 0 10px;
+  }
+
+  /* Shell frame */
+  .shell {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .topbar {
+    height: 44px;
+    background: var(--bg);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    gap: 18px;
+    font-size: 11px;
+    font-family: 'Outfit', system-ui, sans-serif;
+  }
+  .topbar .brand { font-weight: 700; font-size: 14px; letter-spacing: -0.01em; }
+  .topbar .nav-item { color: var(--text-tertiary); }
+  .topbar .nav-item.active {
+    color: var(--text-primary);
+    position: relative;
+  }
+  .topbar .nav-item.active::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 0; right: 0;
+    height: 2px;
+    background: var(--page-accent);
+    border-radius: 1px;
+  }
+  .topbar .income { color: var(--tier-income); opacity: 0.7; }
+  .topbar .committed { color: var(--tier-committed); opacity: 0.7; }
+  .topbar .discretionary { color: var(--tier-discretionary); opacity: 0.7; }
+  .topbar .surplus { color: var(--tier-surplus); opacity: 0.7; }
+  .separator {
+    width: 1px;
+    height: 14px;
+    background: var(--border-strong);
+  }
+  .topbar .spacer { flex: 1; }
+  .panels {
+    display: flex;
+    min-height: 520px;
+  }
+  .left-panel {
+    width: 280px;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+  }
+  .page-header {
+    padding: 18px 20px 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .page-header-title {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--page-accent);
+  }
+  .nav-list {
+    padding: 12px 12px;
+    flex: 1;
+  }
+  .nav-row {
+    padding: 12px 14px;
+    border-radius: 6px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    border-left: 2px solid transparent;
+  }
+  .nav-row.active {
+    background: rgba(139, 92, 246, 0.10);
+    border-left-color: var(--page-accent);
+  }
+  .nav-row:not(.active):hover {
+    background: rgba(139, 92, 246, 0.03);
+  }
+  .nav-title {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+  }
+  .nav-sub {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 3px;
+    font-family: 'JetBrains Mono', monospace;
+    letter-spacing: 0.02em;
+  }
+
+  .right-panel {
+    flex: 1;
+    padding: 24px 28px;
+  }
+
+  /* Cashflow right panel */
+  .rp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 22px;
+  }
+  .rp-title {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin: 0 0 4px;
+  }
+  .rp-subtitle {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .year-nav {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .year-nav button {
+    background: var(--surface-elev);
+    border: 1px solid var(--border-strong);
+    color: var(--text-secondary);
+    width: 22px;
+    height: 22px;
+    border-radius: 4px;
+    font-size: 11px;
+    cursor: pointer;
+  }
+
+  .headline-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+  .headline-card {
+    background: #06080f;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 14px 16px;
+  }
+  .headline-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .headline-value {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+  .headline-value.amber { color: var(--attention); }
+  .headline-meta {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 3px;
+  }
+
+  .bar-chart {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 8px;
+    align-items: end;
+    height: 240px;
+    padding: 24px 12px 28px;
+    position: relative;
+    background: #06080f;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .bar-chart::before {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 28px;
+    height: 1px;
+    background: var(--border-strong);
+  }
+  .bar {
+    background: var(--tier-surplus);
+    opacity: 0.85;
+    border-radius: 3px 3px 0 0;
+    position: relative;
+    min-height: 3px;
+    cursor: pointer;
+    transition: opacity 150ms ease-out;
+  }
+  .bar:hover { opacity: 1; }
+  .bar.tight {
+    background: var(--attention);
+  }
+  .bar-label {
+    position: absolute;
+    bottom: -20px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 10px;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .bar-val {
+    position: absolute;
+    top: -18px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 9px;
+    color: var(--text-tertiary);
+    font-family: 'JetBrains Mono', monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Growth right panel */
+  .growth-card {
+    background: #06080f;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .card-label {
+    font-family: 'Outfit', system-ui, sans-serif;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-tertiary);
+    margin-bottom: 16px;
+  }
+  .networth-placeholder {
+    text-align: center;
+    padding: 30px 20px;
+    color: var(--text-tertiary);
+    font-size: 12px;
+  }
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  .chart-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 10px;
+  }
+  .small-line-chart {
+    height: 110px;
+    position: relative;
+    margin-top: 10px;
+  }
+  .small-line-chart svg {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+  }
+  .yaxis {
+    position: absolute;
+    left: 0; top: 0;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    padding-bottom: 14px;
+  }
+  .chart-body {
+    padding-left: 28px;
+    height: 100%;
+    position: relative;
+  }
+  .xaxis {
+    position: absolute;
+    bottom: 0; left: 28px; right: 0;
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .totals-row {
+    display: flex;
+    gap: 32px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--border);
+  }
+  .totals-row .item .lbl {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-muted);
+  }
+  .totals-row .item .val {
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--text-primary);
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .chip {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 10px;
+    font-size: 9px;
+    font-weight: 600;
+    background: var(--surface-elev);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-strong);
+  }
+  .range-tabs {
+    display: flex;
+    gap: 2px;
+    background: var(--surface-elev);
+    border: 1px solid var(--border-strong);
+    border-radius: 6px;
+    padding: 2px;
+  }
+  .range-tabs span {
+    padding: 4px 10px;
+    font-size: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-tertiary);
+    border-radius: 4px;
+  }
+  .range-tabs span.active {
+    background: var(--page-accent);
+    color: white;
+  }
+</style>
+
+<h1>Forecast — Final Layout</h1>
+<p class="lead">Two-panel shell. Left = section navigator. Right = full-width view of the selected section. Cashflow and Growth shown side by side to demonstrate both states.</p>
+
+<div class="state-label">State 1 — Cashflow selected</div>
+
+<div class="shell">
+  <div class="topbar">
+    <span class="brand">finplan</span>
+    <span class="nav-item">Overview</span>
+    <span class="separator"></span>
+    <span class="nav-item income">Income</span>
+    <span class="nav-item committed">Committed</span>
+    <span class="nav-item discretionary">Discretionary</span>
+    <span class="nav-item surplus">Surplus</span>
+    <span class="separator"></span>
+    <span class="nav-item active">Forecast</span>
+    <span class="nav-item">Assets</span>
+    <span class="nav-item">Goals</span>
+    <span class="nav-item">Gifts</span>
+    <span class="nav-item">Help</span>
+    <span class="spacer"></span>
+    <span class="nav-item">Settings</span>
+  </div>
+  <div class="panels">
+    <div class="left-panel">
+      <div class="page-header">
+        <div class="page-header-title">Forecast</div>
+      </div>
+      <div class="nav-list">
+        <div class="nav-row active">
+          <div class="nav-title">Cashflow</div>
+        </div>
+        <div class="nav-row">
+          <div class="nav-title">Growth</div>
+        </div>
+      </div>
+    </div>
+    <div class="right-panel">
+      <div class="rp-header">
+        <div>
+          <div class="rp-title">Cashflow</div>
+          <div class="rp-subtitle">Click a month to see day-level events</div>
+        </div>
+        <div class="year-nav">
+          <button>‹</button>
+          <span>2026</span>
+          <button>›</button>
+        </div>
+      </div>
+      <div class="headline-row">
+        <div class="headline-card">
+          <div class="headline-label">Tightest month</div>
+          <div class="headline-value amber">Mar · £180</div>
+          <div class="headline-meta">Car insurance lands</div>
+        </div>
+        <div class="headline-card">
+          <div class="headline-label">Best month</div>
+          <div class="headline-value">May · £1,240</div>
+          <div class="headline-meta">Annual bonus</div>
+        </div>
+        <div class="headline-card">
+          <div class="headline-label">Average surplus</div>
+          <div class="headline-value">£634 / mo</div>
+          <div class="headline-meta">Across 12 months</div>
+        </div>
+      </div>
+      <div class="bar-chart">
+        <div class="bar" style="height: 62%"><span class="bar-val">£780</span><span class="bar-label">Jan</span></div>
+        <div class="bar" style="height: 58%"><span class="bar-val">£720</span><span class="bar-label">Feb</span></div>
+        <div class="bar tight" style="height: 14%"><span class="bar-val">£180</span><span class="bar-label">Mar</span></div>
+        <div class="bar" style="height: 64%"><span class="bar-val">£800</span><span class="bar-label">Apr</span></div>
+        <div class="bar" style="height: 95%"><span class="bar-val">£1.2k</span><span class="bar-label">May</span></div>
+        <div class="bar" style="height: 60%"><span class="bar-val">£740</span><span class="bar-label">Jun</span></div>
+        <div class="bar" style="height: 55%"><span class="bar-val">£680</span><span class="bar-label">Jul</span></div>
+        <div class="bar" style="height: 52%"><span class="bar-val">£640</span><span class="bar-label">Aug</span></div>
+        <div class="bar tight" style="height: 18%"><span class="bar-val">£220</span><span class="bar-label">Sep</span></div>
+        <div class="bar" style="height: 56%"><span class="bar-val">£700</span><span class="bar-label">Oct</span></div>
+        <div class="bar" style="height: 48%"><span class="bar-val">£590</span><span class="bar-label">Nov</span></div>
+        <div class="bar tight" style="height: 20%"><span class="bar-val">£260</span><span class="bar-label">Dec</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="state-label">State 2 — Growth selected (current Forecast content preserved)</div>
+
+<div class="shell">
+  <div class="topbar">
+    <span class="brand">finplan</span>
+    <span class="nav-item">Overview</span>
+    <span class="separator"></span>
+    <span class="nav-item income">Income</span>
+    <span class="nav-item committed">Committed</span>
+    <span class="nav-item discretionary">Discretionary</span>
+    <span class="nav-item surplus">Surplus</span>
+    <span class="separator"></span>
+    <span class="nav-item active">Forecast</span>
+    <span class="nav-item">Assets</span>
+    <span class="nav-item">Goals</span>
+    <span class="nav-item">Gifts</span>
+    <span class="nav-item">Help</span>
+    <span class="spacer"></span>
+    <span class="nav-item">Settings</span>
+  </div>
+  <div class="panels">
+    <div class="left-panel">
+      <div class="page-header">
+        <div class="page-header-title">Forecast</div>
+      </div>
+      <div class="nav-list">
+        <div class="nav-row">
+          <div class="nav-title">Cashflow</div>
+        </div>
+        <div class="nav-row active">
+          <div class="nav-title">Growth</div>
+        </div>
+      </div>
+    </div>
+    <div class="right-panel">
+      <div class="rp-header">
+        <div>
+          <div class="rp-title">Growth</div>
+          <div class="rp-subtitle">Long-term projection of net worth, surplus, and retirement</div>
+        </div>
+        <div class="range-tabs">
+          <span>1y</span>
+          <span>3y</span>
+          <span class="active">10y</span>
+          <span>20y</span>
+          <span>30y</span>
+        </div>
+      </div>
+      <div class="growth-card">
+        <div class="card-label">Net worth</div>
+        <div class="networth-placeholder">Add assets in the Assets section to see your projection</div>
+      </div>
+      <div class="two-col">
+        <div class="growth-card" style="margin: 0;">
+          <div class="card-label">Surplus accumulation</div>
+          <div class="small-line-chart">
+            <div class="yaxis">
+              <span>£12k</span>
+              <span>£9k</span>
+              <span>£6k</span>
+              <span>£3k</span>
+              <span>£0k</span>
+            </div>
+            <div class="chart-body">
+              <svg viewBox="0 0 300 96" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="surplusFill" x1="0" x2="0" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#4adcd0" stop-opacity="0.3"/>
+                    <stop offset="100%" stop-color="#4adcd0" stop-opacity="0"/>
+                  </linearGradient>
+                </defs>
+                <path d="M0,94 L30,84 L60,74 L90,64 L120,54 L150,45 L180,36 L210,27 L240,18 L270,10 L300,2 L300,96 L0,96 Z" fill="url(#surplusFill)"/>
+                <path d="M0,94 L30,84 L60,74 L90,64 L120,54 L150,45 L180,36 L210,27 L240,18 L270,10 L300,2" stroke="#4adcd0" stroke-width="1.5" fill="none"/>
+              </svg>
+              <div class="xaxis">
+                <span>2026</span>
+                <span>2031</span>
+                <span>2036</span>
+              </div>
+            </div>
+          </div>
+          <div class="totals-row">
+            <div class="item"><div class="lbl">Today</div><div class="val">£0</div></div>
+            <div class="item"><div class="lbl">Accumulated (2036)</div><div class="val">£11,598</div></div>
+          </div>
+        </div>
+        <div class="growth-card" style="margin: 0;">
+          <div class="card-label">Retirement</div>
+          <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+            <span class="chip">Josh Snaith</span>
+          </div>
+          <div class="networth-placeholder">Set Josh Snaith's retirement year in Settings to see their projection</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

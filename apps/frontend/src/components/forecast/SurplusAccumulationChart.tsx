@@ -15,9 +15,7 @@ export function SurplusAccumulationChart({ data }: SurplusAccumulationChartProps
   return (
     <div className="bg-surface border border-surface-elevated rounded-xl overflow-hidden">
       <div className="px-5 pt-4 pb-2">
-        <span className="text-xs font-heading font-semibold uppercase tracking-widest text-text-tertiary">
-          Surplus Accumulation
-        </span>
+        <span className="label-chart">Surplus Accumulation</span>
       </div>
 
       {isEmpty ? (

@@ -133,16 +133,7 @@ export function FinancialSummaryPanel({
           {waterfallSummary && (
             <>
               <motion.div variants={cv}>
-                <p
-                  className="text-xs mb-2 uppercase tracking-wider"
-                  style={{
-                    color: "#6366f1",
-                    fontFamily: "var(--font-heading, 'Outfit', sans-serif)",
-                    fontWeight: 600,
-                  }}
-                >
-                  Committed
-                </p>
+                <p className="label-detail mb-2 text-tier-committed">Committed</p>
                 <TierDoughnut
                   tier="committed"
                   tierTotal={waterfallSummary.committed.monthlyTotal}
@@ -153,16 +144,7 @@ export function FinancialSummaryPanel({
               </motion.div>
 
               <motion.div variants={cv}>
-                <p
-                  className="text-xs mb-2 uppercase tracking-wider"
-                  style={{
-                    color: "#a855f7",
-                    fontFamily: "var(--font-heading, 'Outfit', sans-serif)",
-                    fontWeight: 600,
-                  }}
-                >
-                  Discretionary
-                </p>
+                <p className="label-detail mb-2 text-tier-discretionary">Discretionary</p>
                 <TierDoughnut
                   tier="discretionary"
                   tierTotal={waterfallSummary.discretionary.total}

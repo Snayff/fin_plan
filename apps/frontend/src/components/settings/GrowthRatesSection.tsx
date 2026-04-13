@@ -8,14 +8,17 @@ export function GrowthRatesSection() {
 
   const settingsRecord = settings as Record<string, unknown> | undefined;
 
+  const [current, setCurrent] = useState<string>(
+    settingsRecord?.currentRatePct != null ? String(settingsRecord.currentRatePct) : "0"
+  );
   const [savings, setSavings] = useState<string>(
-    settingsRecord?.savingsRatePct != null ? String(settingsRecord.savingsRatePct) : ""
+    settingsRecord?.savingsRatePct != null ? String(settingsRecord.savingsRatePct) : "4"
   );
   const [investment, setInvestment] = useState<string>(
-    settingsRecord?.investmentRatePct != null ? String(settingsRecord.investmentRatePct) : ""
+    settingsRecord?.investmentRatePct != null ? String(settingsRecord.investmentRatePct) : "7"
   );
   const [pension, setPension] = useState<string>(
-    settingsRecord?.pensionRatePct != null ? String(settingsRecord.pensionRatePct) : ""
+    settingsRecord?.pensionRatePct != null ? String(settingsRecord.pensionRatePct) : "6"
   );
   const [inflation, setInflation] = useState<string>(
     settingsRecord?.inflationRatePct != null ? String(settingsRecord.inflationRatePct) : "2.5"
@@ -27,10 +30,9 @@ export function GrowthRatesSection() {
     e.preventDefault();
     setError(null);
     setSaved(false);
-    const toNum = (s: string) => (s !== "" ? parseFloat(s) : null);
-    const inflationNum = inflation !== "" ? parseFloat(inflation) : 2.5;
+    const toNum = (s: string, fallback: number) => (s !== "" ? parseFloat(s) : fallback);
     if (
-      [savings, investment, pension].some(
+      [current, savings, investment, pension].some(
         (s) => s !== "" && (isNaN(parseFloat(s)) || parseFloat(s) < 0 || parseFloat(s) > 100)
       )
     ) {
@@ -39,10 +41,11 @@ export function GrowthRatesSection() {
     }
     try {
       await updateSettings.mutateAsync({
-        savingsRatePct: toNum(savings),
-        investmentRatePct: toNum(investment),
-        pensionRatePct: toNum(pension),
-        inflationRatePct: inflationNum,
+        currentRatePct: toNum(current, 0),
+        savingsRatePct: toNum(savings, 4),
+        investmentRatePct: toNum(investment, 7),
+        pensionRatePct: toNum(pension, 6),
+        inflationRatePct: toNum(inflation, 2.5),
       } as UpdateSettingsInput);
       setSaved(true);
     } catch {
@@ -52,12 +55,11 @@ export function GrowthRatesSection() {
 
   return (
     <form onSubmit={(e) => void handleSave(e)} className="flex flex-col gap-4">
-      <h3 className="text-sm font-semibold text-[rgba(238,242,255,0.65)] uppercase tracking-wider">
-        Growth Rates
-      </h3>
+      <h3 className="label-detail">Growth Rates</h3>
 
       <div className="grid grid-cols-2 gap-3">
         {[
+          { label: "Default current account rate (%)", value: current, onChange: setCurrent },
           { label: "Default savings rate (%)", value: savings, onChange: setSavings },
           { label: "Default investment rate (%)", value: investment, onChange: setInvestment },
           { label: "Default pension rate (%)", value: pension, onChange: setPension },
@@ -79,7 +81,7 @@ export function GrowthRatesSection() {
               max="100"
               value={value}
               onChange={(e) => onChange(e.target.value)}
-              placeholder={placeholder ?? "Not set"}
+              placeholder={placeholder}
               className="bg-[rgba(238,242,255,0.04)] border border-[#1a1f35] rounded-md px-3 py-2 text-sm text-[rgba(238,242,255,0.92)] placeholder:text-[rgba(238,242,255,0.2)] focus:outline-none focus:border-[#8b5cf6]"
             />
           </div>

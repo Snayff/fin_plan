@@ -37,19 +37,21 @@ function hashInviteToken(token: string): string {
 }
 
 async function assertOwner(householdId: string, userId: string) {
-  const m = await prisma.householdMember.findUnique({
-    where: { householdId_userId: { householdId, userId } },
+  const m = await prisma.member.findFirst({
+    where: { householdId, userId },
   });
   if (!m || m.role !== "owner") {
     throw new AuthorizationError("Only household owners can perform this action");
   }
+  return m;
 }
 
 async function assertMember(householdId: string, userId: string) {
-  const m = await prisma.householdMember.findUnique({
-    where: { householdId_userId: { householdId, userId } },
+  const m = await prisma.member.findFirst({
+    where: { householdId, userId },
   });
   if (!m) throw new AuthorizationError("Not a member of this household");
+  return m;
 }
 
 export function assertOwnerOrAdmin(role: string): void {
@@ -71,11 +73,11 @@ export async function updateMemberRole(
   ctx?: ActorCtx
 ) {
   const [caller, target] = await Promise.all([
-    db.householdMember.findUnique({
-      where: { householdId_userId: { householdId, userId: callerId } },
+    db.member.findFirst({
+      where: { householdId, userId: callerId },
     }),
-    db.householdMember.findUnique({
-      where: { householdId_userId: { householdId, userId: targetUserId } },
+    db.member.findFirst({
+      where: { householdId, userId: targetUserId },
     }),
   ]);
 
@@ -107,19 +109,19 @@ export async function updateMemberRole(
       resource: "household-member",
       resourceId: targetUserId,
       beforeFetch: async (tx) =>
-        tx.householdMember.findUnique({
-          where: { householdId_userId: { householdId, userId: targetUserId } },
+        tx.member.findFirst({
+          where: { householdId, userId: targetUserId },
         }) as Promise<Record<string, unknown> | null>,
       mutation: async (tx) =>
-        tx.householdMember.update({
-          where: { householdId_userId: { householdId, userId: targetUserId } },
+        tx.member.update({
+          where: { id: target.id },
           data: { role: newRole },
         }),
     });
   }
 
-  return db.householdMember.update({
-    where: { householdId_userId: { householdId, userId: targetUserId } },
+  return db.member.update({
+    where: { id: target.id },
     data: { role: newRole },
   });
 }
@@ -128,24 +130,44 @@ export const householdService = {
   // ─── Household CRUD ────────────────────────────────────────────────────────
 
   async createHousehold(userId: string, name: string) {
-    const household = await prisma.household.create({
-      data: {
-        name,
-        members: { create: { userId, role: "owner" } },
-      },
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { name: true },
     });
+    const household = await prisma.household.create({
+      data: { name },
+    });
+    try {
+      await prisma.member.create({
+        data: {
+          householdId: household.id,
+          userId,
+          name: user?.name ?? "Owner",
+          role: "owner",
+        },
+      });
+    } catch (err: any) {
+      if (err?.code === "P2002") {
+        throw new ConflictError("A member with that name already exists in this household");
+      }
+      throw err;
+    }
     await prisma.householdSettings.create({ data: { householdId: household.id } });
     await subcategoryService.seedDefaults(household.id);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { activeHouseholdId: household.id },
+    });
     return household;
   },
 
   async getUserHouseholds(userId: string) {
-    return prisma.householdMember.findMany({
+    return prisma.member.findMany({
       where: { userId },
       include: {
         household: {
           include: {
-            _count: { select: { members: true } },
+            _count: { select: { memberProfiles: true } },
           },
         },
       },
@@ -167,7 +189,7 @@ export const householdService = {
     return prisma.household.findUnique({
       where: { id: householdId },
       include: {
-        members: {
+        memberProfiles: {
           include: {
             user: { select: { id: true, name: true, email: true } },
           },
@@ -188,64 +210,61 @@ export const householdService = {
 
   // ─── Members ───────────────────────────────────────────────────────────────
 
-  async removeMember(
-    householdId: string,
-    ownerUserId: string,
-    targetUserId: string,
-    ctx?: ActorCtx
-  ) {
+  async removeMember(householdId: string, ownerUserId: string, memberId: string, ctx?: ActorCtx) {
     await assertOwner(householdId, ownerUserId);
-    if (targetUserId === ownerUserId) {
+    const target = await prisma.member.findUnique({ where: { id: memberId } });
+    if (!target || target.householdId !== householdId) {
+      throw new NotFoundError("Member not found");
+    }
+    if (target.userId === ownerUserId) {
       throw new ValidationError("Owner cannot remove themselves from the household");
     }
+
     if (ctx) {
       await audited({
         db: prisma,
         ctx,
         action: "REMOVE_MEMBER",
-        resource: "household-member",
-        resourceId: targetUserId,
+        resource: "member",
+        resourceId: memberId,
         beforeFetch: async (tx) =>
-          tx.householdMember.findUnique({
-            where: { householdId_userId: { householdId, userId: targetUserId } },
-          }) as Promise<Record<string, unknown> | null>,
-        mutation: async (tx) =>
-          tx.householdMember.delete({
-            where: { householdId_userId: { householdId, userId: targetUserId } },
-          }),
+          tx.member.findUnique({ where: { id: memberId } }) as Promise<Record<
+            string,
+            unknown
+          > | null>,
+        mutation: async (tx) => tx.member.delete({ where: { id: memberId } }),
       });
     } else {
-      await prisma.householdMember.delete({
-        where: { householdId_userId: { householdId, userId: targetUserId } },
-      });
+      await prisma.member.delete({ where: { id: memberId } });
     }
 
-    // Clear stale activeHouseholdId if it points to the household they were removed from
-    const user = await prisma.user.findUnique({
-      where: { id: targetUserId },
-      select: { activeHouseholdId: true },
-    });
-
-    if (user?.activeHouseholdId === householdId) {
-      const otherMembership = await prisma.householdMember.findFirst({
-        where: { userId: targetUserId },
-        orderBy: { joinedAt: "asc" },
+    // Clear stale activeHouseholdId if the removed member had a linked user
+    if (target.userId) {
+      const user = await prisma.user.findUnique({
+        where: { id: target.userId },
+        select: { activeHouseholdId: true },
       });
-      await prisma.user.update({
-        where: { id: targetUserId },
-        data: { activeHouseholdId: otherMembership?.householdId ?? null },
-      });
+      if (user?.activeHouseholdId === householdId) {
+        const otherMembership = await prisma.member.findFirst({
+          where: { userId: target.userId },
+          orderBy: { joinedAt: "asc" },
+        });
+        await prisma.user.update({
+          where: { id: target.userId },
+          data: { activeHouseholdId: otherMembership?.householdId ?? null },
+        });
+      }
     }
   },
 
   async leaveHousehold(householdId: string, userId: string) {
-    const member = await prisma.householdMember.findUnique({
-      where: { householdId_userId: { householdId, userId } },
+    const member = await prisma.member.findFirst({
+      where: { householdId, userId },
     });
     if (!member) throw new NotFoundError("You are not a member of this household");
 
     if (member.role === "owner") {
-      const ownerCount = await prisma.householdMember.count({
+      const ownerCount = await prisma.member.count({
         where: { householdId, role: "owner" },
       });
       if (ownerCount <= 1) {
@@ -253,9 +272,7 @@ export const householdService = {
       }
     }
 
-    await prisma.householdMember.delete({
-      where: { householdId_userId: { householdId, userId } },
-    });
+    await prisma.member.delete({ where: { id: member.id } });
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -263,7 +280,7 @@ export const householdService = {
     });
 
     if (user?.activeHouseholdId === householdId) {
-      const otherMembership = await prisma.householdMember.findFirst({
+      const otherMembership = await prisma.member.findFirst({
         where: { userId },
         orderBy: { joinedAt: "asc" },
       });
@@ -283,8 +300,8 @@ export const householdService = {
     role: "member" | "admin" = "member",
     ctx?: ActorCtx
   ) {
-    const callerMembership = await prisma.householdMember.findUnique({
-      where: { householdId_userId: { householdId, userId: ownerUserId } },
+    const callerMembership = await prisma.member.findFirst({
+      where: { householdId, userId: ownerUserId },
     });
     if (!callerMembership) throw new AuthorizationError("Not a member of this household");
     assertOwnerOrAdmin(callerMembership.role);
@@ -294,7 +311,7 @@ export const householdService = {
 
     const normalizedEmail = normalizeEmail(email)!;
 
-    const existingMember = await prisma.householdMember.findFirst({
+    const existingMember = await prisma.member.findFirst({
       where: {
         householdId,
         user: { email: normalizedEmail },
@@ -428,19 +445,41 @@ export const householdService = {
       const personal = await tx.household.create({
         data: {
           name: `${newUser.name}'s Household`,
-          members: { create: { userId: created.id, role: "owner" } },
         },
       });
+      try {
+        await tx.member.create({
+          data: {
+            householdId: personal.id,
+            userId: created.id,
+            name: newUser.name,
+            role: "owner",
+          },
+        });
+      } catch (err: any) {
+        if (err?.code === "P2002") {
+          throw new ConflictError("A member with that name already exists in this household");
+        }
+        throw err;
+      }
       await tx.householdSettings.create({ data: { householdId: personal.id } });
 
       // Join the invited household and set it as active
-      await tx.householdMember.create({
-        data: {
-          householdId: invite.householdId,
-          userId: created.id,
-          role: invite.intendedRole ?? "member",
-        },
-      });
+      try {
+        await tx.member.create({
+          data: {
+            householdId: invite.householdId,
+            userId: created.id,
+            name: newUser.name,
+            role: invite.intendedRole ?? "member",
+          },
+        });
+      } catch (err: any) {
+        if (err?.code === "P2002") {
+          throw new ConflictError("A member with that name already exists in this household");
+        }
+        throw err;
+      }
 
       const updated = await tx.user.update({
         where: { id: created.id },
@@ -492,28 +531,36 @@ export const householdService = {
       );
     }
 
-    const existing = await prisma.householdMember.findUnique({
-      where: { householdId_userId: { householdId: invite.householdId, userId: existingUserId } },
+    const existing = await prisma.member.findFirst({
+      where: { householdId: invite.householdId, userId: existingUserId },
     });
     if (existing) throw new ConflictError("You are already a member of this household");
 
-    await prisma.$transaction([
-      prisma.householdMember.create({
-        data: {
-          householdId: invite.householdId,
-          userId: existingUserId,
-          role: invite.intendedRole ?? "member",
-        },
-      }),
-      prisma.user.update({
-        where: { id: existingUserId },
-        data: { activeHouseholdId: invite.householdId },
-      }),
-      prisma.householdInvite.update({
-        where: { id: invite.id },
-        data: { usedAt: new Date() },
-      }),
-    ]);
+    try {
+      await prisma.$transaction([
+        prisma.member.create({
+          data: {
+            householdId: invite.householdId,
+            userId: existingUserId,
+            name: user.name,
+            role: invite.intendedRole ?? "member",
+          },
+        }),
+        prisma.user.update({
+          where: { id: existingUserId },
+          data: { activeHouseholdId: invite.householdId },
+        }),
+        prisma.householdInvite.update({
+          where: { id: invite.id },
+          data: { usedAt: new Date() },
+        }),
+      ]);
+    } catch (err: any) {
+      if (err?.code === "P2002") {
+        throw new ConflictError("A member with that name already exists in this household");
+      }
+      throw err;
+    }
 
     return invite.household;
   },

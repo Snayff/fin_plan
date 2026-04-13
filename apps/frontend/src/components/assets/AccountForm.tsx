@@ -1,10 +1,12 @@
 import { useState } from "react";
 import type { AccountType } from "@finplan/shared";
 import { useHouseholdMembers, useSettings } from "../../hooks/useSettings.js";
+import { formatCurrency } from "@/utils/format";
 
 const GROWTH_RATE_SETTING_KEY: Partial<
-  Record<AccountType, "savingsRatePct" | "investmentRatePct" | "pensionRatePct">
+  Record<AccountType, "currentRatePct" | "savingsRatePct" | "investmentRatePct" | "pensionRatePct">
 > = {
+  Current: "currentRatePct",
   Savings: "savingsRatePct",
   StocksAndShares: "investmentRatePct",
   Pension: "pensionRatePct",
@@ -14,15 +16,16 @@ interface Props {
   mode: "add" | "edit";
   type: AccountType;
   initialName?: string;
-  initialMemberUserId?: string | null;
+  initialMemberId?: string | null;
   initialGrowthRatePct?: number | null;
   isSaving?: boolean;
   isSavingConfirm?: boolean;
   isStale?: boolean;
   onSave: (data: {
     name: string;
-    memberUserId: string | null;
+    memberId: string | null;
     growthRatePct: number | null;
+    initialValue?: number;
   }) => void;
   onCancel: () => void;
   onDeleteRequest?: () => void;
@@ -37,7 +40,7 @@ export function AccountForm({
   mode,
   type,
   initialName = "",
-  initialMemberUserId = null,
+  initialMemberId = null,
   initialGrowthRatePct = null,
   isSaving,
   isSavingConfirm,
@@ -48,12 +51,26 @@ export function AccountForm({
   onConfirm,
 }: Props) {
   const [name, setName] = useState(initialName);
-  const [memberUserId, setMemberUserId] = useState<string | null>(initialMemberUserId);
+  const [memberId, setMemberId] = useState<string | null>(initialMemberId);
   const [growthRatePct, setGrowthRatePct] = useState(
     initialGrowthRatePct != null ? initialGrowthRatePct.toString() : ""
   );
+  const [initialValue, setInitialValue] = useState<string>("");
+  const [valueFocused, setValueFocused] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [rateError, setRateError] = useState<string | null>(null);
+
+  const displayValue =
+    !valueFocused && initialValue
+      ? (() => {
+          const n = parseFloat(initialValue.replace(/[£,\s]/g, ""));
+          return isNaN(n) ? initialValue : formatCurrency(n);
+        })()
+      : initialValue;
+
+  function parseValue(raw: string): number {
+    return parseFloat(raw.replace(/[£,\s]/g, ""));
+  }
 
   const { data: members } = useHouseholdMembers();
   const { data: settings } = useSettings();
@@ -83,11 +100,19 @@ export function AccountForm({
     }
 
     if (!valid) return;
-    onSave({ name: name.trim(), memberUserId, growthRatePct: parsedRate });
+    const parsedValue = initialValue.trim() === "" ? undefined : parseValue(initialValue);
+    onSave({
+      name: name.trim(),
+      memberId,
+      growthRatePct: parsedRate,
+      ...(mode === "add" && parsedValue !== undefined && !isNaN(parsedValue)
+        ? { initialValue: parsedValue }
+        : {}),
+    });
   }
 
   return (
-    <div className="border-t border-foreground/5 bg-foreground/[0.02] py-3 pr-4 flex flex-col gap-3 border-l-2 border-page-accent/40 pl-[30px]">
+    <div className="border-t border-foreground/5 bg-foreground/[0.02] py-3 pr-4 flex flex-col gap-3 border-l-2 border-page-accent pl-[30px]">
       <div className="grid grid-cols-2 gap-3">
         {/* Name */}
         <div className="col-span-2 flex flex-col gap-1">
@@ -108,18 +133,37 @@ export function AccountForm({
           {nameError && <p className="-mt-0.5 text-xs text-amber-400">{nameError}</p>}
         </div>
 
+        {/* Current value (add mode only) */}
+        {mode === "add" && (
+          <div className="col-span-2 flex flex-col gap-1">
+            <label className={labelClass}>Current value</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              placeholder="£0.00"
+              value={displayValue}
+              onChange={(e) => setInitialValue(e.target.value)}
+              onFocus={() => setValueFocused(true)}
+              onBlur={() => setValueFocused(false)}
+              aria-label="Current value"
+              className={[inputClass, "font-numeric"].join(" ")}
+            />
+            <p className="text-[11px] text-text-muted">Optional — leave blank to record later.</p>
+          </div>
+        )}
+
         {/* Assigned to */}
         <div className="col-span-2 flex flex-col gap-1">
           <label className={labelClass}>Assigned to</label>
           <select
-            value={memberUserId ?? ""}
-            onChange={(e) => setMemberUserId(e.target.value || null)}
+            value={memberId ?? ""}
+            onChange={(e) => setMemberId(e.target.value || null)}
             aria-label="Assigned to"
             className={inputClass}
           >
             <option value="">Household</option>
             {members?.map((m) => (
-              <option key={m.userId} value={m.userId}>
+              <option key={m.id} value={m.id}>
                 {m.firstName}
               </option>
             ))}

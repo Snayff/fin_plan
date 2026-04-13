@@ -147,9 +147,7 @@ function PurchaseGroup({ label, purchases, onSelect }: PurchaseGroupProps) {
 
   return (
     <div>
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide px-3 py-2">
-        {label}
-      </p>
+      <p className="label-section px-3 py-2">{label}</p>
       <div className="rounded-lg border overflow-hidden">
         {purchases.map((p) => (
           <PurchaseRow key={p.id} purchase={p} onSelect={onSelect} />

@@ -20,7 +20,6 @@ mock.module("@/hooks/useWaterfall", () => ({
   useConfirmItem: () => ({ mutate: () => {}, isPending: false }),
   useUpdateItem: () => ({ mutate: () => {}, isPending: false }),
   useEndIncome: () => ({ mutate: () => {}, isPending: false }),
-  useCashflow: () => ({ data: undefined, isLoading: false, isError: false }),
 }));
 mock.module("@/hooks/useSettings", () => ({
   useSnapshot: () => ({ data: undefined, isLoading: false, isError: false }),
@@ -40,8 +39,8 @@ describe("OverviewPage", () => {
     expect(screen.getByText("Overview")).toBeTruthy();
   });
 
-  it("shows timeline strip with Now button", () => {
+  it("shows financial summary panel", () => {
     renderWithProviders(<OverviewPage />);
-    expect(screen.getByText("Now")).toBeTruthy();
+    expect(screen.getByTestId("financial-summary-panel")).toBeTruthy();
   });
 });

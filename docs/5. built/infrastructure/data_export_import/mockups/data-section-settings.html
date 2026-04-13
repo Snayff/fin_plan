@@ -1,0 +1,101 @@
+<h2>Settings — Data Section</h2>
+<p class="subtitle">New section in Settings page, visible to household owners only</p>
+
+<div class="section">
+  <div class="mockup">
+    <div class="mockup-header">Settings Page — Data Section</div>
+    <div class="mockup-body" style="background: #080a14; padding: 24px; font-family: 'Nunito Sans', sans-serif; color: #e2e8f0;">
+
+      <!-- Section header -->
+      <div style="margin-bottom: 24px;">
+        <h3 style="font-size: 16px; font-weight: 600; color: #e2e8f0; margin: 0 0 4px 0; font-family: 'Outfit', sans-serif;">Data</h3>
+        <p style="font-size: 13px; color: #64748b; margin: 0;">Export or import your household data</p>
+      </div>
+
+      <!-- Export row -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; margin-bottom: 12px; border: 1px solid rgba(255,255,255,0.06);">
+        <div>
+          <div style="font-size: 14px; font-weight: 500; color: #e2e8f0;">Export household</div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Download all data as a JSON file</div>
+        </div>
+        <button style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: 'Nunito Sans', sans-serif;">Export</button>
+      </div>
+
+      <!-- Import row -->
+      <div style="display: flex; align-items: center; justify-content: space-between; padding: 16px; background: rgba(255,255,255,0.03); border-radius: 8px; border: 1px solid rgba(255,255,255,0.06);">
+        <div>
+          <div style="font-size: 14px; font-weight: 500; color: #e2e8f0;">Import household</div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 2px;">Load data from a previously exported file</div>
+        </div>
+        <button style="background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #e2e8f0; padding: 8px 16px; border-radius: 6px; font-size: 13px; cursor: pointer; font-family: 'Nunito Sans', sans-serif;">Import</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 32px;">
+  <div class="mockup">
+    <div class="mockup-header">Import — Destination Choice Dialog</div>
+    <div class="mockup-body" style="background: #080a14; padding: 24px; font-family: 'Nunito Sans', sans-serif; color: #e2e8f0; display: flex; align-items: center; justify-content: center; min-height: 300px;">
+
+      <!-- Dialog -->
+      <div style="background: #0f1225; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 28px; max-width: 420px; width: 100%; box-shadow: 0 25px 50px rgba(0,0,0,0.5);">
+        <h3 style="font-size: 16px; font-weight: 600; color: #e2e8f0; margin: 0 0 6px 0; font-family: 'Outfit', sans-serif;">Import data</h3>
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 20px 0;">How would you like to import this household?</p>
+
+        <!-- Option: Overwrite -->
+        <div style="padding: 14px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; margin-bottom: 10px; cursor: pointer;">
+          <div style="font-size: 14px; font-weight: 500; color: #e2e8f0;">Overwrite current household</div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 3px;">Replaces all data in "Snaith Household" with the imported data</div>
+        </div>
+
+        <!-- Option: Create new -->
+        <div style="padding: 14px 16px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; margin-bottom: 20px; cursor: pointer;">
+          <div style="font-size: 14px; font-weight: 500; color: #e2e8f0;">Create a new household</div>
+          <div style="font-size: 12px; color: #64748b; margin-top: 3px;">Imports as a separate household alongside your existing ones</div>
+        </div>
+
+        <!-- Cancel -->
+        <div style="text-align: right;">
+          <button style="background: none; border: none; color: #64748b; font-size: 13px; cursor: pointer; padding: 8px 12px; font-family: 'Nunito Sans', sans-serif;">Cancel</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top: 32px;">
+  <div class="mockup">
+    <div class="mockup-header">HouseholdSwitcher — Reworked Dropdown</div>
+    <div class="mockup-body" style="background: #080a14; padding: 24px; font-family: 'Nunito Sans', sans-serif; color: #e2e8f0;">
+
+      <!-- Simulated nav area -->
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
+        <span style="font-size: 13px; color: #64748b;">Household:</span>
+        <span style="font-size: 14px; font-weight: 500; color: #e2e8f0; cursor: pointer; display: flex; align-items: center; gap: 4px;">
+          Snaith Household
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="opacity: 0.5;"><path d="M3 5L6 8L9 5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </span>
+      </div>
+
+      <!-- Dropdown open state -->
+      <div style="background: #0f1225; border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; width: 220px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.4);">
+        <div style="padding: 10px 14px; background: rgba(255,255,255,0.05); font-size: 13px; color: #e2e8f0; display: flex; align-items: center; justify-content: space-between;">
+          Snaith Household
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 7L6 10L11 4" stroke="#818cf8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </div>
+        <div style="padding: 10px 14px; font-size: 13px; color: #94a3b8; cursor: pointer;">
+          Test Household
+        </div>
+        <div style="border-top: 1px solid rgba(255,255,255,0.06);"></div>
+        <div style="padding: 10px 14px; font-size: 13px; color: #818cf8; cursor: pointer; display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 3V11M3 7H11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Create new household
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

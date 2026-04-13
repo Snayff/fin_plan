@@ -12,7 +12,12 @@
 
 2. **The waterfall is the mental model.** Money flows: Income → Committed Spend → Discretionary Spend → Surplus. Every design decision reinforces this cascade. The waterfall is not a feature — it is the identity of the app.
 
-3. **finplan tracks intent (budgets), not transactions.** The app holds the plan. Users reconcile actual spending through their bank. Language throughout must reflect this: use "budgeted", "planned", "allocated"; never "spent", "paid", "charged".
+3. **finplan tracks intent (budgets), not transactions — with one scoped exception for Gifts.** The app holds the plan. Users reconcile actual spending through their bank for income, committed spend, and discretionary spend. Language in these tiers must reflect this: use "budgeted", "planned", "allocated"; never "spent", "paid", "charged".
+
+   **Gifts exception:** The Gifts planner is the only place in the app where users may record actual amounts against a planned gift. Within the Gifts planner, "spent" is permitted and means _"the amount the user recorded against a specific planned gift"_. This exception is scoped:
+   - It applies to per-gift actuals and aggregates computed from them (e.g. "£450 spent of £2,400 planned").
+   - It does **not** apply to the waterfall. The waterfall always shows the annual gift _budget_, never the sum of actuals.
+   - It does **not** apply to any other tier or feature.
 
 4. **All income is net (take-home only).** Gross income, tax calculations, and employer contributions are out of scope. Users enter what arrives in their account.
 

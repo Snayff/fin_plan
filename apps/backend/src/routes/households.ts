@@ -4,14 +4,18 @@ import {
   updateMemberRole,
   assertOwnerOrAdmin,
 } from "../services/household.service";
-import { authMiddleware } from "../middleware/auth.middleware";
+import { authMiddleware, userOnlyAuth } from "../middleware/auth.middleware";
 import { prisma } from "../config/database.js";
+import { memberService } from "../services/member.service.js";
 import {
   createHouseholdSchema,
   createHouseholdInviteSchema,
   renameHouseholdSchema,
   updateMemberRoleSchema,
   updateMemberProfileSchema,
+  createMemberSchema,
+  updateMemberSchema,
+  deleteMemberSchema,
 } from "@finplan/shared";
 import { AuthorizationError, NotFoundError } from "../utils/errors.js";
 import { actorCtx } from "../lib/actor-ctx.js";
@@ -19,14 +23,14 @@ import { audited } from "../services/audit.service.js";
 
 export async function householdRoutes(fastify: FastifyInstance) {
   // List all households the current user belongs to
-  fastify.get("/households", { preHandler: [authMiddleware] }, async (request, reply) => {
+  fastify.get("/households", { preHandler: [userOnlyAuth] }, async (request, reply) => {
     const userId = request.user!.userId;
     const memberships = await householdService.getUserHouseholds(userId);
     return reply.send({ households: memberships });
   });
 
   // Create a new household
-  fastify.post("/households", { preHandler: [authMiddleware] }, async (request, reply) => {
+  fastify.post("/households", { preHandler: [userOnlyAuth] }, async (request, reply) => {
     const userId = request.user!.userId;
     const { name } = createHouseholdSchema.parse(request.body);
     const household = await householdService.createHousehold(userId, name);
@@ -141,11 +145,18 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const callerId = req.user!.userId;
       const isSelf = userId === callerId;
       if (!isSelf) {
-        const callerMember = await prisma.householdMember.findUnique({
-          where: { householdId_userId: { householdId, userId: callerId } },
+        const callerMember = await prisma.member.findFirst({
+          where: { householdId, userId: callerId },
           select: { role: true },
         });
         assertOwnerOrAdmin(callerMember?.role ?? "member");
+      }
+      const targetMember = await prisma.member.findFirst({
+        where: { householdId, userId },
+        select: { id: true },
+      });
+      if (!targetMember) {
+        throw new NotFoundError("Member not found");
       }
       const data = updateMemberProfileSchema.parse(req.body);
       const updated = await audited({
@@ -153,14 +164,14 @@ export async function householdRoutes(fastify: FastifyInstance) {
         ctx: actorCtx(req),
         action: "UPDATE_MEMBER_PROFILE",
         resource: "household-member",
-        resourceId: userId,
+        resourceId: targetMember.id,
         beforeFetch: async (tx) =>
-          tx.householdMember.findUnique({
-            where: { householdId_userId: { householdId, userId } },
+          tx.member.findUnique({
+            where: { id: targetMember.id },
           }) as Promise<Record<string, unknown> | null>,
         mutation: async (tx) =>
-          tx.householdMember.update({
-            where: { householdId_userId: { householdId, userId } },
+          tx.member.update({
+            where: { id: targetMember.id },
             data: {
               ...(data.dateOfBirth !== undefined
                 ? { dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null }
@@ -207,6 +218,56 @@ export async function householdRoutes(fastify: FastifyInstance) {
         }
         throw err;
       }
+    }
+  );
+
+  // List member profiles for a household
+  fastify.get(
+    "/households/:id/member-profiles",
+    { preHandler: [authMiddleware] },
+    async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const members = await memberService.listMembers(id);
+      return reply.send({ members });
+    }
+  );
+
+  // Create a new member profile (owner only)
+  fastify.post(
+    "/households/:id/member-profiles",
+    { preHandler: [authMiddleware] },
+    async (request, reply) => {
+      const userId = request.user!.userId;
+      const { id } = request.params as { id: string };
+      const data = createMemberSchema.parse(request.body);
+      const member = await memberService.createMember(id, userId, data);
+      return reply.status(201).send({ member });
+    }
+  );
+
+  // Update a member profile (owner only)
+  fastify.patch(
+    "/households/:id/member-profiles/:memberId",
+    { preHandler: [authMiddleware] },
+    async (request, reply) => {
+      const userId = request.user!.userId;
+      const { id, memberId } = request.params as { id: string; memberId: string };
+      const data = updateMemberSchema.parse(request.body);
+      const member = await memberService.updateMember(id, userId, memberId, data);
+      return reply.send({ member });
+    }
+  );
+
+  // Delete a member profile (owner only, with optional reassignment)
+  fastify.delete(
+    "/households/:id/member-profiles/:memberId",
+    { preHandler: [authMiddleware] },
+    async (request, reply) => {
+      const userId = request.user!.userId;
+      const { id, memberId } = request.params as { id: string; memberId: string };
+      const { reassignToMemberId } = deleteMemberSchema.parse(request.body ?? {});
+      await memberService.deleteMember(id, userId, memberId, reassignToMemberId);
+      return reply.send({ success: true });
     }
   );
 }

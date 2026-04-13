@@ -35,6 +35,11 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     ],
   };
 
+  const preMutation = {
+    ...pre,
+    config: { rateLimit: { max: 30, timeWindow: "15 minutes" } },
+  };
+
   fastify.addHook("onResponse", async (request, reply) => {
     if (
       ["POST", "PATCH", "DELETE"].includes(request.method) &&
@@ -45,7 +50,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     }
   });
 
-  // ─── Summary + cashflow ───────────────────────────────────────────────────
+  // ─── Summary ──────────────────────────────────────────────────────────────
 
   fastify.get("/", pre, async (req, reply) => {
     const householdId = req.householdId!;
@@ -53,16 +58,6 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     snapshotService.ensureJan1Snapshot(householdId).catch(() => {});
     const summary = await waterfallService.getWaterfallSummary(householdId);
     return reply.send(summary);
-  });
-
-  fastify.get("/cashflow", pre, async (req, reply) => {
-    const { year } = req.query as { year?: string };
-    const y = year ? parseInt(year, 10) : new Date().getFullYear();
-    if (!Number.isInteger(y) || y < 2000 || y > 2100) {
-      return reply.status(400).send({ error: "Invalid year" });
-    }
-    const months = await waterfallService.getCashflow(req.householdId!, y);
-    return reply.send(months);
   });
 
   fastify.get("/financial-summary", pre, async (req, reply) => {
@@ -77,7 +72,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(sources);
   });
 
-  fastify.post("/income", pre, async (req, reply) => {
+  fastify.post("/income", preMutation, async (req, reply) => {
     const data = createIncomeSourceSchema.parse(req.body);
     const source = await waterfallService.createIncome(req.householdId!, data, actorCtx(req));
     await periodService.createPeriod({
@@ -90,20 +85,20 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.status(201).send(source);
   });
 
-  fastify.patch("/income/:id", pre, async (req, reply) => {
+  fastify.patch("/income/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateIncomeSourceSchema.parse(req.body);
     const source = await waterfallService.updateIncome(req.householdId!, id, data, actorCtx(req));
     return reply.send(source);
   });
 
-  fastify.delete("/income/:id", pre, async (req, reply) => {
+  fastify.delete("/income/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     await waterfallService.deleteIncome(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
-  fastify.post("/income/:id/confirm", pre, async (req, reply) => {
+  fastify.post("/income/:id/confirm", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const source = await waterfallService.confirmIncome(req.householdId!, id);
     return reply.send(source);
@@ -116,7 +111,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(bills);
   });
 
-  fastify.post("/committed", pre, async (req, reply) => {
+  fastify.post("/committed", preMutation, async (req, reply) => {
     const data = createCommittedItemSchema.parse(req.body);
     const bill = await waterfallService.createCommitted(req.householdId!, data, actorCtx(req));
     await periodService.createPeriod({
@@ -129,20 +124,20 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.status(201).send(bill);
   });
 
-  fastify.patch("/committed/:id", pre, async (req, reply) => {
+  fastify.patch("/committed/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateCommittedItemSchema.parse(req.body);
     const bill = await waterfallService.updateCommitted(req.householdId!, id, data, actorCtx(req));
     return reply.send(bill);
   });
 
-  fastify.delete("/committed/:id", pre, async (req, reply) => {
+  fastify.delete("/committed/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     await waterfallService.deleteCommitted(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
-  fastify.post("/committed/:id/confirm", pre, async (req, reply) => {
+  fastify.post("/committed/:id/confirm", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const bill = await waterfallService.confirmCommitted(req.householdId!, id);
     return reply.send(bill);
@@ -155,7 +150,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(bills);
   });
 
-  fastify.post("/yearly", pre, async (req, reply) => {
+  fastify.post("/yearly", preMutation, async (req, reply) => {
     const data = createCommittedItemSchema.parse(req.body);
     const bill = await waterfallService.createYearly(req.householdId!, data, actorCtx(req));
     await periodService.createPeriod({
@@ -168,20 +163,20 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.status(201).send(bill);
   });
 
-  fastify.patch("/yearly/:id", pre, async (req, reply) => {
+  fastify.patch("/yearly/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateCommittedItemSchema.parse(req.body);
     const bill = await waterfallService.updateYearly(req.householdId!, id, data, actorCtx(req));
     return reply.send(bill);
   });
 
-  fastify.delete("/yearly/:id", pre, async (req, reply) => {
+  fastify.delete("/yearly/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     await waterfallService.deleteYearly(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
-  fastify.post("/yearly/:id/confirm", pre, async (req, reply) => {
+  fastify.post("/yearly/:id/confirm", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const bill = await waterfallService.confirmYearly(req.householdId!, id);
     return reply.send(bill);
@@ -194,7 +189,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(cats);
   });
 
-  fastify.post("/discretionary", pre, async (req, reply) => {
+  fastify.post("/discretionary", preMutation, async (req, reply) => {
     const data = createDiscretionaryItemSchema.parse(req.body);
     const cat = await waterfallService.createDiscretionary(req.householdId!, data, actorCtx(req));
     await periodService.createPeriod({
@@ -207,7 +202,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.status(201).send(cat);
   });
 
-  fastify.patch("/discretionary/:id", pre, async (req, reply) => {
+  fastify.patch("/discretionary/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateDiscretionaryItemSchema.parse(req.body);
     const cat = await waterfallService.updateDiscretionary(
@@ -219,13 +214,13 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(cat);
   });
 
-  fastify.delete("/discretionary/:id", pre, async (req, reply) => {
+  fastify.delete("/discretionary/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     await waterfallService.deleteDiscretionary(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
-  fastify.post("/discretionary/:id/confirm", pre, async (req, reply) => {
+  fastify.post("/discretionary/:id/confirm", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const cat = await waterfallService.confirmDiscretionary(req.householdId!, id);
     return reply.send(cat);
@@ -238,7 +233,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(allocs);
   });
 
-  fastify.post("/savings", pre, async (req, reply) => {
+  fastify.post("/savings", preMutation, async (req, reply) => {
     const data = createDiscretionaryItemSchema.parse(req.body);
     const alloc = await waterfallService.createSavings(req.householdId!, data, actorCtx(req));
     await periodService.createPeriod({
@@ -251,20 +246,20 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.status(201).send(alloc);
   });
 
-  fastify.patch("/savings/:id", pre, async (req, reply) => {
+  fastify.patch("/savings/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateDiscretionaryItemSchema.parse(req.body);
     const alloc = await waterfallService.updateSavings(req.householdId!, id, data, actorCtx(req));
     return reply.send(alloc);
   });
 
-  fastify.delete("/savings/:id", pre, async (req, reply) => {
+  fastify.delete("/savings/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     await waterfallService.deleteSavings(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
-  fastify.post("/savings/:id/confirm", pre, async (req, reply) => {
+  fastify.post("/savings/:id/confirm", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const alloc = await waterfallService.confirmSavings(req.householdId!, id);
     return reply.send(alloc);
@@ -280,13 +275,13 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
 
   // ─── Batch + rebuild ──────────────────────────────────────────────────────
 
-  fastify.post("/confirm-batch", pre, async (req, reply) => {
+  fastify.post("/confirm-batch", preMutation, async (req, reply) => {
     const data = confirmBatchSchema.parse(req.body);
     await waterfallService.confirmBatch(req.householdId!, data);
     return reply.status(204).send();
   });
 
-  fastify.delete("/all", pre, async (req, reply) => {
+  fastify.delete("/all", preMutation, async (req, reply) => {
     deleteAllWaterfallSchema.parse(req.body);
     await waterfallService.deleteAll(req.householdId!);
     return reply.status(204).send();
@@ -301,14 +296,14 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(periods);
   });
 
-  fastify.post("/periods", pre, async (req, reply) => {
+  fastify.post("/periods", preMutation, async (req, reply) => {
     const data = createPeriodSchema.parse(req.body);
     await verifyItemOwnership(req.householdId!, data.itemType, data.itemId);
     const period = await periodService.createPeriod(data);
     return reply.status(201).send(period);
   });
 
-  fastify.patch("/periods/:id", pre, async (req, reply) => {
+  fastify.patch("/periods/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updatePeriodSchema.parse(req.body);
     // Verify ownership via parent item
@@ -319,7 +314,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(period);
   });
 
-  fastify.delete("/periods/:id", pre, async (req, reply) => {
+  fastify.delete("/periods/:id", preMutation, async (req, reply) => {
     const { id } = req.params as { id: string };
     // Verify ownership via parent item
     const existing = await prisma.itemAmountPeriod.findUnique({ where: { id } });
@@ -375,7 +370,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(counts);
   });
 
-  fastify.put("/subcategories/:tier", pre, async (req, reply) => {
+  fastify.put("/subcategories/:tier", preMutation, async (req, reply) => {
     const { tier } = req.params as { tier: string };
     const tierParsed = WaterfallTierEnum.safeParse(tier);
     if (!tierParsed.success) {
@@ -394,7 +389,7 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     return reply.send(updated);
   });
 
-  fastify.post("/subcategories/reset", pre, async (req, reply) => {
+  fastify.post("/subcategories/reset", preMutation, async (req, reply) => {
     const bodyParsed = resetSubcategoriesSchema.safeParse(req.body);
     if (!bodyParsed.success) {
       return reply.status(400).send({ error: bodyParsed.error.message });

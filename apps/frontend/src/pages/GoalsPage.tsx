@@ -3,7 +3,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 
 export default function GoalsPage() {
   return (
-    <div data-testid="goals-page" className="relative min-h-screen">
+    <div data-testid="goals-page" className="relative h-full">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10"

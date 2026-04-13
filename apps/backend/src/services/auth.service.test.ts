@@ -38,7 +38,10 @@ beforeEach(() => {
   prismaMock.refreshToken.update.mockResolvedValue({ id: "rt-1", isRevoked: true } as any);
   prismaMock.refreshToken.updateMany.mockResolvedValue({ count: 1 } as any);
   // register() now creates a personal household and updates user.activeHouseholdId
-  prismaMock.household.create.mockResolvedValue({ id: "household-1", name: "Test Household" } as any);
+  prismaMock.household.create.mockResolvedValue({
+    id: "household-1",
+    name: "Test Household",
+  } as any);
   prismaMock.user.update.mockResolvedValue(buildUser({ activeHouseholdId: "household-1" } as any));
 });
 
@@ -84,11 +87,15 @@ describe("authService.register", () => {
   });
 
   it("throws ValidationError for missing email", async () => {
-    await expect(authService.register({ ...validInput, email: "" })).rejects.toThrow("Email, password, and name are required");
+    await expect(authService.register({ ...validInput, email: "" })).rejects.toThrow(
+      "Email, password, and name are required"
+    );
   });
 
   it("throws ValidationError for invalid email format", async () => {
-    await expect(authService.register({ ...validInput, email: "not-an-email" })).rejects.toThrow("Invalid email format");
+    await expect(authService.register({ ...validInput, email: "not-an-email" })).rejects.toThrow(
+      "Invalid email format"
+    );
   });
 
   it("throws ValidationError for short password (< 12 chars)", async () => {
@@ -99,7 +106,9 @@ describe("authService.register", () => {
 
   it("throws ConflictError for duplicate email", async () => {
     prismaMock.user.findUnique.mockResolvedValue(buildUser());
-    await expect(authService.register(validInput)).rejects.toThrow("User with this email already exists");
+    await expect(authService.register(validInput)).rejects.toThrow(
+      "Registration could not be completed. Please try again or log in."
+    );
   });
 
   it("sets default preferences", async () => {
@@ -143,7 +152,10 @@ describe("authService.login", () => {
     prismaMock.user.findUnique.mockResolvedValue(user);
     (verifyPassword as any).mockResolvedValue(true);
 
-    const result = await authService.login({ email: "test@example.com", password: "validpassword1" });
+    const result = await authService.login({
+      email: "test@example.com",
+      password: "validpassword1",
+    });
 
     expect(result.accessToken).toBe("mock-access-token");
     expect(result.refreshToken).toBe("mock-refresh-token");
@@ -152,21 +164,23 @@ describe("authService.login", () => {
 
   it("throws AuthenticationError for unknown email", async () => {
     prismaMock.user.findUnique.mockResolvedValue(null);
-    await expect(authService.login({ email: "unknown@test.com", password: "pass123456789" })).rejects.toThrow(
-      "Invalid email or password"
-    );
+    await expect(
+      authService.login({ email: "unknown@test.com", password: "pass123456789" })
+    ).rejects.toThrow("Invalid credentials");
   });
 
   it("throws AuthenticationError for wrong password", async () => {
     prismaMock.user.findUnique.mockResolvedValue(buildUser());
     (verifyPassword as any).mockResolvedValue(false);
-    await expect(authService.login({ email: "test@test.com", password: "wrongpassword" })).rejects.toThrow(
-      "Invalid email or password"
-    );
+    await expect(
+      authService.login({ email: "test@test.com", password: "wrongpassword" })
+    ).rejects.toThrow("Invalid credentials");
   });
 
   it("throws ValidationError for missing fields", async () => {
-    await expect(authService.login({ email: "", password: "pass" })).rejects.toThrow("Email and password are required");
+    await expect(authService.login({ email: "", password: "pass" })).rejects.toThrow(
+      "Email and password are required"
+    );
   });
 
   it("stores rememberMe preference and session expiries", async () => {

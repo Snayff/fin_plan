@@ -41,10 +41,12 @@ RUN bun run build
 FROM nginx:alpine
 
 # Copy built static files
-COPY --from=builder /workspace/apps/frontend/dist /usr/share/nginx/html
+COPY --from=builder --chown=nginx:nginx /workspace/apps/frontend/dist /usr/share/nginx/html
 
 # Replace default nginx config with ours (proxy rules + SPA fallback)
 COPY apps/frontend/nginx.conf /etc/nginx/conf.d/default.conf
+
+USER nginx
 
 EXPOSE 3000
 

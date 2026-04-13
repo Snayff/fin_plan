@@ -1,6 +1,6 @@
-import jwt from 'jsonwebtoken';
-import { createHash, randomUUID } from 'crypto';
-import { config } from '../config/env';
+import jwt from "jsonwebtoken";
+import { createHash, randomUUID } from "crypto";
+import { config } from "../config/env";
 
 export interface JwtPayload {
   userId: string;
@@ -26,7 +26,7 @@ export function generateAccessToken(payload: JwtPayload): string {
  * Generate a refresh token
  */
 export function generateRefreshToken(payload: RefreshTokenPayload): string {
-  return jwt.sign(payload, config.JWT_REFRESH_SECRET, {
+  return jwt.sign({ ...payload, jti: randomUUID() }, config.JWT_REFRESH_SECRET, {
     expiresIn: config.JWT_REFRESH_EXPIRES_IN as any,
   });
 }
@@ -39,10 +39,10 @@ export function verifyAccessToken(token: string): JwtPayload {
     return jwt.verify(token, config.JWT_SECRET) as JwtPayload;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new Error('Token expired', { cause: error });
+      throw new Error("Token expired", { cause: error });
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      throw new Error('Invalid token', { cause: error });
+      throw new Error("Invalid token", { cause: error });
     }
     throw error;
   }
@@ -56,10 +56,10 @@ export function verifyRefreshToken(token: string): RefreshTokenPayload {
     return jwt.verify(token, config.JWT_REFRESH_SECRET) as RefreshTokenPayload;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new Error('Refresh token expired', { cause: error });
+      throw new Error("Refresh token expired", { cause: error });
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      throw new Error('Invalid refresh token', { cause: error });
+      throw new Error("Invalid refresh token", { cause: error });
     }
     throw error;
   }
@@ -77,7 +77,7 @@ export function decodeToken(token: string): JwtPayload | null {
  * Hash a refresh token for secure storage (SHA-256)
  */
 export function hashToken(token: string): string {
-  return createHash('sha256').update(token).digest('hex');
+  return createHash("sha256").update(token).digest("hex");
 }
 
 /**

@@ -102,6 +102,26 @@ describe("POST /api/assets/assets/:assetId/balance", () => {
   });
 });
 
+describe("POST /api/assets/accounts", () => {
+  it("creates account with initialValue and forwards to service", async () => {
+    const app = await buildTestApp();
+    app.register(assetsRoutes, { prefix: "/api/assets" });
+    await app.ready();
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/assets/accounts",
+      payload: { name: "HSBC Current", type: "Current", initialValue: 1500 },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(mockAssetsService.createAccount).toHaveBeenCalledWith(
+      "hh-1",
+      expect.objectContaining({ name: "HSBC Current", type: "Current", initialValue: 1500 }),
+      expect.any(Object)
+    );
+  });
+});
+
 describe("GET /api/assets/accounts/:type", () => {
   it("returns 200 with accounts for type", async () => {
     const app = await buildTestApp();

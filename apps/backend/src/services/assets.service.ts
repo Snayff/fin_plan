@@ -46,17 +46,18 @@ async function assertAccountOwned(householdId: string, accountId: string) {
   return account;
 }
 
-async function assertMemberOwned(householdId: string, memberUserId: string) {
-  const member = await prisma.householdMember.findUnique({
-    where: { householdId_userId: { householdId, userId: memberUserId } },
+async function assertMemberInHousehold(householdId: string, memberId: string) {
+  const member = await prisma.member.findUnique({
+    where: { id: memberId },
+    select: { id: true, householdId: true },
   });
-  if (!member) {
+  if (!member || member.householdId !== householdId) {
     throw new ValidationError("Member not found in household");
   }
 }
 
 const ASSET_TYPES: AssetType[] = ["Property", "Vehicle", "Other"];
-const ACCOUNT_TYPES: AccountType[] = ["Savings", "Pension", "StocksAndShares", "Other"];
+const ACCOUNT_TYPES: AccountType[] = ["Current", "Savings", "Pension", "StocksAndShares", "Other"];
 
 // ── Summary ───────────────────────────────────────────────────────────────────
 
@@ -120,9 +121,10 @@ export const assetsService = {
   },
 
   async createAsset(householdId: string, data: CreateAssetInput, ctx: ActorCtx) {
-    if (data.memberUserId) {
-      await assertMemberOwned(householdId, data.memberUserId);
+    if (data.memberId) {
+      await assertMemberInHousehold(householdId, data.memberId);
     }
+    const { initialValue, ...assetData } = data;
     return audited({
       db: prisma,
       ctx,
@@ -130,17 +132,28 @@ export const assetsService = {
       resource: "asset",
       resourceId: "",
       beforeFetch: async () => null,
-      mutation: async (tx) =>
-        tx.asset.create({
-          data: { householdId, ...data },
-        }),
+      mutation: async (tx) => {
+        const asset = await tx.asset.create({
+          data: { householdId, ...assetData },
+        });
+        if (initialValue !== undefined) {
+          await tx.assetBalance.create({
+            data: {
+              assetId: asset.id,
+              value: initialValue,
+              date: new Date(),
+            },
+          });
+        }
+        return asset;
+      },
     });
   },
 
   async updateAsset(householdId: string, assetId: string, data: UpdateAssetInput, ctx: ActorCtx) {
     await assertAssetOwned(householdId, assetId);
-    if (data.memberUserId) {
-      await assertMemberOwned(householdId, data.memberUserId);
+    if (data.memberId) {
+      await assertMemberInHousehold(householdId, data.memberId);
     }
     return audited({
       db: prisma,
@@ -239,9 +252,10 @@ export const assetsService = {
   },
 
   async createAccount(householdId: string, data: CreateAccountInput, ctx: ActorCtx) {
-    if (data.memberUserId) {
-      await assertMemberOwned(householdId, data.memberUserId);
+    if (data.memberId) {
+      await assertMemberInHousehold(householdId, data.memberId);
     }
+    const { initialValue, ...accountData } = data;
     return audited({
       db: prisma,
       ctx,
@@ -249,7 +263,21 @@ export const assetsService = {
       resource: "account",
       resourceId: "",
       beforeFetch: async (_tx) => null,
-      mutation: async (tx) => tx.account.create({ data: { householdId, ...data } }),
+      mutation: async (tx) => {
+        const account = await tx.account.create({
+          data: { householdId, ...accountData },
+        });
+        if (initialValue !== undefined) {
+          await tx.accountBalance.create({
+            data: {
+              accountId: account.id,
+              value: initialValue,
+              date: new Date(),
+            },
+          });
+        }
+        return account;
+      },
     });
   },
 
@@ -260,8 +288,8 @@ export const assetsService = {
     ctx: ActorCtx
   ) {
     await assertAccountOwned(householdId, accountId);
-    if (data.memberUserId) {
-      await assertMemberOwned(householdId, data.memberUserId);
+    if (data.memberId) {
+      await assertMemberInHousehold(householdId, data.memberId);
     }
     return audited({
       db: prisma,

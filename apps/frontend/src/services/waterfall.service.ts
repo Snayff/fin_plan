@@ -1,7 +1,6 @@
 import { apiClient } from "@/lib/api";
 import type {
   WaterfallSummary,
-  CashflowMonth,
   SubcategoryRow,
   CreateIncomeSourceInput,
   UpdateIncomeSourceInput,
@@ -25,8 +24,6 @@ import type {
 
 export const waterfallService = {
   getSummary: () => apiClient.get<WaterfallSummary>("/api/waterfall"),
-  getCashflow: (year: number) =>
-    apiClient.get<CashflowMonth[]>(`/api/waterfall/cashflow?year=${year}`),
 
   // Income
   listIncome: () => apiClient.get<any[]>("/api/waterfall/income"),

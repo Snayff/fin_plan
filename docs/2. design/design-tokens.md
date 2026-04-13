@@ -165,6 +165,18 @@ Six levels in the left panel:
 | Item amount          | 13px | 400    | `font-numeric` | `#cbd5e1`                  | Value for each line item — subtle but readable          |
 | Metadata             | 12px | 500    | `font-body`    | varies                     | Staleness age, dates, helper text                       |
 
+### Subheading Labels
+
+Three standardised uppercase label styles, defined as `@layer components` utility classes in `index.css`. Always use these instead of ad-hoc class combinations.
+
+| Class            | Size | Weight | Font           | Tracking          | Colour                     | Use for                                                          |
+| ---------------- | ---- | ------ | -------------- | ----------------- | -------------------------- | ---------------------------------------------------------------- |
+| `.label-section` | 11px | 600    | `font-heading` | `tracking-wider`  | `text-muted-foreground/60` | Panel group headers, sidebar nav labels, settings section titles |
+| `.label-detail`  | 12px | 600    | `font-heading` | `tracking-wider`  | `text-muted-foreground/70` | Right-panel detail sections, content area headings               |
+| `.label-chart`   | 10px | 600    | `font-heading` | `tracking-widest` | `text-text-tertiary`       | Chart titles, data-viz labels, stat card headers                 |
+
+All three are uppercase by default. Override colour with a tier class (e.g. `label-detail text-tier-committed`) when the label is tier-scoped.
+
 ### Cascade Connectors Typography
 
 Between each tier, connector text uses `font-numeric`, 10.5px, `font-medium`, `text-muted`, `tracking-wide`. Rules use `bg-border/50` at 1px height.

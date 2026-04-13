@@ -30,7 +30,7 @@ export interface LoginInput {
 }
 
 export interface AuthResponse {
-  user: Omit<User, "passwordHash">;
+  user: Omit<User, "passwordHash" | "twoFactorSecret" | "twoFactorEnabled">;
   accessToken: string;
   refreshToken: string;
 }
@@ -79,7 +79,7 @@ export const authService = {
     });
 
     if (existingUser) {
-      throw new ConflictError("User with this email already exists");
+      throw new ConflictError("Registration could not be completed. Please try again or log in.");
     }
 
     // Hash password
@@ -120,7 +120,12 @@ export const authService = {
     });
 
     // Remove password hash from response
-    const { passwordHash: _, ...userWithoutPassword } = user;
+    const {
+      passwordHash: _,
+      twoFactorSecret: _2,
+      twoFactorEnabled: _3,
+      ...userWithoutPassword
+    } = user;
 
     return {
       user: userWithoutPassword,
@@ -148,14 +153,14 @@ export const authService = {
     });
 
     if (!user) {
-      throw new AuthenticationError("Invalid email or password");
+      throw new AuthenticationError("Invalid credentials");
     }
 
     // Verify password
     const isPasswordValid = await verifyPassword(password, user.passwordHash);
 
     if (!isPasswordValid) {
-      throw new AuthenticationError("Invalid email or password");
+      throw new AuthenticationError("Invalid credentials");
     }
 
     // Generate tokens
@@ -180,7 +185,12 @@ export const authService = {
     });
 
     // Remove password hash from response
-    const { passwordHash: _, ...userWithoutPassword } = user;
+    const {
+      passwordHash: _,
+      twoFactorSecret: _2,
+      twoFactorEnabled: _3,
+      ...userWithoutPassword
+    } = user;
 
     return {
       user: userWithoutPassword,
@@ -192,7 +202,9 @@ export const authService = {
   /**
    * Find user by ID
    */
-  async findUserById(userId: string): Promise<Omit<User, "passwordHash"> | null> {
+  async findUserById(
+    userId: string
+  ): Promise<Omit<User, "passwordHash" | "twoFactorSecret" | "twoFactorEnabled"> | null> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
     });
@@ -201,7 +213,12 @@ export const authService = {
       return null;
     }
 
-    const { passwordHash: _, ...userWithoutPassword } = user;
+    const {
+      passwordHash: _,
+      twoFactorSecret: _2,
+      twoFactorEnabled: _3,
+      ...userWithoutPassword
+    } = user;
     return userWithoutPassword;
   },
 
@@ -217,13 +234,21 @@ export const authService = {
   /**
    * Update user display name
    */
-  async updateUserName(userId: string, name: string): Promise<Omit<User, "passwordHash">> {
+  async updateUserName(
+    userId: string,
+    name: string
+  ): Promise<Omit<User, "passwordHash" | "twoFactorSecret" | "twoFactorEnabled">> {
     try {
       const user = await prisma.user.update({
         where: { id: userId },
         data: { name },
       });
-      const { passwordHash: _, ...userWithoutPassword } = user;
+      const {
+        passwordHash: _,
+        twoFactorSecret: _2,
+        twoFactorEnabled: _3,
+        ...userWithoutPassword
+      } = user;
       return userWithoutPassword;
     } catch (error) {
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {

@@ -1,18 +1,27 @@
 import { z } from "zod";
 
 export const assetTypeSchema = z.enum(["Property", "Vehicle", "Other"]);
-export const accountTypeSchema = z.enum(["Savings", "Pension", "StocksAndShares", "Other"]);
+export const accountTypeSchema = z.enum([
+  "Current",
+  "Savings",
+  "Pension",
+  "StocksAndShares",
+  "Other",
+]);
 
 // Asset CRUD
 export const createAssetSchema = z.object({
   name: z.string().min(1).max(100).trim(),
   type: assetTypeSchema,
-  memberUserId: z.string().nullable().optional(),
+  memberId: z.string().nullable().optional(),
+  growthRatePct: z.number().min(-100).max(100).nullable().optional(),
+  initialValue: z.number().positive().optional(),
 });
 
 export const updateAssetSchema = z.object({
   name: z.string().min(1).max(100).trim().optional(),
-  memberUserId: z.string().nullable().optional(),
+  memberId: z.string().nullable().optional(),
+  growthRatePct: z.number().min(-100).max(100).nullable().optional(),
 });
 
 export const recordAssetBalanceSchema = z.object({
@@ -25,14 +34,17 @@ export const recordAssetBalanceSchema = z.object({
 export const createAccountSchema = z.object({
   name: z.string().min(1).max(100).trim(),
   type: accountTypeSchema,
-  memberUserId: z.string().nullable().optional(),
+  memberId: z.string().nullable().optional(),
   growthRatePct: z.number().min(0).max(100).nullable().optional(),
+  isCashflowLinked: z.boolean().optional(),
+  initialValue: z.number().positive().optional(),
 });
 
 export const updateAccountSchema = z.object({
   name: z.string().min(1).max(100).trim().optional(),
-  memberUserId: z.string().nullable().optional(),
+  memberId: z.string().nullable().optional(),
   growthRatePct: z.number().min(0).max(100).nullable().optional(),
+  isCashflowLinked: z.boolean().optional(),
 });
 
 export const recordAccountBalanceSchema = z.object({

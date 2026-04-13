@@ -20,11 +20,11 @@ beforeEach(() => {
 // Helper to build a mock account with a latest balance
 function mockAccount(overrides: {
   id?: string;
-  type: "Savings" | "Pension" | "StocksAndShares" | "Other";
+  type: "Current" | "Savings" | "Pension" | "StocksAndShares" | "Other";
   balance: number;
   monthlyContribution?: number;
   growthRatePct?: number | null;
-  memberUserId?: string | null;
+  memberId?: string | null;
 }) {
   return {
     id: overrides.id ?? "acc-1",
@@ -32,7 +32,7 @@ function mockAccount(overrides: {
     type: overrides.type,
     growthRatePct: overrides.growthRatePct ?? null,
     monthlyContribution: overrides.monthlyContribution ?? 0,
-    memberUserId: overrides.memberUserId ?? null,
+    memberId: overrides.memberId ?? null,
     balances: [{ value: overrides.balance, date: new Date("2026-01-01") }],
   };
 }
@@ -54,6 +54,7 @@ function mockAsset(overrides: {
 }
 
 const defaultSettings = {
+  currentRatePct: 0,
   savingsRatePct: 4,
   investmentRatePct: 7,
   pensionRatePct: 6,
@@ -64,15 +65,16 @@ describe("forecastService.getProjections — net worth", () => {
   it("year 0 net worth = sum of non-pension account balances + all asset balances", async () => {
     prismaMock.account.findMany.mockResolvedValue([
       mockAccount({ type: "Savings", balance: 10000 }),
-      mockAccount({ id: "acc-2", type: "Pension", balance: 50000, memberUserId: "user-1" }),
+      mockAccount({ id: "acc-2", type: "Pension", balance: 50000, memberId: "m-1" }),
       mockAccount({ id: "acc-3", type: "StocksAndShares", balance: 5000 }),
     ] as any);
     prismaMock.asset.findMany.mockResolvedValue([
       mockAsset({ type: "Property", balance: 200000 }),
     ] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
-    prismaMock.householdMember.findMany.mockResolvedValue([
+    prismaMock.member.findMany.mockResolvedValue([
       {
+        id: "m-1",
         householdId: "hh-1",
         userId: "user-1",
         retirementYear: 2055,
@@ -94,7 +96,7 @@ describe("forecastService.getProjections — net worth", () => {
     ] as any);
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
-    prismaMock.householdMember.findMany.mockResolvedValue([] as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
 
     const result = await forecastService.getProjections("hh-1", 1);
 
@@ -108,7 +110,7 @@ describe("forecastService.getProjections — net worth", () => {
       mockAsset({ type: "Property", balance: 200000, growthRatePct: 3 }),
     ] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
-    prismaMock.householdMember.findMany.mockResolvedValue([] as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
 
     const result = await forecastService.getProjections("hh-1", 1);
 
@@ -122,12 +124,65 @@ describe("forecastService.getProjections — net worth", () => {
       mockAsset({ type: "Vehicle", balance: 20000, growthRatePct: -15 }),
     ] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
-    prismaMock.householdMember.findMany.mockResolvedValue([] as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
 
     const result = await forecastService.getProjections("hh-1", 1);
 
     // Year 1: 20000 * 0.85 = 17000
     expect(result.netWorth[1]!.nominal).toBe(17000);
+  });
+
+  it("Current accounts use currentRatePct as default growth rate", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ type: "Current", balance: 5000 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      ...defaultSettings,
+      currentRatePct: 2,
+    } as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    // Year 1: 5000 * 1.02 (currentRatePct) = 5100
+    expect(result.netWorth[1]!.nominal).toBe(5100);
+  });
+
+  it("Current account growthRatePct override takes precedence over currentRatePct", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ type: "Current", balance: 5000, growthRatePct: 1 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      ...defaultSettings,
+      currentRatePct: 2,
+    } as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    // Year 1 with 1% override: 5000 * 1.01 = 5050
+    expect(result.netWorth[1]!.nominal).toBe(5050);
+  });
+
+  it("Current and Savings accounts use independent default rates", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ id: "c-1", type: "Current", balance: 1000 }),
+      mockAccount({ id: "s-1", type: "Savings", balance: 1000 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      ...defaultSettings,
+      currentRatePct: 1,
+      savingsRatePct: 5,
+    } as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    // Current: 1000 * 1.01 = 1010; Savings: 1000 * 1.05 = 1050; total = 2060
+    expect(result.netWorth[1]!.nominal).toBe(2060);
   });
 
   it("uses per-account growthRatePct override over household default", async () => {
@@ -136,7 +191,7 @@ describe("forecastService.getProjections — net worth", () => {
     ] as any);
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
-    prismaMock.householdMember.findMany.mockResolvedValue([] as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
 
     const result = await forecastService.getProjections("hh-1", 1);
 
@@ -151,12 +206,13 @@ describe("forecastService.getProjections — net worth", () => {
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue({
       ...defaultSettings,
+      currentRatePct: 0,
       savingsRatePct: 0,
       investmentRatePct: 0,
       pensionRatePct: 0,
       inflationRatePct: 2.5,
     } as any);
-    prismaMock.householdMember.findMany.mockResolvedValue([] as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
 
     const result = await forecastService.getProjections("hh-1", 1);
 
@@ -170,7 +226,7 @@ describe("forecastService.getProjections — net worth", () => {
     ] as any);
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(null);
-    prismaMock.householdMember.findMany.mockResolvedValue([] as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
 
     const result = await forecastService.getProjections("hh-1", 1);
 
@@ -184,7 +240,7 @@ describe("forecastService.getProjections — surplus", () => {
     prismaMock.account.findMany.mockResolvedValue([] as any);
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
-    prismaMock.householdMember.findMany.mockResolvedValue([] as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
     waterfallServiceMock.getWaterfallSummary.mockResolvedValue({
       surplus: { amount: 500 },
     } as any);
@@ -200,19 +256,21 @@ describe("forecastService.getProjections — surplus", () => {
 describe("forecastService.getProjections — retirement", () => {
   it("pension series includes only pension accounts assigned to the member", async () => {
     prismaMock.account.findMany.mockResolvedValue([
-      mockAccount({ id: "p1", type: "Pension", balance: 20000, memberUserId: "user-1" }),
-      mockAccount({ id: "p2", type: "Pension", balance: 30000, memberUserId: "user-2" }),
+      mockAccount({ id: "p1", type: "Pension", balance: 20000, memberId: "m-1" }),
+      mockAccount({ id: "p2", type: "Pension", balance: 30000, memberId: "m-2" }),
     ] as any);
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
-    prismaMock.householdMember.findMany.mockResolvedValue([
+    prismaMock.member.findMany.mockResolvedValue([
       {
+        id: "m-1",
         householdId: "hh-1",
         userId: "user-1",
         retirementYear: 2055,
         user: { id: "user-1", name: "Alice" },
       },
       {
+        id: "m-2",
         householdId: "hh-1",
         userId: "user-2",
         retirementYear: 2060,
@@ -222,8 +280,8 @@ describe("forecastService.getProjections — retirement", () => {
 
     const result = await forecastService.getProjections("hh-1", 1);
 
-    const alice = result.retirement.find((m) => m.memberId === "user-1")!;
-    const bob = result.retirement.find((m) => m.memberId === "user-2")!;
+    const alice = result.retirement.find((m) => m.memberId === "m-1")!;
+    const bob = result.retirement.find((m) => m.memberId === "m-2")!;
 
     expect(alice.series[0]!.pension).toBe(20000);
     expect(bob.series[0]!.pension).toBe(30000);
@@ -233,8 +291,9 @@ describe("forecastService.getProjections — retirement", () => {
     prismaMock.account.findMany.mockResolvedValue([] as any);
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
-    prismaMock.householdMember.findMany.mockResolvedValue([
+    prismaMock.member.findMany.mockResolvedValue([
       {
+        id: "m-1",
         householdId: "hh-1",
         userId: "user-1",
         retirementYear: null,
@@ -251,7 +310,7 @@ describe("forecastService.getProjections — retirement", () => {
     prismaMock.account.findMany.mockResolvedValue([] as any);
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
-    prismaMock.householdMember.findMany.mockResolvedValue([] as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
     waterfallServiceMock.getWaterfallSummary.mockResolvedValue({ surplus: { amount: 0 } } as any);
 
     const result = await forecastService.getProjections("hh-1", 3);
