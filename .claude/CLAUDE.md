@@ -61,6 +61,7 @@ docs/
 - **Shared schemas:** Zod schemas live in `packages/shared/src/schemas/` — never duplicate between apps
 - **Database changes:** Always use `bun run db:migrate` (interactive Prisma migrations) — never edit schema without a migration
 - **No hardcoded colours:** Always use Tailwind design tokens — never hex values or `rgba()` in component code
+- **No dashed borders:** Never use `border-dashed` in component code. The design system uses solid borders exclusively. Only two exceptions exist: `SnapshotDot` (auto vs manual distinction) and `CashflowYearBar` (today marker). All add/ghost buttons must follow the `GhostAddButton` pattern with solid borders.
 
 ---
 

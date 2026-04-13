@@ -52,7 +52,7 @@ export default function ItemRow({
 
   const lifecycleClass =
     item.lifecycleState === "future"
-      ? "opacity-55 border border-dashed border-foreground/10"
+      ? "opacity-55 border border-foreground/10"
       : item.lifecycleState === "expired"
         ? "opacity-35"
         : "";

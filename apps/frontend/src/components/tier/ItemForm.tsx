@@ -313,7 +313,7 @@ export default function ItemForm({
             <button
               type="button"
               onClick={onAddPeriod}
-              className="mt-1 rounded-md border border-dashed border-surface-border px-3.5 py-1.5 text-xs text-text-tertiary hover:text-text-secondary hover:border-surface-elevated-border transition-colors"
+              className="mt-1 rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
             >
               + Add period
             </button>
