@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { ConfigBudgetPanel } from "./ConfigBudgetPanel";
 import { ConfigPeoplePanel } from "./ConfigPeoplePanel";
 import { ConfigEventsPanel } from "./ConfigEventsPanel";
 import { ConfigPlannerModePanel } from "./ConfigPlannerModePanel";
@@ -8,15 +9,22 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { usePrefersReducedMotion } from "@/utils/motion";
 import type { GiftPlannerMode } from "@finplan/shared";
 
-type Drill = "list" | "people" | "events" | "mode" | "quickadd";
+type Drill = "list" | "people" | "events" | "budget" | "mode" | "quickadd";
 type Props = {
   currentMode: GiftPlannerMode;
   readOnly: boolean;
   year: number;
+  annualBudget: number;
   onDirtyChange?: (dirty: boolean) => void;
 };
 
-export function ConfigModePanel({ currentMode, readOnly, year, onDirtyChange }: Props) {
+export function ConfigModePanel({
+  currentMode,
+  readOnly,
+  year,
+  annualBudget,
+  onDirtyChange,
+}: Props) {
   const [drill, setDrill] = useState<Drill>("list");
   const [dir, setDir] = useState(1);
   const [quickAddDirty, setQuickAddDirty] = useState(false);
@@ -80,6 +88,11 @@ export function ConfigModePanel({ currentMode, readOnly, year, onDirtyChange }: 
                 description: "Occasions like birthdays and holidays",
               },
               {
+                id: "budget" as Drill,
+                label: "Budget",
+                description: "Set your annual gift budget",
+              },
+              {
                 id: "mode" as Drill,
                 label: "Mode",
                 description: "Whether the gift budget links to your waterfall",
@@ -128,6 +141,9 @@ export function ConfigModePanel({ currentMode, readOnly, year, onDirtyChange }: 
           </button>
           {drill === "people" && <ConfigPeoplePanel readOnly={readOnly} year={year} />}
           {drill === "events" && <ConfigEventsPanel readOnly={readOnly} />}
+          {drill === "budget" && (
+            <ConfigBudgetPanel year={year} readOnly={readOnly} currentBudget={annualBudget} />
+          )}
           {drill === "mode" && (
             <ConfigPlannerModePanel currentMode={currentMode} readOnly={readOnly} />
           )}
@@ -163,6 +179,8 @@ function labelFor(drill: Drill): string {
       return "People";
     case "events":
       return "Events";
+    case "budget":
+      return "Budget";
     case "mode":
       return "Mode";
     case "quickadd":

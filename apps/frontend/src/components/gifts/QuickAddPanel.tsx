@@ -4,6 +4,7 @@ import {
   useCreateGiftEvent,
   useCreateGiftPerson,
   useQuickAddMatrix,
+  useSetGiftBudget,
 } from "@/hooks/useGifts";
 import {
   Select,
@@ -49,6 +50,7 @@ type AddForm = "person" | "event" | null;
 export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
   const matrix = useQuickAddMatrix(year);
   const bulk = useBulkUpsertAllocations();
+  const setBudgetMutation = useSetGiftBudget();
   const createPerson = useCreateGiftPerson();
   const createEvent = useCreateGiftEvent();
   const [cells, setCells] = useState<Record<string, string>>({});
@@ -113,6 +115,20 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
   const events = matrix.data?.events ?? [];
   const budget = matrix.data?.budget;
 
+  const [budgetInput, setBudgetInput] = useState<string | null>(null);
+  const budgetDisplayValue = budgetInput ?? String(budget?.annual ?? 0);
+
+  const saveBudget = () => {
+    const parsed = parseFloat(budgetDisplayValue);
+    if (Number.isNaN(parsed) || parsed < 0) return;
+    if (parsed === (budget?.annual ?? 0)) {
+      setBudgetInput(null);
+      return;
+    }
+    setBudgetMutation.mutate({ year, data: { annualBudget: parsed } });
+    setBudgetInput(null);
+  };
+
   const set = (personId: string, eventId: string, value: string) =>
     setCells((prev) => ({ ...prev, [`${personId}-${eventId}`]: value }));
 
@@ -136,7 +152,8 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
   );
 
   const allocated = grandTotal;
-  const remaining = (budget?.annual ?? 0) - allocated;
+  const activeBudget = parseFloat(budgetDisplayValue) || 0;
+  const remaining = activeBudget - allocated;
 
   const save = () => {
     const payload = Object.entries(cells)
@@ -505,9 +522,24 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
               <span className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">
                 Budget
               </span>
-              <span className="font-mono text-[15px] font-semibold tabular-nums text-foreground">
-                £{budget.annual.toLocaleString()}
-              </span>
+              <div className="flex items-center gap-0.5">
+                <span className="font-mono text-[15px] font-semibold tabular-nums text-foreground/40">
+                  £
+                </span>
+                <input
+                  type="number"
+                  min={0}
+                  step="any"
+                  disabled={readOnly}
+                  value={budgetDisplayValue}
+                  onChange={(e) => setBudgetInput(e.target.value)}
+                  onBlur={saveBudget}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") saveBudget();
+                  }}
+                  className="w-24 bg-transparent font-mono text-[15px] font-semibold tabular-nums text-foreground border-b border-foreground/20 focus:border-page-accent/60 focus:outline-none py-0"
+                />
+              </div>
             </div>
             <div className="flex flex-col gap-0.5">
               <span className="text-[10px] font-medium uppercase tracking-wider text-foreground/40">

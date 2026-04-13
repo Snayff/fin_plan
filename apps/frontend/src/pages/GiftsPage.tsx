@@ -75,6 +75,7 @@ export default function GiftsPage() {
                 currentMode={state.mode}
                 readOnly={state.isReadOnly}
                 year={year}
+                annualBudget={state.budget.annualBudget}
                 onDirtyChange={setConfigDirty}
               />
             )}
