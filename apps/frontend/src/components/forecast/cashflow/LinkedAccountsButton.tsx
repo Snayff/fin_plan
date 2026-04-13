@@ -37,9 +37,7 @@ export function LinkedAccountsButton({
           </span>
         ) : (
           <>
-            <span className="text-[10px] uppercase tracking-widest text-text-tertiary font-heading">
-              Account balances
-            </span>
+            <span className="label-chart">Account balances</span>
             <span className="font-numeric text-sm text-foreground">
               {formatCurrency(startingBalance)}
             </span>

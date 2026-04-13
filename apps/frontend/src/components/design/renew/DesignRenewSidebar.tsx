@@ -71,9 +71,7 @@ export function DesignRenewSidebar() {
   return (
     <div className="py-8 px-4">
       <div className="mb-6">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-          Dev Only
-        </p>
+        <p className="label-section mb-1">Dev Only</p>
         <h2 className="text-base font-semibold text-foreground">Renew Design System</h2>
         <div className="flex flex-col gap-1 mt-1">
           <a
@@ -93,9 +91,7 @@ export function DesignRenewSidebar() {
       <nav className="space-y-6">
         {navCategories.map(({ category, items }) => (
           <div key={category}>
-            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
-              {category}
-            </p>
+            <p className="label-section mb-2">{category}</p>
             <ul className="space-y-1">
               {items.map(({ label, anchor }) => (
                 <li key={anchor}>

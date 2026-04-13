@@ -8,7 +8,7 @@ export function GiftsBudgetSummary({ budget }: Props) {
   return (
     <div className="space-y-3 px-4 py-4">
       <div>
-        <div className="text-[11px] uppercase tracking-wide text-foreground/55">
+        <div className="label-section">
           <GlossaryTermMarker entryId="gifts-annual-budget">Annual budget</GlossaryTermMarker>
         </div>
         <div
@@ -20,7 +20,7 @@ export function GiftsBudgetSummary({ budget }: Props) {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <div className="text-[11px] uppercase tracking-wide text-foreground/55">
+          <div className="label-section">
             <GlossaryTermMarker entryId="gifts-planned">Planned</GlossaryTermMarker>
           </div>
           <div
@@ -31,7 +31,7 @@ export function GiftsBudgetSummary({ budget }: Props) {
           </div>
         </div>
         <div>
-          <div className="text-[11px] uppercase tracking-wide text-foreground/55">
+          <div className="label-section">
             <GlossaryTermMarker entryId="gifts-spent">Spent</GlossaryTermMarker>
           </div>
           <div

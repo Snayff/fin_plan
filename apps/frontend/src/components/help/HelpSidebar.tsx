@@ -70,9 +70,7 @@ export function HelpSidebar({ selectedId, onSelect }: Props) {
           <>
             {filteredGlossary.length > 0 && (
               <section aria-label="Glossary">
-                <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                  Glossary
-                </p>
+                <p className="px-3 py-1.5 label-section">Glossary</p>
                 {filteredGlossary.map((entry) => (
                   <button
                     key={entry.id}
@@ -93,9 +91,7 @@ export function HelpSidebar({ selectedId, onSelect }: Props) {
 
             {filteredConcepts.length > 0 && (
               <section aria-label="Concepts">
-                <p className="px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                  Concepts
-                </p>
+                <p className="px-3 py-1.5 label-section">Concepts</p>
                 {filteredConcepts.map((concept) => (
                   <button
                     key={concept.id}
@@ -114,9 +110,7 @@ export function HelpSidebar({ selectedId, onSelect }: Props) {
 
             <section aria-disabled="true">
               <div className="px-3 py-1.5 flex items-center gap-2">
-                <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/60">
-                  User Manual
-                </span>
+                <span className="label-section">User Manual</span>
                 <span className="text-[10px] text-muted-foreground/30 border border-border rounded px-1">
                   Coming soon
                 </span>

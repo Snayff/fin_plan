@@ -122,9 +122,7 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
             onMouseLeave={scheduleClose}
             onClick={(e) => e.stopPropagation()}
           >
-            <p className="font-heading text-xs font-semibold text-foreground mb-1 uppercase tracking-wide">
-              {entry.term}
-            </p>
+            <p className="label-detail mb-1 text-foreground">{entry.term}</p>
             <p className="text-xs text-muted-foreground leading-relaxed">{entry.definition}</p>
 
             {entry.relatedConceptIds.filter((id) => id !== entryId).length > 0 && (

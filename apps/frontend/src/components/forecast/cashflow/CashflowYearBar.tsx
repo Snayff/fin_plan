@@ -47,9 +47,7 @@ export function CashflowYearBar({
           </span>
         </span>
       )}
-      <span className="absolute -bottom-5 text-[10px] uppercase tracking-widest text-text-tertiary">
-        {monthLabel}
-      </span>
+      <span className="absolute -bottom-5 label-chart">{monthLabel}</span>
     </button>
   );
 }

@@ -45,9 +45,7 @@ export function ConceptDetailView({ conceptId, onNavigate }: Props) {
       <hr className="my-6 border-border" />
 
       <div>
-        <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">
-          Why it matters in finplan
-        </p>
+        <p className="label-detail mb-2">Why it matters in finplan</p>
         <p className="text-sm text-foreground/80 leading-relaxed">{concept.whyItMatters}</p>
       </div>
 
@@ -55,9 +53,7 @@ export function ConceptDetailView({ conceptId, onNavigate }: Props) {
         <>
           <hr className="my-6 border-border" />
           <div className="rounded-lg border border-page-accent/30 bg-page-accent/5 p-4">
-            <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">
-              See this in finplan
-            </p>
+            <p className="label-detail mb-2">See this in finplan</p>
             <Link
               to={concept.seeThisInFinplan}
               className="text-sm text-page-accent hover:text-page-accent/80 transition-colors font-medium"
@@ -72,9 +68,7 @@ export function ConceptDetailView({ conceptId, onNavigate }: Props) {
         <>
           <hr className="my-6 border-border" />
           <div>
-            <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">
-              Related terms
-            </p>
+            <p className="label-detail mb-2">Related terms</p>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
               {filteredTermIds.map((termId) => {
                 const term = getGlossaryEntry(termId);

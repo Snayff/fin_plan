@@ -24,9 +24,7 @@ function HeadlineCard({
 }) {
   return (
     <div className="rounded-md border border-border bg-card px-4 py-3">
-      <div className="text-[10px] uppercase tracking-widest text-text-tertiary font-heading">
-        {label}
-      </div>
+      <div className="label-chart">{label}</div>
       <div
         className={cn("font-numeric text-base mt-1", amber ? "text-attention" : "text-foreground")}
       >

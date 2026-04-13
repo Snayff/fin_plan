@@ -201,9 +201,7 @@ export function HouseholdSection() {
           {/* Pending invites */}
           {(household?.invites ?? []).length > 0 && (
             <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                Pending invites
-              </p>
+              <p className="label-section">Pending invites</p>
               {(household?.invites ?? []).map((invite) => (
                 <div
                   key={invite.id}

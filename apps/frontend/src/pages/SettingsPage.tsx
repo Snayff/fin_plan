@@ -90,9 +90,7 @@ export default function SettingsPage() {
     <div data-page="settings" className="relative flex h-full overflow-hidden">
       {/* Left nav */}
       <aside className="flex flex-col w-48 shrink-0 border-r p-4 overflow-y-auto">
-        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-3">
-          Settings
-        </p>
+        <p className="label-section mb-3">Settings</p>
         <div className="space-y-1">
           {SECTIONS.filter(canSeeSection).map((s) => (
             <button

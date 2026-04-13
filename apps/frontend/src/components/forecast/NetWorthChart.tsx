@@ -32,9 +32,7 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
   return (
     <div className="bg-surface border border-surface-elevated rounded-xl overflow-hidden">
       <div className="px-5 pt-4 pb-2">
-        <span className="text-xs font-heading font-semibold uppercase tracking-widest text-text-tertiary">
-          Net Worth
-        </span>
+        <span className="label-chart">Net Worth</span>
       </div>
 
       {isEmpty ? (

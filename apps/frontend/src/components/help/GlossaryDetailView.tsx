@@ -41,9 +41,7 @@ export function GlossaryDetailView({ entryId, onNavigate }: Props) {
         <>
           <hr className="my-4 border-border" />
           <div className="rounded-lg border border-page-accent/30 bg-page-accent/5 p-4">
-            <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">
-              Explore this topic
-            </p>
+            <p className="label-detail mb-2">Explore this topic</p>
             <button
               type="button"
               onClick={() => onNavigate(entryId)}
@@ -59,9 +57,7 @@ export function GlossaryDetailView({ entryId, onNavigate }: Props) {
         <>
           <hr className="my-4 border-border" />
           <div>
-            <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">
-              Related concepts
-            </p>
+            <p className="label-detail mb-2">Related concepts</p>
             <div className="flex flex-wrap gap-2">
               {filteredConceptIds.map((conceptId) => {
                 const concept = getConceptEntry(conceptId);
@@ -86,9 +82,7 @@ export function GlossaryDetailView({ entryId, onNavigate }: Props) {
         <>
           <hr className="my-4 border-border" />
           <div>
-            <p className="text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider mb-2">
-              Related terms
-            </p>
+            <p className="label-detail mb-2">Related terms</p>
             <div className="flex flex-wrap gap-x-3 gap-y-1">
               {filteredTermIds.map((termId) => {
                 const term = getGlossaryEntry(termId);

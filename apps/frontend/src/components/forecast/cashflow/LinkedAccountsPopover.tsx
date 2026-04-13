@@ -75,7 +75,7 @@ export function LinkedAccountsPopover({ onClose }: LinkedAccountsPopoverProps) {
         <>
           <label className="flex items-center gap-3 px-2 py-1.5 cursor-pointer">
             <input type="checkbox" checked={allSelected} onChange={toggleAll} />
-            <span className="text-xs uppercase tracking-widest text-text-tertiary">Select all</span>
+            <span className="label-chart">Select all</span>
           </label>
           <div className="border-t border-border my-2" />
           <ul className="space-y-1 max-h-64 overflow-y-auto">
@@ -93,9 +93,7 @@ export function LinkedAccountsPopover({ onClose }: LinkedAccountsPopoverProps) {
                     <span className="text-sm truncate" title={a.name}>
                       {a.name}
                     </span>
-                    <span className="text-[10px] uppercase tracking-widest text-text-tertiary shrink-0">
-                      {a.type}
-                    </span>
+                    <span className="label-chart shrink-0">{a.type}</span>
                   </span>
                   <span className="font-numeric text-xs text-text-secondary shrink-0 w-16 text-right">
                     {formatCurrency(a.latestBalance ?? 0)}

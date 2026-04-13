@@ -55,9 +55,7 @@ export function GrowthRatesSection() {
 
   return (
     <form onSubmit={(e) => void handleSave(e)} className="flex flex-col gap-4">
-      <h3 className="text-sm font-semibold text-[rgba(238,242,255,0.65)] uppercase tracking-wider">
-        Growth Rates
-      </h3>
+      <h3 className="label-detail">Growth Rates</h3>
 
       <div className="grid grid-cols-2 gap-3">
         {[

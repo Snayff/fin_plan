@@ -467,9 +467,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
                 {freshItems.length > 0 && (
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">
-                        Up to date ({freshItems.length})
-                      </p>
+                      <p className="label-section">Up to date ({freshItems.length})</p>
                       {unresolvedFresh.length > 0 && (
                         <button
                           type="button"
