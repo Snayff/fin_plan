@@ -173,9 +173,10 @@ model HouseholdSettings {
   investmentRatePct   Float    @default(7)
   pensionRatePct      Float    @default(6)
   inflationRatePct    Float    @default(2.5)
-  showPence           Boolean  @default(false)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  showPence             Boolean  @default(false)
+  waterfallTipDismissed Boolean  @default(false)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 // ─── Waterfall ────────────────────────────────────────────────────────────────
