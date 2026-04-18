@@ -6,9 +6,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
 import { formatCurrency } from "@/utils/format";
-import type { TierConfig } from "./tierConfig";
+import { useCreatePeriod, useDeletePeriod } from "@/hooks/useWaterfall";
+import type { TierConfig, TierKey } from "./tierConfig";
 import type { SpendType } from "./formatAmount";
+
+const TIER_TO_PERIOD_ITEM_TYPE: Record<TierKey, string> = {
+  income: "income_source",
+  committed: "committed_item",
+  discretionary: "discretionary_item",
+};
 
 function toDateInputValue(d: Date): string {
   const y = d.getFullYear();
@@ -69,8 +77,6 @@ type Props = (AddModeProps | EditModeProps) & {
   onSave: (data: ItemData) => void;
   onCancel: () => void;
   isSaving?: boolean;
-  onDeletePeriod?: (periodId: string) => void;
-  onAddPeriod?: () => void;
 };
 
 export default function ItemForm({
@@ -85,8 +91,6 @@ export default function ItemForm({
   onDelete,
   isSaving,
   isStale,
-  onDeletePeriod,
-  onAddPeriod,
 }: Props) {
   const tier = config.tier;
   const [name, setName] = useState(item?.name ?? "");
@@ -100,6 +104,20 @@ export default function ItemForm({
   });
   const [amountError, setAmountError] = useState<string | null>(null);
   const [amountFocused, setAmountFocused] = useState(false);
+
+  const [isAddingPeriod, setIsAddingPeriod] = useState(false);
+  const [newPeriodStart, setNewPeriodStart] = useState(() => toDateInputValue(new Date()));
+  const [newPeriodAmount, setNewPeriodAmount] = useState("");
+
+  const periodItemType = TIER_TO_PERIOD_ITEM_TYPE[tier];
+  const itemId = item?.id ?? "";
+  const qc = useQueryClient();
+  const createPeriod = useCreatePeriod(periodItemType, itemId);
+  const deletePeriod = useDeletePeriod(periodItemType, itemId);
+
+  function invalidateTierItems() {
+    void qc.invalidateQueries({ queryKey: ["waterfall", "tier-items", tier] });
+  }
 
   // Discretionary items only need a date for one-off purchases.
   const dueDateRequired = tier === "income" || tier === "committed";
@@ -300,9 +318,13 @@ export default function ItemForm({
                     )}
                     <button
                       type="button"
-                      onClick={() => onDeletePeriod?.(period.id)}
+                      disabled={deletePeriod.isPending}
+                      onClick={async () => {
+                        await deletePeriod.mutateAsync(period.id);
+                        invalidateTierItems();
+                      }}
                       aria-label={`Remove period from ${startDate.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`}
-                      className="ml-auto text-xs text-text-muted hover:text-red-400 transition-colors"
+                      className="ml-auto text-xs text-text-muted hover:text-red-400 transition-colors disabled:opacity-40"
                     >
                       Remove
                     </button>
@@ -310,13 +332,67 @@ export default function ItemForm({
                 );
               })}
             </div>
-            <button
-              type="button"
-              onClick={onAddPeriod}
-              className="mt-1 rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
-            >
-              + Add period
-            </button>
+            {isAddingPeriod ? (
+              <div className="mt-1 flex items-center gap-2 rounded-md border border-surface-border bg-surface px-3 py-2">
+                <input
+                  type="date"
+                  value={newPeriodStart}
+                  onChange={(e) => setNewPeriodStart(e.target.value)}
+                  aria-label="New period start date"
+                  className={`${inputClass} w-[140px] text-xs`}
+                />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={newPeriodAmount}
+                  onChange={(e) => setNewPeriodAmount(e.target.value)}
+                  aria-label="New period amount"
+                  className={`${inputClass} w-[100px] font-numeric text-xs`}
+                />
+                <button
+                  type="button"
+                  disabled={
+                    createPeriod.isPending ||
+                    !newPeriodStart ||
+                    isNaN(parseAmount(newPeriodAmount)) ||
+                    parseAmount(newPeriodAmount) <= 0
+                  }
+                  onClick={async () => {
+                    await createPeriod.mutateAsync({
+                      startDate: new Date(newPeriodStart),
+                      amount: parseAmount(newPeriodAmount),
+                    });
+                    invalidateTierItems();
+                    setIsAddingPeriod(false);
+                    setNewPeriodAmount("");
+                    setNewPeriodStart(toDateInputValue(new Date()));
+                  }}
+                  className="rounded-md bg-page-accent/20 px-2 py-1 text-xs font-medium text-page-accent hover:bg-page-accent/30 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingPeriod(false);
+                    setNewPeriodAmount("");
+                    setNewPeriodStart(toDateInputValue(new Date()));
+                  }}
+                  className="text-xs text-text-muted hover:text-text-secondary transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsAddingPeriod(true)}
+                className="mt-1 rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
+              >
+                + Add period
+              </button>
+            )}
           </div>
         )}
       </div>
