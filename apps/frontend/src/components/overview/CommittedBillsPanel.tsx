@@ -30,6 +30,7 @@ export function CommittedBillsPanel({
 }: CommittedBillsPanelProps) {
   const { data: settings } = useSettings();
   const threshold = settings?.stalenessThresholds?.committed_bill ?? 6;
+  const showPence = settings?.showPence ?? false;
 
   return (
     <div className="flex flex-col h-full">
@@ -74,7 +75,7 @@ export function CommittedBillsPanel({
                     thresholdMonths={threshold}
                   />
                   <span className="font-numeric text-foreground/60">
-                    {formatCurrency(bill.amount)}
+                    {formatCurrency(bill.amount, showPence)}
                   </span>
                 </div>
               </div>

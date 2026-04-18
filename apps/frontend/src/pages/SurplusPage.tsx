@@ -10,6 +10,7 @@ export default function SurplusPage() {
   const { data, isLoading } = useWaterfallSummary();
   const { data: settings } = useSettings();
   const benchmarkPct = settings?.surplusBenchmarkPct ?? 10;
+  const showPence = settings?.showPence ?? false;
 
   const income = data?.income.total ?? 0;
   const committed = (data?.committed.monthlyTotal ?? 0) + (data?.committed.monthlyAvg12 ?? 0);
@@ -40,7 +41,7 @@ export default function SurplusPage() {
                             Income
                           </span>
                           <span className="font-numeric text-[11px] font-medium text-tier-income">
-                            {formatCurrency(toGBP(income))}
+                            {formatCurrency(toGBP(income), showPence)}
                           </span>
                         </div>
                         <div className="text-[11px] text-foreground/50">
@@ -51,7 +52,7 @@ export default function SurplusPage() {
                             Balance
                           </span>
                           <span className="font-numeric text-[13px] font-semibold text-secondary">
-                            {formatCurrency(toGBP(income))}
+                            {formatCurrency(toGBP(income), showPence)}
                           </span>
                         </div>
                       </div>
@@ -62,7 +63,7 @@ export default function SurplusPage() {
                             Committed
                           </span>
                           <span className="font-numeric text-[11px] font-medium text-tier-committed">
-                            − {formatCurrency(toGBP(committed))}
+                            − {formatCurrency(toGBP(committed), showPence)}
                           </span>
                         </div>
                         <div className="text-[11px] text-foreground/50">
@@ -73,7 +74,7 @@ export default function SurplusPage() {
                             Remaining
                           </span>
                           <span className="font-numeric text-[13px] font-semibold text-secondary">
-                            {formatCurrency(toGBP(income - committed))}
+                            {formatCurrency(toGBP(income - committed), showPence)}
                           </span>
                         </div>
                       </div>
@@ -84,7 +85,7 @@ export default function SurplusPage() {
                             Discretionary
                           </span>
                           <span className="font-numeric text-[11px] font-medium text-tier-discretionary">
-                            − {formatCurrency(toGBP(discretionary))}
+                            − {formatCurrency(toGBP(discretionary), showPence)}
                           </span>
                         </div>
                         <div className="text-[11px] text-foreground/50">
@@ -95,7 +96,7 @@ export default function SurplusPage() {
                             Remaining
                           </span>
                           <span className="font-numeric text-[13px] font-semibold text-secondary">
-                            {formatCurrency(toGBP(surplus))}
+                            {formatCurrency(toGBP(surplus), showPence)}
                           </span>
                         </div>
                       </div>
@@ -112,7 +113,7 @@ export default function SurplusPage() {
                             Monthly
                           </span>
                           <span className="font-numeric text-base font-semibold text-tier-surplus">
-                            {formatCurrency(toGBP(surplus))}
+                            {formatCurrency(toGBP(surplus), showPence)}
                           </span>
                         </div>
                       </div>
@@ -143,7 +144,7 @@ export default function SurplusPage() {
                   At the end of each month, you should have
                 </p>
                 <p className="font-numeric text-4xl font-bold text-tier-surplus">
-                  {formatCurrency(toGBP(surplus))}
+                  {formatCurrency(toGBP(surplus), showPence)}
                 </p>
                 <p className="text-sm text-foreground/50">left over.</p>
                 <p className="mt-1 text-xs text-foreground/30">

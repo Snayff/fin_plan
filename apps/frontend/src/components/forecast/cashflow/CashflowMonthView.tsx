@@ -10,6 +10,7 @@ import {
 } from "recharts";
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { usePrefersReducedMotion } from "@/utils/motion";
 import type { CashflowEvent, CashflowMonthDetail } from "@finplan/shared";
 import { CashflowEventList } from "./CashflowEventList";
@@ -38,6 +39,8 @@ export function CashflowMonthView({
   onBack,
   onSelectMonth,
 }: CashflowMonthViewProps) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const monthLabel = format(new Date(detail.year, detail.month - 1, 1), "MMMM yyyy");
   const openingDateLabel = format(new Date(detail.year, detail.month - 1, 1), "d MMM yyyy");
   const startKey = monthKey(windowStart.year, windowStart.month);
@@ -92,21 +95,21 @@ export function CashflowMonthView({
       <div className="grid grid-cols-4 gap-3">
         <StatCard
           label="Opening balance"
-          value={formatCurrency(detail.startingBalance)}
+          value={formatCurrency(detail.startingBalance, showPence)}
           sub={openingDateLabel}
         />
-        <StatCard label="End balance" value={formatCurrency(detail.endBalance)} />
+        <StatCard label="End balance" value={formatCurrency(detail.endBalance, showPence)} />
         <StatCard
           label="Tightest point"
-          value={formatCurrency(detail.tightestPoint.value)}
+          value={formatCurrency(detail.tightestPoint.value, showPence)}
           amber={detail.tightestPoint.value < 0}
         />
-        <StatCard label="Net change" value={formatCurrency(detail.netChange)} />
+        <StatCard label="Net change" value={formatCurrency(detail.netChange, showPence)} />
       </div>
 
       <div className="rounded bg-card border border-border px-3 py-2 text-xs text-text-tertiary">
-        Discretionary {formatCurrency(detail.monthlyDiscretionaryTotal)}/mo amortised evenly across
-        the month
+        Discretionary {formatCurrency(detail.monthlyDiscretionaryTotal, showPence)}/mo amortised
+        evenly across the month
       </div>
 
       <CashflowMonthChart detail={detail} todayDay={todayDay} />
@@ -154,6 +157,8 @@ function CashflowMonthChart({
   todayDay: number | null;
 }) {
   const prefersReducedMotion = usePrefersReducedMotion();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
 
   if (detail.dailyTrace.length === 0) return null;
 
@@ -198,7 +203,7 @@ function CashflowMonthChart({
             axisLine={false}
           />
           <YAxis
-            tickFormatter={(v: number) => formatCurrency(v)}
+            tickFormatter={(v: number) => formatCurrency(v, showPence)}
             tick={{ fontSize: 11, fill: "rgba(238,242,255,0.4)" }}
             tickLine={false}
             axisLine={false}
@@ -291,6 +296,8 @@ interface CashflowChartTooltipProps {
 }
 
 function CashflowChartTooltip({ point, year, month, eventsByDay }: CashflowChartTooltipProps) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const label =
     point.day === 0
       ? `${format(new Date(year, month - 1, 1), "d MMM")} · start`
@@ -300,7 +307,9 @@ function CashflowChartTooltip({ point, year, month, eventsByDay }: CashflowChart
   return (
     <div className="rounded-md border border-border bg-card px-3 py-2 text-xs shadow-lg min-w-[140px]">
       <div className="label-chart">{label}</div>
-      <div className="font-numeric text-foreground mt-1">{formatCurrency(point.balance)}</div>
+      <div className="font-numeric text-foreground mt-1">
+        {formatCurrency(point.balance, showPence)}
+      </div>
       {dayEvents.length > 0 && (
         <div className="mt-2 space-y-0.5 border-t border-border pt-2">
           {dayEvents.map((ev, i) => (
@@ -308,7 +317,7 @@ function CashflowChartTooltip({ point, year, month, eventsByDay }: CashflowChart
               <span className="text-text-tertiary">{ev.label}</span>
               <span className="font-numeric text-foreground">
                 {ev.amount >= 0 ? "+" : ""}
-                {formatCurrency(ev.amount)}
+                {formatCurrency(ev.amount, showPence)}
               </span>
             </div>
           ))}

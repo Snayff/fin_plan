@@ -33,6 +33,7 @@ export function IncomeTypePanel({
 }: IncomeTypePanelProps) {
   const { data: settings } = useSettings();
   const threshold = settings?.stalenessThresholds?.income_source ?? 12;
+  const showPence = settings?.showPence ?? false;
 
   return (
     <div className="flex flex-col h-full">
@@ -85,7 +86,7 @@ export function IncomeTypePanel({
                           <GlossaryTermMarker entryId="amortised">÷12</GlossaryTermMarker>
                         </span>
                       )}
-                      <span>{formatCurrency(displayAmount)}</span>
+                      <span>{formatCurrency(displayAmount, showPence)}</span>
                     </div>
                   </div>
                 </div>
