@@ -394,3 +394,14 @@ export function useDeletePeriod(itemType: string, itemId: string) {
     },
   });
 }
+
+export function useDeleteAllWaterfall() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => waterfallService.deleteAll(),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
+    },
+  });
+}

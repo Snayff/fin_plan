@@ -9,6 +9,7 @@ import { GrowthRatesSection } from "@/components/settings/GrowthRatesSection";
 import { DisplaySection } from "@/components/settings/DisplaySection";
 import { SubcategoriesSection } from "@/components/settings/SubcategoriesSection";
 import { DataSection } from "@/components/settings/DataSection";
+import { RebuildWaterfallSection } from "@/components/settings/RebuildWaterfallSection";
 import { SkeletonLoader } from "@/components/common/SkeletonLoader";
 import { PanelError } from "@/components/common/PanelError";
 import { useSettings } from "@/hooks/useSettings";
@@ -24,6 +25,7 @@ const SECTIONS = [
   { id: "isa", label: "ISA settings" },
   { id: "household", label: "Household" },
   { id: "data", label: "Data", roles: ["owner"] as string[] },
+  { id: "rebuild-waterfall", label: "Rebuild waterfall", roles: ["owner"] as string[] },
   { id: "growth-rates", label: "Growth rates", roles: ["owner", "admin"] as string[] },
   { id: "audit-log", label: "Audit log", roles: ["owner", "admin"] as string[] },
 ] as const;
@@ -143,6 +145,11 @@ export default function SettingsPage() {
             {isOwner && (
               <div ref={setRef("data")} data-section-id="data">
                 <DataSection />
+              </div>
+            )}
+            {isOwner && (
+              <div ref={setRef("rebuild-waterfall")} data-section-id="rebuild-waterfall">
+                <RebuildWaterfallSection />
               </div>
             )}
             {canSeeAuditLog && (
