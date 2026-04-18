@@ -1,5 +1,10 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 import { render, screen, fireEvent } from "@testing-library/react";
+
+mock.module("@/hooks/useSettings", () => ({
+  useSettings: () => ({ data: undefined }),
+}));
+
 import { WaterfallSankey } from "./WaterfallSankey";
 
 describe("WaterfallSankey", () => {
