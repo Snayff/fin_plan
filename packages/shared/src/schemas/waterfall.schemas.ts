@@ -241,7 +241,7 @@ export interface WaterfallSummary {
     byType: IncomeByType[];
     bySubcategory: SubcategoryTotal[];
     monthly: IncomeSourceRow[];
-    annual: (IncomeSourceRow & { monthlyAmount: number })[];
+    nonMonthly: IncomeSourceRow[];
     oneOff: IncomeSourceRow[];
   };
   committed: {
@@ -249,7 +249,7 @@ export interface WaterfallSummary {
     monthlyAvg12: number;
     bySubcategory: SubcategoryTotal[];
     bills: CommittedBillRow[];
-    yearlyBills: YearlyBillRow[];
+    nonMonthlyBills: YearlyBillRow[];
   };
   discretionary: {
     total: number;
