@@ -38,7 +38,7 @@ describe("TopNav", () => {
     expect(screen.getByRole("link", { name: /surplus/i })).toBeTruthy();
     expect(screen.getByRole("link", { name: /goals/i })).toBeTruthy();
     expect(screen.getByRole("link", { name: /gifts/i })).toBeTruthy();
-    expect(screen.getByRole("link", { name: /settings/i })).toBeTruthy();
+    expect(screen.queryByRole("link", { name: /settings/i })).toBeNull();
   });
 
   it("marks the active route with aria-current", () => {

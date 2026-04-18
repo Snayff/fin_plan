@@ -10,7 +10,6 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { useAuthStore } from "@/stores/authStore";
 import {
   useHouseholdDetails,
-  useRenameHousehold,
   useInviteMember,
   useCancelInvite,
   useLeaveHousehold,
@@ -18,7 +17,7 @@ import {
 import { SettingsSection } from "./SettingsSection";
 import { MemberManagementSection } from "./MemberManagementSection";
 
-export function HouseholdSection() {
+export function HouseholdMembersSection() {
   const user = useAuthStore((s) => s.user);
   const householdId = user?.activeHouseholdId ?? "";
   const navigate = useNavigate();
@@ -26,13 +25,10 @@ export function HouseholdSection() {
   const { data } = useHouseholdDetails(householdId);
   const household = data?.household;
 
-  const renameHousehold = useRenameHousehold();
   const inviteMember = useInviteMember();
   const cancelInvite = useCancelInvite();
   const leaveHousehold = useLeaveHousehold();
 
-  const [editName, setEditName] = useState("");
-  const [editingName, setEditingName] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteResult, setInviteResult] = useState<{
     token: string;
@@ -45,23 +41,6 @@ export function HouseholdSection() {
   const isOwner = currentMember?.role === "owner";
   const ownerCount = household?.memberProfiles.filter((m) => m.role === "owner").length ?? 0;
   const isSoleOwner = isOwner && ownerCount <= 1;
-
-  function startRename() {
-    setEditName(household?.name ?? "");
-    setEditingName(true);
-  }
-
-  function handleRename() {
-    renameHousehold.mutate(
-      { id: householdId, name: editName },
-      {
-        onSuccess: () => {
-          setEditingName(false);
-          toast.success("Household renamed");
-        },
-      }
-    );
-  }
 
   function handleInvite(e: React.FormEvent) {
     e.preventDefault();
@@ -93,44 +72,10 @@ export function HouseholdSection() {
 
   return (
     <SettingsSection
-      id="household"
-      title="Household"
-      description="Manage your household details, members, and invitations."
+      id="members"
+      title="Members & invites"
+      description="Manage who has access to this household."
     >
-      {/* Name / rename */}
-      <div className="space-y-2">
-        {editingName ? (
-          <div className="flex items-center gap-2 max-w-sm">
-            <Input
-              className="flex-1"
-              value={editName}
-              onChange={(e) => setEditName(e.target.value)}
-              autoFocus
-              aria-label="Household name"
-            />
-            <Button size="sm" onClick={handleRename} disabled={renameHousehold.isPending}>
-              Save
-            </Button>
-            <Button size="sm" variant="ghost" onClick={() => setEditingName(false)}>
-              Cancel
-            </Button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-3">
-            <p className="font-medium">{household?.name}</p>
-            {isOwner && (
-              <button
-                type="button"
-                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                onClick={startRename}
-              >
-                Rename
-              </button>
-            )}
-          </div>
-        )}
-      </div>
-
       <MemberManagementSection />
 
       {!isSoleOwner && currentMember && (

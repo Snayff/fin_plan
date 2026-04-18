@@ -4,7 +4,7 @@ import { Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/stores/authStore";
 import { useExportHousehold, useImportHousehold, useValidateImport } from "@/hooks/useExportImport";
-import { Section } from "./Section";
+import { SettingsSection } from "./SettingsSection";
 import { ImportDestinationDialog } from "./ImportDestinationDialog";
 
 export function DataSection() {
@@ -78,11 +78,11 @@ export function DataSection() {
   }
 
   return (
-    <Section id="data" title="Data">
-      <p className="text-sm text-muted-foreground">
-        Back up your household data or restore from a previous export.
-      </p>
-
+    <SettingsSection
+      id="data"
+      title="Data"
+      description="Back up your household data or restore from a previous export."
+    >
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-4 rounded-md border p-4">
           <div>
@@ -132,6 +132,6 @@ export function DataSection() {
         onConfirm={handleConfirmImport}
         isPending={importMutation.isPending}
       />
-    </Section>
+    </SettingsSection>
   );
 }
