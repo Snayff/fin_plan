@@ -87,9 +87,13 @@ export function IncomeTypePanel({
                     />
                     <div className="flex items-center gap-1 font-numeric text-foreground/60">
                       {amortisationMarker && (
-                        <span className="text-xs text-muted-foreground">
-                          <GlossaryTermMarker entryId="amortised">{amortisationMarker}</GlossaryTermMarker>
-                        </span>
+                        src.frequency === "weekly" ? (
+                          <span className="text-xs text-muted-foreground">{amortisationMarker}</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            <GlossaryTermMarker entryId="amortised">{amortisationMarker}</GlossaryTermMarker>
+                          </span>
+                        )
                       )}
                       <span>{formatCurrency(displayAmount, showPence)}</span>
                     </div>
