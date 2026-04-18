@@ -490,3 +490,9 @@ input[type="number"] {
     opacity: 1;
   }
 }
+
+/* Settings right panel — horizontal divider between adjacent sections */
+.settings-right-body > section + section {
+  border-top: 1px solid rgba(238, 242, 255, 0.06);
+  padding-top: 48px;
+}
