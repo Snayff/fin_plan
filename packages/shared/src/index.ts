@@ -6,3 +6,4 @@ export * from "./schemas";
 
 // Utilities
 export { toGBP } from "./utils";
+export * from "./utils/frequency";
