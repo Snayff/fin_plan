@@ -1,3 +1,4 @@
+import { toMonthlyAmount } from "@finplan/shared";
 import type { WaterfallSummary } from "@finplan/shared";
 
 export interface DrillItem {
@@ -19,10 +20,10 @@ export function extractDrillItems(
       subcategoryId: b.subcategoryId ?? "",
     }));
 
-    const yearly: DrillItem[] = summary.committed.yearlyBills.map((y) => ({
+    const yearly: DrillItem[] = summary.committed.nonMonthlyBills.map((y) => ({
       id: y.id,
       name: y.name,
-      amount: y.amount / 12,
+      amount: toMonthlyAmount(y.amount, y.spendType ?? "yearly"),
       subcategoryId: y.subcategoryId ?? "",
     }));
 
