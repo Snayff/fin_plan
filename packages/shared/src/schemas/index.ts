@@ -121,9 +121,6 @@ export {
   type UpdateReviewSessionInput,
 } from "./review-session.schemas";
 
-// Setup session schemas and types
-export { updateSetupSessionSchema, type UpdateSetupSessionInput } from "./setup-session.schemas";
-
 // Assets schemas and types
 export * from "./assets.schemas.js";
 
