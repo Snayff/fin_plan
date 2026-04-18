@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const IncomeFrequencyEnum = z.enum(["monthly", "annual", "one_off"]);
+export const IncomeFrequencyEnum = z.enum(["monthly", "annual", "one_off", "weekly", "quarterly"]);
 export type IncomeFrequency = z.infer<typeof IncomeFrequencyEnum>;
 
 export const IncomeTypeEnum = z.enum([
@@ -27,7 +27,7 @@ export type WaterfallItemType = z.infer<typeof WaterfallItemTypeEnum>;
 
 // ─── New enums ───────────────────────────────────────────────────────────────
 
-export const SpendTypeEnum = z.enum(["monthly", "yearly", "one_off"]);
+export const SpendTypeEnum = z.enum(["monthly", "yearly", "one_off", "weekly", "quarterly"]);
 export type SpendType = z.infer<typeof SpendTypeEnum>;
 
 export const WaterfallTierEnum = z.enum(["income", "committed", "discretionary"]);
