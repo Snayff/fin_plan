@@ -1,11 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import {
-  toMonthlyAmount,
-  toYearlyAmount,
-  isRecurring,
-  WEEKS_PER_YEAR,
-  MONTHS_PER_YEAR,
-} from "./frequency";
+import { toMonthlyAmount, toYearlyAmount, isRecurring } from "./frequency";
 
 describe("toMonthlyAmount", () => {
   it("monthly returns amount unchanged", () => {
@@ -13,9 +7,7 @@ describe("toMonthlyAmount", () => {
   });
 
   it("weekly converts amount * 52 / 12", () => {
-    expect(toMonthlyAmount(520, "weekly")).toBeCloseTo(
-      (520 * WEEKS_PER_YEAR) / MONTHS_PER_YEAR,
-    );
+    expect(toMonthlyAmount(520, "weekly")).toBeCloseTo(2253.33, 2);
   });
 
   it("quarterly divides by 3", () => {
@@ -84,13 +76,5 @@ describe("isRecurring", () => {
 
   it("returns false for one_off", () => {
     expect(isRecurring("one_off")).toBe(false);
-  });
-});
-
-describe("toMonthlyAmount floating point", () => {
-  it("weekly 520 ≈ 520 * 52 / 12", () => {
-    expect(toMonthlyAmount(520, "weekly")).toBeCloseTo(
-      (520 * WEEKS_PER_YEAR) / MONTHS_PER_YEAR,
-    );
   });
 });
