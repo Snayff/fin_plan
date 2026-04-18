@@ -18,6 +18,8 @@ import type {
   UpdateDiscretionaryItemInput,
   WaterfallTier,
   SubcategoryTotal,
+  SpendType,
+  IncomeFrequency,
 } from "@finplan/shared";
 import { computeLifecycleState } from "./period.service.js";
 
@@ -108,8 +110,8 @@ function buildSubcategoryTotals(
   items: Array<{
     subcategoryId: string | null;
     amount: number;
-    spendType?: string;
-    frequency?: string;
+    spendType?: SpendType;
+    frequency?: IncomeFrequency;
     lastReviewedAt: Date;
   }>,
   otherSubcategoryId: string | null
@@ -125,7 +127,7 @@ function buildSubcategoryTotals(
     if (!subId || !map.has(subId)) continue;
     const entry = map.get(subId)!;
 
-    const freq = (item.spendType ?? item.frequency) as Parameters<typeof toMonthlyAmount>[1] | undefined;
+    const freq = item.spendType ?? item.frequency;
     const monthlyAmount = freq ? toMonthlyAmount(item.amount, freq) : item.amount;
 
     entry.total += monthlyAmount;
@@ -273,6 +275,7 @@ export const waterfallService = {
       sources,
     }));
 
+    // one_off committed items are excluded from the recurring total — they appear in cashflow only
     // Committed: monthly-like items at monthly equivalent, non-monthly items averaged
     const monthlyLikeCommitted = activeCommitted.filter(
       (i) => i.spendType === "monthly" || i.spendType === "weekly"
@@ -300,8 +303,14 @@ export const waterfallService = {
       : activeDiscretionary;
 
     // Discretionary: all items summed for waterfall total
-    const discretionaryTotal = activeDiscretionary.reduce((s, c) => s + c.amount, 0);
-    const savingsTotal = savingsItems.reduce((s, a) => s + a.amount, 0);
+    const discretionaryTotal = activeDiscretionary.reduce(
+      (s, c) => s + toMonthlyAmount(c.amount, c.spendType),
+      0
+    );
+    const savingsTotal = savingsItems.reduce(
+      (s, a) => s + toMonthlyAmount(a.amount, a.spendType),
+      0
+    );
 
     const surplusAmount = toGBP(
       incomeTotal - committedMonthlyTotal - nonMonthlyMonthlyAvg - discretionaryTotal
