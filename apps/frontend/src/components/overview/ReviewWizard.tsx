@@ -65,6 +65,8 @@ function ItemCard({
   onConfirm,
   onUpdate,
 }: ItemCardProps) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(String(amount));
   const stale = isStale(lastReviewedAt, thresholdMonths);
@@ -89,8 +91,8 @@ function ItemCard({
           <p className="text-sm font-medium">{name}</p>
           <p className="text-xs text-muted-foreground">
             {_type === "yearly"
-              ? `${formatCurrency(amount)}/yr · ${formatCurrency(amount / 12)}/mo`
-              : formatCurrency(amount)}
+              ? `${formatCurrency(amount, showPence)}/yr · ${formatCurrency(amount / 12, showPence)}/mo`
+              : formatCurrency(amount, showPence)}
           </p>
           {stale && <p className="text-xs text-attention">Stale</p>}
         </div>
@@ -172,6 +174,7 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
   const deleteSession = useDeleteReviewSession();
   const createSnapshot = useCreateSnapshot();
   const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const { data: summary } = useWaterfallSummary();
   const queryClient = useQueryClient();
 
@@ -525,7 +528,9 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
                   {summary && (
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Current surplus</span>
-                      <span className="font-medium">{formatCurrency(summary.surplus.amount)}</span>
+                      <span className="font-medium">
+                        {formatCurrency(summary.surplus.amount, showPence)}
+                      </span>
                     </div>
                   )}
                   <div className="flex justify-between text-sm">
@@ -541,7 +546,8 @@ export function ReviewWizard({ onClose }: ReviewWizardProps) {
                       <div key={id} className="flex justify-between text-sm text-muted-foreground">
                         <span>{change.name}</span>
                         <span>
-                          {formatCurrency(change.from)} → {formatCurrency(change.to)}
+                          {formatCurrency(change.from, showPence)} →{" "}
+                          {formatCurrency(change.to, showPence)}
                         </span>
                       </div>
                     ))}

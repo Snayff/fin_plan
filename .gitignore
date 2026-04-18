@@ -58,7 +58,10 @@ docker-compose.override.yml
 docs/scratch/
 
 # claude
-.claude/screenshots/
+.claude/skills
+.claude/worktrees
+settings
+
 
 # WIP
 docs/mockups/

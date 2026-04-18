@@ -60,20 +60,21 @@ export function AccountForm({
   const [nameError, setNameError] = useState<string | null>(null);
   const [rateError, setRateError] = useState<string | null>(null);
 
+  const { data: members } = useHouseholdMembers();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
+
   const displayValue =
     !valueFocused && initialValue
       ? (() => {
           const n = parseFloat(initialValue.replace(/[£,\s]/g, ""));
-          return isNaN(n) ? initialValue : formatCurrency(n);
+          return isNaN(n) ? initialValue : formatCurrency(n, showPence);
         })()
       : initialValue;
 
   function parseValue(raw: string): number {
     return parseFloat(raw.replace(/[£,\s]/g, ""));
   }
-
-  const { data: members } = useHouseholdMembers();
-  const { data: settings } = useSettings();
 
   const settingKey = GROWTH_RATE_SETTING_KEY[type];
   const defaultRate =

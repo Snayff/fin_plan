@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import type { CashflowProjectionMonth } from "@finplan/shared";
 import { format } from "date-fns";
 
@@ -16,10 +17,12 @@ export function CashflowYearBar({
   onClick,
   todayDayProportion,
 }: CashflowYearBarProps) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const heightPct =
     maxAbsNet > 0 ? Math.min(100, (Math.abs(month.netChange) / maxAbsNet) * 100) : 0;
   const monthLabel = format(new Date(month.year, month.month - 1, 1), "MMM");
-  const ariaLabel = `${monthLabel} ${month.year}: net ${formatCurrency(month.netChange)}, closing ${formatCurrency(month.closingBalance)}${
+  const ariaLabel = `${monthLabel} ${month.year}: net ${formatCurrency(month.netChange, showPence)}, closing ${formatCurrency(month.closingBalance, showPence)}${
     month.dipBelowZero ? ", dips below zero" : ""
   }`;
   return (

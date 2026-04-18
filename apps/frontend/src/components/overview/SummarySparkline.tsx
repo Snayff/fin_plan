@@ -3,6 +3,7 @@ import { AreaChart, Area, ResponsiveContainer, YAxis, Tooltip } from "recharts";
 import type { TooltipProps } from "recharts";
 import { format, isValid, parseISO } from "date-fns";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 
 interface SummarySparklineProps {
   data: Array<{ date: string; value: number }>;
@@ -16,6 +17,8 @@ function SparklineTooltip({
   payload,
   color,
 }: TooltipProps<number, string> & { color: string }) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   if (!active || !payload?.length) return null;
   const value = payload[0]?.value;
   if (value === undefined) return null;
@@ -27,7 +30,7 @@ function SparklineTooltip({
   return (
     <div className="bg-[#0d1021] border border-white/10 rounded px-2 py-1 text-xs leading-snug">
       {dateLabel && <div className="text-white/50">{dateLabel}</div>}
-      <div style={{ color }}>{formatCurrency(value)}</div>
+      <div style={{ color }}>{formatCurrency(value, showPence)}</div>
     </div>
   );
 }

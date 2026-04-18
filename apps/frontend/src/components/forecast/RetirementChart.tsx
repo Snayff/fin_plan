@@ -2,6 +2,7 @@ import * as Tabs from "@radix-ui/react-tabs";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { NavLink } from "react-router-dom";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { usePrefersReducedMotion } from "@/utils/motion";
 import { cn } from "@/lib/utils";
 import type { RetirementMemberProjection } from "@finplan/shared";
@@ -13,6 +14,8 @@ interface RetirementChartProps {
 
 export function RetirementChart({ members, horizonEndYear }: RetirementChartProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
 
   if (members.length === 0) {
     return (
@@ -130,7 +133,7 @@ export function RetirementChart({ members, horizonEndYear }: RetirementChartProp
                         />
                         <Tooltip
                           formatter={(value: number, name: string) => [
-                            formatCurrency(value),
+                            formatCurrency(value, showPence),
                             name === "pension"
                               ? "Pension"
                               : name === "savings"
@@ -194,7 +197,10 @@ export function RetirementChart({ members, horizonEndYear }: RetirementChartProp
                           <span className="text-xs text-text-tertiary">{label}</span>
                           {statPoint && (
                             <span className="font-numeric text-xs text-text-secondary tabular-nums">
-                              {formatCurrency(statPoint[key as keyof typeof statPoint] as number)}
+                              {formatCurrency(
+                                statPoint[key as keyof typeof statPoint] as number,
+                                showPence
+                              )}
                             </span>
                           )}
                         </div>
@@ -203,7 +209,7 @@ export function RetirementChart({ members, horizonEndYear }: RetirementChartProp
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-text-tertiary">{retirementLabel}:</span>
                       <span className="font-numeric text-sm font-semibold text-text-primary tabular-nums">
-                        {formatCurrency(total)}
+                        {formatCurrency(total, showPence)}
                       </span>
                     </div>
                   </div>

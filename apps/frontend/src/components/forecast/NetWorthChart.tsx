@@ -8,6 +8,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { usePrefersReducedMotion } from "@/utils/motion";
 import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import type { NetWorthPoint } from "@finplan/shared";
@@ -25,6 +26,8 @@ interface NetWorthChartProps {
 
 export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const isEmpty = data.length === 0 || data.every((d) => d.nominal === 0);
   const first = data[0];
   const last = data[data.length - 1];
@@ -70,7 +73,7 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
               />
               <Tooltip
                 formatter={(value: number, name: string) => [
-                  formatCurrency(value),
+                  formatCurrency(value, showPence),
                   name === "nominal" ? "Ignoring Inflation" : "Real Terms",
                 ]}
                 contentStyle={{
@@ -125,13 +128,13 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
           <div>
             <span className="text-xs text-text-tertiary">Today</span>
             <p className="font-numeric text-sm text-text-primary tabular-nums">
-              {formatCurrency(first.nominal)}
+              {formatCurrency(first.nominal, showPence)}
             </p>
           </div>
           <div>
             <span className="text-xs text-text-tertiary">Ignoring Inflation ({last.year})</span>
             <p className="font-numeric text-sm text-page-accent tabular-nums">
-              {formatCurrency(last.nominal)}
+              {formatCurrency(last.nominal, showPence)}
             </p>
           </div>
           <div>
@@ -139,7 +142,7 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
               <GlossaryTermMarker entryId="real-terms">Real Terms</GlossaryTermMarker> ({last.year})
             </span>
             <p className="font-numeric text-sm text-text-secondary tabular-nums">
-              {formatCurrency(last.real)}
+              {formatCurrency(last.real, showPence)}
             </p>
           </div>
         </div>
