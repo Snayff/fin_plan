@@ -62,7 +62,6 @@ export function HouseholdSwitcher() {
   const activeName =
     households.find((h) => h.household.id === activeId)?.household.name ?? "My household";
 
-  // Close on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
