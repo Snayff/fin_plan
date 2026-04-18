@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { waterfallService } from "@/services/waterfall.service";
 import { showError } from "@/lib/toast";
-import type { CreatePeriodInput, UpdatePeriodInput, SpendType } from "@finplan/shared";
+import type { CreatePeriodInput, UpdatePeriodInput, SpendType, IncomeFrequency } from "@finplan/shared";
 
 export const WATERFALL_KEYS = {
   summary: ["waterfall", "summary"] as const,
@@ -126,9 +126,11 @@ export function useSubcategories(tier: "income" | "committed" | "discretionary")
   });
 }
 
-const spendTypeToFrequency: Record<string, "monthly" | "annual" | "one_off"> = {
+const spendTypeToFrequency: Record<string, IncomeFrequency> = {
   monthly: "monthly",
   yearly: "annual",
+  weekly: "weekly",
+  quarterly: "quarterly",
   one_off: "one_off",
 };
 

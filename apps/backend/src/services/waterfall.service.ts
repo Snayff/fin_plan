@@ -364,10 +364,10 @@ export const waterfallService = {
       discretionary: {
         total: discretionaryTotal,
         bySubcategory: discretionaryBySubcategory,
-        categories: categoryItems.map((c) => ({ ...c, monthlyBudget: c.amount })),
+        categories: categoryItems.map((c) => ({ ...c, monthlyBudget: toMonthlyAmount(c.amount, c.spendType ?? "monthly") })),
         savings: {
           total: savingsTotal,
-          allocations: savingsItems.map((a) => ({ ...a, monthlyAmount: a.amount })),
+          allocations: savingsItems.map((a) => ({ ...a, monthlyAmount: toMonthlyAmount(a.amount, a.spendType ?? "monthly") })),
         },
       },
       surplus: {
