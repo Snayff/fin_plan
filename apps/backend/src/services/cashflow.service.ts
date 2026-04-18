@@ -98,9 +98,10 @@ function buildEvents(
         cursor.setUTCMonth(cursor.getUTCMonth() + 1);
       }
     } else if (frequencyKey === "weekly") {
-      // Anchor on the weekday of dueDate. Find the first occurrence on-or-after `from`.
-      const cursor = new Date(from);
-      // Advance to the first matching weekday >= from
+      // Anchor on the weekday of dueDate. Find the first occurrence on-or-after max(from, due).
+      const anchorDate = due > from ? due : from;
+      const cursor = new Date(anchorDate);
+      // Advance to the first matching weekday >= anchorDate
       const targetDay = due.getUTCDay(); // 0=Sun ... 6=Sat
       while (cursor.getUTCDay() !== targetDay) {
         cursor.setUTCDate(cursor.getUTCDate() + 1);
