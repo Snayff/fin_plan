@@ -125,7 +125,10 @@ export default function ItemForm({
   // Discretionary items only need a date for one-off purchases.
   const dueDateRequired = tier === "income" || tier === "committed";
   const showDueDate = dueDateRequired || spendType === "one_off";
-  const dueDateLabel = spendType === "monthly" || spendType === "yearly" ? "First payment" : "Date";
+  const dueDateLabel =
+    spendType === "monthly" || spendType === "weekly" || spendType === "quarterly" || spendType === "yearly"
+      ? "First payment"
+      : "Date";
 
   const displayAmount =
     !amountFocused && amount
@@ -222,7 +225,9 @@ export default function ItemForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="weekly">Weekly</SelectItem>
               <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="quarterly">Quarterly</SelectItem>
               <SelectItem value="yearly">Yearly</SelectItem>
               <SelectItem value="one_off">One-off</SelectItem>
             </SelectContent>
