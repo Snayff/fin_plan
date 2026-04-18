@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { formatCurrency } from "@/utils/format";
 import { SubcategoryGroup } from "./SubcategoryGroup";
 import { AddSubcategoryButton } from "./AddSubcategoryButton";
@@ -51,13 +52,40 @@ export function WaterfallTierTable({
   onDeleteItem,
 }: Props) {
   const meta = TIER_META[tier];
+  const [draftsBySub, setDraftsBySub] = useState<Record<string, string[]>>({});
+
+  const handleAddDraft = (subcategoryId: string) => {
+    const draftId = `draft-${Date.now()}`;
+    setDraftsBySub((prev) => ({
+      ...prev,
+      [subcategoryId]: [...(prev[subcategoryId] ?? []), draftId],
+    }));
+  };
   const isEmpty = items.length === 0 && subcategories.length === 0;
 
   const orphanItems = items.filter((i) => !subcategories.some((s) => s.id === i.subcategoryId));
 
+  const makeDraftItems = (subcategoryId: string): TierItemRow[] =>
+    (draftsBySub[subcategoryId] ?? []).map(
+      (draftId) =>
+        ({
+          id: draftId,
+          name: "",
+          amount: 0,
+          spendType: "monthly" as const,
+          subcategoryId,
+          notes: null,
+          dueDate: null,
+          lastReviewedAt: new Date(),
+          createdAt: new Date(),
+          sortOrder: 9999,
+          isDraft: true,
+        }) as TierItemRow
+    );
+
   const groupedKnown = subcategories.map((s) => ({
     subcategory: { id: s.id, name: s.name, sortOrder: s.sortOrder },
-    items: items.filter((i) => i.subcategoryId === s.id),
+    items: [...items.filter((i) => i.subcategoryId === s.id), ...makeDraftItems(s.id)],
   }));
 
   return (
@@ -119,7 +147,7 @@ export function WaterfallTierTable({
                 subcategory={subcategory}
                 items={groupItems}
                 members={members}
-                onAddDraft={() => {}}
+                onAddDraft={handleAddDraft}
                 onDeleteItem={onDeleteItem}
                 onSaveName={onSaveName}
                 onSaveAmount={onSaveAmount}
@@ -135,7 +163,7 @@ export function WaterfallTierTable({
                 }}
                 items={orphanItems}
                 members={members}
-                onAddDraft={() => {}}
+                onAddDraft={handleAddDraft}
                 onDeleteItem={onDeleteItem}
                 onSaveName={onSaveName}
                 onSaveAmount={onSaveAmount}
