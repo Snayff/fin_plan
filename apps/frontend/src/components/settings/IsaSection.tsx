@@ -1,39 +1,38 @@
-import { useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
-import { Section } from "./Section";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { SettingsSection } from "./SettingsSection";
+import { AutoSaveField } from "./AutoSaveField";
 
 export function IsaSection() {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
-  const [limit, setLimit] = useState(settings?.isaAnnualLimit ?? 20000);
 
-  function handleSave() {
-    updateSettings.mutate(
-      { isaAnnualLimit: limit },
-      { onSuccess: () => toast.success("ISA settings saved") }
-    );
-  }
+  const { value, setValue, status, errorMessage } = useAutoSave<number>({
+    initialValue: settings?.isaAnnualLimit ?? 20000,
+    onSave: async (next) => {
+      await updateSettings.mutateAsync({ isaAnnualLimit: next });
+    },
+  });
 
   return (
-    <Section id="isa" title="ISA settings">
-      <div className="max-w-xs space-y-1">
-        <label htmlFor="isa-limit" className="text-xs text-muted-foreground">
-          Annual limit (£)
-        </label>
+    <SettingsSection id="isa" title="ISA settings">
+      <AutoSaveField
+        label="Annual limit (£)"
+        htmlFor="isa-limit"
+        status={status}
+        errorMessage={errorMessage}
+        className="max-w-xs"
+      >
         <Input
           id="isa-limit"
           type="number"
           min={0}
-          value={limit}
-          onChange={(e) => setLimit(parseFloat(e.target.value) || 0)}
+          value={value}
+          onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
+          aria-invalid={status === "error"}
         />
-      </div>
-      <Button size="sm" onClick={handleSave} disabled={updateSettings.isPending}>
-        {updateSettings.isPending ? "Saving…" : "Save"}
-      </Button>
-    </Section>
+      </AutoSaveField>
+    </SettingsSection>
   );
 }
