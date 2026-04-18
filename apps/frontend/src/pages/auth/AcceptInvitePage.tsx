@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "../../stores/authStore";
 import { householdService } from "../../services/household.service";
 import { authService } from "../../services/auth.service";
@@ -20,6 +21,7 @@ type PageState =
 export default function AcceptInvitePage() {
   const { token } = useParams<{ token: string }>();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { isAuthenticated, setUser, login } = useAuthStore();
 
   const [pageState, setPageState] = useState<PageState>({ status: "loading" });
@@ -74,6 +76,7 @@ export default function AcceptInvitePage() {
         useAuthStore.getState().accessToken!
       );
       setUser(updatedUser, useAuthStore.getState().accessToken!);
+      void qc.invalidateQueries();
       setTimeout(() => navigate("/overview"), 1500);
     } catch (err) {
       setError((err as ApiError).message || "Failed to join household");

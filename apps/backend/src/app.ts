@@ -1,10 +1,11 @@
-import Fastify, { type FastifyInstance } from "fastify";
+import Fastify, { type FastifyInstance, type FastifyRequest } from "fastify";
 import cors from "@fastify/cors";
 import cookie from "@fastify/cookie";
 import csrf from "@fastify/csrf-protection";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import { config } from "./config/env";
+import { verifyAccessToken } from "./utils/jwt";
 import { authRoutes } from "./routes/auth.routes";
 import { householdRoutes } from "./routes/households";
 import { inviteRoutes } from "./routes/invite";
@@ -64,6 +65,19 @@ export async function buildApp(opts?: { logger?: boolean | object }): Promise<Fa
     max: config.RATE_LIMIT_MAX,
     timeWindow: config.RATE_LIMIT_TIME_WINDOW,
     allowList: (req: { url: string }) => req.url === "/health",
+    // Rate-limit per authenticated user so household members on the same IP don't share a bucket
+    keyGenerator: (req: FastifyRequest) => {
+      try {
+        const auth = req.headers.authorization;
+        if (auth?.startsWith("Bearer ")) {
+          const payload = verifyAccessToken(auth.slice(7));
+          if (payload.userId) return `user:${payload.userId}`;
+        }
+      } catch {
+        // Fall through to IP-based limiting for unauthenticated requests
+      }
+      return req.ip;
+    },
   });
 
   // Health check endpoint

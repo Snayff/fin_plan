@@ -86,7 +86,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default("http://localhost:3000"),
 
   // Rate Limiting
-  RATE_LIMIT_MAX: z.string().default("100").transform(Number),
+  RATE_LIMIT_MAX: z.string().default("500").transform(Number),
   RATE_LIMIT_TIME_WINDOW: z.string().default("15m"),
 
   // Email (SMTP)
