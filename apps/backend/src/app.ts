@@ -14,7 +14,6 @@ import { plannerRoutes } from "./routes/planner.routes";
 import { settingsRoutes } from "./routes/settings.routes";
 import { snapshotRoutes } from "./routes/snapshots.routes";
 import { reviewRoutes } from "./routes/review-session.routes";
-import { setupRoutes } from "./routes/setup-session.routes";
 import { auditLogRoutes } from "./routes/audit-log.routes";
 import { assetsRoutes } from "./routes/assets.routes";
 import { forecastRoutes } from "./routes/forecast.routes";
@@ -99,7 +98,6 @@ export async function buildApp(opts?: { logger?: boolean | object }): Promise<Fa
   server.register(settingsRoutes, { prefix: "/api/settings" });
   server.register(snapshotRoutes, { prefix: "/api/snapshots" });
   server.register(reviewRoutes, { prefix: "/api/review-session" });
-  server.register(setupRoutes, { prefix: "/api/setup-session" });
   server.register(auditLogRoutes, { prefix: "/api" });
   server.register(assetsRoutes, { prefix: "/api/assets" });
   server.register(forecastRoutes, { prefix: "/api/forecast" });
