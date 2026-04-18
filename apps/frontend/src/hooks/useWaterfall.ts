@@ -288,6 +288,64 @@ export function useTierItems(tier: "income" | "committed" | "discretionary") {
   });
 }
 
+export function useCreateSubcategory(tier: "income" | "committed" | "discretionary") {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => waterfallService.createSubcategory(tier, name),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.subcategories(tier) });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : ((error as Record<string, unknown>)?.message as string | undefined);
+      showError(message ?? "Failed to create subcategory");
+    },
+  });
+}
+
+export function useFullWaterfall() {
+  const summary = useWaterfallSummary();
+  const incomeSubs = useSubcategories("income");
+  const committedSubs = useSubcategories("committed");
+  const discretionarySubs = useSubcategories("discretionary");
+  const incomeItems = useTierItems("income");
+  const committedItems = useTierItems("committed");
+  const discretionaryItems = useTierItems("discretionary");
+
+  return {
+    summary,
+    subcategories: {
+      income: incomeSubs.data ?? [],
+      committed: committedSubs.data ?? [],
+      discretionary: discretionarySubs.data ?? [],
+    },
+    items: {
+      income: incomeItems.data ?? [],
+      committed: committedItems.data ?? [],
+      discretionary: discretionaryItems.data ?? [],
+    },
+    isLoading:
+      summary.isLoading ||
+      incomeSubs.isLoading ||
+      committedSubs.isLoading ||
+      discretionarySubs.isLoading ||
+      incomeItems.isLoading ||
+      committedItems.isLoading ||
+      discretionaryItems.isLoading,
+    isError:
+      summary.isError ||
+      incomeSubs.isError ||
+      committedSubs.isError ||
+      discretionarySubs.isError ||
+      incomeItems.isError ||
+      committedItems.isError ||
+      discretionaryItems.isError,
+  };
+}
+
 // ─── Period hooks ─────────────────────────────────────────────────────────────
 
 export const PERIOD_KEYS = {
