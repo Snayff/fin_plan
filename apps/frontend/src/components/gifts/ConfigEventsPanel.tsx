@@ -88,7 +88,7 @@ export function ConfigEventsPanel({ readOnly }: Props) {
           </span>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 min-h-0 overflow-y-auto p-6">
         {/* Locked events */}
         <section>
           <h3 className={labelClass}>Locked</h3>

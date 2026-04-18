@@ -186,7 +186,7 @@ export default function ItemArea({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {/* Add form at top */}
         <AnimatePresence initial={false}>
           {isAddingItem && (
