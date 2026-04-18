@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import { Check, ChevronDown, Plus } from "lucide-react";
+import { Check, ChevronDown, Plus, Settings } from "lucide-react";
 import { householdService } from "@/services/household.service";
 import { authService } from "@/services/auth.service";
 import { useAuthStore } from "@/stores/authStore";
@@ -77,7 +77,8 @@ export function HouseholdSwitcher() {
     <div className="relative" ref={dropdownRef}>
       <button
         type="button"
-        className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-foreground/80 transition-colors truncate max-w-[160px]"
+        aria-expanded={isOpen}
+        className="flex items-center gap-1 text-sm font-medium text-foreground hover:text-foreground/80 transition-colors truncate max-w-[180px] px-2 py-1 rounded border border-transparent hover:bg-white/[0.02]"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span className="truncate">{activeName}</span>
@@ -85,12 +86,20 @@ export function HouseholdSwitcher() {
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 w-56 rounded-md border bg-popover shadow-lg z-50">
+        <div
+          role="menu"
+          className="absolute right-0 top-[calc(100%+6px)] min-w-[240px] max-w-[300px] bg-popover border rounded-md p-1.5 z-30 shadow-lg"
+          style={{ maxHeight: "min(420px, calc(100vh - 70px))", overflowY: "auto" }}
+        >
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-foreground/40 px-2.5 pt-1 pb-1">
+            Switch household
+          </p>
           {households.map(({ household }) => (
             <button
               key={household.id}
               type="button"
-              className="flex items-center justify-between w-full px-3 py-2 text-sm hover:bg-accent transition-colors"
+              role="menuitem"
+              className="flex items-center justify-between w-full px-2.5 py-2 rounded text-sm text-foreground/85 hover:bg-accent/12 hover:text-foreground transition-colors"
               onClick={() => {
                 if (household.id !== activeId) switchMutation.mutate(household.id);
                 else setIsOpen(false);
@@ -100,10 +109,23 @@ export function HouseholdSwitcher() {
               {household.id === activeId && <Check className="h-3.5 w-3.5 text-primary shrink-0" />}
             </button>
           ))}
-          <div className="border-t" />
+          <div className="h-px bg-foreground/10 my-1.5" />
           <button
             type="button"
-            className="flex items-center gap-2 w-full px-3 py-2 text-sm text-primary hover:bg-accent transition-colors"
+            role="menuitem"
+            className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded text-sm text-foreground/85 hover:bg-accent/12 hover:text-foreground transition-colors"
+            onClick={() => {
+              setIsOpen(false);
+              navigate("/settings/household");
+            }}
+          >
+            <Settings className="h-3.5 w-3.5 text-foreground/40" />
+            Household settings
+          </button>
+          <button
+            type="button"
+            role="menuitem"
+            className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded text-sm text-primary hover:bg-accent/12 transition-colors"
             onClick={() => {
               setIsOpen(false);
               setShowCreate(true);
