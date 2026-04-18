@@ -183,7 +183,7 @@ export function DataDisplayRenewPatterns() {
             <div className="flex flex-col items-center justify-center py-8 gap-3 text-center">
               <p className="text-text-secondary text-sm">Your waterfall is empty.</p>
               <button className="px-4 py-2 text-sm rounded-md bg-primary text-white">
-                Set up your waterfall from scratch ▸
+                Build your waterfall
               </button>
             </div>
           </PatternExample>
