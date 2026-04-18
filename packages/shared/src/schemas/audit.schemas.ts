@@ -18,8 +18,101 @@ export const ResourceSlugEnum = z.enum([
   "surplus-config",
   "isa-config",
   "staleness-config",
+  // richer-audit-logging additions
+  "snapshot",
+  "user",
+  "gift-person",
+  "gift-event",
+  "gift-allocation",
+  "member-profile",
+  "year-budget",
+  "household",
 ]);
 export type ResourceSlug = z.infer<typeof ResourceSlugEnum>;
+
+/**
+ * Single source of truth for every audit action name written by backend code.
+ * Values mirror keys so a drift test can enforce `v === k` for every entry.
+ */
+export const AuditAction = {
+  // Auth events
+  REGISTER: "REGISTER",
+  LOGIN_SUCCESS: "LOGIN_SUCCESS",
+  LOGIN_FAILED: "LOGIN_FAILED",
+  LOGOUT: "LOGOUT",
+  TOKEN_REFRESH: "TOKEN_REFRESH",
+  SESSION_REVOKED: "SESSION_REVOKED",
+  ALL_SESSIONS_REVOKED: "ALL_SESSIONS_REVOKED",
+  UPDATE_PROFILE: "UPDATE_PROFILE",
+
+  // Household
+  CREATE_HOUSEHOLD: "CREATE_HOUSEHOLD",
+  UPDATE_HOUSEHOLD: "UPDATE_HOUSEHOLD",
+  DELETE_HOUSEHOLD: "DELETE_HOUSEHOLD",
+  LEAVE_HOUSEHOLD: "LEAVE_HOUSEHOLD",
+  INVITE_MEMBER: "INVITE_MEMBER",
+  ACCEPT_INVITE: "ACCEPT_INVITE",
+  CANCEL_INVITE: "CANCEL_INVITE",
+  REMOVE_MEMBER: "REMOVE_MEMBER",
+  UPDATE_MEMBER_ROLE: "UPDATE_MEMBER_ROLE",
+  CREATE_MEMBER_PROFILE: "CREATE_MEMBER_PROFILE",
+  UPDATE_MEMBER_PROFILE: "UPDATE_MEMBER_PROFILE",
+  DELETE_MEMBER_PROFILE: "DELETE_MEMBER_PROFILE",
+  UPDATE_HOUSEHOLD_SETTINGS: "UPDATE_HOUSEHOLD_SETTINGS",
+
+  // Waterfall (already emitted by existing code)
+  CREATE_INCOME_SOURCE: "CREATE_INCOME_SOURCE",
+  UPDATE_INCOME_SOURCE: "UPDATE_INCOME_SOURCE",
+  DELETE_INCOME_SOURCE: "DELETE_INCOME_SOURCE",
+  CREATE_COMMITTED_ITEM: "CREATE_COMMITTED_ITEM",
+  UPDATE_COMMITTED_ITEM: "UPDATE_COMMITTED_ITEM",
+  DELETE_COMMITTED_ITEM: "DELETE_COMMITTED_ITEM",
+  CREATE_DISCRETIONARY_ITEM: "CREATE_DISCRETIONARY_ITEM",
+  UPDATE_DISCRETIONARY_ITEM: "UPDATE_DISCRETIONARY_ITEM",
+  DELETE_DISCRETIONARY_ITEM: "DELETE_DISCRETIONARY_ITEM",
+
+  // Wealth
+  CREATE_WEALTH_ACCOUNT: "CREATE_WEALTH_ACCOUNT",
+  UPDATE_WEALTH_ACCOUNT: "UPDATE_WEALTH_ACCOUNT",
+  DELETE_WEALTH_ACCOUNT: "DELETE_WEALTH_ACCOUNT",
+  CREATE_LIABILITY: "CREATE_LIABILITY",
+  UPDATE_LIABILITY: "UPDATE_LIABILITY",
+  DELETE_LIABILITY: "DELETE_LIABILITY",
+
+  // Snapshots
+  CREATE_SNAPSHOT: "CREATE_SNAPSHOT",
+  UPDATE_SNAPSHOT: "UPDATE_SNAPSHOT",
+  DELETE_SNAPSHOT: "DELETE_SNAPSHOT",
+
+  // Gifts
+  CREATE_GIFT_PERSON: "CREATE_GIFT_PERSON",
+  UPDATE_GIFT_PERSON: "UPDATE_GIFT_PERSON",
+  DELETE_GIFT_PERSON: "DELETE_GIFT_PERSON",
+  CREATE_GIFT_EVENT: "CREATE_GIFT_EVENT",
+  UPDATE_GIFT_EVENT: "UPDATE_GIFT_EVENT",
+  DELETE_GIFT_EVENT: "DELETE_GIFT_EVENT",
+  UPSERT_GIFT_ALLOCATIONS: "UPSERT_GIFT_ALLOCATIONS",
+
+  // Planner
+  CREATE_PLANNER_GOAL: "CREATE_PLANNER_GOAL",
+  UPDATE_PLANNER_GOAL: "UPDATE_PLANNER_GOAL",
+  DELETE_PLANNER_GOAL: "DELETE_PLANNER_GOAL",
+  UPSERT_YEAR_BUDGET: "UPSERT_YEAR_BUDGET",
+
+  // Review / setup sessions (already emitted)
+  UPDATE_REVIEW_SESSION: "UPDATE_REVIEW_SESSION",
+  UPDATE_SETUP_SESSION: "UPDATE_SETUP_SESSION",
+
+  // Import / export
+  EXPORT_DATA: "EXPORT_DATA",
+  IMPORT_DATA: "IMPORT_DATA",
+} as const;
+
+export type AuditActionKey = keyof typeof AuditAction;
+export type AuditActionValue = (typeof AuditAction)[AuditActionKey];
+export const AuditActionEnum = z.enum(
+  Object.values(AuditAction) as [AuditActionValue, ...AuditActionValue[]]
+);
 
 export const AuditChangeSchema = z.object({
   field: z.string(),
@@ -54,3 +147,24 @@ export const AuditLogResponseSchema = z.object({
   nextCursor: z.string().nullable(),
 });
 export type AuditLogResponse = z.infer<typeof AuditLogResponseSchema>;
+
+/** Security activity — per-user, auth-scoped view. */
+export const SecurityActivityQuerySchema = z.object({
+  cursor: z.string().optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+export type SecurityActivityQuery = z.infer<typeof SecurityActivityQuerySchema>;
+
+export const SecurityActivityEntrySchema = z.object({
+  id: z.string(),
+  action: z.string(),
+  createdAt: z.string().datetime(),
+  metadata: z.unknown().nullable(),
+});
+export type SecurityActivityEntry = z.infer<typeof SecurityActivityEntrySchema>;
+
+export const SecurityActivityResponseSchema = z.object({
+  entries: z.array(SecurityActivityEntrySchema),
+  nextCursor: z.string().nullable(),
+});
+export type SecurityActivityResponse = z.infer<typeof SecurityActivityResponseSchema>;
