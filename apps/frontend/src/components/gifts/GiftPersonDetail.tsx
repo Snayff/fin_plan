@@ -12,15 +12,19 @@ export function GiftPersonDetail({ personId, year, onBack, readOnly }: Props) {
 
   return (
     <div className="flex h-full flex-col">
-      <button
-        type="button"
-        data-testid="gifts-breadcrumb-back"
-        onClick={onBack}
-        className="px-6 py-3 text-left text-xs text-foreground/50 hover:text-foreground"
-      >
-        ← People / {data.person.name}
-      </button>
-      <div className="flex-1 space-y-2 overflow-y-auto px-6 pb-6">
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-foreground/5 text-sm text-muted-foreground">
+        <button
+          type="button"
+          data-testid="gifts-breadcrumb-back"
+          onClick={onBack}
+          className="hover:text-foreground transition-colors"
+        >
+          ← People
+        </button>
+        <span>/</span>
+        <span className="text-foreground font-medium">{data.person.name}</span>
+      </div>
+      <div className="flex-1 space-y-2 overflow-y-auto p-4">
         {data.allocations.map((a) => (
           <AllocationCard
             key={a.giftEventId}
