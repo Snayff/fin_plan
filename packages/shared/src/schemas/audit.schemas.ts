@@ -27,6 +27,12 @@ export const ResourceSlugEnum = z.enum([
   "member-profile",
   "year-budget",
   "household",
+  // asset & account slugs
+  "asset",
+  "asset-balance",
+  "account",
+  "account-balance",
+  "session",
 ]);
 export type ResourceSlug = z.infer<typeof ResourceSlugEnum>;
 
@@ -106,6 +112,23 @@ export const AuditAction = {
   // Import / export
   EXPORT_DATA: "EXPORT_DATA",
   IMPORT_DATA: "IMPORT_DATA",
+
+  // Assets & accounts
+  CREATE_ASSET: "CREATE_ASSET",
+  UPDATE_ASSET: "UPDATE_ASSET",
+  DELETE_ASSET: "DELETE_ASSET",
+  RECORD_ASSET_BALANCE: "RECORD_ASSET_BALANCE",
+  CONFIRM_ASSET: "CONFIRM_ASSET",
+  CREATE_ACCOUNT: "CREATE_ACCOUNT",
+  UPDATE_ACCOUNT: "UPDATE_ACCOUNT",
+  DELETE_ACCOUNT: "DELETE_ACCOUNT",
+  RECORD_ACCOUNT_BALANCE: "RECORD_ACCOUNT_BALANCE",
+  CONFIRM_ACCOUNT: "CONFIRM_ACCOUNT",
+  UPDATE_ACCOUNT_CASHFLOW_LINK: "UPDATE_ACCOUNT_CASHFLOW_LINK",
+
+  // Sessions (create variants)
+  CREATE_REVIEW_SESSION: "CREATE_REVIEW_SESSION",
+  CREATE_SETUP_SESSION: "CREATE_SETUP_SESSION",
 } as const;
 
 export type AuditActionKey = keyof typeof AuditAction;

@@ -225,7 +225,7 @@ export const householdService = {
         db: prisma,
         ctx,
         action: "REMOVE_MEMBER",
-        resource: "member",
+        resource: "household-member",
         resourceId: memberId,
         beforeFetch: async (tx) =>
           tx.member.findUnique({ where: { id: memberId } }) as Promise<Record<
