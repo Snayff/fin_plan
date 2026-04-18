@@ -230,6 +230,40 @@ export const subcategoryService = {
     });
   },
 
+  async create(householdId: string, tier: WaterfallTier, name: string) {
+    const existing = await prisma.subcategory.count({ where: { householdId, tier } });
+    if (existing >= 7) {
+      const err = new Error("Maximum 7 subcategories per tier");
+      (err as any).code = "LIMIT_EXCEEDED";
+      throw err;
+    }
+    const maxSort = await prisma.subcategory.aggregate({
+      where: { householdId, tier },
+      _max: { sortOrder: true },
+    });
+    const nextSort = (maxSort._max.sortOrder ?? -1) + 1;
+    try {
+      return await prisma.subcategory.create({
+        data: {
+          householdId,
+          tier,
+          name: name.trim(),
+          sortOrder: nextSort,
+          isLocked: false,
+          isDefault: false,
+          lockedByPlanner: false,
+        },
+      });
+    } catch (err: any) {
+      if (err.code === "P2002") {
+        const e = new Error("A subcategory with that name already exists");
+        (e as any).code = "DUPLICATE";
+        throw e;
+      }
+      throw err;
+    }
+  },
+
   getDefaults() {
     return DEFAULT_SUBCATEGORIES;
   },

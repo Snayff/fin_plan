@@ -87,10 +87,12 @@ export {
   type PeriodRow,
   batchSaveSubcategoriesSchema,
   resetSubcategoriesSchema,
+  createSubcategorySchema,
   type BatchSaveSubcategoriesInput,
   type SubcategoryEntry,
   type SubcategoryReassignment,
   type ResetSubcategoriesInput,
+  type CreateSubcategoryInput,
 } from "./waterfall.schemas";
 
 // Settings schemas and types
