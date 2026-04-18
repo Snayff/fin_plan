@@ -1,105 +1,95 @@
-import { useState } from "react";
-import { useSettings, useUpdateSettings } from "../../hooks/useSettings.js";
-import type { UpdateSettingsInput } from "@finplan/shared";
+import { Input } from "@/components/ui/input";
+import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
+import { useAutoSave } from "@/hooks/useAutoSave";
+import { SettingsSection } from "./SettingsSection";
+import { AutoSaveField } from "./AutoSaveField";
+
+interface RateValues {
+  currentRatePct: number;
+  savingsRatePct: number;
+  investmentRatePct: number;
+  pensionRatePct: number;
+  inflationRatePct: number;
+}
+
+const DEFAULTS: RateValues = {
+  currentRatePct: 0,
+  savingsRatePct: 4,
+  investmentRatePct: 7,
+  pensionRatePct: 6,
+  inflationRatePct: 2.5,
+};
+
+const LABELS: Record<keyof RateValues, string> = {
+  currentRatePct: "Default current account rate (%)",
+  savingsRatePct: "Default savings rate (%)",
+  investmentRatePct: "Default investment rate (%)",
+  pensionRatePct: "Default pension rate (%)",
+  inflationRatePct: "Inflation rate (%)",
+};
+
+function RateField({
+  rateKey,
+  current,
+  onUpdate,
+}: {
+  rateKey: keyof RateValues;
+  current: RateValues;
+  onUpdate: (next: RateValues) => Promise<void>;
+}) {
+  const { value, setValue, status, errorMessage } = useAutoSave<number>({
+    initialValue: current[rateKey],
+    onSave: async (next) => onUpdate({ ...current, [rateKey]: next }),
+  });
+
+  return (
+    <AutoSaveField
+      label={LABELS[rateKey]}
+      htmlFor={`rate-${rateKey}`}
+      status={status}
+      errorMessage={errorMessage}
+    >
+      <Input
+        id={`rate-${rateKey}`}
+        type="number"
+        step={0.1}
+        min={0}
+        max={100}
+        value={value}
+        onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
+        aria-invalid={status === "error"}
+      />
+    </AutoSaveField>
+  );
+}
 
 export function GrowthRatesSection() {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
 
-  const settingsRecord = settings as Record<string, unknown> | undefined;
+  const current: RateValues = {
+    currentRatePct: settings?.currentRatePct ?? DEFAULTS.currentRatePct,
+    savingsRatePct: settings?.savingsRatePct ?? DEFAULTS.savingsRatePct,
+    investmentRatePct: settings?.investmentRatePct ?? DEFAULTS.investmentRatePct,
+    pensionRatePct: settings?.pensionRatePct ?? DEFAULTS.pensionRatePct,
+    inflationRatePct: settings?.inflationRatePct ?? DEFAULTS.inflationRatePct,
+  };
 
-  const [current, setCurrent] = useState<string>(
-    settingsRecord?.currentRatePct != null ? String(settingsRecord.currentRatePct) : "0"
-  );
-  const [savings, setSavings] = useState<string>(
-    settingsRecord?.savingsRatePct != null ? String(settingsRecord.savingsRatePct) : "4"
-  );
-  const [investment, setInvestment] = useState<string>(
-    settingsRecord?.investmentRatePct != null ? String(settingsRecord.investmentRatePct) : "7"
-  );
-  const [pension, setPension] = useState<string>(
-    settingsRecord?.pensionRatePct != null ? String(settingsRecord.pensionRatePct) : "6"
-  );
-  const [inflation, setInflation] = useState<string>(
-    settingsRecord?.inflationRatePct != null ? String(settingsRecord.inflationRatePct) : "2.5"
-  );
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setSaved(false);
-    const toNum = (s: string, fallback: number) => (s !== "" ? parseFloat(s) : fallback);
-    if (
-      [current, savings, investment, pension].some(
-        (s) => s !== "" && (isNaN(parseFloat(s)) || parseFloat(s) < 0 || parseFloat(s) > 100)
-      )
-    ) {
-      setError("Rates must be between 0 and 100");
-      return;
-    }
-    try {
-      await updateSettings.mutateAsync({
-        currentRatePct: toNum(current, 0),
-        savingsRatePct: toNum(savings, 4),
-        investmentRatePct: toNum(investment, 7),
-        pensionRatePct: toNum(pension, 6),
-        inflationRatePct: toNum(inflation, 2.5),
-      } as UpdateSettingsInput);
-      setSaved(true);
-    } catch {
-      setError("Failed to save growth rates.");
-    }
-  }
+  const save = async (next: RateValues) => {
+    await updateSettings.mutateAsync(next);
+  };
 
   return (
-    <form onSubmit={(e) => void handleSave(e)} className="flex flex-col gap-4">
-      <h3 className="label-detail">Growth Rates</h3>
-
-      <div className="grid grid-cols-2 gap-3">
-        {[
-          { label: "Default current account rate (%)", value: current, onChange: setCurrent },
-          { label: "Default savings rate (%)", value: savings, onChange: setSavings },
-          { label: "Default investment rate (%)", value: investment, onChange: setInvestment },
-          { label: "Default pension rate (%)", value: pension, onChange: setPension },
-          {
-            label: "Inflation rate (%)",
-            value: inflation,
-            onChange: setInflation,
-            placeholder: "2.5",
-          },
-        ].map(({ label, value, onChange, placeholder }) => (
-          <div key={label} className="flex flex-col gap-1.5">
-            <label className="text-[11px] uppercase tracking-wider text-[rgba(238,242,255,0.4)]">
-              {label}
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              max="100"
-              value={value}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder={placeholder}
-              className="bg-[rgba(238,242,255,0.04)] border border-[#1a1f35] rounded-md px-3 py-2 text-sm text-[rgba(238,242,255,0.92)] placeholder:text-[rgba(238,242,255,0.2)] focus:outline-none focus:border-[#8b5cf6]"
-            />
-          </div>
+    <SettingsSection
+      id="growth-rates"
+      title="Growth rates"
+      description="Default annual growth rates used for projections."
+    >
+      <div className="grid grid-cols-2 gap-3 max-w-lg">
+        {(Object.keys(LABELS) as Array<keyof RateValues>).map((k) => (
+          <RateField key={k} rateKey={k} current={current} onUpdate={save} />
         ))}
       </div>
-
-      {error && <p className="text-red-400 text-xs">{error}</p>}
-      {saved && <p className="text-green-400 text-xs">Saved.</p>}
-
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={updateSettings.isPending}
-          className="bg-[#8b5cf6] hover:bg-[#7c3aed] disabled:opacity-50 rounded-md px-4 py-1.5 text-sm text-white font-medium transition-colors"
-        >
-          {updateSettings.isPending ? "Saving…" : "Save Growth Rates"}
-        </button>
-      </div>
-    </form>
+    </SettingsSection>
   );
 }
