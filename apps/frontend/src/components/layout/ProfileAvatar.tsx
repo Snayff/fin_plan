@@ -26,13 +26,39 @@ export function ProfileAvatar() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
+  const menuRef = useRef<HTMLDivElement | null>(null);
 
-  const close = useCallback(() => setOpen(false), []);
+  const close = useCallback(() => {
+    setOpen(false);
+    triggerRef.current?.focus();
+  }, []);
+
+  useEffect(() => {
+    if (!open) return;
+    const first = menuRef.current?.querySelector<HTMLElement>('[role="menuitem"]');
+    first?.focus();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape") {
+        close();
+        return;
+      }
+      if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+        e.preventDefault();
+        const items = Array.from(
+          menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]') ?? []
+        );
+        const idx = items.indexOf(document.activeElement as HTMLElement);
+        const next =
+          e.key === "ArrowDown"
+            ? items[(idx + 1) % items.length]
+            : items[(idx - 1 + items.length) % items.length];
+        next?.focus();
+      }
     };
     const onClick = (e: MouseEvent) => {
       if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) close();
@@ -57,11 +83,13 @@ export function ProfileAvatar() {
   return (
     <div ref={wrapRef} className="relative">
       <button
+        ref={triggerRef}
         type="button"
         aria-label="Profile menu"
         aria-expanded={open}
+        aria-haspopup="menu"
         onClick={() => setOpen((o) => !o)}
-        className="h-8 w-8 rounded-full flex items-center justify-center font-heading font-bold text-xs text-white border-2 border-transparent hover:border-action/40 active:scale-[0.97] transition-[transform,border-color] duration-150"
+        className="h-8 w-8 rounded-full flex items-center justify-center font-heading font-bold text-xs text-white border-2 border-transparent hover:border-action/40 active:scale-[0.97] transition-[transform,border-color] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-action/60"
         style={{
           background: `linear-gradient(135deg, hsl(${hue}, 60%, 55%) 0%, hsl(${(hue + 60) % 360}, 70%, 60%) 100%)`,
         }}
@@ -70,6 +98,7 @@ export function ProfileAvatar() {
       </button>
       {open && (
         <ProfileAvatarDropdown
+          ref={menuRef}
           userName={user.name ?? user.email ?? ""}
           userEmail={user.email ?? ""}
           onSignOut={handleSignOut}

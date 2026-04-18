@@ -46,7 +46,7 @@ export function SettingsLeftPanel({
           <p className={cn("px-4 -mt-2 pb-3 text-xs font-medium", subLabelClassName)}>{subLabel}</p>
         )}
       </div>
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <nav aria-label="Settings sections" className="flex-1 min-h-0 overflow-y-auto">
         {groups.map((g) => (
           <div key={g.key || "flat"}>
             {g.key && (
@@ -63,7 +63,7 @@ export function SettingsLeftPanel({
                   aria-current={isActive ? "true" : undefined}
                   onClick={() => onNavClick(item.id)}
                   className={cn(
-                    "relative flex w-full items-center px-4 py-2.5 text-left text-sm transition-colors",
+                    "relative flex w-full items-center px-4 py-2.5 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-page-accent",
                     isActive
                       ? "font-medium text-page-accent bg-page-accent/14 border-l-2 border-page-accent rounded-r-sm"
                       : "text-foreground/60 hover:bg-page-accent/5 hover:text-foreground/90"
@@ -75,7 +75,7 @@ export function SettingsLeftPanel({
             })}
           </div>
         ))}
-      </div>
+      </nav>
       <div className="shrink-0 border-t border-foreground/10 px-4 py-3 flex justify-between text-sm">
         <span className="text-foreground/40">finplan</span>
         <span className="font-numeric text-xs text-foreground/30">v{version}</span>

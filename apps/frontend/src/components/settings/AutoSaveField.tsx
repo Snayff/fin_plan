@@ -31,16 +31,16 @@ export function AutoSaveField({
           <label htmlFor={htmlFor} className="text-xs font-medium text-foreground/75">
             {label}
           </label>
-          {status === "saved" && (
-            <span
-              aria-live="polite"
-              className="autosave-saved-flash text-[10.5px] font-medium text-success"
-            >
-              ✓ saved
-            </span>
-          )}
+          <span
+            aria-live="polite"
+            aria-atomic="true"
+            className="autosave-saved-flash text-[10.5px] font-medium text-success"
+          >
+            {status === "saved" ? "✓ saved" : ""}
+          </span>
         </div>
       )}
+      {inline && label && <span className="sr-only">{label}</span>}
       {children}
       {status === "error" && errorMessage && (
         <p role="alert" className="text-[11px] font-medium text-destructive">
