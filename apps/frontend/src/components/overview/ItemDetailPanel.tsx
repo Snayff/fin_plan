@@ -53,6 +53,7 @@ export function ItemDetailPanel({
   const confirmItem = useConfirmItem();
   const updateItem = useUpdateItem();
   const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const isReadOnly = !!isReadOnlyProp || snapshotDate != null;
   const savingsNudge = useSavingsNudge(item.id, item.type, isReadOnly);
 
@@ -156,12 +157,12 @@ export function ItemDetailPanel({
             </p>
           )}
           <p className="text-hero font-numeric font-extrabold text-primary">
-            {formatCurrency(item.amount)}
+            {formatCurrency(item.amount, showPence)}
           </p>
           {item.type === "yearly_bill" && (
             <p className="text-sm text-muted-foreground mt-0.5">
               <GlossaryTermMarker entryId="amortised">Amortised (÷12)</GlossaryTermMarker>{" "}
-              {formatCurrency(item.amount / 12)}/mo
+              {formatCurrency(item.amount / 12, showPence)}/mo
             </p>
           )}
           <p className={cn("text-sm mt-0.5", itemIsStale && "text-attention")}>

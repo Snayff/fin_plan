@@ -6,6 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useSettings } from "@/hooks/useSettings";
 import { formatCurrency } from "@/utils/format";
 import type { TierConfig } from "./tierConfig";
 import type { SpendType } from "./formatAmount";
@@ -89,6 +90,8 @@ export default function ItemForm({
   onAddPeriod,
 }: Props) {
   const tier = config.tier;
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const [name, setName] = useState(item?.name ?? "");
   const [amount, setAmount] = useState(item?.amount?.toString() ?? "");
   const [spendType, setSpendType] = useState<SpendType>(item?.spendType ?? "monthly");
@@ -110,7 +113,7 @@ export default function ItemForm({
     !amountFocused && amount
       ? (() => {
           const n = parseFloat(amount);
-          return isNaN(n) ? amount : formatCurrency(n);
+          return isNaN(n) ? amount : formatCurrency(n, showPence);
         })()
       : amount;
 

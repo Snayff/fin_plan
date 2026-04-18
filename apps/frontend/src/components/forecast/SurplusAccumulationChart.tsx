@@ -1,5 +1,6 @@
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { usePrefersReducedMotion } from "@/utils/motion";
 import type { SurplusPoint } from "@finplan/shared";
 
@@ -9,6 +10,8 @@ interface SurplusAccumulationChartProps {
 
 export function SurplusAccumulationChart({ data }: SurplusAccumulationChartProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const isEmpty = data.length < 2 || data.every((d) => d.cumulative === 0);
   const last = data[data.length - 1];
 
@@ -48,7 +51,7 @@ export function SurplusAccumulationChart({ data }: SurplusAccumulationChartProps
                 width={48}
               />
               <Tooltip
-                formatter={(value: number) => [formatCurrency(value), "Accumulated"]}
+                formatter={(value: number) => [formatCurrency(value, showPence), "Accumulated"]}
                 contentStyle={{
                   background: "#141b2e",
                   border: "1px solid #222c45",
@@ -76,13 +79,13 @@ export function SurplusAccumulationChart({ data }: SurplusAccumulationChartProps
           <div>
             <span className="text-xs text-text-tertiary">Today</span>
             <p className="font-numeric text-sm text-text-primary tabular-nums">
-              {formatCurrency(0)}
+              {formatCurrency(0, showPence)}
             </p>
           </div>
           <div>
             <span className="text-xs text-text-tertiary">Accumulated ({last.year})</span>
             <p className="font-numeric text-sm text-text-primary tabular-nums">
-              {formatCurrency(last.cumulative)}
+              {formatCurrency(last.cumulative, showPence)}
             </p>
           </div>
         </div>

@@ -117,7 +117,7 @@ export default function ItemRow({
               <span className="flex items-center gap-1 font-numeric text-[11px]">
                 <span className="text-text-muted">&rarr;</span>
                 <span className={`${config.textClass} opacity-70`}>
-                  {formatCurrency(item.nextPeriod.amount)}
+                  {formatCurrency(item.nextPeriod.amount, showPence)}
                 </span>
                 <span className="font-body text-[10px] text-text-muted">
                   from{" "}

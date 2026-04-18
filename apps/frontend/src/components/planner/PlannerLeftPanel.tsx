@@ -1,4 +1,5 @@
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { cn } from "@/lib/utils";
 
 type ActiveView = "purchases";
@@ -21,6 +22,8 @@ export function PlannerLeftPanel({
     .filter((p) => p.scheduledThisYear === true && p.status !== "done")
     .reduce((sum: number, p) => sum + (p.estimatedCost ?? 0), 0);
 
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const purchaseBudget = budget?.purchaseBudget ?? 0;
   const purchasesOverBudget = scheduledTotal > purchaseBudget;
 
@@ -30,12 +33,12 @@ export function PlannerLeftPanel({
       <div className="mb-1">
         <div className="flex items-center justify-between px-2 py-1">
           <span className="label-section">Purchases</span>
-          <span className="text-sm font-medium">{formatCurrency(purchaseBudget)}</span>
+          <span className="text-sm font-medium">{formatCurrency(purchaseBudget, showPence)}</span>
         </div>
 
         <div className="flex items-center justify-between px-2 py-0.5 text-sm">
           <span className="text-muted-foreground">Scheduled</span>
-          <span>{formatCurrency(scheduledTotal)}</span>
+          <span>{formatCurrency(scheduledTotal, showPence)}</span>
         </div>
 
         {purchasesOverBudget && (
