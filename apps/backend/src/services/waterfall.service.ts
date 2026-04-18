@@ -1,7 +1,7 @@
 import { prisma } from "../config/database.js";
 import { NotFoundError, ValidationError } from "../utils/errors.js";
 import { subcategoryService } from "./subcategory.service.js";
-import { toGBP } from "@finplan/shared";
+import { toGBP, toMonthlyAmount } from "@finplan/shared";
 import { audited } from "./audit.service.js";
 import type { ActorCtx } from "./audit.service.js";
 import type {
@@ -125,10 +125,8 @@ function buildSubcategoryTotals(
     if (!subId || !map.has(subId)) continue;
     const entry = map.get(subId)!;
 
-    let monthlyAmount = item.amount;
-    if (item.spendType === "yearly" || item.frequency === "annual") {
-      monthlyAmount = item.amount / 12;
-    }
+    const freq = (item.spendType ?? item.frequency) as Parameters<typeof toMonthlyAmount>[1] | undefined;
+    const monthlyAmount = freq ? toMonthlyAmount(item.amount, freq) : item.amount;
 
     entry.total += monthlyAmount;
     entry.count += 1;
@@ -235,13 +233,19 @@ export const waterfallService = {
     });
     const activeDiscretionary = enrichedDiscretionary.filter((s) => s.lifecycleState === "active");
 
-    const monthlyIncome = activeIncome.filter((s) => s.frequency === "monthly");
-    const annualIncome = activeIncome.filter((s) => s.frequency === "annual");
+    const monthlyLikeIncome = activeIncome.filter(
+      (s) => s.frequency === "monthly" || s.frequency === "weekly"
+    );
+    const nonMonthlyIncome = activeIncome.filter(
+      (s) => s.frequency === "annual" || s.frequency === "quarterly"
+    );
     const oneOffIncome = activeIncome.filter((s) => s.frequency === "one_off");
 
     const incomeTotal = toGBP(
-      monthlyIncome.reduce((s, i) => s + i.amount, 0) +
-        annualIncome.reduce((s, i) => s + i.amount / 12, 0)
+      [...monthlyLikeIncome, ...nonMonthlyIncome].reduce(
+        (s, i) => s + toMonthlyAmount(i.amount, i.frequency),
+        0
+      )
     );
 
     // Group active non-oneOff sources by incomeType for left panel navigation
@@ -254,8 +258,7 @@ export const waterfallService = {
       other: "Other",
     };
 
-    const annualWithMonthly = annualIncome.map((s) => ({ ...s, monthlyAmount: s.amount / 12 }));
-    const activeNonOneOff: IncomeSourceRow[] = [...monthlyIncome, ...annualWithMonthly];
+    const activeNonOneOff: IncomeSourceRow[] = [...monthlyLikeIncome, ...nonMonthlyIncome];
     const typeMap = new Map<IncomeType, IncomeSourceRow[]>();
     for (const src of activeNonOneOff) {
       const group = typeMap.get(src.incomeType) ?? [];
@@ -266,21 +269,24 @@ export const waterfallService = {
     const byType: IncomeByType[] = Array.from(typeMap.entries()).map(([type, sources]) => ({
       type,
       label: INCOME_TYPE_LABELS[type],
-      monthlyTotal: sources.reduce((sum, src) => {
-        if (src.frequency === "annual") {
-          return sum + src.amount / 12;
-        }
-        return sum + src.amount;
-      }, 0),
+      monthlyTotal: sources.reduce((sum, src) => sum + toMonthlyAmount(src.amount, src.frequency), 0),
       sources,
     }));
 
-    // Committed: monthly items at face value, yearly items averaged over 12
-    const monthlyCommitted = activeCommitted.filter((i) => i.spendType === "monthly");
-    const yearlyCommitted = activeCommitted.filter((i) => i.spendType === "yearly");
-
-    const committedMonthlyTotal = monthlyCommitted.reduce((s, b) => s + b.amount, 0);
-    const yearlyMonthlyAvg = toGBP(yearlyCommitted.reduce((s, b) => s + b.amount, 0) / 12);
+    // Committed: monthly-like items at monthly equivalent, non-monthly items averaged
+    const monthlyLikeCommitted = activeCommitted.filter(
+      (i) => i.spendType === "monthly" || i.spendType === "weekly"
+    );
+    const nonMonthlyCommitted = activeCommitted.filter(
+      (i) => i.spendType === "yearly" || i.spendType === "quarterly"
+    );
+    const committedMonthlyTotal = monthlyLikeCommitted.reduce(
+      (s, b) => s + toMonthlyAmount(b.amount, b.spendType),
+      0
+    );
+    const nonMonthlyMonthlyAvg = toGBP(
+      nonMonthlyCommitted.reduce((s, b) => s + toMonthlyAmount(b.amount, b.spendType), 0)
+    );
 
     // Detect savings subcategory to split discretionary items
     const savingsSubcategory =
@@ -298,7 +304,7 @@ export const waterfallService = {
     const savingsTotal = savingsItems.reduce((s, a) => s + a.amount, 0);
 
     const surplusAmount = toGBP(
-      incomeTotal - committedMonthlyTotal - yearlyMonthlyAvg - discretionaryTotal
+      incomeTotal - committedMonthlyTotal - nonMonthlyMonthlyAvg - discretionaryTotal
     );
     const percentOfIncome = toGBP(incomeTotal > 0 ? (surplusAmount / incomeTotal) * 100 : 0);
 
@@ -335,16 +341,16 @@ export const waterfallService = {
         total: incomeTotal,
         byType,
         bySubcategory: incomeBySubcategory,
-        monthly: monthlyIncome,
-        annual: annualWithMonthly,
+        monthly: monthlyLikeIncome,
+        nonMonthly: nonMonthlyIncome,
         oneOff: oneOffIncome,
       },
       committed: {
         monthlyTotal: committedMonthlyTotal,
-        monthlyAvg12: yearlyMonthlyAvg,
+        monthlyAvg12: nonMonthlyMonthlyAvg,
         bySubcategory: committedBySubcategory,
-        bills: monthlyCommitted,
-        yearlyBills: yearlyCommitted,
+        bills: monthlyLikeCommitted,
+        nonMonthlyBills: nonMonthlyCommitted,
       },
       discretionary: {
         total: discretionaryTotal,
