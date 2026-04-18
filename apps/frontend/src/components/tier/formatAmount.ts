@@ -1,8 +1,8 @@
-import { toGBP } from "@finplan/shared";
+import { toGBP, toMonthlyAmount, toYearlyAmount } from "@finplan/shared";
+import type { SpendType } from "@finplan/shared";
+export type { SpendType };
 import { formatCurrency } from "@/utils/format";
 import { monthsElapsed, isStale as stalenessIsStale } from "@/utils/staleness";
-
-export type SpendType = "monthly" | "yearly" | "one_off";
 
 export function formatItemAmount(
   amount: number,
@@ -16,8 +16,24 @@ export function formatItemAmount(
   if (spendType === "monthly") {
     return { primary: formatCurrency(toGBP(amount), showPence), secondary: null, label: null };
   }
+  if (spendType === "weekly") {
+    const monthly = showPence ? toMonthlyAmount(amount, "weekly") : Math.round(toMonthlyAmount(amount, "weekly"));
+    return {
+      primary: formatCurrency(toGBP(amount), showPence),
+      secondary: `${formatCurrency(toGBP(monthly), showPence)}/mo`,
+      label: null,
+    };
+  }
+  if (spendType === "quarterly") {
+    const monthly = showPence ? toMonthlyAmount(amount, "quarterly") : Math.round(toMonthlyAmount(amount, "quarterly"));
+    return {
+      primary: formatCurrency(toGBP(amount), showPence),
+      secondary: `${formatCurrency(toGBP(monthly), showPence)}/mo`,
+      label: null,
+    };
+  }
   if (spendType === "yearly") {
-    const monthly = showPence ? amount / 12 : Math.round(amount / 12);
+    const monthly = showPence ? toMonthlyAmount(amount, "yearly") : Math.round(toMonthlyAmount(amount, "yearly"));
     return {
       primary: formatCurrency(toGBP(amount), showPence),
       secondary: `${formatCurrency(toGBP(monthly), showPence)}/mo`,
@@ -25,7 +41,7 @@ export function formatItemAmount(
     };
   }
   // one_off
-  const monthly = showPence ? amount / 12 : Math.round(amount / 12);
+  const monthly = showPence ? toMonthlyAmount(amount, "one_off") : Math.round(toMonthlyAmount(amount, "one_off"));
   return {
     primary: formatCurrency(toGBP(amount), showPence),
     secondary: `${formatCurrency(toGBP(monthly), showPence)}/mo`,
@@ -44,7 +60,9 @@ export function isStale(lastReviewedAt: Date, now: Date, thresholdMonths: number
 }
 
 export const SPEND_TYPE_LABELS: Record<SpendType, string> = {
+  weekly: "Weekly",
   monthly: "Monthly",
+  quarterly: "Quarterly",
   yearly: "Yearly",
   one_off: "One-off",
 };
@@ -71,18 +89,20 @@ export function formatTwoLineAmount(
     };
   }
 
-  const isMonthly = spendType === "monthly";
-  const monthlyAmt = isMonthly ? amount : showPence ? amount / 12 : Math.round(amount / 12);
-  const yearlyAmt = isMonthly ? amount * 12 : amount;
+  const monthlyAmt = showPence
+    ? toMonthlyAmount(amount, spendType)
+    : Math.round(toMonthlyAmount(amount, spendType));
+  const yearlyAmt = toYearlyAmount(amount, spendType);
+  const isMonthlyLike = spendType === "monthly" || spendType === "weekly";
 
   return {
     monthly: {
       value: `${formatCurrency(toGBP(monthlyAmt), showPence)}/mo`,
-      bright: isMonthly,
+      bright: isMonthlyLike,
     },
     yearly: {
       value: `${formatCurrency(toGBP(yearlyAmt), showPence)}/yr`,
-      bright: !isMonthly,
+      bright: !isMonthlyLike,
     },
   };
 }

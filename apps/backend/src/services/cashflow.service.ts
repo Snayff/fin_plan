@@ -3,6 +3,9 @@ import { NotFoundError, ValidationError } from "../utils/errors.js";
 import { audited, computeDiff } from "./audit.service.js";
 import type { ActorCtx } from "./audit.service.js";
 import { findEffectivePeriod } from "./period.service.js";
+import {
+  toMonthlyAmount,
+} from "@finplan/shared";
 import type {
   LinkableAccountRow,
   BulkUpdateLinkedAccountsInput,
@@ -74,7 +77,7 @@ function buildEvents(
     item: any,
     itemType: "income_source" | "committed_item",
     sign: 1 | -1,
-    frequencyKey: "monthly" | "annual" | "yearly" | "one_off"
+    frequencyKey: "monthly" | "annual" | "yearly" | "one_off" | "weekly" | "quarterly"
   ) {
     const periods = periodsByKey.get(`${itemType}:${item.id}`) ?? [];
     const due: Date = item.dueDate;
@@ -94,6 +97,26 @@ function buildEvents(
         }
         cursor.setUTCMonth(cursor.getUTCMonth() + 1);
       }
+    } else if (frequencyKey === "weekly") {
+      // Anchor on the weekday of dueDate. Find the first occurrence on-or-after max(from, due).
+      const anchorDate = due > from ? due : from;
+      const cursor = new Date(anchorDate);
+      // Advance to the first matching weekday >= anchorDate
+      const targetDay = due.getUTCDay(); // 0=Sun ... 6=Sat
+      while (cursor.getUTCDay() !== targetDay) {
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+      while (cursor < to) {
+        const amount = periodActiveOn(periods, cursor);
+        if (amount > 0)
+          events.push({
+            date: new Date(cursor),
+            amount: sign * amount,
+            itemType,
+            label: item.name,
+          });
+        cursor.setUTCDate(cursor.getUTCDate() + 7);
+      }
     } else if (frequencyKey === "annual" || frequencyKey === "yearly") {
       const month = due.getUTCMonth();
       const day = due.getUTCDate();
@@ -109,6 +132,30 @@ function buildEvents(
             events.push({ date: occ, amount: sign * amount, itemType, label: item.name });
         }
         year++;
+      }
+    } else if (frequencyKey === "quarterly") {
+      const day = due.getUTCDate();
+      // Anchor at the later of (visible window start, item's first occurrence)
+      const anchorDate = due > from ? due : from;
+      // Step from due date in 3-month increments until we reach anchorDate
+      let curYear = due.getUTCFullYear();
+      let curMonth = due.getUTCMonth();
+      while (true) {
+        const occ = new Date(Date.UTC(curYear, curMonth, day));
+        if (occ >= anchorDate) break;
+        curMonth += 3;
+        if (curMonth >= 12) { curYear++; curMonth -= 12; }
+      }
+      while (true) {
+        const occ = new Date(Date.UTC(curYear, curMonth, day));
+        if (occ >= to) break;
+        if (occ >= from && occ >= due) {
+          const amount = periodActiveOn(periods, occ);
+          if (amount > 0)
+            events.push({ date: occ, amount: sign * amount, itemType, label: item.name });
+        }
+        curMonth += 3;
+        if (curMonth >= 12) { curYear++; curMonth -= 12; }
       }
     } else {
       // one_off
@@ -152,8 +199,7 @@ function computeMonthlyDiscretionaryBaseline(
     if (d.spendType === "one_off") continue;
     const periods = periodsByKey.get(`discretionary_item:${d.id}`) ?? [];
     const amount = periodActiveOn(periods, refDate);
-    if (d.spendType === "monthly") total += amount;
-    else if (d.spendType === "yearly") total += amount / 12;
+    total += toMonthlyAmount(amount, d.spendType);
   }
   return total;
 }

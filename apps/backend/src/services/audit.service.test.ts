@@ -109,6 +109,14 @@ describe("computeDiff", () => {
     expect(diff).toEqual([{ field: "spendType", before: "monthly", after: "yearly" }]);
   });
 
+  it("captures weekly ↔ quarterly spendType transition in diff", () => {
+    const diff = computeDiff(
+      { id: "ci-1", spendType: "weekly" },
+      { id: "ci-1", spendType: "quarterly" }
+    );
+    expect(diff).toEqual([{ field: "spendType", before: "weekly", after: "quarterly" }]);
+  });
+
   it("excludes universal system fields on delete", () => {
     const diff = computeDiff({ id: "abc", householdId: "hh", name: "Old" }, null);
     expect(diff).toEqual([{ field: "name", before: "Old" }]);

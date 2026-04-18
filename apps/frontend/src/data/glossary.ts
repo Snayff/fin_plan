@@ -24,6 +24,26 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     appearsIn: ["Committed Spend waterfall", "Annual Income entries", "Cashflow calendar"],
   },
   {
+    id: "amortised_quarterly",
+    term: "Amortised Quarterly (÷3)",
+    definition:
+      "A quarterly amount converted to its monthly equivalent by dividing by 3. A £900 quarterly bill averages £300/month across your waterfall.",
+    tag: "financial",
+    relatedConceptIds: ["amortisation"],
+    relatedTermIds: ["amortised"],
+    appearsIn: ["Committed Spend waterfall", "Income entries"],
+  },
+  {
+    id: "amortised_weekly",
+    term: "Amortised Weekly (× 52/12)",
+    definition:
+      "A weekly amount converted to its monthly equivalent by multiplying by 52 ÷ 12 (≈ 4.33). A weekly salary of £500 contributes approximately £2,167/month to your waterfall.",
+    tag: "financial",
+    relatedConceptIds: ["amortisation"],
+    relatedTermIds: ["amortised"],
+    appearsIn: ["Income entries", "Committed Spend waterfall"],
+  },
+  {
     id: "gifts-annual-budget",
     term: "Annual Budget (Gifts)",
     definition:

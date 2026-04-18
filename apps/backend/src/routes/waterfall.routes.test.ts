@@ -7,8 +7,8 @@ import { AuthenticationError } from "../utils/errors";
 const waterfallServiceMock = {
   getWaterfallSummary: mock(() =>
     Promise.resolve({
-      income: { total: 0, byType: [], monthly: [], annual: [], oneOff: [] },
-      committed: { monthlyTotal: 0, monthlyAvg12: 0, bills: [], yearlyBills: [] },
+      income: { total: 0, byType: [], monthly: [], nonMonthly: [], oneOff: [] },
+      committed: { monthlyTotal: 0, monthlyAvg12: 0, bills: [], nonMonthlyBills: [] },
       discretionary: { total: 0, categories: [], savings: { total: 0, allocations: [] } },
       surplus: { amount: 0, percentOfIncome: 0 },
     })
@@ -139,8 +139,8 @@ afterAll(async () => {
 });
 
 const mockSummary = {
-  income: { total: 5000, byType: [], monthly: [], annual: [], oneOff: [] },
-  committed: { monthlyTotal: 1000, monthlyAvg12: 100, bills: [], yearlyBills: [] },
+  income: { total: 5000, byType: [], monthly: [], nonMonthly: [], oneOff: [] },
+  committed: { monthlyTotal: 1000, monthlyAvg12: 100, bills: [], nonMonthlyBills: [] },
   discretionary: { total: 500, categories: [], savings: { total: 0, allocations: [] } },
   surplus: { amount: 3400, percentOfIncome: 68 },
 };

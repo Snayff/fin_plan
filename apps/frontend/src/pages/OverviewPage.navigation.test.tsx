@@ -45,14 +45,14 @@ mock.module("@/hooks/useWaterfall", () => ({
             notes: null,
           },
         ],
-        annual: [],
+        nonMonthly: [],
         oneOff: [],
       },
       committed: {
         monthlyTotal: 1500,
         monthlyAvg12: 0,
         bills: [],
-        yearlyBills: [],
+        nonMonthlyBills: [],
         bySubcategory: [],
       },
       discretionary: {
