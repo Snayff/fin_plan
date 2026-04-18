@@ -26,6 +26,7 @@ const GiftsPage = lazy(() => import("./pages/GiftsPage"));
 const HelpPage = lazy(() => import("./pages/HelpPage"));
 const AssetsPage = lazy(() => import("./pages/AssetsPage"));
 const ForecastPage = lazy(() => import("./pages/ForecastPage"));
+const FullWaterfallPage = lazy(() => import("./pages/FullWaterfallPage"));
 
 const PageLoader = () => (
   <div className="min-h-screen flex items-center justify-center bg-background text-muted-foreground">
@@ -75,6 +76,7 @@ export function ProtectedAppRoutes() {
                     <Route path="/help" element={<HelpPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/design-renew" element={<DesignRenewPage />} />
+                    <Route path="/waterfall" element={<FullWaterfallPage />} />
 
                     {/* Fallback */}
                     <Route path="*" element={<Navigate to="/overview" replace />} />
