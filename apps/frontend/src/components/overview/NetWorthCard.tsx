@@ -1,5 +1,6 @@
 import type { SparklinePoint } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { SummarySparkline } from "./SummarySparkline";
 
 interface NetWorthCardProps {
@@ -8,6 +9,8 @@ interface NetWorthCardProps {
 }
 
 export function NetWorthCard({ netWorth, sparklineData }: NetWorthCardProps) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   return (
     <div
       className="rounded-xl pt-5 pb-4 overflow-hidden"
@@ -39,7 +42,7 @@ export function NetWorthCard({ netWorth, sparklineData }: NetWorthCardProps) {
           lineHeight: 1.1,
         }}
       >
-        {netWorth !== null ? formatCurrency(netWorth) : "£\u2014"}
+        {netWorth !== null ? formatCurrency(netWorth, showPence) : "£\u2014"}
       </p>
       {netWorth !== null && (
         <div className="mt-3">

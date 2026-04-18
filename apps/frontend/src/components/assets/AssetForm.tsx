@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useHouseholdMembers } from "../../hooks/useSettings.js";
+import { useHouseholdMembers, useSettings } from "../../hooks/useSettings.js";
 import { formatCurrency } from "@/utils/format";
 
 interface Props {
@@ -48,12 +48,14 @@ export function AssetForm({
   const [nameError, setNameError] = useState<string | null>(null);
 
   const { data: members } = useHouseholdMembers();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
 
   const displayValue =
     !valueFocused && initialValue
       ? (() => {
           const n = parseFloat(initialValue);
-          return isNaN(n) ? initialValue : formatCurrency(n);
+          return isNaN(n) ? initialValue : formatCurrency(n, showPence);
         })()
       : initialValue;
 

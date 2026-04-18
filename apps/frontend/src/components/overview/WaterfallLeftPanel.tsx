@@ -90,6 +90,7 @@ export function WaterfallLeftPanel({
 }: WaterfallLeftPanelProps) {
   const navigate = useNavigate();
   const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const thresholds = settings?.stalenessThresholds ?? {
     income_source: 12,
     committed_bill: 6,
@@ -166,7 +167,7 @@ export function WaterfallLeftPanel({
                     />
                   )}
                 </div>
-                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal)}</span>
+                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal, showPence)}</span>
               </div>
             );
           })}
@@ -208,7 +209,7 @@ export function WaterfallLeftPanel({
                     />
                   )}
                 </div>
-                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal)}</span>
+                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal, showPence)}</span>
               </div>
             );
           })}
@@ -219,7 +220,9 @@ export function WaterfallLeftPanel({
               )}
             >
               <GlossaryTermMarker entryId="amortised">incl. yearly ÷12</GlossaryTermMarker>
-              <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyAvg12)}</span>
+              <span className={AMOUNT_CLASS}>
+                {formatCurrency(committed.monthlyAvg12, showPence)}
+              </span>
             </div>
           )}
         </div>
@@ -262,7 +265,7 @@ export function WaterfallLeftPanel({
                     />
                   )}
                 </div>
-                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal)}</span>
+                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal, showPence)}</span>
               </div>
             );
           })}

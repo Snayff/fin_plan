@@ -30,11 +30,12 @@ export function CommittedBillsPanel({
 }: CommittedBillsPanelProps) {
   const { data: settings } = useSettings();
   const threshold = settings?.stalenessThresholds?.committed_bill ?? 6;
+  const showPence = settings?.showPence ?? false;
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="flex flex-col h-full">
+      {/* Breadcrumb header */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-foreground/5 text-sm text-muted-foreground">
         <button
           type="button"
           onClick={onBack}
@@ -46,38 +47,42 @@ export function CommittedBillsPanel({
         <span className="text-foreground font-medium">Monthly bills</span>
       </div>
 
-      {bills.length === 0 ? (
-        <div className="flex items-center justify-center h-32">
-          <p className="text-sm text-muted-foreground">No monthly bills added yet</p>
-        </div>
-      ) : (
-        <div className="space-y-1">
-          {bills.map((bill) => (
-            <div
-              key={bill.id}
-              className={cn(ROW_CLASS, selectedItemId === bill.id && "bg-accent")}
-              onClick={() =>
-                onSelectBill({
-                  id: bill.id,
-                  type: "committed_bill",
-                  name: bill.name,
-                  amount: bill.amount,
-                  lastReviewedAt: new Date(bill.lastReviewedAt),
-                })
-              }
-            >
-              <span>{bill.name}</span>
-              <div className="flex items-center gap-2">
-                <StalenessIndicator
-                  lastReviewedAt={bill.lastReviewedAt}
-                  thresholdMonths={threshold}
-                />
-                <span className="font-numeric text-foreground/60">{formatCurrency(bill.amount)}</span>
+      <div className="flex-1 overflow-y-auto p-4">
+        {bills.length === 0 ? (
+          <div className="flex items-center justify-center h-32">
+            <p className="text-sm text-muted-foreground">No monthly bills added yet</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {bills.map((bill) => (
+              <div
+                key={bill.id}
+                className={cn(ROW_CLASS, selectedItemId === bill.id && "bg-accent")}
+                onClick={() =>
+                  onSelectBill({
+                    id: bill.id,
+                    type: "committed_bill",
+                    name: bill.name,
+                    amount: bill.amount,
+                    lastReviewedAt: new Date(bill.lastReviewedAt),
+                  })
+                }
+              >
+                <span>{bill.name}</span>
+                <div className="flex items-center gap-2">
+                  <StalenessIndicator
+                    lastReviewedAt={bill.lastReviewedAt}
+                    thresholdMonths={threshold}
+                  />
+                  <span className="font-numeric text-foreground/60">
+                    {formatCurrency(bill.amount, showPence)}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

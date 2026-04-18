@@ -101,7 +101,7 @@ export function AssetItemArea({ type }: Props) {
       </div>
 
       {/* Content */}
-      <div className="px-6 flex-1 overflow-y-auto">
+      <div className="px-6 flex-1 min-h-0 overflow-y-auto">
         {/* Add form at top */}
         <AnimatePresence initial={false}>
           {isAddingItem && (

@@ -73,7 +73,8 @@ describe("GiftPersonDetail", () => {
     render(<GiftPersonDetail personId="p1" year={2026} onBack={() => {}} readOnly={false} />, {
       wrapper,
     });
-    expect(screen.getByText(/← People \/ Mum/i)).toBeInTheDocument();
+    expect(screen.getByText(/← People/i)).toBeInTheDocument();
+    expect(screen.getByText("Mum")).toBeInTheDocument();
     expect(screen.getByText("Christmas")).toBeInTheDocument();
     expect(screen.getByText("Birthday")).toBeInTheDocument();
   });
