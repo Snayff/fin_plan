@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 import type { AuditLogQuery, AuditEntry, AuditLogResponse } from "@finplan/shared";
+import { filterChanges } from "./audit.service";
 
 type QueryParams = AuditLogQuery & { householdId: string };
 
@@ -74,7 +75,9 @@ export async function queryAuditLog(
       action: e.action ?? "",
       resource: e.resource ?? "",
       resourceId: e.resourceId ?? null,
-      changes: Array.isArray(e.changes) ? (e.changes as AuditEntry["changes"]) : null,
+      changes: Array.isArray(e.changes)
+        ? filterChanges(e.changes as NonNullable<AuditEntry["changes"]>, e.resource ?? undefined)
+        : null,
       createdAt: e.createdAt.toISOString(),
     })),
     nextCursor,

@@ -1,14 +1,42 @@
 import { prisma } from "../config/database";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
-const REDACTED_FIELDS = new Set([
-  "password",
+// Universal: every model carries these, never user-meaningful
+const SYSTEM_FIELDS = new Set([
+  "id",
+  "householdId",
+  "createdAt",
+  "updatedAt",
+  "sortOrder",
+  "lastReviewedAt",
+  "subcategoryId",
+  "yearAdded",
+  "tokenHash",
   "passwordHash",
-  "email",
-  "token",
+  "twoFactorSecret",
+  "twoFactorBackupCodes",
   "refreshToken",
-  "notes",
+  "token",
+  "password",
+  "email",
 ]);
+
+// Per-resource: fields that exist on the row but the user does not directly drive
+const RESOURCE_FIELD_DENYLIST: Record<string, Set<string>> = {
+  "committed-item": new Set(["isPlannerOwned"]),
+  "discretionary-item": new Set(["isPlannerOwned"]),
+  "planner-goal": new Set(["scheduledThisYear"]),
+};
+
+export function isHiddenField(field: string, resource?: string): boolean {
+  if (SYSTEM_FIELDS.has(field)) return true;
+  if (resource && RESOURCE_FIELD_DENYLIST[resource]?.has(field)) return true;
+  return false;
+}
+
+export function filterChanges<T extends { field: string }>(changes: T[], resource?: string): T[] {
+  return changes.filter((c) => !isHiddenField(c.field, resource));
+}
 
 export interface AuditLogEntry {
   userId?: string;
@@ -50,14 +78,15 @@ export type AuditChange = {
 
 export function computeDiff(
   before: Record<string, unknown> | null,
-  after: Record<string, unknown> | null
+  after: Record<string, unknown> | null,
+  resource?: string
 ): AuditChange[] {
   if (!before && !after) return [];
 
   if (!before) {
     // CREATE — all after fields
     return Object.entries(after!)
-      .filter(([field]) => !REDACTED_FIELDS.has(field))
+      .filter(([field]) => !isHiddenField(field, resource))
       .map(([field, value]) => ({
         field,
         after: value,
@@ -67,7 +96,7 @@ export function computeDiff(
   if (!after) {
     // DELETE — all before fields
     return Object.entries(before)
-      .filter(([field]) => !REDACTED_FIELDS.has(field))
+      .filter(([field]) => !isHiddenField(field, resource))
       .map(([field, value]) => ({
         field,
         before: value,
@@ -79,7 +108,7 @@ export function computeDiff(
   const changes: AuditChange[] = [];
 
   for (const field of allKeys) {
-    if (REDACTED_FIELDS.has(field)) continue;
+    if (isHiddenField(field, resource)) continue;
     const b = before[field];
     const a = after[field];
     if (JSON.stringify(b) !== JSON.stringify(a)) {
@@ -118,7 +147,7 @@ export async function audited<T>({
         ? (result as Record<string, unknown>)
         : null;
 
-    const changes = computeDiff(beforeState, afterState);
+    const changes = computeDiff(beforeState, afterState, resource);
 
     await (tx as any).auditLog.create({
       data: {
