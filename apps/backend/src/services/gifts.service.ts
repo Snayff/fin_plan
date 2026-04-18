@@ -285,7 +285,11 @@ export const giftsService = {
     });
   },
 
-  async bulkUpsertAllocations(householdId: string, input: BulkUpsertAllocationsInput) {
+  async bulkUpsertAllocations(
+    householdId: string,
+    input: BulkUpsertAllocationsInput,
+    ctx: ActorCtx
+  ) {
     if (input.cells.length === 0) return { count: 0 };
     for (const cell of input.cells) this._assertCurrentYear(cell.year);
 
@@ -334,6 +338,24 @@ export const giftsService = {
     for (const e of events)
       if (e.householdId !== householdId) throw new NotFoundError("Gift event not found");
 
+    // Pre-count existing to classify creates vs updates
+    const existingAllocations = await prisma.giftAllocation.findMany({
+      where: {
+        householdId,
+        OR: resolvedCells.map((c) => ({ giftPersonId: c.personId, giftEventId: c.eventId })),
+      },
+      select: { giftPersonId: true, giftEventId: true },
+    });
+    const existingKeys = new Set(
+      existingAllocations.map((e) => `${e.giftPersonId}:${e.giftEventId}`)
+    );
+    let created = 0;
+    let updated = 0;
+    for (const cell of resolvedCells) {
+      if (existingKeys.has(`${cell.personId}:${cell.eventId}`)) updated++;
+      else created++;
+    }
+
     await prisma.$transaction(async (tx) => {
       for (const cell of resolvedCells) {
         await tx.giftAllocation.upsert({
@@ -354,6 +376,19 @@ export const giftsService = {
           update: { planned: cell.planned },
         });
       }
+      await tx.auditLog.create({
+        data: {
+          householdId: ctx.householdId,
+          actorId: ctx.actorId,
+          actorName: ctx.actorName,
+          ipAddress: ctx.ipAddress,
+          userAgent: ctx.userAgent,
+          action: AuditAction.UPSERT_GIFT_ALLOCATIONS,
+          resource: "gift-allocation",
+          resourceId: "bulk",
+          metadata: { counts: { created, updated } },
+        },
+      });
     });
     return { count: resolvedCells.length };
   },

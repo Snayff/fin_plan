@@ -288,12 +288,22 @@ describe("giftsService.upsertAllocation status transitions", () => {
 });
 
 describe("giftsService.bulkUpsertAllocations", () => {
+  const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Alice" };
+
+  beforeEach(() => {
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+  });
+
   it("rejects past-year cells", async () => {
     const lastYear = new Date().getFullYear() - 1;
     await expect(
-      giftsService.bulkUpsertAllocations("hh-1", {
-        cells: [{ personId: "p1", eventId: "e1", year: lastYear, planned: 10 }],
-      })
+      giftsService.bulkUpsertAllocations(
+        "hh-1",
+        {
+          cells: [{ personId: "p1", eventId: "e1", year: lastYear, planned: 10 }],
+        },
+        ctx
+      )
     ).rejects.toMatchObject({ name: "ValidationError" });
   });
 
@@ -304,14 +314,19 @@ describe("giftsService.bulkUpsertAllocations", () => {
       { id: "p2", householdId: "hh-1" },
     ] as any);
     prismaMock.giftEvent.findMany.mockResolvedValue([{ id: "e1", householdId: "hh-1" }] as any);
+    prismaMock.giftAllocation.findMany.mockResolvedValue([] as any);
     prismaMock.giftAllocation.upsert.mockResolvedValue({} as any);
 
-    await giftsService.bulkUpsertAllocations("hh-1", {
-      cells: [
-        { personId: "p1", eventId: "e1", year, planned: 25 },
-        { personId: "p2", eventId: "e1", year, planned: 30 },
-      ],
-    });
+    await giftsService.bulkUpsertAllocations(
+      "hh-1",
+      {
+        cells: [
+          { personId: "p1", eventId: "e1", year, planned: 25 },
+          { personId: "p2", eventId: "e1", year, planned: 30 },
+        ],
+      },
+      ctx
+    );
 
     expect(prismaMock.$transaction).toHaveBeenCalled();
     expect(prismaMock.giftAllocation.upsert).toHaveBeenCalledTimes(2);
@@ -323,9 +338,13 @@ describe("giftsService.bulkUpsertAllocations", () => {
     prismaMock.giftEvent.findMany.mockResolvedValue([{ id: "e1", householdId: "hh-1" }] as any);
 
     await expect(
-      giftsService.bulkUpsertAllocations("hh-1", {
-        cells: [{ personId: "p1", eventId: "e1", year, planned: 10 }],
-      })
+      giftsService.bulkUpsertAllocations(
+        "hh-1",
+        {
+          cells: [{ personId: "p1", eventId: "e1", year, planned: 10 }],
+        },
+        ctx
+      )
     ).rejects.toMatchObject({ name: "NotFoundError" });
   });
 });
@@ -880,6 +899,55 @@ describe("giftsService — audit logging for person CRUD", () => {
         }),
       })
     );
+  });
+});
+
+describe("giftsService.bulkUpsertAllocations — audit summary", () => {
+  const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Alice" };
+
+  beforeEach(() => {
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+  });
+
+  it("emits exactly one UPSERT_GIFT_ALLOCATIONS row with counts metadata", async () => {
+    // Setup: 2 cells, first is new (not found), second is existing (found)
+    prismaMock.giftPerson.findMany.mockResolvedValue([
+      { id: "gp-1", householdId: "hh-1", name: "Bob" },
+      { id: "gp-2", householdId: "hh-1", name: "Alice" },
+    ] as any);
+    prismaMock.giftEvent.findMany.mockResolvedValue([
+      { id: "ge-1", householdId: "hh-1", name: "Xmas" },
+    ] as any);
+    // First cell: no existing allocation (new)
+    // Second cell: existing allocation (update)
+    prismaMock.giftAllocation.findMany.mockResolvedValue([
+      { giftPersonId: "gp-2", giftEventId: "ge-1" }, // gp-2 exists, so it's an update
+    ] as any);
+    prismaMock.giftAllocation.upsert.mockResolvedValue({} as any);
+
+    await giftsService.bulkUpsertAllocations(
+      "hh-1",
+      {
+        cells: [
+          { personId: "gp-1", eventId: "ge-1", year: 2026, planned: 20 },
+          { personId: "gp-2", eventId: "ge-1", year: 2026, planned: 15 },
+        ],
+      },
+      ctx
+    );
+
+    // Should emit exactly one UPSERT_GIFT_ALLOCATIONS row
+    const auditCalls = prismaMock.auditLog.create.mock.calls;
+    const bulkAuditCall = auditCalls.find(
+      (c: any) => c[0]?.data?.action === "UPSERT_GIFT_ALLOCATIONS"
+    );
+    expect(bulkAuditCall).toBeDefined();
+    expect(bulkAuditCall![0].data.metadata).toMatchObject({
+      counts: { created: 1, updated: 1 },
+    });
+    expect(
+      auditCalls.filter((c: any) => c[0]?.data?.action === "UPSERT_GIFT_ALLOCATIONS")
+    ).toHaveLength(1);
   });
 });
 
