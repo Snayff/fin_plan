@@ -1,4 +1,3 @@
-// apps/frontend/src/hooks/useAutoSave.ts
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export type AutoSaveStatus = "idle" | "saving" | "saved" | "error";
