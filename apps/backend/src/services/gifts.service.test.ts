@@ -65,16 +65,19 @@ describe("giftsService people CRUD", () => {
     });
   });
 
+  const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Alice" };
+
   it("createPerson rejects duplicate names with ConflictError", async () => {
     prismaMock.giftPerson.create.mockRejectedValue({ code: "P2002" });
-    await expect(giftsService.createPerson("hh-1", { name: "Mum" })).rejects.toMatchObject({
+    await expect(giftsService.createPerson("hh-1", { name: "Mum" }, ctx)).rejects.toMatchObject({
       name: "ConflictError",
     });
   });
 
   it("createPerson persists with householdId", async () => {
     prismaMock.giftPerson.create.mockResolvedValue({ id: "p1" } as any);
-    await giftsService.createPerson("hh-1", { name: "Sis", notes: "fav books" });
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+    await giftsService.createPerson("hh-1", { name: "Sis", notes: "fav books" }, ctx);
     expect(prismaMock.giftPerson.create).toHaveBeenCalledWith({
       data: { householdId: "hh-1", name: "Sis", notes: "fav books" },
     });
@@ -85,31 +88,42 @@ describe("giftsService people CRUD", () => {
       id: "p1",
       householdId: "other",
     } as any);
-    await expect(giftsService.updatePerson("hh-1", "p1", { name: "x" })).rejects.toMatchObject({
-      name: "NotFoundError",
-    });
+    await expect(giftsService.updatePerson("hh-1", "p1", { name: "x" }, ctx)).rejects.toMatchObject(
+      {
+        name: "NotFoundError",
+      }
+    );
   });
 
   it("deletePerson cascades via prisma onDelete", async () => {
     prismaMock.giftPerson.findUnique.mockResolvedValue({
       id: "p1",
       householdId: "hh-1",
+      memberId: null,
     } as any);
     prismaMock.giftPerson.delete.mockResolvedValue({} as any);
-    await giftsService.deletePerson("hh-1", "p1");
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+    await giftsService.deletePerson("hh-1", "p1", ctx);
     expect(prismaMock.giftPerson.delete).toHaveBeenCalledWith({ where: { id: "p1" } });
   });
 });
 
 describe("giftsService events CRUD", () => {
+  const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Alice" };
+
   it("createEvent persists with householdId", async () => {
     prismaMock.giftEvent.create.mockResolvedValue({ id: "e1" } as any);
-    await giftsService.createEvent("hh-1", {
-      name: "Christmas",
-      dateType: "shared",
-      dateMonth: 12,
-      dateDay: 25,
-    });
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+    await giftsService.createEvent(
+      "hh-1",
+      {
+        name: "Christmas",
+        dateType: "shared",
+        dateMonth: 12,
+        dateDay: 25,
+      },
+      ctx
+    );
     expect(prismaMock.giftEvent.create).toHaveBeenCalledWith({
       data: {
         householdId: "hh-1",
@@ -125,7 +139,7 @@ describe("giftsService events CRUD", () => {
   it("createEvent rejects duplicates", async () => {
     prismaMock.giftEvent.create.mockRejectedValue({ code: "P2002" });
     await expect(
-      giftsService.createEvent("hh-1", { name: "Birthday", dateType: "personal" })
+      giftsService.createEvent("hh-1", { name: "Birthday", dateType: "personal" }, ctx)
     ).rejects.toMatchObject({ name: "ConflictError" });
   });
 
@@ -136,7 +150,9 @@ describe("giftsService events CRUD", () => {
       isLocked: true,
       name: "Christmas",
     } as any);
-    await expect(giftsService.updateEvent("hh-1", "e1", { name: "Xmas" })).rejects.toMatchObject({
+    await expect(
+      giftsService.updateEvent("hh-1", "e1", { name: "Xmas" }, ctx)
+    ).rejects.toMatchObject({
       name: "ValidationError",
     });
   });
@@ -149,7 +165,8 @@ describe("giftsService events CRUD", () => {
       name: "Mother's Day",
     } as any);
     prismaMock.giftEvent.update.mockResolvedValue({} as any);
-    await giftsService.updateEvent("hh-1", "e1", { dateMonth: 3, dateDay: 22 });
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+    await giftsService.updateEvent("hh-1", "e1", { dateMonth: 3, dateDay: 22 }, ctx);
     expect(prismaMock.giftEvent.update).toHaveBeenCalled();
   });
 
@@ -159,7 +176,7 @@ describe("giftsService events CRUD", () => {
       householdId: "hh-1",
       isLocked: true,
     } as any);
-    await expect(giftsService.deleteEvent("hh-1", "e1")).rejects.toMatchObject({
+    await expect(giftsService.deleteEvent("hh-1", "e1", ctx)).rejects.toMatchObject({
       name: "ValidationError",
     });
   });
@@ -171,7 +188,8 @@ describe("giftsService events CRUD", () => {
       isLocked: false,
     } as any);
     prismaMock.giftEvent.delete.mockResolvedValue({} as any);
-    await giftsService.deleteEvent("hh-1", "e2");
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+    await giftsService.deleteEvent("hh-1", "e2", ctx);
     expect(prismaMock.giftEvent.delete).toHaveBeenCalledWith({ where: { id: "e2" } });
   });
 });
@@ -793,5 +811,148 @@ describe("giftsService.runRolloverIfNeeded", () => {
       create: { householdId: "hh-1", userId: "user-1", year },
       update: {},
     });
+  });
+});
+
+describe("giftsService — audit logging for person CRUD", () => {
+  const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Alice" };
+
+  beforeEach(() => {
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+  });
+
+  it("writes CREATE_GIFT_PERSON audit entry on createPerson", async () => {
+    prismaMock.giftPerson.create.mockResolvedValue({
+      id: "gp-1",
+      householdId: "hh-1",
+      name: "Bob",
+    } as any);
+    await giftsService.createPerson("hh-1", { name: "Bob" }, ctx);
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CREATE_GIFT_PERSON",
+          resource: "gift-person",
+          actorId: "user-1",
+        }),
+      })
+    );
+  });
+
+  it("writes UPDATE_GIFT_PERSON audit entry on updatePerson", async () => {
+    prismaMock.giftPerson.findUnique.mockResolvedValue({
+      id: "gp-1",
+      householdId: "hh-1",
+      name: "Bob",
+    } as any);
+    prismaMock.giftPerson.update.mockResolvedValue({
+      id: "gp-1",
+      householdId: "hh-1",
+      name: "Bobby",
+    } as any);
+    await giftsService.updatePerson("hh-1", "gp-1", { name: "Bobby" }, ctx);
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "UPDATE_GIFT_PERSON",
+          resource: "gift-person",
+          resourceId: "gp-1",
+        }),
+      })
+    );
+  });
+
+  it("writes DELETE_GIFT_PERSON audit entry on deletePerson", async () => {
+    prismaMock.giftPerson.findUnique.mockResolvedValue({
+      id: "gp-1",
+      householdId: "hh-1",
+      name: "Bob",
+      memberId: null,
+    } as any);
+    prismaMock.giftPerson.delete.mockResolvedValue({} as any);
+    await giftsService.deletePerson("hh-1", "gp-1", ctx);
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DELETE_GIFT_PERSON",
+          resource: "gift-person",
+          resourceId: "gp-1",
+        }),
+      })
+    );
+  });
+});
+
+describe("giftsService — audit logging for event CRUD", () => {
+  const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Alice" };
+
+  beforeEach(() => {
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+  });
+
+  it("writes CREATE_GIFT_EVENT audit entry on createEvent", async () => {
+    prismaMock.giftEvent.create.mockResolvedValue({
+      id: "ge-1",
+      householdId: "hh-1",
+      name: "Xmas",
+    } as any);
+    await giftsService.createEvent(
+      "hh-1",
+      { name: "Xmas", dateType: "shared", dateMonth: 12, dateDay: 25 },
+      ctx
+    );
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CREATE_GIFT_EVENT",
+          resource: "gift-event",
+          actorId: "user-1",
+        }),
+      })
+    );
+  });
+
+  it("writes UPDATE_GIFT_EVENT audit entry on updateEvent", async () => {
+    prismaMock.giftEvent.findUnique.mockResolvedValue({
+      id: "ge-1",
+      householdId: "hh-1",
+      name: "Xmas",
+      isLocked: false,
+    } as any);
+    prismaMock.giftEvent.update.mockResolvedValue({
+      id: "ge-1",
+      householdId: "hh-1",
+      name: "Christmas",
+    } as any);
+    await giftsService.updateEvent("hh-1", "ge-1", { name: "Christmas" }, ctx);
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "UPDATE_GIFT_EVENT",
+          resource: "gift-event",
+          resourceId: "ge-1",
+        }),
+      })
+    );
+  });
+
+  it("writes DELETE_GIFT_EVENT audit entry on deleteEvent", async () => {
+    prismaMock.giftEvent.findUnique.mockResolvedValue({
+      id: "ge-1",
+      householdId: "hh-1",
+      name: "Xmas",
+      isLocked: false,
+    } as any);
+    prismaMock.giftEvent.delete.mockResolvedValue({} as any);
+    await giftsService.deleteEvent("hh-1", "ge-1", ctx);
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DELETE_GIFT_EVENT",
+          resource: "gift-event",
+          resourceId: "ge-1",
+        }),
+      })
+    );
   });
 });
