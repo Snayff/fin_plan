@@ -86,6 +86,51 @@ describe("computeDiff", () => {
     const diff = computeDiff({ a: 1, b: 2 }, { a: 1, b: 3 });
     expect(diff).toEqual([{ field: "b", before: 2, after: 3 }]);
   });
+
+  it("excludes universal system fields on create", () => {
+    const diff = computeDiff(null, {
+      id: "abc",
+      householdId: "hh",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      sortOrder: 0,
+      lastReviewedAt: new Date(),
+      subcategoryId: "sub",
+      name: "Salary",
+    });
+    expect(diff).toEqual([{ field: "name", after: "Salary" }]);
+  });
+
+  it("excludes universal system fields on update", () => {
+    const diff = computeDiff(
+      { id: "abc", updatedAt: new Date("2026-01-01"), spendType: "monthly" },
+      { id: "abc", updatedAt: new Date("2026-04-01"), spendType: "yearly" }
+    );
+    expect(diff).toEqual([{ field: "spendType", before: "monthly", after: "yearly" }]);
+  });
+
+  it("excludes universal system fields on delete", () => {
+    const diff = computeDiff({ id: "abc", householdId: "hh", name: "Old" }, null);
+    expect(diff).toEqual([{ field: "name", before: "Old" }]);
+  });
+
+  it("excludes per-resource denylisted fields when resource matches", () => {
+    const diff = computeDiff(
+      { name: "Rent", isPlannerOwned: false },
+      { name: "Rent", isPlannerOwned: true },
+      "committed-item"
+    );
+    expect(diff).toEqual([]);
+  });
+
+  it("includes per-resource denylisted fields for unrelated resources", () => {
+    const diff = computeDiff(
+      { name: "Rent", isPlannerOwned: false },
+      { name: "Rent", isPlannerOwned: true },
+      "some-other-resource"
+    );
+    expect(diff).toEqual([{ field: "isPlannerOwned", before: false, after: true }]);
+  });
 });
 
 describe("audited()", () => {
