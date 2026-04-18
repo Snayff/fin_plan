@@ -139,16 +139,17 @@ export function ItemDetailPanel({
   // End income is now managed through the period system
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <button
-          onClick={onBack}
-          type="button"
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-        >
-          ← {breadcrumbLabel} / {item.name}
+    <div className="flex flex-col h-full">
+      {/* Breadcrumb header */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-foreground/5 text-sm text-muted-foreground">
+        <button onClick={onBack} type="button" className="hover:text-foreground transition-colors">
+          ← {breadcrumbLabel}
         </button>
+        <span>/</span>
+        <span className="text-foreground font-medium">{item.name}</span>
+      </div>
 
+      <div className="flex-1 overflow-y-auto p-4 space-y-6">
         <div>
           <h2 className="text-lg font-semibold">{item.name}</h2>
           {item.type === "income_source" && (
@@ -169,95 +170,95 @@ export function ItemDetailPanel({
             {stalenessLabel(item.lastReviewedAt)}
           </p>
         </div>
-      </div>
 
-      <HistoryChart data={history} snapshotDate={snapshotDate} />
+        <HistoryChart data={history} snapshotDate={snapshotDate} />
 
-      {!isReadOnly && (
-        <>
-          {inlineMode === "none" && (
-            <>
-              <ButtonPair
-                leftLabel="Edit"
-                rightLabel="Still correct ✓"
-                onLeftClick={() => {
-                  setEditAmount(String(item.amount));
-                  setInlineMode("edit");
-                }}
-                onRightClick={handleConfirm}
-                isLoading={confirmItem.isPending}
-              />
-              {item.type === "savings_allocation" && savingsNudge && (
-                <NudgeCard message={savingsNudge.message} options={savingsNudge.options} />
-              )}
-            </>
-          )}
+        {!isReadOnly && (
+          <>
+            {inlineMode === "none" && (
+              <>
+                <ButtonPair
+                  leftLabel="Edit"
+                  rightLabel="Still correct ✓"
+                  onLeftClick={() => {
+                    setEditAmount(String(item.amount));
+                    setInlineMode("edit");
+                  }}
+                  onRightClick={handleConfirm}
+                  isLoading={confirmItem.isPending}
+                />
+                {item.type === "savings_allocation" && savingsNudge && (
+                  <NudgeCard message={savingsNudge.message} options={savingsNudge.options} />
+                )}
+              </>
+            )}
 
-          {inlineMode === "edit" && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="edit-amount">
-                New amount
-              </label>
-              <input
-                id="edit-amount"
-                type="number"
-                value={editAmount}
-                onChange={(e) => setEditAmount(e.target.value)}
-                className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-ring"
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleSaveEdit} disabled={updateItem.isPending}>
-                  {updateItem.isPending ? "Saving…" : "Save"}
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => setInlineMode("none")}>
-                  Cancel
-                </Button>
+            {inlineMode === "edit" && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium" htmlFor="edit-amount">
+                  New amount
+                </label>
+                <input
+                  id="edit-amount"
+                  type="number"
+                  value={editAmount}
+                  onChange={(e) => setEditAmount(e.target.value)}
+                  className="w-full rounded border border-input bg-background px-3 py-1.5 text-sm focus:outline-none focus:border-ring"
+                />
+                <div className="flex gap-2">
+                  <Button size="sm" onClick={handleSaveEdit} disabled={updateItem.isPending}>
+                    {updateItem.isPending ? "Saving…" : "Save"}
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => setInlineMode("none")}>
+                    Cancel
+                  </Button>
+                </div>
               </div>
+            )}
+          </>
+        )}
+
+        {/* Snapshot prompt for income amount change */}
+        {showSnapshotPrompt && (
+          <div className="rounded-lg border p-3 space-y-2 bg-accent/30">
+            <p className="text-sm font-medium">Save a snapshot before updating?</p>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => {
+                  setShowSnapshotPrompt(false);
+                  setShowSnapshotModal(true);
+                }}
+              >
+                Yes, save snapshot first
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setShowSnapshotPrompt(false);
+                  doSaveEdit();
+                }}
+              >
+                No, update directly
+              </Button>
             </div>
-          )}
-        </>
-      )}
-
-      {/* Snapshot prompt for income amount change */}
-      {showSnapshotPrompt && (
-        <div className="rounded-lg border p-3 space-y-2 bg-accent/30">
-          <p className="text-sm font-medium">Save a snapshot before updating?</p>
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              onClick={() => {
-                setShowSnapshotPrompt(false);
-                setShowSnapshotModal(true);
-              }}
-            >
-              Yes, save snapshot first
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setShowSnapshotPrompt(false);
-                doSaveEdit();
-              }}
-            >
-              No, update directly
-            </Button>
           </div>
-        </div>
-      )}
+        )}
 
-      {showSnapshotModal && (
-        <CreateSnapshotModal
-          onClose={() => {
-            setShowSnapshotModal(false);
-            doSaveEdit();
-          }}
-          onCreated={() => {
-            setShowSnapshotModal(false);
-            doSaveEdit();
-          }}
-        />
-      )}
+        {showSnapshotModal && (
+          <CreateSnapshotModal
+            onClose={() => {
+              setShowSnapshotModal(false);
+              doSaveEdit();
+            }}
+            onCreated={() => {
+              setShowSnapshotModal(false);
+              doSaveEdit();
+            }}
+          />
+        )}
+      </div>
     </div>
   );
 }

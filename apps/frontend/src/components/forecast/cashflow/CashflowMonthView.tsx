@@ -56,9 +56,9 @@ export function CashflowMonthView({
       <button
         type="button"
         onClick={onBack}
-        className="self-start text-xs text-text-tertiary hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent rounded px-1"
+        className="self-start text-sm text-muted-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-page-accent rounded px-1"
       >
-        ← Cashflow / {monthLabel}
+        ← Cashflow / <span className="text-foreground font-medium">{monthLabel}</span>
       </button>
 
       <div className="flex items-center gap-1">

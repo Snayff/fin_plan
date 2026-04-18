@@ -36,9 +36,9 @@ export function IncomeTypePanel({
   const showPence = settings?.showPence ?? false;
 
   return (
-    <div className="space-y-6">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="flex flex-col h-full">
+      {/* Breadcrumb header */}
+      <div className="flex items-center gap-2 px-4 py-3 border-b border-foreground/5 text-sm text-muted-foreground">
         <button
           type="button"
           onClick={onBack}
@@ -50,49 +50,51 @@ export function IncomeTypePanel({
         <span className="text-foreground font-medium">{label}</span>
       </div>
 
-      {sources.length === 0 ? (
-        <div className="flex items-center justify-center h-32">
-          <p className="text-sm text-muted-foreground">No {label.toLowerCase()} sources</p>
-        </div>
-      ) : (
-        <div className="space-y-1">
-          {sources.map((src) => {
-            const isAnnual = src.frequency === "annual";
-            const displayAmount = isAnnual ? src.amount / 12 : src.amount;
-            return (
-              <div
-                key={src.id}
-                className={cn(ROW_CLASS, selectedItemId === src.id && "bg-accent")}
-                onClick={() =>
-                  onSelectSource({
-                    id: src.id,
-                    type: "income_source",
-                    name: src.name,
-                    amount: src.amount,
-                    lastReviewedAt: new Date(src.lastReviewedAt),
-                  })
-                }
-              >
-                <span>{src.name}</span>
-                <div className="flex items-center gap-2">
-                  <StalenessIndicator
-                    lastReviewedAt={src.lastReviewedAt}
-                    thresholdMonths={threshold}
-                  />
-                  <div className="flex items-center gap-1 font-numeric text-foreground/60">
-                    {isAnnual && (
-                      <span className="text-xs text-muted-foreground">
-                        <GlossaryTermMarker entryId="amortised">÷12</GlossaryTermMarker>
-                      </span>
-                    )}
-                    <span>{formatCurrency(displayAmount, showPence)}</span>
+      <div className="flex-1 overflow-y-auto p-4">
+        {sources.length === 0 ? (
+          <div className="flex items-center justify-center h-32">
+            <p className="text-sm text-muted-foreground">No {label.toLowerCase()} sources</p>
+          </div>
+        ) : (
+          <div className="space-y-1">
+            {sources.map((src) => {
+              const isAnnual = src.frequency === "annual";
+              const displayAmount = isAnnual ? src.amount / 12 : src.amount;
+              return (
+                <div
+                  key={src.id}
+                  className={cn(ROW_CLASS, selectedItemId === src.id && "bg-accent")}
+                  onClick={() =>
+                    onSelectSource({
+                      id: src.id,
+                      type: "income_source",
+                      name: src.name,
+                      amount: src.amount,
+                      lastReviewedAt: new Date(src.lastReviewedAt),
+                    })
+                  }
+                >
+                  <span>{src.name}</span>
+                  <div className="flex items-center gap-2">
+                    <StalenessIndicator
+                      lastReviewedAt={src.lastReviewedAt}
+                      thresholdMonths={threshold}
+                    />
+                    <div className="flex items-center gap-1 font-numeric text-foreground/60">
+                      {isAnnual && (
+                        <span className="text-xs text-muted-foreground">
+                          <GlossaryTermMarker entryId="amortised">÷12</GlossaryTermMarker>
+                        </span>
+                      )}
+                      <span>{formatCurrency(displayAmount, showPence)}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
