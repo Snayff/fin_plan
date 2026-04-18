@@ -230,3 +230,27 @@ describe("SYSTEM_FIELDS — twoFactorEnabled is hidden", () => {
     expect(changes.find((c) => c.field === "name")).toBeDefined();
   });
 });
+
+describe("audited() — lazy resourceId", () => {
+  beforeEach(() => {
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+  });
+
+  it("resolves resourceId from a function when the mutation result is an object", async () => {
+    await audited({
+      db: prismaMock as any,
+      ctx,
+      action: "CREATE_SNAPSHOT",
+      resource: "snapshot",
+      resourceId: (after: { id: string }) => after.id,
+      beforeFetch: async () => null,
+      mutation: async () => ({ id: "snap-123", name: "Q1" }),
+    });
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ resourceId: "snap-123" }),
+      })
+    );
+  });
+});

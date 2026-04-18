@@ -167,7 +167,7 @@ export type AuditedParams<T> = {
   ctx: ActorCtx;
   action: string;
   resource: string;
-  resourceId: string;
+  resourceId: string | ((after: T) => string);
   beforeFetch: (tx: PrismaClient) => Promise<Record<string, unknown> | null>;
   mutation: (tx: PrismaClient) => Promise<T>;
 };
@@ -192,6 +192,8 @@ export async function audited<T>({
 
     const changes = computeDiff(beforeState, afterState, resource);
 
+    const resolvedResourceId = typeof resourceId === "function" ? resourceId(result) : resourceId;
+
     await (tx as any).auditLog.create({
       data: {
         householdId: ctx.householdId,
@@ -201,7 +203,7 @@ export async function audited<T>({
         userAgent: ctx.userAgent,
         action,
         resource,
-        resourceId,
+        resourceId: resolvedResourceId,
         changes,
       },
     });
