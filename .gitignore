@@ -61,6 +61,8 @@ docs/scratch/
 .claude/skills
 .claude/worktrees
 settings
+!apps/frontend/src/components/settings/
+!apps/backend/src/**/settings/
 
 
 # WIP
