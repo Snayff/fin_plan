@@ -109,7 +109,11 @@ export function SearchPalette({ open, onOpenChange, userId }: Props) {
             <Command.List className="max-h-[60vh] overflow-y-auto min-h-0">
               {isEmptyQuery ? (
                 recents.length === 0 ? (
-                  <div className="px-3 py-6 text-xs text-foreground/50">
+                  <div
+                    role="status"
+                    aria-live="polite"
+                    className="px-3 py-6 text-xs text-foreground/50"
+                  >
                     Start typing to search…
                   </div>
                 ) : (

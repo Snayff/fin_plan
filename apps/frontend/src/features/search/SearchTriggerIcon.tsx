@@ -9,7 +9,7 @@ export function SearchTriggerIcon({ onOpen }: Props) {
       onClick={onOpen}
       aria-label="Search (Ctrl+K)"
       title="Search (Ctrl+K)"
-      className="p-1.5 rounded-sm text-foreground/70 hover:text-foreground hover:bg-foreground/[0.06]"
+      className="p-1.5 rounded-sm text-foreground/70 hover:text-foreground hover:bg-foreground/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
     >
       <Search className="h-4 w-4" />
     </button>
