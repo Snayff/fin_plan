@@ -6,6 +6,7 @@ describe("schema: DiscretionaryItem.linkedAccountId + HouseholdSettings asset ra
   let householdId: string;
   let subcategoryId: string;
   let accountId: string;
+  let settingsHouseholdId: string;
 
   beforeAll(async () => {
     const hh = await createTestHousehold();
@@ -22,6 +23,9 @@ describe("schema: DiscretionaryItem.linkedAccountId + HouseholdSettings asset ra
 
   afterAll(async () => {
     await prisma.household.delete({ where: { id: householdId } });
+    if (settingsHouseholdId) {
+      await prisma.household.delete({ where: { id: settingsHouseholdId } });
+    }
   });
 
   it("allows setting linkedAccountId on a DiscretionaryItem", async () => {
@@ -49,8 +53,10 @@ describe("schema: DiscretionaryItem.linkedAccountId + HouseholdSettings asset ra
   });
 
   it("HouseholdSettings has propertyRatePct / vehicleRatePct / otherAssetRatePct defaults", async () => {
+    const settingsHh = await createTestHousehold();
+    settingsHouseholdId = settingsHh.id;
     const settings = await prisma.householdSettings.create({
-      data: { householdId: (await createTestHousehold()).id },
+      data: { householdId: settingsHouseholdId },
     });
     expect(settings.propertyRatePct).toBe(3.5);
     expect(settings.vehicleRatePct).toBe(-15);
