@@ -139,6 +139,75 @@ describe("plannerService.createPurchase with audited()", () => {
   });
 });
 
+// ─── Year budget audit ────────────────────────────────────────────────────────
+
+describe("plannerService.upsertYearBudget with ctx", () => {
+  const actor = {
+    householdId: "hh_1",
+    actorId: "user_1",
+    actorName: "Test User",
+  };
+
+  it("emits one UPSERT_YEAR_BUDGET row per year with counts (created)", async () => {
+    prismaMock.plannerYearBudget.findUnique.mockResolvedValue(null);
+    prismaMock.plannerYearBudget.upsert.mockResolvedValue({
+      householdId: "hh_1",
+      year: 2026,
+    } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await plannerService.upsertYearBudget("hh_1", 2026, { purchaseBudget: 500 }, actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "UPSERT_YEAR_BUDGET",
+          resource: "year-budget",
+          resourceId: "2026",
+          metadata: { counts: { created: 1, updated: 0 } },
+          actorId: "user_1",
+        }),
+      })
+    );
+  });
+
+  it("emits one UPSERT_YEAR_BUDGET row per year with counts (updated)", async () => {
+    prismaMock.plannerYearBudget.findUnique.mockResolvedValue({
+      householdId: "hh_1",
+      year: 2026,
+    } as any);
+    prismaMock.plannerYearBudget.upsert.mockResolvedValue({
+      householdId: "hh_1",
+      year: 2026,
+    } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await plannerService.upsertYearBudget("hh_1", 2026, { purchaseBudget: 600 }, actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "UPSERT_YEAR_BUDGET",
+          resource: "year-budget",
+          resourceId: "2026",
+          metadata: { counts: { created: 0, updated: 1 } },
+        }),
+      })
+    );
+  });
+
+  it("does not write AuditLog when ctx is absent (backward compat)", async () => {
+    prismaMock.plannerYearBudget.upsert.mockResolvedValue({
+      householdId: "hh_1",
+      year: 2026,
+    } as any);
+
+    await plannerService.upsertYearBudget("hh_1", 2026, { purchaseBudget: 500 });
+
+    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+  });
+});
+
 // ─── Gift API removal ─────────────────────────────────────────────────────────
 
 describe("plannerService gift API removal", () => {

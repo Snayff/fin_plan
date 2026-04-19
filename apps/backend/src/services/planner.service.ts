@@ -2,6 +2,7 @@ import { prisma } from "../config/database.js";
 import { NotFoundError } from "../utils/errors.js";
 import { audited } from "./audit.service.js";
 import type { ActorCtx } from "./audit.service.js";
+import { AuditAction } from "@finplan/shared";
 import type {
   CreatePurchaseInput,
   UpdatePurchaseInput,
@@ -30,7 +31,7 @@ export const plannerService = {
         ctx,
         action: "CREATE_PLANNER_GOAL",
         resource: "planner-goal",
-        resourceId: "",
+        resourceId: (after: { id: string }) => after.id,
         beforeFetch: async () => null,
         mutation: async (tx) =>
           tx.purchaseItem.create({
@@ -94,7 +95,42 @@ export const plannerService = {
     return prisma.plannerYearBudget.create({ data: { householdId, year } });
   },
 
-  async upsertYearBudget(householdId: string, year: number, data: UpsertYearBudgetInput) {
+  async upsertYearBudget(
+    householdId: string,
+    year: number,
+    data: UpsertYearBudgetInput,
+    ctx?: ActorCtx
+  ) {
+    if (ctx) {
+      return prisma.$transaction(async (tx) => {
+        const existing = await tx.plannerYearBudget.findUnique({
+          where: { householdId_year: { householdId, year } },
+        });
+        const isNew = existing === null;
+
+        const result = await tx.plannerYearBudget.upsert({
+          where: { householdId_year: { householdId, year } },
+          create: { householdId, year, ...data },
+          update: data,
+        });
+
+        await (tx as any).auditLog.create({
+          data: {
+            householdId: ctx.householdId,
+            actorId: ctx.actorId,
+            actorName: ctx.actorName,
+            ipAddress: ctx.ipAddress,
+            userAgent: ctx.userAgent,
+            action: AuditAction.UPSERT_YEAR_BUDGET,
+            resource: "year-budget",
+            resourceId: String(year),
+            metadata: { counts: { created: isNew ? 1 : 0, updated: isNew ? 0 : 1 } },
+          },
+        });
+
+        return result;
+      });
+    }
     return prisma.plannerYearBudget.upsert({
       where: { householdId_year: { householdId, year } },
       create: { householdId, year, ...data },
