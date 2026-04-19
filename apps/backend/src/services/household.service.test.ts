@@ -381,6 +381,7 @@ describe("householdService.inviteMember with audited()", () => {
         data: expect.objectContaining({
           action: "INVITE_MEMBER",
           resource: "household-invite",
+          resourceId: expect.any(String),
           actorId: "owner-user-id",
         }),
       })
@@ -579,6 +580,174 @@ describe("householdService.leaveHousehold", () => {
     await householdService.leaveHousehold("household-1", "user-1");
 
     expect(prismaMock.user.update).not.toHaveBeenCalled();
+  });
+});
+
+// ─── renameHousehold with audited() ─────────────────────────────────────────
+
+describe("householdService.renameHousehold with audited()", () => {
+  const actor = {
+    householdId: "household-1",
+    actorId: "owner-user-id",
+    actorName: "Owner",
+  };
+
+  it("writes an UPDATE_HOUSEHOLD AuditLog entry when ctx is provided", async () => {
+    const owner = buildUser({ id: "owner-user-id" });
+    const household = buildHousehold({ id: "household-1", name: "Old Name" });
+    const ownerMember = buildMember({
+      householdId: household.id,
+      userId: owner.id,
+      role: "owner",
+    });
+    const updated = { ...household, name: "New Name" };
+
+    prismaMock.member.findFirst.mockResolvedValue(ownerMember);
+    prismaMock.household.findUnique.mockResolvedValue(household);
+    prismaMock.household.update.mockResolvedValue(updated);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await householdService.renameHousehold(household.id, owner.id, "New Name", actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "UPDATE_HOUSEHOLD",
+          resource: "household",
+          resourceId: "household-1",
+          actorId: "owner-user-id",
+        }),
+      })
+    );
+  });
+});
+
+// ─── cancelInvite with audited() ─────────────────────────────────────────────
+
+describe("householdService.cancelInvite with audited()", () => {
+  const actor = {
+    householdId: "household-1",
+    actorId: "owner-user-id",
+    actorName: "Owner",
+  };
+
+  it("writes a CANCEL_INVITE AuditLog entry when ctx is provided", async () => {
+    const owner = buildUser({ id: "owner-user-id" });
+    const ownerMember = buildMember({
+      householdId: "household-1",
+      userId: owner.id,
+      role: "owner",
+    });
+    const invite = buildHouseholdInvite({ id: "invite-1", householdId: "household-1" });
+
+    prismaMock.member.findFirst.mockResolvedValue(ownerMember);
+    prismaMock.householdInvite.findUnique.mockResolvedValue(invite);
+    prismaMock.householdInvite.delete.mockResolvedValue(invite);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await householdService.cancelInvite("household-1", owner.id, "invite-1", actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CANCEL_INVITE",
+          resource: "household-invite",
+          resourceId: "invite-1",
+          actorId: "owner-user-id",
+        }),
+      })
+    );
+  });
+});
+
+// ─── leaveHousehold with audited() ───────────────────────────────────────────
+
+describe("householdService.leaveHousehold with audited()", () => {
+  const actor = {
+    householdId: "household-1",
+    actorId: "user-1",
+    actorName: "Member",
+  };
+
+  it("writes a LEAVE_HOUSEHOLD AuditLog entry with the membership id as resourceId", async () => {
+    const member = buildMember({
+      id: "member-1",
+      householdId: "household-1",
+      userId: "user-1",
+      role: "member",
+    });
+    const user = buildUser({ id: "user-1", activeHouseholdId: "household-2" });
+
+    prismaMock.member.findFirst.mockResolvedValue(member);
+    prismaMock.member.findUnique.mockResolvedValue(member);
+    prismaMock.member.delete.mockResolvedValue(member);
+    prismaMock.user.findUnique.mockResolvedValue(user);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await householdService.leaveHousehold("household-1", "user-1", actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "LEAVE_HOUSEHOLD",
+          resource: "household-member",
+          resourceId: "member-1",
+          actorId: "user-1",
+        }),
+      })
+    );
+  });
+});
+
+// ─── acceptInvite with audit ──────────────────────────────────────────────────
+
+describe("householdService.acceptInvite with audit", () => {
+  it("writes an ACCEPT_INVITE AuditLog entry inside the transaction", async () => {
+    const invite = buildHouseholdInvite({
+      id: "invite-1",
+      email: "invitee@example.com",
+      householdId: "household-1",
+      usedAt: null,
+      expiresAt: new Date(Date.now() + 60_000),
+      household: { id: "household-1", name: "Test Household" },
+    });
+
+    const createdUser = buildUser({
+      id: "new-user-1",
+      email: "invitee@example.com",
+      name: "Alice",
+      activeHouseholdId: "household-1",
+    });
+    const personal = buildHousehold({ id: "personal-hh-1" });
+
+    prismaMock.householdInvite.findUnique.mockResolvedValue(invite);
+    prismaMock.user.findUnique.mockResolvedValueOnce(null); // no existing user
+    prismaMock.user.create.mockResolvedValue(createdUser);
+    prismaMock.household.create.mockResolvedValue(personal);
+    prismaMock.member.create.mockResolvedValue(buildMember());
+    prismaMock.householdSettings.create.mockResolvedValue({} as any);
+    prismaMock.user.update.mockResolvedValue(createdUser);
+    prismaMock.householdInvite.update.mockResolvedValue({ ...invite, usedAt: new Date() });
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+    prismaMock.subcategory.createMany.mockResolvedValue({ count: 16 });
+    prismaMock.refreshToken.create.mockResolvedValue({} as any);
+
+    await householdService.acceptInvite(
+      "valid-token",
+      { name: "Alice", email: "invitee@example.com", password: "verysecure123" },
+      { ipAddress: "127.0.0.1", userAgent: "test-agent" }
+    );
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "ACCEPT_INVITE",
+          resource: "household-invite",
+          resourceId: "invite-1",
+          actorId: "new-user-1",
+        }),
+      })
+    );
   });
 });
 

@@ -62,7 +62,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
     const userId = request.user!.userId;
     const { id } = request.params as { id: string };
     const { name } = renameHouseholdSchema.parse(request.body);
-    const household = await householdService.renameHousehold(id, userId, name);
+    const household = await householdService.renameHousehold(id, userId, name, actorCtx(request));
     return reply.send({ household });
   });
 
@@ -116,7 +116,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user!.userId;
       const { id, inviteId } = request.params as { id: string; inviteId: string };
-      await householdService.cancelInvite(id, userId, inviteId);
+      await householdService.cancelInvite(id, userId, inviteId, actorCtx(request));
       return reply.send({ success: true });
     }
   );
@@ -128,7 +128,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user!.userId;
       const { id } = request.params as { id: string };
-      await householdService.leaveHousehold(id, userId);
+      await householdService.leaveHousehold(id, userId, actorCtx(request));
       return reply.send({ success: true });
     }
   );

@@ -17,6 +17,7 @@ import {
 } from "../utils/errors.js";
 import { audited } from "./audit.service.js";
 import type { ActorCtx } from "./audit.service.js";
+import { AuditAction } from "@finplan/shared";
 
 const INVITE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 const IDLE_SESSION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -203,8 +204,25 @@ export const householdService = {
     });
   },
 
-  async renameHousehold(householdId: string, ownerUserId: string, name: string) {
+  async renameHousehold(householdId: string, ownerUserId: string, name: string, ctx?: ActorCtx) {
     await assertOwner(householdId, ownerUserId);
+
+    if (ctx) {
+      return audited({
+        db: prisma,
+        ctx,
+        action: AuditAction.UPDATE_HOUSEHOLD,
+        resource: "household",
+        resourceId: householdId,
+        beforeFetch: async (tx) =>
+          tx.household.findUnique({ where: { id: householdId } }) as Promise<Record<
+            string,
+            unknown
+          > | null>,
+        mutation: async (tx) => tx.household.update({ where: { id: householdId }, data: { name } }),
+      });
+    }
+
     return prisma.household.update({ where: { id: householdId }, data: { name } });
   },
 
@@ -257,7 +275,7 @@ export const householdService = {
     }
   },
 
-  async leaveHousehold(householdId: string, userId: string) {
+  async leaveHousehold(householdId: string, userId: string, ctx?: ActorCtx) {
     const member = await prisma.member.findFirst({
       where: { householdId, userId },
     });
@@ -272,7 +290,23 @@ export const householdService = {
       }
     }
 
-    await prisma.member.delete({ where: { id: member.id } });
+    if (ctx) {
+      await audited({
+        db: prisma,
+        ctx,
+        action: AuditAction.LEAVE_HOUSEHOLD,
+        resource: "household-member",
+        resourceId: member.id,
+        beforeFetch: async (tx) =>
+          tx.member.findUnique({ where: { id: member.id } }) as Promise<Record<
+            string,
+            unknown
+          > | null>,
+        mutation: async (tx) => tx.member.delete({ where: { id: member.id } }),
+      });
+    } else {
+      await prisma.member.delete({ where: { id: member.id } });
+    }
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -375,13 +409,29 @@ export const householdService = {
     return { token: rawToken, email: normalizedEmail };
   },
 
-  async cancelInvite(householdId: string, ownerUserId: string, inviteId: string) {
+  async cancelInvite(householdId: string, ownerUserId: string, inviteId: string, ctx?: ActorCtx) {
     await assertOwner(householdId, ownerUserId);
 
     const invite = await prisma.householdInvite.findUnique({ where: { id: inviteId } });
     if (!invite || invite.householdId !== householdId) throw new NotFoundError("Invite not found");
 
-    await prisma.householdInvite.delete({ where: { id: inviteId } });
+    if (ctx) {
+      await audited({
+        db: prisma,
+        ctx,
+        action: AuditAction.CANCEL_INVITE,
+        resource: "household-invite",
+        resourceId: inviteId,
+        beforeFetch: async (tx) =>
+          tx.householdInvite.findUnique({ where: { id: inviteId } }) as Promise<Record<
+            string,
+            unknown
+          > | null>,
+        mutation: async (tx) => tx.householdInvite.delete({ where: { id: inviteId } }),
+      });
+    } else {
+      await prisma.householdInvite.delete({ where: { id: inviteId } });
+    }
   },
 
   // ─── Invite acceptance ─────────────────────────────────────────────────────
@@ -401,7 +451,11 @@ export const householdService = {
   },
 
   /** New user accepts an invite — creates account + joins household */
-  async acceptInvite(token: string, newUser: { name: string; email: string; password: string }) {
+  async acceptInvite(
+    token: string,
+    newUser: { name: string; email: string; password: string },
+    requestCtx?: { ipAddress?: string; userAgent?: string }
+  ) {
     const invite = await this.validateInviteToken(token);
     const normalizedEmail = normalizeEmail(newUser.email);
 
@@ -490,6 +544,21 @@ export const householdService = {
       await tx.householdInvite.update({
         where: { id: invite.id },
         data: { usedAt: new Date() },
+      });
+
+      // Audit the acceptance — actor is the newly created user
+      await (tx as any).auditLog.create({
+        data: {
+          householdId: invite.householdId,
+          actorId: created.id,
+          actorName: newUser.name,
+          ipAddress: requestCtx?.ipAddress,
+          userAgent: requestCtx?.userAgent,
+          action: AuditAction.ACCEPT_INVITE,
+          resource: "household-invite",
+          resourceId: invite.id,
+          changes: [],
+        },
       });
 
       return { user: updated, personalHouseholdId: personal.id };
