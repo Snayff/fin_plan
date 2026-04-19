@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "../../stores/authStore";
@@ -16,6 +16,7 @@ type PageState =
       emailRequired: boolean;
       maskedInvitedEmail: string | null;
     }
+  | { status: "joining"; householdName: string }
   | { status: "success"; householdName: string };
 
 export default function AcceptInvitePage() {
@@ -40,6 +41,34 @@ export default function AcceptInvitePage() {
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const joinStartedRef = useRef(false);
+
+  const performJoin = useCallback(
+    async (householdName: string, emailRequired: boolean, maskedInvitedEmail: string | null) => {
+      if (!token || joinStartedRef.current) return;
+      joinStartedRef.current = true;
+      setIsSubmitting(true);
+      setError("");
+      setPageState({ status: "joining", householdName });
+      try {
+        await householdService.joinViaInvite(token);
+        setPageState({ status: "success", householdName });
+        const { user: updatedUser } = await authService.getCurrentUser(
+          useAuthStore.getState().accessToken!
+        );
+        setUser(updatedUser, useAuthStore.getState().accessToken!);
+        void qc.invalidateQueries();
+        setTimeout(() => navigate("/overview"), 1500);
+      } catch (err) {
+        joinStartedRef.current = false;
+        setPageState({ status: "ready", householdName, emailRequired, maskedInvitedEmail });
+        setError((err as ApiError).message || "Failed to join household");
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [token, qc, navigate, setUser]
+  );
 
   useEffect(() => {
     if (!token) {
@@ -65,25 +94,15 @@ export default function AcceptInvitePage() {
       });
   }, [token]);
 
-  const handleJoin = async () => {
-    if (!token) return;
-    setIsSubmitting(true);
-    setError("");
-    try {
-      const { household } = await householdService.joinViaInvite(token);
-      setPageState({ status: "success", householdName: household.name });
-      const { user: updatedUser } = await authService.getCurrentUser(
-        useAuthStore.getState().accessToken!
+  useEffect(() => {
+    if (isAuthenticated && pageState.status === "ready") {
+      void performJoin(
+        pageState.householdName,
+        pageState.emailRequired,
+        pageState.maskedInvitedEmail
       );
-      setUser(updatedUser, useAuthStore.getState().accessToken!);
-      void qc.invalidateQueries();
-      setTimeout(() => navigate("/overview"), 1500);
-    } catch (err) {
-      setError((err as ApiError).message || "Failed to join household");
-    } finally {
-      setIsSubmitting(false);
     }
-  };
+  }, [isAuthenticated, pageState, performJoin]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,16 +132,18 @@ export default function AcceptInvitePage() {
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pageState.status !== "ready") return;
+    const { householdName, emailRequired, maskedInvitedEmail } = pageState;
     setIsSubmitting(true);
     setError("");
     try {
       await login({ email: loginEmail, password: loginPassword });
-      // After login the store updates; the component re-renders and shows the join button
     } catch (err) {
       setError((err as ApiError).message || "Sign in failed");
-    } finally {
       setIsSubmitting(false);
+      return;
     }
+    // performJoin manages isSubmitting from here; do NOT set false
+    void performJoin(householdName, emailRequired, maskedInvitedEmail);
   };
 
   if (pageState.status === "loading") {
@@ -139,6 +160,19 @@ export default function AcceptInvitePage() {
         <div className="w-full max-w-md p-8 text-center bg-card rounded-lg shadow-lg">
           <h1 className="text-2xl font-bold text-foreground mb-3">Invite Link Invalid</h1>
           <p className="text-muted-foreground">{pageState.message}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (pageState.status === "joining") {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="w-full max-w-md p-8 text-center bg-card rounded-lg shadow-lg">
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            Joining {pageState.householdName}…
+          </h1>
+          <p className="text-muted-foreground">Please wait.</p>
         </div>
       </div>
     );
@@ -185,11 +219,14 @@ export default function AcceptInvitePage() {
           )}
 
           <button
-            onClick={handleJoin}
+            onClick={() => {
+              joinStartedRef.current = false;
+              void performJoin(householdName, emailRequired, maskedInvitedEmail);
+            }}
             disabled={isSubmitting}
             className="w-full py-2 px-4 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {isSubmitting ? "Joining..." : `Join ${householdName}`}
+            {isSubmitting ? "Joining…" : "Try again"}
           </button>
         </div>
       </div>

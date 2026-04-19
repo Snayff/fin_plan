@@ -3,6 +3,7 @@ import { householdService } from "../services/household.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { acceptInviteSchema } from "@finplan/shared";
 import { config } from "../config/env";
+import { actorCtx } from "../lib/actor-ctx.js";
 
 function maskInviteEmail(email: string): string {
   const atIndex = email.indexOf("@");
@@ -57,7 +58,7 @@ export async function inviteRoutes(fastify: FastifyInstance) {
   fastify.post("/invite/:token/join", { preHandler: [authMiddleware] }, async (request, reply) => {
     const { token } = request.params as { token: string };
     const userId = request.user!.userId;
-    const household = await householdService.joinViaInvite(token, userId);
+    const household = await householdService.joinViaInvite(token, userId, actorCtx(request));
     return reply.send({ household });
   });
 }
