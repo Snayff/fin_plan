@@ -65,23 +65,20 @@ export function WaterfallTierTable({
 
   const orphanItems = items.filter((i) => !subcategories.some((s) => s.id === i.subcategoryId));
 
-  const makeDraftItems = (subcategoryId: string): TierItemRow[] =>
-    (draftsBySub[subcategoryId] ?? []).map(
-      (draftId) =>
-        ({
-          id: draftId,
-          name: "",
-          amount: 0,
-          spendType: "monthly" as const,
-          subcategoryId,
-          notes: null,
-          dueDate: null,
-          lastReviewedAt: new Date(),
-          createdAt: new Date(),
-          sortOrder: 9999,
-          isDraft: true,
-        }) as TierItemRow
-    );
+  const makeDraftItems = (subcategoryId: string): Array<TierItemRow & { isDraft: true }> =>
+    (draftsBySub[subcategoryId] ?? []).map((draftId) => ({
+      id: draftId,
+      name: "",
+      amount: 0,
+      spendType: "monthly" as const,
+      subcategoryId,
+      notes: null,
+      dueDate: null,
+      lastReviewedAt: new Date(),
+      createdAt: new Date(),
+      sortOrder: 9999,
+      isDraft: true as const,
+    }));
 
   const groupedKnown = subcategories.map((s) => ({
     subcategory: { id: s.id, name: s.name, sortOrder: s.sortOrder },

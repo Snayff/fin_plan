@@ -49,6 +49,7 @@ export function AddSubcategoryButton({ onCreate }: Props) {
         <input
           autoFocus
           type="text"
+          aria-label="New subcategory name"
           placeholder="New subcategory name"
           value={value}
           disabled={saving}

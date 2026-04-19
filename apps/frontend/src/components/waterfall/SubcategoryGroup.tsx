@@ -17,10 +17,12 @@ interface Member {
   name: string;
 }
 
+type TierItemRowWithExtra = TierItemRow & { ownerId?: string | null; isDraft?: boolean };
+
 interface Props {
   tier: Tier;
   subcategory: Subcategory;
-  items: TierItemRow[];
+  items: TierItemRowWithExtra[];
   members: Member[];
   onAddDraft: (subcategoryId: string) => void;
   onDeleteItem: (id: string) => Promise<unknown>;
@@ -67,7 +69,7 @@ export function SubcategoryGroup({
         <TierRow
           key={item.id}
           tier={tier}
-          item={item as any}
+          item={item}
           members={members}
           onSaveName={(name) => onSaveName(item.id, name)}
           onSaveAmount={(amount) => onSaveAmount(item.id, amount)}
@@ -78,6 +80,7 @@ export function SubcategoryGroup({
         <td colSpan={colSpan} className="px-3 py-1.5 text-left">
           <button
             type="button"
+            aria-label={`Add item to ${subcategory.name}`}
             onClick={() => onAddDraft(subcategory.id)}
             className="text-xs italic text-text-tertiary transition-colors hover:text-text-secondary"
           >
