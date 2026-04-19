@@ -1,0 +1,174 @@
+<style>
+  .app-frame { background: #080a14; border-radius: 8px; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; color: #e6e8ee; border: 1px solid #1b1f2e; height: 360px; display: flex; flex-direction: column; position: relative; }
+  .app-header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: #0b1020; border-bottom: 1px solid #1b1f2e; flex-shrink: 0; }
+  .brand { font-weight: 600; color: #c4b8ff; font-size: 13px; }
+  .nav-link { color: #a9b0c4; font-size: 11px; padding: 3px 7px; border-radius: 4px; }
+  .nav-link.wf-income { color: #7c8cff; }
+  .nav-link.wf-committed { color: #a78cff; }
+  .nav-link.wf-discretionary { color: #c78cff; }
+  .nav-link.wf-surplus { color: #6ee7b7; }
+  .nav-link.active { background: rgba(124,140,255,0.14); border-left: 2px solid #7c8cff; padding-left: 5px; border-radius: 0 4px 4px 0; color: #e6e8ee; }
+  .avatar { width: 22px; height: 22px; border-radius: 50%; background: #252b3d; flex-shrink: 0; display:flex; align-items:center; justify-content:center; color: #8b90a3; font-size: 9px; }
+  .household { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #a9b0c4; padding: 3px 7px; background: #121625; border-radius: 4px; }
+  .search-trigger { width: 26px; height: 26px; border-radius: 6px; background: #121625; border: 1px solid #7c8cff; display: flex; align-items: center; justify-content: center; color: #e6e8ee; flex-shrink: 0; }
+  .search-trigger svg { width: 14px; height: 14px; }
+  .search-expanded { flex: 1; display: flex; align-items: center; gap: 8px; background: #121625; border: 1px solid #7c8cff; border-radius: 6px; padding: 4px 10px; color: #e6e8ee; font-size: 12px; box-shadow: 0 0 0 2px rgba(124,140,255,0.15); }
+  .search-expanded svg { width: 14px; height: 14px; color: #7c8cff; }
+  .search-expanded .query { font-weight: 500; }
+  .search-expanded .cursor { display: inline-block; width: 1px; height: 12px; background: #e6e8ee; vertical-align: middle; margin-left: 1px; animation: blink 1s infinite; }
+  .search-expanded .esc { margin-left: auto; background: #1b1f2e; color: #8b90a3; border-radius: 3px; padding: 1px 5px; font-size: 9px; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .app-body { display: flex; flex: 1; position: relative; overflow: hidden; }
+  .left-panel { width: 130px; background: #0b1020; border-right: 1px solid #1b1f2e; padding: 10px; font-size: 11px; flex-shrink: 0; color: #8b90a3; }
+  .content-area { flex: 1; padding: 14px; font-size: 11px; color: #8b90a3; overflow: hidden; }
+  .scrim { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(8,10,20,0.6); z-index: 5; }
+  .overlay-anchored { position: absolute; top: 48px; left: 14px; right: 14px; background: #0b1020; border: 1px solid #252b3d; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); z-index: 10; overflow: hidden; }
+  .overlay-expand { position: absolute; top: 48px; left: 14px; right: 14px; background: #0b1020; border: 1px solid #252b3d; border-top: none; border-radius: 0 0 10px 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); z-index: 10; overflow: hidden; }
+  .overlay-input { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #1b1f2e; }
+  .overlay-input svg { width: 14px; height: 14px; color: #7c8cff; }
+  .overlay-input-text { flex: 1; color: #e6e8ee; font-size: 12px; }
+  .overlay-input-kbd { background: #1b1f2e; color: #8b90a3; border-radius: 3px; padding: 2px 5px; font-size: 9px; }
+  .result-group { padding: 4px; }
+  .result-group-label { text-transform: uppercase; font-size: 8px; letter-spacing: 1px; color: #6b7180; padding: 4px 8px; }
+  .result-row { padding: 6px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #e6e8ee; border-radius: 5px; gap: 8px; }
+  .result-row.highlighted { background: rgba(124,140,255,0.14); }
+  .row-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+  .result-icon { width: 16px; height: 16px; border-radius: 3px; background: #1b1f2e; display: flex; align-items: center; justify-content: center; color: #8b90a3; font-size: 9px; flex-shrink: 0; }
+  .result-sub { color: #8b90a3; font-size: 10px; flex-shrink: 0; }
+  .mockup-label { font-weight: 600; margin-bottom: 6px; color: #e6e8ee; font-size: 13px; }
+  .mockup-note { font-size: 11px; color: #8b90a3; margin-top: 6px; line-height: 1.4; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 16px; }
+</style>
+
+<h2>Open behaviour — anchored drop vs expand-over-nav</h2>
+<p class="subtitle">Position locked at R. Two visibly-different open behaviours compared side-by-side.</p>
+
+<div class="options">
+  <div class="option" data-choice="open-anchored" onclick="toggleSelect(this)">
+    <div class="letter">E</div>
+    <div class="content">
+      <h3>Anchored drop</h3>
+      <p>The nav row stays put. A full card (input + results) drops from under it. Dimming happens only in the body area. The chrome is untouched.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="open-expand" onclick="toggleSelect(this)">
+    <div class="letter">F</div>
+    <div class="content">
+      <h3>Expand over nav</h3>
+      <p>The icon morphs into a full-width search input that <strong>covers the nav row</strong>. Brand stays on left, household switcher and avatar stay on right. Results drop below the expanded input. Closing the search restores the nav.</p>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <!-- E: ANCHORED -->
+  <div>
+    <div class="mockup-label">E — Anchored drop (nav stays visible)</div>
+    <div class="app-frame">
+      <div class="app-header">
+        <div class="brand">finplan</div>
+        <span class="nav-link">Overview</span>
+        <span class="nav-link wf-income active">Income</span>
+        <span class="nav-link wf-committed">Committed</span>
+        <span class="nav-link wf-discretionary">Discretionary</span>
+        <span class="nav-link wf-surplus">Surplus</span>
+        <span class="nav-link">Forecast</span>
+        <span class="nav-link">Assets</span>
+        <span class="nav-link">Goals</span>
+        <span class="nav-link">Gifts</span>
+        <span class="nav-link">Help</span>
+        <div style="flex:1"></div>
+        <div class="search-trigger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="household">Snaith ▾</div>
+        <div class="avatar">GS</div>
+      </div>
+      <div class="app-body">
+        <div class="left-panel">Income…</div>
+        <div class="content-area">Page…</div>
+        <div class="scrim"></div>
+        <div class="overlay-anchored">
+          <div class="overlay-input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+            <span class="overlay-input-text"><span class="query">mort</span><span class="cursor"></span></span>
+            <span class="overlay-input-kbd">Esc</span>
+          </div>
+          <div class="result-group">
+            <div class="result-group-label">Data</div>
+            <div class="result-row highlighted">
+              <div class="row-left"><div class="result-icon" style="background:rgba(167,140,255,0.2); color:#a78cff">C</div><span><b>Mort</b>gage</span></div>
+              <span class="result-sub">Committed · Monthly</span>
+            </div>
+            <div class="result-row">
+              <div class="row-left"><div class="result-icon" style="background:rgba(167,140,255,0.2); color:#a78cff">C</div><span><b>Mort</b>gage protection</span></div>
+              <span class="result-sub">Committed · Monthly</span>
+            </div>
+          </div>
+          <div class="result-group">
+            <div class="result-group-label">Help</div>
+            <div class="result-row">
+              <div class="row-left"><div class="result-icon" style="background:rgba(110,231,183,0.2); color:#6ee7b7">?</div><span>A<b>mort</b>ised</span></div>
+              <span class="result-sub">Loan repaid in fixed instalments…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup-note"><strong>Pros:</strong> nav stays visible for context — user still sees where they are; lightweight animation. <strong>Cons:</strong> two input-ish things near the top (trigger icon still visible in row, plus overlay input below) feels redundant.</div>
+  </div>
+
+  <!-- F: EXPAND-OVER-NAV -->
+  <div>
+    <div class="mockup-label">F — Expand over nav (input replaces nav row)</div>
+    <div class="app-frame">
+      <div class="app-header">
+        <div class="brand">finplan</div>
+        <div class="search-expanded">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+          <span><span class="query">mort</span><span class="cursor"></span></span>
+          <span class="esc">Esc</span>
+        </div>
+        <div class="household">Snaith ▾</div>
+        <div class="avatar">GS</div>
+      </div>
+      <div class="app-body">
+        <div class="left-panel">Income…</div>
+        <div class="content-area">Page…</div>
+        <div class="scrim"></div>
+        <div class="overlay-expand">
+          <div class="result-group">
+            <div class="result-group-label">Data</div>
+            <div class="result-row highlighted">
+              <div class="row-left"><div class="result-icon" style="background:rgba(167,140,255,0.2); color:#a78cff">C</div><span><b>Mort</b>gage</span></div>
+              <span class="result-sub">Committed · Monthly</span>
+            </div>
+            <div class="result-row">
+              <div class="row-left"><div class="result-icon" style="background:rgba(167,140,255,0.2); color:#a78cff">C</div><span><b>Mort</b>gage protection</span></div>
+              <span class="result-sub">Committed · Monthly</span>
+            </div>
+          </div>
+          <div class="result-group">
+            <div class="result-group-label">Help</div>
+            <div class="result-row">
+              <div class="row-left"><div class="result-icon" style="background:rgba(110,231,183,0.2); color:#6ee7b7">?</div><span>A<b>mort</b>ised</span></div>
+              <span class="result-sub">Loan repaid in fixed instalments…</span>
+            </div>
+          </div>
+          <div class="result-group">
+            <div class="result-group-label">Actions</div>
+            <div class="result-row">
+              <div class="row-left"><div class="result-icon" style="background:rgba(124,140,255,0.2); color:#7c8cff">→</div><span>Go to Forecast</span></div>
+              <span class="result-sub">/forecast</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup-note"><strong>Pros:</strong> unified — input becomes the chrome, no dual presence; feels like a mode you've entered, not an overlay on top; input has more horizontal room. <strong>Cons:</strong> nav is hidden while searching (you can't glance at where you are); more motion; slightly heavier transition.</div>
+  </div>
+</div>
+
+<div style="margin-top:22px; padding: 12px 14px; border: 1px solid #252b3d; border-radius: 8px; background: #0b1020; font-size: 12px; color: #a9b0c4;">
+  <strong>Note on F's transition:</strong> icon animates from its 26px corner position, growing leftward and widening until the search bar fills the full nav-row slot. Nav links fade out simultaneously. Results slide down from under the bar.
+</div>
