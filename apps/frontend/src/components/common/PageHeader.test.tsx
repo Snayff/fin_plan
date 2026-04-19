@@ -53,4 +53,18 @@ describe("PageHeader", () => {
     expect(heading.className).toContain("tracking-tier");
     expect(heading.className).toContain("text-lg");
   });
+
+  it("renders context name and separator inside heading when contextName is provided", () => {
+    renderWithProviders(<PageHeader title="Household" contextName="Snaith" />);
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading.textContent).toContain("Household");
+    expect(heading.textContent).toContain("/");
+    expect(heading.textContent).toContain("Snaith");
+  });
+
+  it("does not render separator when contextName is omitted", () => {
+    renderWithProviders(<PageHeader title="Household" />);
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading.textContent).not.toContain("/");
+  });
 });
