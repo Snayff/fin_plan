@@ -10,12 +10,12 @@ describe("formatTwoLineAmount", () => {
     expect(result.yearly.bright).toBe(false);
   });
 
-  it("yearly item: yearly is bright, monthly is muted", () => {
+  it("yearly item: monthly is bright, yearly is muted", () => {
     const result = formatTwoLineAmount(840, "yearly");
     expect(result.monthly.value).toBe("£70/mo");
-    expect(result.monthly.bright).toBe(false);
+    expect(result.monthly.bright).toBe(true);
     expect(result.yearly.value).toBe("£840/yr");
-    expect(result.yearly.bright).toBe(true);
+    expect(result.yearly.bright).toBe(false);
   });
 
   it("one-off item: single amount, no yearly", () => {
