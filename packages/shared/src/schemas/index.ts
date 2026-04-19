@@ -179,6 +179,9 @@ export {
 // Gifts schemas and types
 export * from "./gifts.schemas";
 
+// Search schemas and types
+export * from "./search.schemas";
+
 // Response schemas and types (contracts + security allowlists for API responses)
 export {
   // Auth
