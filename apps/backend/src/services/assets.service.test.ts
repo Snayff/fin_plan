@@ -205,6 +205,7 @@ describe("assetsService.listAccountsByType", () => {
         lastReviewedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        linkedItems: [],
         balances: [
           {
             id: "b1",
@@ -222,6 +223,84 @@ describe("assetsService.listAccountsByType", () => {
 
     expect(result[0]!.currentBalance).toBe(42100);
     expect(result[0]!.balances).toHaveLength(1);
+    expect(result[0]!.monthlyContribution).toBe(0);
+    expect(result[0]!.linkedItems).toEqual([]);
+  });
+
+  it("derives monthlyContribution from active ItemAmountPeriods of linked items", async () => {
+    const ITEM_ID_1 = "item-1";
+    const ITEM_ID_2 = "item-2";
+
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: ACCOUNT_ID,
+        name: "ISA",
+        type: "Savings",
+        householdId: HOUSEHOLD_ID,
+        memberId: null,
+        growthRatePct: null,
+        lastReviewedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        linkedItems: [
+          { id: ITEM_ID_1, name: "ISA monthly", spendType: "monthly" },
+          { id: ITEM_ID_2, name: "ISA yearly top-up", spendType: "yearly" },
+        ],
+        balances: [],
+      },
+    ] as any);
+
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        id: "p1",
+        itemType: "discretionary_item",
+        itemId: ITEM_ID_1,
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 300,
+        createdAt: new Date(),
+      },
+      {
+        id: "p2",
+        itemType: "discretionary_item",
+        itemId: ITEM_ID_2,
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 1200,
+        createdAt: new Date(),
+      },
+    ] as any);
+
+    const result = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Savings");
+
+    // 300 monthly + 1200/12 yearly = 300 + 100 = 400
+    expect(result[0]!.monthlyContribution).toBe(400);
+    expect(result[0]!.linkedItems).toHaveLength(2);
+    expect(result[0]!.linkedItems[0]!.amount).toBe(300);
+    expect(result[0]!.linkedItems[1]!.amount).toBe(1200);
+  });
+
+  it("returns monthlyContribution 0 and does not query periods when no linked items", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: ACCOUNT_ID,
+        name: "Current",
+        type: "Current",
+        householdId: HOUSEHOLD_ID,
+        memberId: null,
+        growthRatePct: null,
+        lastReviewedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        linkedItems: [],
+        balances: [],
+      },
+    ] as any);
+
+    const result = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Current");
+
+    expect(result[0]!.monthlyContribution).toBe(0);
+    expect(prismaMock.itemAmountPeriod.findMany).not.toHaveBeenCalled();
   });
 });
 
