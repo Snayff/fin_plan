@@ -58,7 +58,7 @@ describe("SubcategoryGroup", () => {
         </tbody>
       </table>
     );
-    const addBtn = screen.getByRole("button", { name: /\+ add/i });
+    const addBtn = screen.getByRole("button", { name: /add item to housing/i });
     fireEvent.click(addBtn);
     expect(onAddDraft).toHaveBeenCalledWith("sub-1");
   });
