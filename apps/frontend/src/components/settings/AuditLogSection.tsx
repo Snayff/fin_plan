@@ -96,6 +96,9 @@ export function AuditLogSection() {
           </Button>
         </div>
       )}
+      <p className="pt-3 text-xs text-muted-foreground">
+        Entries older than 180 days are automatically removed.
+      </p>
     </SettingsSection>
   );
 }
