@@ -6,6 +6,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { authService } from "@/services/auth.service";
 import type { UpdateSettingsInput, AuditLogQuery } from "@finplan/shared";
 import { fetchAuditLog, updateMemberRole } from "@/services/auditLog.service";
+import { fetchSecurityActivity } from "@/services/securityActivity.service";
 
 export const SETTINGS_KEYS = {
   settings: ["settings"] as const,
@@ -156,6 +157,16 @@ export function useAuditLog(filters: Omit<AuditLogQuery, "cursor" | "limit">) {
         cursor: pageParam as string | undefined,
         limit: 50,
       }),
+    getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
+    initialPageParam: undefined as string | undefined,
+  });
+}
+
+export function useSecurityActivity() {
+  return useInfiniteQuery({
+    queryKey: ["security-activity"],
+    queryFn: ({ pageParam }) =>
+      fetchSecurityActivity({ cursor: pageParam as string | undefined, limit: 50 }),
     getNextPageParam: (lastPage) => lastPage.nextCursor ?? undefined,
     initialPageParam: undefined as string | undefined,
   });

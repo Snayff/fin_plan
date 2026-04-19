@@ -374,7 +374,8 @@ describe("PATCH /api/households/:id", () => {
     expect(householdService.renameHousehold).toHaveBeenCalledWith(
       "household-1",
       "user-1",
-      "Updated Name"
+      "Updated Name",
+      expect.objectContaining({ actorId: "user-1" })
     );
   });
 
@@ -579,7 +580,8 @@ describe("DELETE /api/households/:id/invites/:inviteId", () => {
     expect(householdService.cancelInvite).toHaveBeenCalledWith(
       "household-1",
       "user-1",
-      "invite-abc"
+      "invite-abc",
+      expect.objectContaining({ actorId: "user-1" })
     );
   });
 
@@ -613,7 +615,11 @@ describe("DELETE /api/households/:id/leave", () => {
       headers: authHeaders,
     });
 
-    expect(householdService.leaveHousehold).toHaveBeenCalledWith("household-xyz", "user-1");
+    expect(householdService.leaveHousehold).toHaveBeenCalledWith(
+      "household-xyz",
+      "user-1",
+      expect.objectContaining({ actorId: "user-1" })
+    );
   });
 
   it("returns 401 without auth", async () => {
@@ -739,7 +745,8 @@ describe("POST /api/households/:id/member-profiles", () => {
     expect(memberService.createMember).toHaveBeenCalledWith(
       "household-1",
       "user-1",
-      expect.objectContaining({ name: "New Member", retirementYear: 2055 })
+      expect.objectContaining({ name: "New Member", retirementYear: 2055 }),
+      expect.objectContaining({ actorId: "user-1" })
     );
   });
 
@@ -810,7 +817,8 @@ describe("PATCH /api/households/:id/member-profiles/:memberId", () => {
       "household-1",
       "user-1",
       "member-profile-1",
-      expect.objectContaining({ name: "Updated Name", retirementYear: 2060 })
+      expect.objectContaining({ name: "Updated Name", retirementYear: 2060 }),
+      expect.objectContaining({ actorId: "user-1" })
     );
   });
 
@@ -849,6 +857,7 @@ describe("DELETE /api/households/:id/member-profiles/:memberId", () => {
       "household-1",
       "user-1",
       "member-profile-1",
+      expect.objectContaining({ actorId: "user-1" }),
       undefined
     );
   });
@@ -865,6 +874,7 @@ describe("DELETE /api/households/:id/member-profiles/:memberId", () => {
       "household-1",
       "user-1",
       "member-profile-1",
+      expect.objectContaining({ actorId: "user-1" }),
       "member-profile-2"
     );
   });

@@ -22,9 +22,12 @@ describe("setupSessionService.getSession", () => {
 
 describe("setupSessionService.createOrResetSession", () => {
   it("upserts resetting step to 0", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
+    prismaMock.waterfallSetupSession.findUnique.mockResolvedValue(null);
     prismaMock.waterfallSetupSession.upsert.mockResolvedValue({ householdId: "hh-1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await setupSessionService.createOrResetSession("hh-1");
+    await setupSessionService.createOrResetSession("hh-1", ctx);
 
     expect(prismaMock.waterfallSetupSession.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -37,9 +40,12 @@ describe("setupSessionService.createOrResetSession", () => {
 
 describe("setupSessionService.updateSession", () => {
   it("updates currentStep", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
+    prismaMock.waterfallSetupSession.findUnique.mockResolvedValue(null);
     prismaMock.waterfallSetupSession.update.mockResolvedValue({ householdId: "hh-1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await setupSessionService.updateSession("hh-1", { currentStep: 3 });
+    await setupSessionService.updateSession("hh-1", { currentStep: 3 }, ctx);
 
     expect(prismaMock.waterfallSetupSession.update).toHaveBeenCalledWith({
       where: { householdId: "hh-1" },
@@ -72,12 +78,14 @@ describe("setupSessionService.createOrResetSession with audited()", () => {
     );
   });
 
-  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+  it("always writes AuditLog (ctx is required)", async () => {
+    prismaMock.waterfallSetupSession.findUnique.mockResolvedValue(null);
     prismaMock.waterfallSetupSession.upsert.mockResolvedValue({ householdId: "hh-1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await setupSessionService.createOrResetSession("hh-1");
+    await setupSessionService.createOrResetSession("hh-1", actor);
 
-    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+    expect(prismaMock.auditLog.create).toHaveBeenCalled();
   });
 });
 
