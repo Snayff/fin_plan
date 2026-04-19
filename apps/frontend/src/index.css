@@ -496,3 +496,15 @@ input[type="number"] {
   border-top: 1px solid rgba(238, 242, 255, 0.06);
   padding-top: 48px;
 }
+
+@keyframes search-focus-pulse {
+  0% {
+    background-color: hsl(var(--accent) / 0.24);
+  }
+  100% {
+    background-color: transparent;
+  }
+}
+.search-focus-pulse {
+  animation: search-focus-pulse 1.2s ease-out forwards;
+}

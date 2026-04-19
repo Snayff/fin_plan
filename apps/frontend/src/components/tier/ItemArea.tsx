@@ -36,6 +36,7 @@ interface Props {
   isLoading: boolean;
   now?: Date;
   stalenessMonths?: number;
+  initialIsAdding?: boolean;
   onSubcategorySelect?: (id: string) => void;
 }
 
@@ -48,11 +49,12 @@ export default function ItemArea({
   isLoading,
   now = new Date(),
   stalenessMonths = 12,
+  initialIsAdding,
   onSubcategorySelect,
 }: Props) {
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [isAddingItem, setIsAddingItem] = useState(initialIsAdding ?? false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [sortField, setSortField] = useState<"name" | "createdAt" | "monthlyValue">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -265,22 +267,23 @@ export default function ItemArea({
 
         {/* Item list */}
         {displayItems.map((item) => (
-          <ItemAreaRow
-            key={item.id}
-            tier={tier}
-            config={config}
-            item={item}
-            subcategoryName={subcategory.name}
-            subcategories={subcategories}
-            expandedItemId={expandedItemId}
-            editingItemId={editingItemId}
-            onToggleExpand={(id) => setExpandedItemId(expandedItemId === id ? null : id)}
-            onStartEdit={setEditingItemId}
-            onCancelEdit={() => setEditingItemId(null)}
-            onDeleteRequest={setDeletingItemId}
-            now={now}
-            stalenessMonths={stalenessMonths}
-          />
+          <div key={item.id} data-search-focus={item.id}>
+            <ItemAreaRow
+              tier={tier}
+              config={config}
+              item={item}
+              subcategoryName={subcategory.name}
+              subcategories={subcategories}
+              expandedItemId={expandedItemId}
+              editingItemId={editingItemId}
+              onToggleExpand={(id) => setExpandedItemId(expandedItemId === id ? null : id)}
+              onStartEdit={setEditingItemId}
+              onCancelEdit={() => setEditingItemId(null)}
+              onDeleteRequest={setDeletingItemId}
+              now={now}
+              stalenessMonths={stalenessMonths}
+            />
+          </div>
         ))}
       </div>
 
