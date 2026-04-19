@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { exportService } from "../services/export.service.js";
 import { importService } from "../services/import.service.js";
+import { actorCtx } from "../lib/actor-ctx.js";
 import { importOptionsSchema } from "@finplan/shared";
 
 const FIVE_MB = 5 * 1024 * 1024;
@@ -18,7 +19,11 @@ export async function exportImportRoutes(fastify: FastifyInstance) {
     },
     async (request, reply) => {
       const userId = request.user!.userId;
-      const data = await exportService.exportHousehold(request.householdId!, userId);
+      const data = await exportService.exportHousehold(
+        request.householdId!,
+        userId,
+        actorCtx(request)
+      );
       return reply.send(data);
     }
   );
@@ -42,7 +47,8 @@ export async function exportImportRoutes(fastify: FastifyInstance) {
         request.householdId!,
         userId,
         request.body,
-        mode
+        mode,
+        actorCtx(request)
       );
       return reply.send(result);
     }

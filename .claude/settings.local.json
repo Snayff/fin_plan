@@ -85,7 +85,14 @@
       "Bash(agent-browser click:*)",
       "Bash(grep -r \"AreaChart\\\\|LineChart\\\\|BarChart\\\\|PieChart\" /c/Users/Gabriel/Documents/Dev/fin_plan/apps/frontend/src/components/overview --include=*.tsx --include=*.ts)",
       "WebFetch(domain:www.pocketsmith.com)",
-      "Bash(echo \"---exit: $?\")"
+      "Bash(echo \"---exit: $?\")",
+      "Bash(grep -v \"//\")",
+      "Bash(git log *)",
+      "Bash(bash \"/c/Users/Gabriel/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/Gabriel/Documents/Dev/fin_plan/.worktrees/feature_asset-account-growth\")",
+      "Bash(bash \"/c/Users/Gabriel/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/Gabriel/Documents/Dev/fin_plan/.worktrees/feature_universal-search\")",
+      "Bash(bash \"/c/Users/Gabriel/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh\" --project-dir \"C:/Users/Gabriel/Documents/Dev/fin_plan/.worktrees/feature_universal-search\" --foreground)",
+      "Bash(bash \"/c/Users/Gabriel/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/stop-server.sh\" \"C:/Users/Gabriel/Documents/Dev/fin_plan/.worktrees/feature_asset-account-growth/.superpowers/brainstorm/54484-1776584121/state\")",
+      "Bash(bash \"/c/Users/Gabriel/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/stop-server.sh\" \"C:/Users/Gabriel/Documents/Dev/fin_plan/.worktrees/feature_universal-search/.superpowers/brainstorm/59071-1776586418/state\")"
     ]
   },
   "hooks": {

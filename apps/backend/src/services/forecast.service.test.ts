@@ -18,11 +18,12 @@ beforeEach(() => {
 });
 
 // Helper to build a mock account with a latest balance
+// monthlyContribution is now derived from linkedItems + ItemAmountPeriod at read time
 function mockAccount(overrides: {
   id?: string;
   type: "Current" | "Savings" | "Pension" | "StocksAndShares" | "Other";
   balance: number;
-  monthlyContribution?: number;
+  linkedItems?: Array<{ id: string; spendType: string }>;
   growthRatePct?: number | null;
   memberId?: string | null;
 }) {
@@ -31,8 +32,8 @@ function mockAccount(overrides: {
     householdId: "hh-1",
     type: overrides.type,
     growthRatePct: overrides.growthRatePct ?? null,
-    monthlyContribution: overrides.monthlyContribution ?? 0,
     memberId: overrides.memberId ?? null,
+    linkedItems: overrides.linkedItems ?? [],
     balances: [{ value: overrides.balance, date: new Date("2026-01-01") }],
   };
 }
@@ -92,11 +93,26 @@ describe("forecastService.getProjections — net worth", () => {
 
   it("applies account growth rate with monthly contributions after year 1", async () => {
     prismaMock.account.findMany.mockResolvedValue([
-      mockAccount({ type: "Savings", balance: 10000, monthlyContribution: 100 }),
+      mockAccount({
+        type: "Savings",
+        balance: 10000,
+        linkedItems: [{ id: "item-contrib", spendType: "monthly" }],
+      }),
     ] as any);
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
     prismaMock.member.findMany.mockResolvedValue([] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        id: "p-contrib",
+        itemType: "discretionary_item",
+        itemId: "item-contrib",
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 100,
+        createdAt: new Date(),
+      },
+    ] as any);
 
     const result = await forecastService.getProjections("hh-1", 1);
 
@@ -318,5 +334,75 @@ describe("forecastService.getProjections — retirement", () => {
     expect(result.netWorth.every((p) => p.nominal === 0)).toBe(true);
     expect(result.surplus.every((p) => p.cumulative === 0)).toBe(true);
     expect(result.retirement).toHaveLength(0);
+  });
+});
+
+describe("forecastService.getProjections — monthlyContributionsByScope", () => {
+  it("sums non-pension linked contributions into netWorth scope", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({
+        id: "savings-1",
+        type: "Savings",
+        balance: 5000,
+        linkedItems: [{ id: "item-savings", spendType: "monthly" }],
+      }),
+      mockAccount({
+        id: "pension-1",
+        type: "Pension",
+        balance: 20000,
+        linkedItems: [{ id: "item-pension", spendType: "monthly" }],
+        memberId: "m-1",
+      }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([
+      {
+        id: "m-1",
+        householdId: "hh-1",
+        userId: "user-1",
+        retirementYear: null,
+        user: { id: "user-1", name: "Alice" },
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        id: "p1",
+        itemType: "discretionary_item",
+        itemId: "item-savings",
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 300,
+        createdAt: new Date(),
+      },
+      {
+        id: "p2",
+        itemType: "discretionary_item",
+        itemId: "item-pension",
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 200,
+        createdAt: new Date(),
+      },
+    ] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    expect(result.monthlyContributionsByScope.netWorth).toBe(300);
+    expect(result.monthlyContributionsByScope.retirement).toBe(200);
+  });
+
+  it("returns zeroes when no linked items exist", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ type: "Savings", balance: 10000 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    expect(result.monthlyContributionsByScope.netWorth).toBe(0);
+    expect(result.monthlyContributionsByScope.retirement).toBe(0);
   });
 });

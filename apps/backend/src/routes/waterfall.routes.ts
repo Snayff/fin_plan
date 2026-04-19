@@ -18,6 +18,7 @@ import {
   updatePeriodSchema,
   batchSaveSubcategoriesSchema,
   resetSubcategoriesSchema,
+  createSubcategorySchema,
 } from "@finplan/shared";
 import { periodService } from "../services/period.service.js";
 import { prisma } from "../config/database.js";
@@ -387,6 +388,35 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
     }
     const updated = await subcategoryService.listByTier(req.householdId!, tierParsed.data);
     return reply.send(updated);
+  });
+
+  fastify.post("/subcategories/:tier", preMutation, async (req, reply) => {
+    const { tier } = req.params as { tier: string };
+    const tierParsed = WaterfallTierEnum.safeParse(tier);
+    if (!tierParsed.success) {
+      return reply.status(400).send({ error: "Invalid tier" });
+    }
+    const bodyParsed = createSubcategorySchema.safeParse(req.body);
+    if (!bodyParsed.success) {
+      return reply.status(400).send({ error: bodyParsed.error.message });
+    }
+    try {
+      const sub = await subcategoryService.create(
+        req.householdId!,
+        tierParsed.data,
+        bodyParsed.data.name,
+        actorCtx(req)
+      );
+      return reply.status(201).send(sub);
+    } catch (err: any) {
+      if (err.code === "DUPLICATE") {
+        return reply.status(409).send({ error: err.message });
+      }
+      if (err.code === "LIMIT_EXCEEDED") {
+        return reply.status(400).send({ error: err.message });
+      }
+      throw err;
+    }
   });
 
   fastify.post("/subcategories/reset", preMutation, async (req, reply) => {

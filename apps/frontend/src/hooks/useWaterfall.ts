@@ -230,6 +230,9 @@ export interface TierItemRow {
   lifecycleState?: "active" | "future" | "expired";
   periods?: Array<{ id: string; startDate: Date; endDate: Date | null; amount: number }>;
   nextPeriod?: { amount: number; startDate: Date } | null;
+  /** Populated for discretionary items in the Savings subcategory. */
+  linkedAccountId?: string | null;
+  linkedAccount?: { id: string; name: string; type: string } | null;
 }
 
 function normaliseIncomeFrequency(frequency: string): SpendType {
@@ -266,6 +269,8 @@ function mapTierItem(r: any, spendType: string): TierItemRow {
     lifecycleState: r.lifecycleState ?? "active",
     periods,
     nextPeriod,
+    linkedAccountId: r.linkedAccountId ?? null,
+    linkedAccount: r.linkedAccount ?? null,
   };
 }
 
@@ -290,6 +295,64 @@ export function useTierItems(tier: "income" | "committed" | "discretionary") {
     queryKey: TIER_ITEM_KEYS.items(tier),
     queryFn: () => fetchTierItems(tier),
   });
+}
+
+export function useCreateSubcategory(tier: "income" | "committed" | "discretionary") {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (name: string) => waterfallService.createSubcategory(tier, name),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.subcategories(tier) });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+    },
+    onError: (error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : ((error as Record<string, unknown>)?.message as string | undefined);
+      showError(message ?? "Failed to create subcategory");
+    },
+  });
+}
+
+export function useFullWaterfall() {
+  const summary = useWaterfallSummary();
+  const incomeSubs = useSubcategories("income");
+  const committedSubs = useSubcategories("committed");
+  const discretionarySubs = useSubcategories("discretionary");
+  const incomeItems = useTierItems("income");
+  const committedItems = useTierItems("committed");
+  const discretionaryItems = useTierItems("discretionary");
+
+  return {
+    summary,
+    subcategories: {
+      income: incomeSubs.data ?? [],
+      committed: committedSubs.data ?? [],
+      discretionary: discretionarySubs.data ?? [],
+    },
+    items: {
+      income: incomeItems.data ?? [],
+      committed: committedItems.data ?? [],
+      discretionary: discretionaryItems.data ?? [],
+    },
+    isLoading:
+      summary.isLoading ||
+      incomeSubs.isLoading ||
+      committedSubs.isLoading ||
+      discretionarySubs.isLoading ||
+      incomeItems.isLoading ||
+      committedItems.isLoading ||
+      discretionaryItems.isLoading,
+    isError:
+      summary.isError ||
+      incomeSubs.isError ||
+      committedSubs.isError ||
+      discretionarySubs.isError ||
+      incomeItems.isError ||
+      committedItems.isError ||
+      discretionaryItems.isError,
+  };
 }
 
 // ─── Period hooks ─────────────────────────────────────────────────────────────
@@ -337,6 +400,17 @@ export function useDeletePeriod(itemType: string, itemId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: PERIOD_KEYS.list(itemType, itemId) });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+    },
+  });
+}
+
+export function useDeleteAllWaterfall() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => waterfallService.deleteAll(),
+    onSuccess: () => {
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
     },
   });
 }

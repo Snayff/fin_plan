@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import GhostAddButton from "./GhostAddButton";
 import ItemAreaRow from "./ItemAreaRow";
@@ -139,6 +140,12 @@ export default function ItemArea({
           </span>
         </div>
         <div className="flex items-center gap-1.5">
+          <Link
+            to={`/waterfall#${tier}`}
+            className="rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
+          >
+            View all
+          </Link>
           {!subcategory.isLocked && (
             <GhostAddButton
               onClick={() => {

@@ -12,6 +12,7 @@ import { formatCurrency } from "@/utils/format";
 import { useCreatePeriod, useDeletePeriod } from "@/hooks/useWaterfall";
 import type { TierConfig, TierKey } from "./tierConfig";
 import type { SpendType } from "./formatAmount";
+import { LinkedAccountPicker } from "./LinkedAccountPicker";
 
 const TIER_TO_PERIOD_ITEM_TYPE: Record<TierKey, string> = {
   income: "income_source",
@@ -39,6 +40,8 @@ interface ItemData {
   notes: string | null;
   /** Required for income/committed; null for discretionary unless one_off. */
   dueDate: string | null;
+  /** Only set when item is in the Savings discretionary subcategory. */
+  linkedAccountId?: string | null;
 }
 
 interface ItemPeriod {
@@ -53,6 +56,7 @@ interface EditItem extends Omit<ItemData, "dueDate"> {
   lastReviewedAt: Date;
   dueDate: Date | null;
   periods?: ItemPeriod[];
+  linkedAccountId?: string | null;
 }
 
 type AddModeProps = {
@@ -105,6 +109,9 @@ export default function ItemForm({
     if (item?.dueDate) return toDateInputValue(item.dueDate);
     return toDateInputValue(new Date());
   });
+  const [linkedAccountId, setLinkedAccountId] = useState<string | null>(
+    item?.linkedAccountId ?? null
+  );
   const [amountError, setAmountError] = useState<string | null>(null);
   const [amountFocused, setAmountFocused] = useState(false);
 
@@ -122,11 +129,26 @@ export default function ItemForm({
     void qc.invalidateQueries({ queryKey: ["waterfall", "tier-items", tier] });
   }
 
+  // Show the account picker only for Savings subcategory in discretionary tier.
+  const isSavingsSubcategory =
+    tier === "discretionary" &&
+    subcategories.find((s) => s.id === subcategoryId)?.name === "Savings";
+
+  // Auto-clear linked account if user moves item out of Savings subcategory.
+  function handleSubcategoryChange(id: string) {
+    const newName = subcategories.find((s) => s.id === id)?.name;
+    if (newName !== "Savings") setLinkedAccountId(null);
+    setSubcategoryId(id);
+  }
+
   // Discretionary items only need a date for one-off purchases.
   const dueDateRequired = tier === "income" || tier === "committed";
   const showDueDate = dueDateRequired || spendType === "one_off";
   const dueDateLabel =
-    spendType === "monthly" || spendType === "weekly" || spendType === "quarterly" || spendType === "yearly"
+    spendType === "monthly" ||
+    spendType === "weekly" ||
+    spendType === "quarterly" ||
+    spendType === "yearly"
       ? "First payment"
       : "Date";
 
@@ -156,6 +178,7 @@ export default function ItemForm({
       subcategoryId,
       notes: notes.trim() || null,
       dueDate: showDueDate ? dueDate : null,
+      linkedAccountId: isSavingsSubcategory ? linkedAccountId : null,
     });
   }
 
@@ -254,7 +277,7 @@ export default function ItemForm({
         {/* Category */}
         <div className="col-span-2 flex flex-col gap-1">
           <label className={labelClass}>Category</label>
-          <Select value={subcategoryId} onValueChange={setSubcategoryId}>
+          <Select value={subcategoryId} onValueChange={handleSubcategoryChange}>
             <SelectTrigger
               aria-label="Subcategory"
               className="h-auto rounded-md border-foreground/10 bg-foreground/[0.04] py-1.5 text-sm focus:ring-page-accent/40"
@@ -270,6 +293,11 @@ export default function ItemForm({
             </SelectContent>
           </Select>
         </div>
+
+        {/* Linked account — Savings subcategory only */}
+        {isSavingsSubcategory && (
+          <LinkedAccountPicker value={linkedAccountId} onChange={setLinkedAccountId} />
+        )}
 
         {/* Notes */}
         <div className="col-span-2 flex flex-col gap-1">

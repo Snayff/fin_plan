@@ -20,6 +20,7 @@ import type {
   UpdatePeriodInput,
   BatchSaveSubcategoriesInput,
   ResetSubcategoriesInput,
+  DiscretionaryItemResponse,
 } from "@finplan/shared";
 
 export const waterfallService = {
@@ -52,23 +53,25 @@ export const waterfallService = {
   confirmYearly: (id: string) => apiClient.post<any>(`/api/waterfall/yearly/${id}/confirm`),
 
   // Discretionary
-  listDiscretionary: () => apiClient.get<any[]>("/api/waterfall/discretionary"),
+  listDiscretionary: () =>
+    apiClient.get<DiscretionaryItemResponse[]>("/api/waterfall/discretionary"),
   createDiscretionary: (data: CreateDiscretionaryItemInput) =>
-    apiClient.post<any>("/api/waterfall/discretionary", data),
+    apiClient.post<DiscretionaryItemResponse>("/api/waterfall/discretionary", data),
   updateDiscretionary: (id: string, data: UpdateDiscretionaryItemInput) =>
-    apiClient.patch<any>(`/api/waterfall/discretionary/${id}`, data),
+    apiClient.patch<DiscretionaryItemResponse>(`/api/waterfall/discretionary/${id}`, data),
   deleteDiscretionary: (id: string) => apiClient.delete<void>(`/api/waterfall/discretionary/${id}`),
   confirmDiscretionary: (id: string) =>
-    apiClient.post<any>(`/api/waterfall/discretionary/${id}/confirm`),
+    apiClient.post<DiscretionaryItemResponse>(`/api/waterfall/discretionary/${id}/confirm`),
 
   // Savings
-  listSavings: () => apiClient.get<any[]>("/api/waterfall/savings"),
+  listSavings: () => apiClient.get<DiscretionaryItemResponse[]>("/api/waterfall/savings"),
   createSavings: (data: CreateSavingsAllocationInput) =>
-    apiClient.post<any>("/api/waterfall/savings", data),
+    apiClient.post<DiscretionaryItemResponse>("/api/waterfall/savings", data),
   updateSavings: (id: string, data: UpdateSavingsAllocationInput) =>
-    apiClient.patch<any>(`/api/waterfall/savings/${id}`, data),
+    apiClient.patch<DiscretionaryItemResponse>(`/api/waterfall/savings/${id}`, data),
   deleteSavings: (id: string) => apiClient.delete<void>(`/api/waterfall/savings/${id}`),
-  confirmSavings: (id: string) => apiClient.post<any>(`/api/waterfall/savings/${id}/confirm`),
+  confirmSavings: (id: string) =>
+    apiClient.post<DiscretionaryItemResponse>(`/api/waterfall/savings/${id}/confirm`),
 
   // History + batch
   getHistory: (type: string, id: string) =>
@@ -84,6 +87,9 @@ export const waterfallService = {
   // Subcategory mutations
   getSubcategoryCounts: (tier: "income" | "committed" | "discretionary") =>
     apiClient.get<Record<string, number>>(`/api/waterfall/subcategories/${tier}/counts`),
+
+  createSubcategory: (tier: "income" | "committed" | "discretionary", name: string) =>
+    apiClient.post<SubcategoryRow>(`/api/waterfall/subcategories/${tier}`, { name }),
 
   saveSubcategories: (
     tier: "income" | "committed" | "discretionary",

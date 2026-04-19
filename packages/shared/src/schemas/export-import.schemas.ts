@@ -108,7 +108,6 @@ const exportAccountSchema = z.object({
   type: z.enum(["Current", "Savings", "Pension", "StocksAndShares", "Other"]),
   ownerName: z.string().nullable().optional(),
   growthRatePct: z.number().nullable().optional(),
-  monthlyContribution: z.number(),
   isCashflowLinked: z.boolean().default(false),
   lastReviewedAt: z.string().datetime().nullable().optional(),
   balances: z.array(

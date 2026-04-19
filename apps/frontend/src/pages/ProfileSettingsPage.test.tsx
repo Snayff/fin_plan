@@ -23,6 +23,14 @@ mock.module("@/hooks/useSettings", () => ({
     refetch: () => {},
   }),
   useUpdateSettings: () => ({ mutate: () => {}, mutateAsync: async () => ({}), isPending: false }),
+  useSecurityActivity: () => ({
+    data: { pages: [{ entries: [], nextCursor: null }] },
+    isLoading: false,
+    isError: false,
+    fetchNextPage: () => {},
+    hasNextPage: false,
+    isFetchingNextPage: false,
+  }),
 }));
 
 mock.module("@/services/auth.service", () => ({
@@ -43,5 +51,13 @@ describe("ProfileSettingsPage", () => {
     const titles = headings.map((h) => h.textContent);
     expect(titles).toContain("Account");
     expect(titles).toContain("Display");
+  });
+
+  it("renders Security activity nav item and section", () => {
+    renderWithProviders(<ProfileSettingsPage />);
+    expect(screen.getByRole("button", { name: "Security activity" })).toBeTruthy();
+    const headings = screen.getAllByRole("heading", { level: 3 });
+    const titles = headings.map((h) => h.textContent);
+    expect(titles).toContain("Security activity");
   });
 });

@@ -98,6 +98,7 @@ export const createDiscretionaryItemSchema = z.object({
   sortOrder: z.number().int().optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
+  linkedAccountId: z.string().nullable().optional(),
 });
 
 export const updateDiscretionaryItemSchema = z.object({
@@ -106,6 +107,7 @@ export const updateDiscretionaryItemSchema = z.object({
   spendType: SpendTypeEnum.optional(),
   notes: z.string().max(500).nullable().optional(),
   sortOrder: z.number().int().optional(),
+  linkedAccountId: z.string().nullable().optional(),
 });
 
 export type CreateDiscretionaryItemInput = z.infer<typeof createDiscretionaryItemSchema>;
@@ -425,3 +427,11 @@ export const resetSubcategoriesSchema = z.object({
 });
 
 export type ResetSubcategoriesInput = z.infer<typeof resetSubcategoriesSchema>;
+
+// ─── Quick-add subcategory ───────────────────────────────────────────────────
+
+export const createSubcategorySchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(40),
+});
+
+export type CreateSubcategoryInput = z.infer<typeof createSubcategorySchema>;

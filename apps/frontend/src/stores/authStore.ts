@@ -6,6 +6,7 @@ import {
   type RegisterData,
 } from "../services/auth.service";
 import type { ApiError } from "../lib/api";
+import { decodeAccessTokenExpMs } from "../lib/jwt";
 
 export type AuthStatus = "initializing" | "authenticated" | "unauthenticated";
 
@@ -29,6 +30,51 @@ interface AuthState {
 
 let initializationPromise: Promise<void> | null = null;
 
+// Refresh the access token this many ms before its `exp` claim. The 60s buffer
+// gives a comfortable window for the refresh round-trip and absorbs minor
+// clock skew between client and server.
+const REFRESH_BUFFER_MS = 60_000;
+
+// Floor on the scheduled delay. Prevents a tight loop if the server ever
+// hands out a token whose `exp` is permanently in the past.
+const MIN_REFRESH_DELAY_MS = 5_000;
+
+let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearScheduledRefresh(): void {
+  if (refreshTimer !== null) {
+    clearTimeout(refreshTimer);
+    refreshTimer = null;
+  }
+}
+
+function scheduleProactiveRefresh(token: string): void {
+  clearScheduledRefresh();
+
+  const expMs = decodeAccessTokenExpMs(token);
+  if (expMs === null) return;
+
+  const naturalDelay = expMs - Date.now() - REFRESH_BUFFER_MS;
+  const delay = naturalDelay <= 0 ? 0 : Math.max(naturalDelay, MIN_REFRESH_DELAY_MS);
+
+  refreshTimer = setTimeout(() => {
+    refreshTimer = null;
+    void runScheduledRefresh();
+  }, delay);
+}
+
+async function runScheduledRefresh(): Promise<void> {
+  try {
+    const { accessToken } = await authService.refreshToken();
+    // Route through updateAccessToken so the next refresh is scheduled.
+    useAuthStore.getState().updateAccessToken(accessToken);
+  } catch {
+    // Refresh failed — drop to unauthenticated and let the existing
+    // mutation/redirect flow kick the user to /login on next interaction.
+    useAuthStore.getState().setUnauthenticated();
+  }
+}
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   accessToken: null,
@@ -37,16 +83,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: false,
   error: null,
 
-  setUser: (user, accessToken) =>
+  setUser: (user, accessToken) => {
     set({
       user,
       accessToken,
       isAuthenticated: true,
       authStatus: "authenticated",
       error: null,
-    }),
+    });
+    scheduleProactiveRefresh(accessToken);
+  },
 
-  setUnauthenticated: () =>
+  setUnauthenticated: () => {
+    clearScheduledRefresh();
     set({
       user: null,
       accessToken: null,
@@ -54,7 +103,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       authStatus: "unauthenticated",
       isLoading: false,
       error: null,
-    }),
+    });
+  },
 
   initializeAuth: async () => {
     if (get().authStatus !== "initializing") {
@@ -69,14 +119,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         const { accessToken } = await authService.refreshToken();
         const { user } = await authService.getCurrentUser(accessToken);
-        set({
-          user,
-          accessToken,
-          isAuthenticated: true,
-          authStatus: "authenticated",
-          isLoading: false,
-          error: null,
-        });
+        get().setUser(user, accessToken);
       } catch (error) {
         const apiError = error as ApiError;
         // 400 MISSING_REFRESH_TOKEN is expected when no session exists — treat silently
@@ -97,14 +140,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await authService.register(data);
-      set({
-        user: response.user,
-        accessToken: response.accessToken,
-        isAuthenticated: true,
-        authStatus: "authenticated",
-        isLoading: false,
-        error: null,
-      });
+      get().setUser(response.user, response.accessToken);
+      set({ isLoading: false });
     } catch (error) {
       const apiError = error as ApiError;
       set({
@@ -119,14 +156,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       const response = await authService.login(data);
-      set({
-        user: response.user,
-        accessToken: response.accessToken,
-        isAuthenticated: true,
-        authStatus: "authenticated",
-        isLoading: false,
-        error: null,
-      });
+      get().setUser(response.user, response.accessToken);
+      set({ isLoading: false });
     } catch (error) {
       const apiError = error as ApiError;
       set({
@@ -152,8 +183,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   clearError: () => set({ error: null }),
 
-  updateAccessToken: (accessToken) =>
-    set({
-      accessToken,
-    }),
+  updateAccessToken: (accessToken) => {
+    set({ accessToken });
+    scheduleProactiveRefresh(accessToken);
+  },
 }));

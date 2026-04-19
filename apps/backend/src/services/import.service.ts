@@ -6,6 +6,8 @@ import {
   ValidationError,
 } from "../utils/errors.js";
 import { exportService } from "./export.service.js";
+import type { ActorCtx } from "./audit.service.js";
+import { AuditAction } from "@finplan/shared";
 import {
   CURRENT_EXPORT_SCHEMA_VERSION,
   householdExportSchema,
@@ -103,7 +105,8 @@ export const importService = {
     targetHouseholdId: string,
     callerUserId: string,
     rawData: unknown,
-    mode: ImportOptions["mode"]
+    mode: ImportOptions["mode"],
+    ctx?: ActorCtx
   ): Promise<{ success: boolean; householdId: string; backupId?: string }> {
     // Validate first — version check included
     const validation = this.validateImportData(rawData);
@@ -182,7 +185,6 @@ export const importService = {
           await tx.snapshot.deleteMany({ where: { householdId } });
           await tx.householdInvite.deleteMany({ where: { householdId } });
           await tx.reviewSession.deleteMany({ where: { householdId } });
-          await tx.waterfallSetupSession.deleteMany({ where: { householdId } });
 
           // Collect existing waterfall item ids so we can purge periods/history.
           const [existingIncome, existingCommitted, existingDiscretionary] = await Promise.all([
@@ -466,7 +468,6 @@ export const importService = {
                 type: a.type,
                 memberId: a.ownerName ? (memberIdByName.get(a.ownerName) ?? null) : null,
                 growthRatePct: a.growthRatePct ?? null,
-                monthlyContribution: a.monthlyContribution,
                 isCashflowLinked: a.isCashflowLinked ?? false,
                 lastReviewedAt: a.lastReviewedAt ? new Date(a.lastReviewedAt) : null,
               },
@@ -625,6 +626,35 @@ export const importService = {
               );
             }
           }
+        }
+
+        // Write single IMPORT_DATA audit row with counts
+        if (ctx) {
+          await (tx as any).auditLog.create({
+            data: {
+              householdId,
+              actorId: ctx.actorId,
+              actorName: ctx.actorName,
+              ipAddress: ctx.ipAddress,
+              userAgent: ctx.userAgent,
+              action: AuditAction.IMPORT_DATA,
+              resource: "household",
+              resourceId: householdId,
+              metadata: {
+                counts: {
+                  incomeSources: data.incomeSources.length,
+                  committedItems: data.committedItems.length,
+                  discretionaryItems: data.discretionaryItems.length,
+                  assets: data.assets?.length ?? 0,
+                  accounts: data.accounts?.length ?? 0,
+                  members: data.members.length,
+                  giftPeople: data.gifts?.people.length ?? 0,
+                  giftEvents: data.gifts?.events.length ?? 0,
+                  giftAllocations: data.gifts?.allocations.length ?? 0,
+                },
+              },
+            },
+          });
         }
 
         return householdId;

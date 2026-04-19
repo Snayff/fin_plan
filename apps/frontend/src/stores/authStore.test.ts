@@ -1,7 +1,20 @@
-import { describe, it, expect, mock, beforeEach } from "bun:test";
+import { describe, it, expect, mock, beforeEach, afterEach } from "bun:test";
 import { useAuthStore } from "./authStore";
 import { setAuthenticated, mockUser } from "../test/helpers/auth";
 import { authService } from "../services/auth.service";
+
+function base64url(value: string): string {
+  return btoa(value).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+
+function tokenExpiringInMs(ms: number): string {
+  const exp = Math.floor((Date.now() + ms) / 1000);
+  const header = base64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+  const body = base64url(JSON.stringify({ sub: "user-1", exp }));
+  return `${header}.${body}.signature`;
+}
+
+const wait = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const loginMock = mock(() => {});
 const registerMock = mock(() => {});
@@ -30,6 +43,11 @@ beforeEach(() => {
     isLoading: false,
     error: null,
   });
+});
+
+afterEach(() => {
+  // Clear any scheduled refresh timers between tests so they don't bleed across.
+  useAuthStore.getState().setUnauthenticated();
 });
 
 describe("useAuthStore", () => {
@@ -203,6 +221,66 @@ describe("useAuthStore", () => {
     it("updates the access token", () => {
       useAuthStore.getState().updateAccessToken("new-token");
       expect(useAuthStore.getState().accessToken).toBe("new-token");
+    });
+  });
+
+  describe("proactive refresh scheduling", () => {
+    it("triggers refresh almost immediately when setUser receives a near-expiry token", async () => {
+      const replacement = tokenExpiringInMs(60 * 60 * 1000);
+      (authService.refreshToken as any).mockResolvedValue({ accessToken: replacement });
+
+      useAuthStore.getState().setUser(mockUser, tokenExpiringInMs(50));
+
+      await wait(50);
+      expect(refreshTokenMock).toHaveBeenCalledTimes(1);
+      expect(useAuthStore.getState().accessToken).toBe(replacement);
+    });
+
+    it("does not refresh when the token has plenty of life left", async () => {
+      useAuthStore.getState().setUser(mockUser, tokenExpiringInMs(60 * 60 * 1000));
+
+      await wait(50);
+      expect(refreshTokenMock).not.toHaveBeenCalled();
+    });
+
+    it("cancels the scheduled refresh on setUnauthenticated", async () => {
+      useAuthStore.getState().setUser(mockUser, tokenExpiringInMs(50));
+      useAuthStore.getState().setUnauthenticated();
+
+      await wait(50);
+      expect(refreshTokenMock).not.toHaveBeenCalled();
+    });
+
+    it("reschedules when updateAccessToken receives a new near-expiry token", async () => {
+      const replacement = tokenExpiringInMs(60 * 60 * 1000);
+      (authService.refreshToken as any).mockResolvedValue({ accessToken: replacement });
+
+      useAuthStore.getState().setUser(mockUser, tokenExpiringInMs(60 * 60 * 1000));
+      useAuthStore.getState().updateAccessToken(tokenExpiringInMs(50));
+
+      await wait(50);
+      expect(refreshTokenMock).toHaveBeenCalledTimes(1);
+    });
+
+    it("clears auth state when the scheduled refresh fails", async () => {
+      setAuthenticated(mockUser, tokenExpiringInMs(60 * 60 * 1000));
+      (authService.refreshToken as any).mockRejectedValue({ message: "expired" });
+
+      useAuthStore.getState().updateAccessToken(tokenExpiringInMs(50));
+
+      await wait(50);
+      expect(useAuthStore.getState().authStatus).toBe("unauthenticated");
+    });
+
+    it("ignores tokens with no exp claim (no infinite reschedule loop)", async () => {
+      const header = base64url(JSON.stringify({ alg: "HS256", typ: "JWT" }));
+      const body = base64url(JSON.stringify({ sub: "user-1" }));
+      const noExpToken = `${header}.${body}.sig`;
+
+      useAuthStore.getState().setUser(mockUser, noExpToken);
+
+      await wait(50);
+      expect(refreshTokenMock).not.toHaveBeenCalled();
     });
   });
 });

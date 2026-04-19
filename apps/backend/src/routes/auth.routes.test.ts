@@ -22,6 +22,11 @@ mock.module("../middleware/auth.middleware", () => ({
   authMiddleware: mock(() => {}),
 }));
 
+const mockAuditLog = mock(() => {});
+mock.module("../services/audit.service", () => ({
+  auditService: { log: mockAuditLog },
+}));
+
 import { authService } from "../services/auth.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { authRoutes } from "./auth.routes";
@@ -40,6 +45,7 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
+  mockAuditLog.mockClear();
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
@@ -399,5 +405,30 @@ describe("PATCH /api/auth/me", () => {
     });
 
     expect(response.statusCode).toBe(401);
+  });
+
+  it("PATCH /api/auth/me writes UPDATE_PROFILE audit row with before/after name", async () => {
+    const oldUser = { id: "user-1", email: "test@test.com", name: "Old Name" };
+    const updatedUser = { id: "user-1", email: "test@test.com", name: "New Name" };
+    (authService.findUserById as any).mockResolvedValueOnce(oldUser);
+    (authService.updateUserName as any).mockResolvedValue(updatedUser);
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/auth/me",
+      headers: { Authorization: "Bearer valid-token" },
+      payload: { name: "New Name" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mockAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        action: "UPDATE_PROFILE",
+        resource: "user",
+        resourceId: "user-1",
+        metadata: { before: { name: "Old Name" }, after: { name: "New Name" } },
+      })
+    );
   });
 });

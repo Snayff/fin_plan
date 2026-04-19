@@ -2,10 +2,12 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "../config/database.js";
 import { AuthorizationError, NotFoundError } from "../utils/errors.js";
 import {
+  AuditAction,
   CURRENT_EXPORT_SCHEMA_VERSION,
   householdExportSchema,
   type HouseholdExport,
 } from "@finplan/shared";
+import type { ActorCtx } from "./audit.service.js";
 
 /**
  * Assert that the requesting user is an owner of the household.
@@ -37,10 +39,14 @@ export const exportService = {
    *
    * Excludes audit logs, snapshots, and user account data.
    */
-  async exportHousehold(householdId: string, userId: string): Promise<HouseholdExport> {
+  async exportHousehold(
+    householdId: string,
+    userId: string,
+    ctx?: ActorCtx
+  ): Promise<HouseholdExport> {
     await assertExportAccess(householdId, userId);
 
-    return prisma.$transaction(
+    const result = await prisma.$transaction(
       async (tx) => {
         const household = await tx.household.findUnique({ where: { id: householdId } });
         if (!household) {
@@ -254,7 +260,6 @@ export const exportService = {
             type: a.type,
             ownerName: a.memberId ? (memberNameByMemberId.get(a.memberId) ?? null) : null,
             growthRatePct: a.growthRatePct,
-            monthlyContribution: a.monthlyContribution,
             isCashflowLinked: a.isCashflowLinked,
             lastReviewedAt: a.lastReviewedAt ? a.lastReviewedAt.toISOString() : null,
             balances: a.balances.map((b) => ({
@@ -322,5 +327,39 @@ export const exportService = {
       },
       { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
     );
+
+    // Write a single audit row for this export (read-only operation — no transaction required)
+    if (ctx) {
+      await prisma.auditLog.create({
+        data: {
+          householdId: ctx.householdId,
+          actorId: ctx.actorId,
+          actorName: ctx.actorName,
+          ipAddress: ctx.ipAddress,
+          userAgent: ctx.userAgent,
+          action: AuditAction.EXPORT_DATA,
+          resource: "household",
+          resourceId: householdId,
+          metadata: {
+            counts: {
+              members: result.members.length,
+              subcategories: result.subcategories.length,
+              incomeSources: result.incomeSources.length,
+              committedItems: result.committedItems.length,
+              discretionaryItems: result.discretionaryItems.length,
+              assets: result.assets.length,
+              accounts: result.accounts.length,
+              purchaseItems: result.purchaseItems.length,
+              plannerYearBudgets: result.plannerYearBudgets.length,
+              giftPeople: result.gifts?.people.length ?? 0,
+              giftEvents: result.gifts?.events.length ?? 0,
+              giftAllocations: result.gifts?.allocations.length ?? 0,
+            },
+          },
+        },
+      });
+    }
+
+    return result;
   },
 };

@@ -14,7 +14,6 @@ import { plannerRoutes } from "./routes/planner.routes";
 import { settingsRoutes } from "./routes/settings.routes";
 import { snapshotRoutes } from "./routes/snapshots.routes";
 import { reviewRoutes } from "./routes/review-session.routes";
-import { setupRoutes } from "./routes/setup-session.routes";
 import { auditLogRoutes } from "./routes/audit-log.routes";
 import { assetsRoutes } from "./routes/assets.routes";
 import { forecastRoutes } from "./routes/forecast.routes";
@@ -22,7 +21,10 @@ import { giftsRoutes } from "./routes/gifts.routes";
 import { exportImportRoutes } from "./routes/export-import.routes.js";
 import { cashflowRoutes } from "./routes/cashflow.routes";
 import { searchRoutes } from "./routes/search.routes.js";
+import { securityActivityRoutes } from "./routes/security-activity.routes.js";
 import { errorHandler } from "./middleware/errorHandler";
+import { prisma } from "./config/database";
+import { startRetentionJob } from "./services/retention.service";
 
 export async function buildApp(opts?: { logger?: boolean | object }): Promise<FastifyInstance> {
   const server = Fastify({
@@ -100,13 +102,15 @@ export async function buildApp(opts?: { logger?: boolean | object }): Promise<Fa
   server.register(settingsRoutes, { prefix: "/api/settings" });
   server.register(snapshotRoutes, { prefix: "/api/snapshots" });
   server.register(reviewRoutes, { prefix: "/api/review-session" });
-  server.register(setupRoutes, { prefix: "/api/setup-session" });
   server.register(auditLogRoutes, { prefix: "/api" });
   server.register(assetsRoutes, { prefix: "/api/assets" });
   server.register(forecastRoutes, { prefix: "/api/forecast" });
   server.register(giftsRoutes, { prefix: "/api/gifts" });
   server.register(cashflowRoutes, { prefix: "/api/cashflow" });
   server.register(searchRoutes, { prefix: "/api/search" });
+  server.register(securityActivityRoutes, { prefix: "/api" });
+
+  startRetentionJob(prisma);
 
   return server;
 }

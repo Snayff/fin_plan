@@ -31,6 +31,13 @@ export interface AssetItem {
   }>;
 }
 
+export interface LinkedContributionItem {
+  id: string;
+  name: string;
+  spendType: string;
+  amount: number;
+}
+
 export interface AccountItem {
   id: string;
   name: string;
@@ -43,6 +50,8 @@ export interface AccountItem {
   updatedAt: string;
   currentBalance: number;
   currentBalanceDate: string | null;
+  monthlyContribution: number;
+  linkedItems: LinkedContributionItem[];
   balances: Array<{
     id: string;
     value: number;
