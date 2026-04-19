@@ -240,6 +240,16 @@ export function useDeleteMember() {
   });
 }
 
+export function useDismissWaterfallTip() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => settingsService.dismissWaterfallTip(),
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.settings });
+    },
+  });
+}
+
 export function useUpdateMemberRole(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({

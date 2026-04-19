@@ -33,6 +33,7 @@ export const ResourceSlugEnum = z.enum([
   "account",
   "account-balance",
   "session",
+  "subcategory",
 ]);
 export type ResourceSlug = z.infer<typeof ResourceSlugEnum>;
 
@@ -76,6 +77,7 @@ export const AuditAction = {
   CREATE_DISCRETIONARY_ITEM: "CREATE_DISCRETIONARY_ITEM",
   UPDATE_DISCRETIONARY_ITEM: "UPDATE_DISCRETIONARY_ITEM",
   DELETE_DISCRETIONARY_ITEM: "DELETE_DISCRETIONARY_ITEM",
+  CREATE_SUBCATEGORY: "CREATE_SUBCATEGORY",
 
   // Wealth
   CREATE_WEALTH_ACCOUNT: "CREATE_WEALTH_ACCOUNT",

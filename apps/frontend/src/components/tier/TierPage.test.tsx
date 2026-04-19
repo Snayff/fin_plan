@@ -7,6 +7,19 @@ let _searchParams = new URLSearchParams();
 
 mock.module("react-router-dom", () => ({
   useSearchParams: () => [_searchParams, () => {}],
+  Link: ({
+    to,
+    children,
+    ...props
+  }: {
+    to: string;
+    children: React.ReactNode;
+    [k: string]: unknown;
+  }) => (
+    <a href={to} {...props}>
+      {children}
+    </a>
+  ),
 }));
 
 mock.module("@/hooks/useWaterfall", () => ({

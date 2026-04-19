@@ -344,7 +344,6 @@ describe("importService.importHousehold", () => {
     prismaMock.snapshot.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.householdInvite.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.reviewSession.deleteMany.mockResolvedValue(deleteManyResult);
-    prismaMock.waterfallSetupSession.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.itemAmountPeriod.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.waterfallHistory.deleteMany.mockResolvedValue(deleteManyResult);
     prismaMock.incomeSource.deleteMany.mockResolvedValue(deleteManyResult);
@@ -426,9 +425,12 @@ describe("importService.importHousehold", () => {
     expect(prismaMock.reviewSession.deleteMany).toHaveBeenCalledWith({
       where: { householdId: "household-1" },
     });
-    expect(prismaMock.waterfallSetupSession.deleteMany).toHaveBeenCalledWith({
-      where: { householdId: "household-1" },
-    });
+  });
+
+  it("does not reference waterfallSetupSession during import wipe", async () => {
+    const { prismaMock } = await import("../test/mocks/prisma");
+    // @ts-expect-error — asserting model is removed from the mock
+    expect(prismaMock.waterfallSetupSession).toBeUndefined();
   });
 
   it("writes one IMPORT_DATA audit row with counts metadata on create_new", async () => {

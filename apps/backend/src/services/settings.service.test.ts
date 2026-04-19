@@ -91,3 +91,40 @@ describe("settingsService.updateSettings with audited()", () => {
     expect(prismaMock.auditLog.create).toHaveBeenCalled();
   });
 });
+
+describe("HouseholdSettings.waterfallTipDismissed", () => {
+  it("defaults to false for a new household", async () => {
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+    prismaMock.householdSettings.create.mockResolvedValue({
+      householdId: "hh-1",
+      waterfallTipDismissed: false,
+    } as any);
+
+    const settings = await settingsService.getSettings("hh-1");
+
+    expect(settings.waterfallTipDismissed).toBe(false);
+  });
+
+  it("can be updated to true via updateSettings", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+    prismaMock.householdSettings.upsert.mockResolvedValue({
+      householdId: "hh-1",
+      waterfallTipDismissed: true,
+    } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    const updated = await settingsService.updateSettings(
+      "hh-1",
+      { waterfallTipDismissed: true },
+      ctx
+    );
+
+    expect(updated.waterfallTipDismissed).toBe(true);
+    expect(prismaMock.householdSettings.upsert).toHaveBeenCalledWith({
+      where: { householdId: "hh-1" },
+      create: { householdId: "hh-1", waterfallTipDismissed: true },
+      update: { waterfallTipDismissed: true },
+    });
+  });
+});

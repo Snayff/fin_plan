@@ -85,6 +85,9 @@ export const waterfallService = {
   getSubcategoryCounts: (tier: "income" | "committed" | "discretionary") =>
     apiClient.get<Record<string, number>>(`/api/waterfall/subcategories/${tier}/counts`),
 
+  createSubcategory: (tier: "income" | "committed" | "discretionary", name: string) =>
+    apiClient.post<SubcategoryRow>(`/api/waterfall/subcategories/${tier}`, { name }),
+
   saveSubcategories: (
     tier: "income" | "committed" | "discretionary",
     data: BatchSaveSubcategoriesInput

@@ -176,3 +176,10 @@ describe("Current account type", () => {
     expect(result.success).toBe(true);
   });
 });
+
+describe("setup-session schema removal", () => {
+  it("does not export updateSetupSessionSchema", async () => {
+    const mod = await import("../index");
+    expect((mod as Record<string, unknown>).updateSetupSessionSchema).toBeUndefined();
+  });
+});

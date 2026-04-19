@@ -185,7 +185,6 @@ export const importService = {
           await tx.snapshot.deleteMany({ where: { householdId } });
           await tx.householdInvite.deleteMany({ where: { householdId } });
           await tx.reviewSession.deleteMany({ where: { householdId } });
-          await tx.waterfallSetupSession.deleteMany({ where: { householdId } });
 
           // Collect existing waterfall item ids so we can purge periods/history.
           const [existingIncome, existingCommitted, existingDiscretionary] = await Promise.all([
