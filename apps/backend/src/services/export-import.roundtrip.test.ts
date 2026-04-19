@@ -170,7 +170,6 @@ function setupExportMocks() {
       type: "Savings",
       memberId: "member-bob",
       growthRatePct: 4.0,
-      monthlyContribution: 500,
       lastReviewedAt: new Date("2026-03-01T00:00:00Z"),
       balances: [
         {
@@ -635,7 +634,6 @@ describe("export → import round-trip", () => {
         name: "ISA",
         type: "Savings",
         memberId: "new-member-bob",
-        monthlyContribution: 500,
       }),
     });
 

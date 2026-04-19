@@ -313,7 +313,6 @@ describe("assetsService.createAccount", () => {
       householdId: HOUSEHOLD_ID,
       memberId: null,
       growthRatePct: null,
-      monthlyContribution: 0,
       isCashflowLinked: false,
       lastReviewedAt: null,
       createdAt: new Date(),

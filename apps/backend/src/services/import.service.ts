@@ -466,7 +466,6 @@ export const importService = {
                 type: a.type,
                 memberId: a.ownerName ? (memberIdByName.get(a.ownerName) ?? null) : null,
                 growthRatePct: a.growthRatePct ?? null,
-                monthlyContribution: a.monthlyContribution,
                 isCashflowLinked: a.isCashflowLinked ?? false,
                 lastReviewedAt: a.lastReviewedAt ? new Date(a.lastReviewedAt) : null,
               },
