@@ -3,7 +3,8 @@ import type { ForecastHorizon } from "@finplan/shared";
 import { TimeHorizonSelector } from "@/components/forecast/TimeHorizonSelector";
 import { NetWorthChart } from "@/components/forecast/NetWorthChart";
 import { SurplusAccumulationChart } from "@/components/forecast/SurplusAccumulationChart";
-import { RetirementChart } from "@/components/forecast/RetirementChart";
+import { AccountAccumulationChart } from "@/components/forecast/AccountAccumulationChart";
+import { RetirementSummary } from "@/components/forecast/RetirementSummary";
 import { useForecast } from "@/hooks/useForecast";
 
 const CHART_SKELETON = (
@@ -49,9 +50,11 @@ export function GrowthSectionPanel() {
             monthlyContributions={data?.monthlyContributionsByScope?.netWorth}
           />
         )}
-        <div className="grid grid-cols-2 gap-4">
+
+        <div className="grid grid-cols-3 gap-4">
           {isLoading ? (
             <>
+              {CHART_SKELETON}
               {CHART_SKELETON}
               {CHART_SKELETON}
             </>
@@ -59,18 +62,36 @@ export function GrowthSectionPanel() {
             <>
               {CHART_ERROR}
               {CHART_ERROR}
+              {CHART_ERROR}
             </>
           ) : (
             <>
               <SurplusAccumulationChart data={data?.surplus ?? []} />
-              <RetirementChart
-                members={data?.retirement ?? []}
-                horizonEndYear={horizonEndYear}
-                monthlyContributions={data?.monthlyContributionsByScope?.retirement}
+              <AccountAccumulationChart
+                label="Savings Accumulation"
+                data={data?.savings ?? []}
+                monthlyContributions={data?.monthlyContributionsByScope?.savings}
+                accent={{ stroke: "#6366f1", gradId: "savingsGrad" }}
+                emptyMessage="Add a savings account to see your projection"
+              />
+              <AccountAccumulationChart
+                label="Stocks & Shares Accumulation"
+                data={data?.stocksAndShares ?? []}
+                monthlyContributions={data?.monthlyContributionsByScope?.stocksAndShares}
+                accent={{ stroke: "#0ea5e9", gradId: "ssGrad" }}
+                emptyMessage="Add a stocks & shares account to see your projection"
               />
             </>
           )}
         </div>
+
+        {isLoading ? (
+          CHART_SKELETON
+        ) : isError ? (
+          CHART_ERROR
+        ) : (
+          <RetirementSummary members={data?.retirement ?? []} horizonEndYear={horizonEndYear} />
+        )}
       </div>
     </div>
   );

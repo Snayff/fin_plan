@@ -193,9 +193,9 @@ export const forecastService = {
       cumulative: Math.round(monthlySurplus * 12 * y),
     }));
 
-    // ── Retirement (per member: own pensions + shared savings + shared S&S) ──
-    // Savings and S&S are household-shared — both members see the full household
-    // amount, representing their joint pool (intentional, not a double-count).
+    // ── Savings & Stocks-and-Shares household series ──────────────────────────
+    // Household-shared pools — surfaced both as their own top-level series and
+    // nested inside each member's retirement projection (joint pool, intentional).
     const savingsAccounts = accounts.filter((a) => a.type === "Savings").map(toProjectableAccount);
     const ssAccounts = accounts
       .filter((a) => a.type === "StocksAndShares")
@@ -204,6 +204,16 @@ export const forecastService = {
     const savingsSums = sumAccountSeries(savingsAccounts, settings, horizonYears);
     const ssSums = sumAccountSeries(ssAccounts, settings, horizonYears);
 
+    const savings = Array.from({ length: horizonYears + 1 }, (_, y) => ({
+      year: currentYear + y,
+      balance: Math.round(savingsSums[y] ?? 0),
+    }));
+    const stocksAndShares = Array.from({ length: horizonYears + 1 }, (_, y) => ({
+      year: currentYear + y,
+      balance: Math.round(ssSums[y] ?? 0),
+    }));
+
+    // ── Retirement (per member: own pensions + shared savings + shared S&S) ──
     const retirement = members.map((member) => {
       const pensionAccounts = accounts
         .filter((a) => a.type === "Pension" && a.memberId === member.id)
@@ -226,16 +236,27 @@ export const forecastService = {
     });
 
     // ── Monthly contributions by scope ────────────────────────────────────────
-    // netWorth = all non-pension accounts; retirement = pension accounts only
+    // netWorth = all non-pension accounts; retirement = pension accounts only;
+    // savings / stocksAndShares are scoped to their account type.
+    const sumContributions = (predicate: (a: (typeof accounts)[number]) => boolean): number =>
+      accounts
+        .filter(predicate)
+        .reduce((sum, a) => sum + (monthlyContributionByAccountId.get(a.id) ?? 0), 0);
+
     const monthlyContributionsByScope = {
-      netWorth: accounts
-        .filter((a) => a.type !== "Pension")
-        .reduce((sum, a) => sum + (monthlyContributionByAccountId.get(a.id) ?? 0), 0),
-      retirement: accounts
-        .filter((a) => a.type === "Pension")
-        .reduce((sum, a) => sum + (monthlyContributionByAccountId.get(a.id) ?? 0), 0),
+      netWorth: sumContributions((a) => a.type !== "Pension"),
+      retirement: sumContributions((a) => a.type === "Pension"),
+      savings: sumContributions((a) => a.type === "Savings"),
+      stocksAndShares: sumContributions((a) => a.type === "StocksAndShares"),
     };
 
-    return { netWorth, surplus, retirement, monthlyContributionsByScope };
+    return {
+      netWorth,
+      surplus,
+      savings,
+      stocksAndShares,
+      retirement,
+      monthlyContributionsByScope,
+    };
   },
 };
