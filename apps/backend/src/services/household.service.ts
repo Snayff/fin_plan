@@ -71,7 +71,7 @@ type UpdateMemberRoleParams = {
 export async function updateMemberRole(
   db: PrismaClient,
   { householdId, callerId, targetUserId, newRole }: UpdateMemberRoleParams,
-  ctx?: ActorCtx
+  ctx: ActorCtx
 ) {
   const [caller, target] = await Promise.all([
     db.member.findFirst({
@@ -102,28 +102,21 @@ export async function updateMemberRole(
   // Must be owner or admin
   assertOwnerOrAdmin(caller.role);
 
-  if (ctx) {
-    return audited({
-      db: prisma,
-      ctx,
-      action: "UPDATE_MEMBER_ROLE",
-      resource: "household-member",
-      resourceId: targetUserId,
-      beforeFetch: async (tx) =>
-        tx.member.findFirst({
-          where: { householdId, userId: targetUserId },
-        }) as Promise<Record<string, unknown> | null>,
-      mutation: async (tx) =>
-        tx.member.update({
-          where: { id: target.id },
-          data: { role: newRole },
-        }),
-    });
-  }
-
-  return db.member.update({
-    where: { id: target.id },
-    data: { role: newRole },
+  return audited({
+    db: prisma,
+    ctx,
+    action: "UPDATE_MEMBER_ROLE",
+    resource: "household-member",
+    resourceId: targetUserId,
+    beforeFetch: async (tx) =>
+      tx.member.findFirst({
+        where: { householdId, userId: targetUserId },
+      }) as Promise<Record<string, unknown> | null>,
+    mutation: async (tx) =>
+      tx.member.update({
+        where: { id: target.id },
+        data: { role: newRole },
+      }),
   });
 }
 
@@ -204,31 +197,27 @@ export const householdService = {
     });
   },
 
-  async renameHousehold(householdId: string, ownerUserId: string, name: string, ctx?: ActorCtx) {
+  async renameHousehold(householdId: string, ownerUserId: string, name: string, ctx: ActorCtx) {
     await assertOwner(householdId, ownerUserId);
 
-    if (ctx) {
-      return audited({
-        db: prisma,
-        ctx,
-        action: AuditAction.UPDATE_HOUSEHOLD,
-        resource: "household",
-        resourceId: householdId,
-        beforeFetch: async (tx) =>
-          tx.household.findUnique({ where: { id: householdId } }) as Promise<Record<
-            string,
-            unknown
-          > | null>,
-        mutation: async (tx) => tx.household.update({ where: { id: householdId }, data: { name } }),
-      });
-    }
-
-    return prisma.household.update({ where: { id: householdId }, data: { name } });
+    return audited({
+      db: prisma,
+      ctx,
+      action: AuditAction.UPDATE_HOUSEHOLD,
+      resource: "household",
+      resourceId: householdId,
+      beforeFetch: async (tx) =>
+        tx.household.findUnique({ where: { id: householdId } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) => tx.household.update({ where: { id: householdId }, data: { name } }),
+    });
   },
 
   // ─── Members ───────────────────────────────────────────────────────────────
 
-  async removeMember(householdId: string, ownerUserId: string, memberId: string, ctx?: ActorCtx) {
+  async removeMember(householdId: string, ownerUserId: string, memberId: string, ctx: ActorCtx) {
     await assertOwner(householdId, ownerUserId);
     const target = await prisma.member.findUnique({ where: { id: memberId } });
     if (!target || target.householdId !== householdId) {
@@ -238,23 +227,19 @@ export const householdService = {
       throw new ValidationError("Owner cannot remove themselves from the household");
     }
 
-    if (ctx) {
-      await audited({
-        db: prisma,
-        ctx,
-        action: "REMOVE_MEMBER",
-        resource: "household-member",
-        resourceId: memberId,
-        beforeFetch: async (tx) =>
-          tx.member.findUnique({ where: { id: memberId } }) as Promise<Record<
-            string,
-            unknown
-          > | null>,
-        mutation: async (tx) => tx.member.delete({ where: { id: memberId } }),
-      });
-    } else {
-      await prisma.member.delete({ where: { id: memberId } });
-    }
+    await audited({
+      db: prisma,
+      ctx,
+      action: "REMOVE_MEMBER",
+      resource: "household-member",
+      resourceId: memberId,
+      beforeFetch: async (tx) =>
+        tx.member.findUnique({ where: { id: memberId } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) => tx.member.delete({ where: { id: memberId } }),
+    });
 
     // Clear stale activeHouseholdId if the removed member had a linked user
     if (target.userId) {
@@ -275,7 +260,7 @@ export const householdService = {
     }
   },
 
-  async leaveHousehold(householdId: string, userId: string, ctx?: ActorCtx) {
+  async leaveHousehold(householdId: string, userId: string, ctx: ActorCtx) {
     const member = await prisma.member.findFirst({
       where: { householdId, userId },
     });
@@ -290,23 +275,19 @@ export const householdService = {
       }
     }
 
-    if (ctx) {
-      await audited({
-        db: prisma,
-        ctx,
-        action: AuditAction.LEAVE_HOUSEHOLD,
-        resource: "household-member",
-        resourceId: member.id,
-        beforeFetch: async (tx) =>
-          tx.member.findUnique({ where: { id: member.id } }) as Promise<Record<
-            string,
-            unknown
-          > | null>,
-        mutation: async (tx) => tx.member.delete({ where: { id: member.id } }),
-      });
-    } else {
-      await prisma.member.delete({ where: { id: member.id } });
-    }
+    await audited({
+      db: prisma,
+      ctx,
+      action: AuditAction.LEAVE_HOUSEHOLD,
+      resource: "household-member",
+      resourceId: member.id,
+      beforeFetch: async (tx) =>
+        tx.member.findUnique({ where: { id: member.id } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) => tx.member.delete({ where: { id: member.id } }),
+    });
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -409,29 +390,25 @@ export const householdService = {
     return { token: rawToken, email: normalizedEmail };
   },
 
-  async cancelInvite(householdId: string, ownerUserId: string, inviteId: string, ctx?: ActorCtx) {
+  async cancelInvite(householdId: string, ownerUserId: string, inviteId: string, ctx: ActorCtx) {
     await assertOwner(householdId, ownerUserId);
 
     const invite = await prisma.householdInvite.findUnique({ where: { id: inviteId } });
     if (!invite || invite.householdId !== householdId) throw new NotFoundError("Invite not found");
 
-    if (ctx) {
-      await audited({
-        db: prisma,
-        ctx,
-        action: AuditAction.CANCEL_INVITE,
-        resource: "household-invite",
-        resourceId: inviteId,
-        beforeFetch: async (tx) =>
-          tx.householdInvite.findUnique({ where: { id: inviteId } }) as Promise<Record<
-            string,
-            unknown
-          > | null>,
-        mutation: async (tx) => tx.householdInvite.delete({ where: { id: inviteId } }),
-      });
-    } else {
-      await prisma.householdInvite.delete({ where: { id: inviteId } });
-    }
+    await audited({
+      db: prisma,
+      ctx,
+      action: AuditAction.CANCEL_INVITE,
+      resource: "household-invite",
+      resourceId: inviteId,
+      beforeFetch: async (tx) =>
+        tx.householdInvite.findUnique({ where: { id: inviteId } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) => tx.householdInvite.delete({ where: { id: inviteId } }),
+    });
   },
 
   // ─── Invite acceptance ─────────────────────────────────────────────────────

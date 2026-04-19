@@ -142,7 +142,7 @@ export async function giftsRoutes(fastify: FastifyInstance) {
 
   fastify.post("/allocations/bulk", pre, async (req, reply) => {
     const data = bulkUpsertAllocationsSchema.parse(req.body);
-    const result = await giftsService.bulkUpsertAllocations(req.householdId!, data);
+    const result = await giftsService.bulkUpsertAllocations(req.householdId!, data, actorCtx(req));
     return reply.send(result);
   });
 

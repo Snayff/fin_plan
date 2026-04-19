@@ -26,9 +26,11 @@ describe("plannerService.listPurchases", () => {
 
 describe("plannerService.createPurchase", () => {
   it("creates with householdId and current year", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
     prismaMock.purchaseItem.create.mockResolvedValue({ id: "p-1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await plannerService.createPurchase("hh-1", { name: "Bike", estimatedCost: 500 });
+    await plannerService.createPurchase("hh-1", { name: "Bike", estimatedCost: 500 }, ctx);
 
     expect(prismaMock.purchaseItem.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -42,11 +44,13 @@ describe("plannerService.createPurchase", () => {
 });
 
 describe("plannerService.updatePurchase", () => {
+  const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
+
   it("throws NotFoundError when item not found", async () => {
     prismaMock.purchaseItem.findUnique.mockResolvedValue(null);
 
     await expect(
-      plannerService.updatePurchase("hh-1", "p-1", { name: "New name" })
+      plannerService.updatePurchase("hh-1", "p-1", { name: "New name" }, ctx)
     ).rejects.toThrow("Purchase not found");
   });
 
@@ -57,20 +61,22 @@ describe("plannerService.updatePurchase", () => {
     } as any);
 
     await expect(
-      plannerService.updatePurchase("hh-1", "p-1", { name: "New name" })
+      plannerService.updatePurchase("hh-1", "p-1", { name: "New name" }, ctx)
     ).rejects.toThrow("Purchase not found");
   });
 });
 
 describe("plannerService.deletePurchase", () => {
   it("deletes when ownership verified", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
     prismaMock.purchaseItem.findUnique.mockResolvedValue({
       id: "p-1",
       householdId: "hh-1",
     } as any);
     prismaMock.purchaseItem.delete.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await plannerService.deletePurchase("hh-1", "p-1");
+    await plannerService.deletePurchase("hh-1", "p-1", ctx);
 
     expect(prismaMock.purchaseItem.delete).toHaveBeenCalledWith({ where: { id: "p-1" } });
   });
@@ -130,12 +136,13 @@ describe("plannerService.createPurchase with audited()", () => {
     );
   });
 
-  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+  it("always writes AuditLog (ctx is required)", async () => {
     prismaMock.purchaseItem.create.mockResolvedValue({ id: "p_1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await plannerService.createPurchase("hh_1", { name: "Bike", estimatedCost: 500 });
+    await plannerService.createPurchase("hh_1", { name: "Bike", estimatedCost: 500 }, actor);
 
-    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+    expect(prismaMock.auditLog.create).toHaveBeenCalled();
   });
 });
 
@@ -196,15 +203,17 @@ describe("plannerService.upsertYearBudget with ctx", () => {
     );
   });
 
-  it("does not write AuditLog when ctx is absent (backward compat)", async () => {
+  it("always writes AuditLog (ctx is required)", async () => {
+    prismaMock.plannerYearBudget.findUnique.mockResolvedValue(null);
     prismaMock.plannerYearBudget.upsert.mockResolvedValue({
       householdId: "hh_1",
       year: 2026,
     } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await plannerService.upsertYearBudget("hh_1", 2026, { purchaseBudget: 500 });
+    await plannerService.upsertYearBudget("hh_1", 2026, { purchaseBudget: 500 }, actor);
 
-    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+    expect(prismaMock.auditLog.create).toHaveBeenCalled();
   });
 });
 

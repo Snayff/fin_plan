@@ -128,8 +128,8 @@ export const memberService = {
     householdId: string,
     callerUserId: string,
     memberId: string,
-    reassignToMemberId?: string,
-    ctx: ActorCtx
+    ctx: ActorCtx,
+    reassignToMemberId?: string
   ) {
     await assertCallerIsOwner(householdId, callerUserId);
 

@@ -121,7 +121,7 @@ describe("memberService.deleteMember gifts integration", () => {
     prismaMock.member.delete.mockResolvedValue({} as any);
     prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await memberService.deleteMember("hh-1", "owner-user", "m-1", undefined, ctx);
+    await memberService.deleteMember("hh-1", "owner-user", "m-1", ctx, undefined);
 
     expect(prismaMock.giftPerson.updateMany).toHaveBeenCalledWith({
       where: { householdId: "hh-1", memberId: "m-1" },
@@ -226,7 +226,7 @@ describe("memberService audit logging", () => {
     prismaMock.giftPerson.updateMany.mockResolvedValue({ count: 0 } as any);
     prismaMock.member.delete.mockResolvedValue({} as any);
 
-    await memberService.deleteMember("hh-1", "caller-user", "m-1", undefined, ctx);
+    await memberService.deleteMember("hh-1", "caller-user", "m-1", ctx, undefined);
 
     expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
       expect.objectContaining({

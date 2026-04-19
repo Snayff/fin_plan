@@ -278,7 +278,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const userId = request.user!.userId;
       const { id, memberId } = request.params as { id: string; memberId: string };
       const { reassignToMemberId } = deleteMemberSchema.parse(request.body ?? {});
-      await memberService.deleteMember(id, userId, memberId, reassignToMemberId, actorCtx(request));
+      await memberService.deleteMember(id, userId, memberId, actorCtx(request), reassignToMemberId);
       return reply.send({ success: true });
     }
   );

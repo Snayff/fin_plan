@@ -24,64 +24,52 @@ export const plannerService = {
     });
   },
 
-  async createPurchase(householdId: string, data: CreatePurchaseInput, ctx?: ActorCtx) {
-    if (ctx) {
-      return audited({
-        db: prisma,
-        ctx,
-        action: "CREATE_PLANNER_GOAL",
-        resource: "planner-goal",
-        resourceId: (after: { id: string }) => after.id,
-        beforeFetch: async () => null,
-        mutation: async (tx) =>
-          tx.purchaseItem.create({
-            data: { ...data, householdId, yearAdded: new Date().getFullYear() },
-          }),
-      });
-    }
-    return prisma.purchaseItem.create({
-      data: { ...data, householdId, yearAdded: new Date().getFullYear() },
+  async createPurchase(householdId: string, data: CreatePurchaseInput, ctx: ActorCtx) {
+    return audited({
+      db: prisma,
+      ctx,
+      action: "CREATE_PLANNER_GOAL",
+      resource: "planner-goal",
+      resourceId: (after: { id: string }) => after.id,
+      beforeFetch: async () => null,
+      mutation: async (tx) =>
+        tx.purchaseItem.create({
+          data: { ...data, householdId, yearAdded: new Date().getFullYear() },
+        }),
     });
   },
 
-  async updatePurchase(householdId: string, id: string, data: UpdatePurchaseInput, ctx?: ActorCtx) {
+  async updatePurchase(householdId: string, id: string, data: UpdatePurchaseInput, ctx: ActorCtx) {
     const existing = await prisma.purchaseItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Purchase");
-    if (ctx) {
-      return audited({
-        db: prisma,
-        ctx,
-        action: "UPDATE_PLANNER_GOAL",
-        resource: "planner-goal",
-        resourceId: id,
-        beforeFetch: async (tx) =>
-          tx.purchaseItem.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
-        mutation: async (tx) => tx.purchaseItem.update({ where: { id }, data }),
-      });
-    }
-    return prisma.purchaseItem.update({ where: { id }, data });
+    return audited({
+      db: prisma,
+      ctx,
+      action: "UPDATE_PLANNER_GOAL",
+      resource: "planner-goal",
+      resourceId: id,
+      beforeFetch: async (tx) =>
+        tx.purchaseItem.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+      mutation: async (tx) => tx.purchaseItem.update({ where: { id }, data }),
+    });
   },
 
-  async deletePurchase(householdId: string, id: string, ctx?: ActorCtx) {
+  async deletePurchase(householdId: string, id: string, ctx: ActorCtx) {
     const existing = await prisma.purchaseItem.findUnique({ where: { id } });
     assertOwned(existing, householdId, "Purchase");
-    if (ctx) {
-      await audited({
-        db: prisma,
-        ctx,
-        action: "DELETE_PLANNER_GOAL",
-        resource: "planner-goal",
-        resourceId: id,
-        beforeFetch: async (tx) =>
-          tx.purchaseItem.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
-        mutation: async (tx) => {
-          await tx.purchaseItem.delete({ where: { id } });
-          return null;
-        },
-      });
-      return;
-    }
-    await prisma.purchaseItem.delete({ where: { id } });
+    await audited({
+      db: prisma,
+      ctx,
+      action: "DELETE_PLANNER_GOAL",
+      resource: "planner-goal",
+      resourceId: id,
+      beforeFetch: async (tx) =>
+        tx.purchaseItem.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+      mutation: async (tx) => {
+        await tx.purchaseItem.delete({ where: { id } });
+        return null;
+      },
+    });
   },
 
   // ─── Year budget ──────────────────────────────────────────────────────────
@@ -99,42 +87,35 @@ export const plannerService = {
     householdId: string,
     year: number,
     data: UpsertYearBudgetInput,
-    ctx?: ActorCtx
+    ctx: ActorCtx
   ) {
-    if (ctx) {
-      return prisma.$transaction(async (tx) => {
-        const existing = await tx.plannerYearBudget.findUnique({
-          where: { householdId_year: { householdId, year } },
-        });
-        const isNew = existing === null;
-
-        const result = await tx.plannerYearBudget.upsert({
-          where: { householdId_year: { householdId, year } },
-          create: { householdId, year, ...data },
-          update: data,
-        });
-
-        await (tx as any).auditLog.create({
-          data: {
-            householdId: ctx.householdId,
-            actorId: ctx.actorId,
-            actorName: ctx.actorName,
-            ipAddress: ctx.ipAddress,
-            userAgent: ctx.userAgent,
-            action: AuditAction.UPSERT_YEAR_BUDGET,
-            resource: "year-budget",
-            resourceId: String(year),
-            metadata: { counts: { created: isNew ? 1 : 0, updated: isNew ? 0 : 1 } },
-          },
-        });
-
-        return result;
+    return prisma.$transaction(async (tx) => {
+      const existing = await tx.plannerYearBudget.findUnique({
+        where: { householdId_year: { householdId, year } },
       });
-    }
-    return prisma.plannerYearBudget.upsert({
-      where: { householdId_year: { householdId, year } },
-      create: { householdId, year, ...data },
-      update: data,
+      const isNew = existing === null;
+
+      const result = await tx.plannerYearBudget.upsert({
+        where: { householdId_year: { householdId, year } },
+        create: { householdId, year, ...data },
+        update: data,
+      });
+
+      await (tx as any).auditLog.create({
+        data: {
+          householdId: ctx.householdId,
+          actorId: ctx.actorId,
+          actorName: ctx.actorName,
+          ipAddress: ctx.ipAddress,
+          userAgent: ctx.userAgent,
+          action: AuditAction.UPSERT_YEAR_BUDGET,
+          resource: "year-budget",
+          resourceId: String(year),
+          metadata: { counts: { created: isNew ? 1 : 0, updated: isNew ? 0 : 1 } },
+        },
+      });
+
+      return result;
     });
   },
 };
