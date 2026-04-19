@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { formatCurrency } from "@/utils/format";
 import type { TierItemRow } from "@/hooks/useWaterfall";
 
 interface Member {
@@ -158,6 +159,13 @@ export function TierRow({ tier, item, members, onSaveName, onSaveAmount, onDelet
           </td>
         )}
 
+        {/* /month equivalent */}
+        <td className="px-2 py-1.5 text-right font-numeric tabular-nums text-sm text-text-tertiary">
+          {tier === "income"
+            ? formatCurrency(item.amount)
+            : formatCurrency(Math.round(item.amount / 12))}
+        </td>
+
         {/* Delete button */}
         <td className="w-8 px-1 py-1.5 text-right">
           <button
@@ -198,7 +206,7 @@ export function TierRow({ tier, item, members, onSaveName, onSaveAmount, onDelet
       {/* Inline confirm UI — avoids needing a portal */}
       {confirmOpen && (
         <tr>
-          <td colSpan={tier === "income" ? 6 : 5} className="px-2 py-2">
+          <td colSpan={tier === "income" ? 7 : 6} className="px-2 py-2">
             <div className="flex items-center gap-3 rounded border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm">
               <span className="flex-1 text-text-secondary">
                 Delete <strong className="font-medium">{item.name}</strong>? This cannot be undone.

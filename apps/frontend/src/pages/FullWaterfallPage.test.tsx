@@ -22,6 +22,7 @@ mock.module("@/hooks/useWaterfall", () => ({
 mock.module("@/hooks/useSettings", () => ({
   useSettings: () => ({ data: null, isLoading: false }),
   useDismissWaterfallTip: () => ({ mutate: () => {} }),
+  useHouseholdMembers: () => ({ data: [] }),
 }));
 
 describe("FullWaterfallPage", () => {

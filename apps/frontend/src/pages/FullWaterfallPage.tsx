@@ -1,14 +1,14 @@
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useFullWaterfall, useCreateSubcategory } from "@/hooks/useWaterfall";
-import { useSettings, useDismissWaterfallTip } from "@/hooks/useSettings";
+import { useSettings, useDismissWaterfallTip, useHouseholdMembers } from "@/hooks/useSettings";
 import { waterfallService } from "@/services/waterfall.service";
+import { formatCurrency } from "@/utils/format";
 import { WaterfallTierTable } from "@/components/waterfall/WaterfallTierTable";
 import { SurplusStrip } from "@/components/waterfall/SurplusStrip";
 import { TipBanner } from "@/components/waterfall/TipBanner";
 import { NetworkStatusBanner } from "@/components/waterfall/NetworkStatusBanner";
 import { WaterfallConnector } from "@/components/overview/WaterfallConnector";
-import { useHouseholdMembers } from "@/hooks/useSettings";
 import type { PeriodItemType } from "@finplan/shared";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -167,7 +167,7 @@ export default function FullWaterfallPage() {
             onDeleteItem={makeDeleteItem("income")}
           />
 
-          <WaterfallConnector text={`−  ${formatCurrencySimple(committedTotal)}  committed`} />
+          <WaterfallConnector text={`−  ${formatCurrency(committedTotal)}  committed`} />
 
           {/* Committed tier */}
           <WaterfallTierTable
@@ -182,9 +182,7 @@ export default function FullWaterfallPage() {
             onDeleteItem={makeDeleteItem("committed")}
           />
 
-          <WaterfallConnector
-            text={`−  ${formatCurrencySimple(discretionaryTotal)}  discretionary`}
-          />
+          <WaterfallConnector text={`−  ${formatCurrency(discretionaryTotal)}  discretionary`} />
 
           {/* Discretionary tier */}
           <WaterfallTierTable
@@ -209,14 +207,4 @@ export default function FullWaterfallPage() {
       </div>
     </div>
   );
-}
-
-// ── Minimal currency formatter (no import needed) ─────────────────────────────
-function formatCurrencySimple(amount: number): string {
-  return new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount / 100);
 }

@@ -404,7 +404,8 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
       const sub = await subcategoryService.create(
         req.householdId!,
         tierParsed.data,
-        bodyParsed.data.name
+        bodyParsed.data.name,
+        actorCtx(req)
       );
       return reply.status(201).send(sub);
     } catch (err: any) {
