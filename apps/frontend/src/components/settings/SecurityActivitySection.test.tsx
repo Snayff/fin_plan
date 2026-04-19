@@ -1,7 +1,6 @@
 import { describe, it, expect, mock } from "bun:test";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/helpers/render";
-import { SecurityActivitySection } from "./SecurityActivitySection";
 import type { SecurityActivityEntry } from "@finplan/shared";
 
 function makeEntry(overrides: Partial<SecurityActivityEntry>): SecurityActivityEntry {
