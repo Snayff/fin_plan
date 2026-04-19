@@ -53,12 +53,7 @@ describe('AcceptInvitePage', () => {
 
     renderAcceptInvitePage();
 
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: /join my household/i })).toBeTruthy();
-    });
-
-    await userEvent.click(screen.getByRole('button', { name: /join my household/i }));
-
+    // When authenticated, the component auto-joins via useEffect — no button click needed
     await waitFor(() => {
       expect(
         screen.getByText(
