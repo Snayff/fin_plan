@@ -233,14 +233,3 @@ export function TierRow({ tier, item, members, onSaveName, onSaveAmount, onDelet
     </>
   );
 }
-
-/**
- * Helper to derive the period itemType string from a tier name.
- */
-export function tierToPeriodItemType(
-  tier: "income" | "committed" | "discretionary"
-): "income_source" | "committed_item" | "discretionary_item" {
-  if (tier === "income") return "income_source";
-  if (tier === "committed") return "committed_item";
-  return "discretionary_item";
-}

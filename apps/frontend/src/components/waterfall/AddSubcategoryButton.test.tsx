@@ -9,7 +9,7 @@ describe("AddSubcategoryButton", () => {
   });
 
   it("toggles to inline input on click, submits name, and resets on success", async () => {
-    const onCreate = mock((name: string) => Promise.resolve());
+    const onCreate = mock((_name: string) => Promise.resolve());
     render(<AddSubcategoryButton onCreate={onCreate} />);
     fireEvent.click(screen.getByRole("button", { name: /add subcategory/i }));
     const input = screen.getByPlaceholderText(/new subcategory/i) as HTMLInputElement;
