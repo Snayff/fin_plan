@@ -1,6 +1,7 @@
 import { describe, it, expect, mock } from "bun:test";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import ItemArea from "./ItemArea";
 import { TIER_CONFIGS } from "./tierConfig";
 
@@ -40,17 +41,19 @@ const subcategories = [{ id: "sub-housing", name: "Housing" }];
 function renderArea(itemList = items) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={qc}>
-      <ItemArea
-        tier="committed"
-        config={TIER_CONFIGS.committed}
-        subcategory={subcategory}
-        subcategories={subcategories}
-        items={itemList}
-        isLoading={false}
-        now={new Date("2026-01-15")}
-      />
-    </QueryClientProvider>
+    <MemoryRouter>
+      <QueryClientProvider client={qc}>
+        <ItemArea
+          tier="committed"
+          config={TIER_CONFIGS.committed}
+          subcategory={subcategory}
+          subcategories={subcategories}
+          items={itemList}
+          isLoading={false}
+          now={new Date("2026-01-15")}
+        />
+      </QueryClientProvider>
+    </MemoryRouter>
   );
 }
 
@@ -109,5 +112,11 @@ describe("ItemArea", () => {
     await waitFor(() => {
       expect(screen.queryByText("Notes")).toBeNull();
     });
+  });
+
+  it("renders a 'View all' link pointing to /waterfall#committed", () => {
+    renderArea();
+    const link = screen.getByRole("link", { name: /view all/i });
+    expect(link.getAttribute("href")).toBe("/waterfall#committed");
   });
 });

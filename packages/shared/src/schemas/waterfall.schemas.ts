@@ -425,3 +425,11 @@ export const resetSubcategoriesSchema = z.object({
 });
 
 export type ResetSubcategoriesInput = z.infer<typeof resetSubcategoriesSchema>;
+
+// ─── Quick-add subcategory ───────────────────────────────────────────────────
+
+export const createSubcategorySchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(40),
+});
+
+export type CreateSubcategoryInput = z.infer<typeof createSubcategorySchema>;

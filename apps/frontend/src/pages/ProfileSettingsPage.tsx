@@ -6,10 +6,12 @@ import {
 } from "@/components/settings/SettingsRightPanel";
 import { ProfileSection } from "@/components/settings/ProfileSection";
 import { DisplaySection } from "@/components/settings/DisplaySection";
+import { SecurityActivitySection } from "@/components/settings/SecurityActivitySection";
 
 const ITEMS: SettingsNavItem[] = [
   { id: "account", label: "Account" },
   { id: "display", label: "Display" },
+  { id: "security-activity", label: "Security activity" },
 ];
 
 export default function ProfileSettingsPage() {
@@ -38,6 +40,7 @@ export default function ProfileSettingsPage() {
       >
         <ProfileSection />
         <DisplaySection />
+        <SecurityActivitySection />
       </SettingsRightPanel>
     </div>
   );

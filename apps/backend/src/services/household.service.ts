@@ -17,6 +17,7 @@ import {
 } from "../utils/errors.js";
 import { audited } from "./audit.service.js";
 import type { ActorCtx } from "./audit.service.js";
+import { AuditAction } from "@finplan/shared";
 
 const INVITE_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 hours
 const IDLE_SESSION_MS = 7 * 24 * 60 * 60 * 1000;
@@ -70,7 +71,7 @@ type UpdateMemberRoleParams = {
 export async function updateMemberRole(
   db: PrismaClient,
   { householdId, callerId, targetUserId, newRole }: UpdateMemberRoleParams,
-  ctx?: ActorCtx
+  ctx: ActorCtx
 ) {
   const [caller, target] = await Promise.all([
     db.member.findFirst({
@@ -101,28 +102,21 @@ export async function updateMemberRole(
   // Must be owner or admin
   assertOwnerOrAdmin(caller.role);
 
-  if (ctx) {
-    return audited({
-      db: prisma,
-      ctx,
-      action: "UPDATE_MEMBER_ROLE",
-      resource: "household-member",
-      resourceId: targetUserId,
-      beforeFetch: async (tx) =>
-        tx.member.findFirst({
-          where: { householdId, userId: targetUserId },
-        }) as Promise<Record<string, unknown> | null>,
-      mutation: async (tx) =>
-        tx.member.update({
-          where: { id: target.id },
-          data: { role: newRole },
-        }),
-    });
-  }
-
-  return db.member.update({
-    where: { id: target.id },
-    data: { role: newRole },
+  return audited({
+    db: prisma,
+    ctx,
+    action: AuditAction.UPDATE_MEMBER_ROLE,
+    resource: "household-member",
+    resourceId: targetUserId,
+    beforeFetch: async (tx) =>
+      tx.member.findFirst({
+        where: { householdId, userId: targetUserId },
+      }) as Promise<Record<string, unknown> | null>,
+    mutation: async (tx) =>
+      tx.member.update({
+        where: { id: target.id },
+        data: { role: newRole },
+      }),
   });
 }
 
@@ -203,14 +197,27 @@ export const householdService = {
     });
   },
 
-  async renameHousehold(householdId: string, ownerUserId: string, name: string) {
+  async renameHousehold(householdId: string, ownerUserId: string, name: string, ctx: ActorCtx) {
     await assertOwner(householdId, ownerUserId);
-    return prisma.household.update({ where: { id: householdId }, data: { name } });
+
+    return audited({
+      db: prisma,
+      ctx,
+      action: AuditAction.UPDATE_HOUSEHOLD,
+      resource: "household",
+      resourceId: householdId,
+      beforeFetch: async (tx) =>
+        tx.household.findUnique({ where: { id: householdId } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) => tx.household.update({ where: { id: householdId }, data: { name } }),
+    });
   },
 
   // ─── Members ───────────────────────────────────────────────────────────────
 
-  async removeMember(householdId: string, ownerUserId: string, memberId: string, ctx?: ActorCtx) {
+  async removeMember(householdId: string, ownerUserId: string, memberId: string, ctx: ActorCtx) {
     await assertOwner(householdId, ownerUserId);
     const target = await prisma.member.findUnique({ where: { id: memberId } });
     if (!target || target.householdId !== householdId) {
@@ -220,23 +227,19 @@ export const householdService = {
       throw new ValidationError("Owner cannot remove themselves from the household");
     }
 
-    if (ctx) {
-      await audited({
-        db: prisma,
-        ctx,
-        action: "REMOVE_MEMBER",
-        resource: "member",
-        resourceId: memberId,
-        beforeFetch: async (tx) =>
-          tx.member.findUnique({ where: { id: memberId } }) as Promise<Record<
-            string,
-            unknown
-          > | null>,
-        mutation: async (tx) => tx.member.delete({ where: { id: memberId } }),
-      });
-    } else {
-      await prisma.member.delete({ where: { id: memberId } });
-    }
+    await audited({
+      db: prisma,
+      ctx,
+      action: AuditAction.REMOVE_MEMBER,
+      resource: "household-member",
+      resourceId: memberId,
+      beforeFetch: async (tx) =>
+        tx.member.findUnique({ where: { id: memberId } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) => tx.member.delete({ where: { id: memberId } }),
+    });
 
     // Clear stale activeHouseholdId if the removed member had a linked user
     if (target.userId) {
@@ -257,7 +260,7 @@ export const householdService = {
     }
   },
 
-  async leaveHousehold(householdId: string, userId: string) {
+  async leaveHousehold(householdId: string, userId: string, ctx: ActorCtx) {
     const member = await prisma.member.findFirst({
       where: { householdId, userId },
     });
@@ -272,7 +275,19 @@ export const householdService = {
       }
     }
 
-    await prisma.member.delete({ where: { id: member.id } });
+    await audited({
+      db: prisma,
+      ctx,
+      action: AuditAction.LEAVE_HOUSEHOLD,
+      resource: "household-member",
+      resourceId: member.id,
+      beforeFetch: async (tx) =>
+        tx.member.findUnique({ where: { id: member.id } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) => tx.member.delete({ where: { id: member.id } }),
+    });
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -298,7 +313,7 @@ export const householdService = {
     ownerUserId: string,
     email: string,
     role: "member" | "admin" = "member",
-    ctx?: ActorCtx
+    ctx: ActorCtx
   ) {
     const callerMembership = await prisma.member.findFirst({
       where: { householdId, userId: ownerUserId },
@@ -339,49 +354,48 @@ export const householdService = {
     const tokenHash = hashInviteToken(rawToken);
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_MS);
 
-    if (ctx) {
-      await audited({
-        db: prisma,
-        ctx,
-        action: "INVITE_MEMBER",
-        resource: "household-invite",
-        resourceId: tokenHash,
-        beforeFetch: async () => null,
-        mutation: async (tx) =>
-          tx.householdInvite.create({
-            data: {
-              householdId,
-              email: normalizedEmail,
-              tokenHash,
-              expiresAt,
-              createdByUserId: ownerUserId,
-              intendedRole: role,
-            },
-          }),
-      });
-    } else {
-      await prisma.householdInvite.create({
-        data: {
-          householdId,
-          email: normalizedEmail,
-          tokenHash,
-          expiresAt,
-          createdByUserId: ownerUserId,
-          intendedRole: role,
-        },
-      });
-    }
+    await audited({
+      db: prisma,
+      ctx,
+      action: AuditAction.INVITE_MEMBER,
+      resource: "household-invite",
+      resourceId: tokenHash,
+      beforeFetch: async () => null,
+      mutation: async (tx) =>
+        tx.householdInvite.create({
+          data: {
+            householdId,
+            email: normalizedEmail,
+            tokenHash,
+            expiresAt,
+            createdByUserId: ownerUserId,
+            intendedRole: role,
+          },
+        }),
+    });
 
     return { token: rawToken, email: normalizedEmail };
   },
 
-  async cancelInvite(householdId: string, ownerUserId: string, inviteId: string) {
+  async cancelInvite(householdId: string, ownerUserId: string, inviteId: string, ctx: ActorCtx) {
     await assertOwner(householdId, ownerUserId);
 
     const invite = await prisma.householdInvite.findUnique({ where: { id: inviteId } });
     if (!invite || invite.householdId !== householdId) throw new NotFoundError("Invite not found");
 
-    await prisma.householdInvite.delete({ where: { id: inviteId } });
+    await audited({
+      db: prisma,
+      ctx,
+      action: AuditAction.CANCEL_INVITE,
+      resource: "household-invite",
+      resourceId: inviteId,
+      beforeFetch: async (tx) =>
+        tx.householdInvite.findUnique({ where: { id: inviteId } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) => tx.householdInvite.delete({ where: { id: inviteId } }),
+    });
   },
 
   // ─── Invite acceptance ─────────────────────────────────────────────────────
@@ -401,7 +415,11 @@ export const householdService = {
   },
 
   /** New user accepts an invite — creates account + joins household */
-  async acceptInvite(token: string, newUser: { name: string; email: string; password: string }) {
+  async acceptInvite(
+    token: string,
+    newUser: { name: string; email: string; password: string },
+    requestCtx?: { ipAddress?: string; userAgent?: string }
+  ) {
     const invite = await this.validateInviteToken(token);
     const normalizedEmail = normalizeEmail(newUser.email);
 
@@ -492,6 +510,21 @@ export const householdService = {
         data: { usedAt: new Date() },
       });
 
+      // Audit the acceptance — actor is the newly created user
+      await (tx as any).auditLog.create({
+        data: {
+          householdId: invite.householdId,
+          actorId: created.id,
+          actorName: newUser.name,
+          ipAddress: requestCtx?.ipAddress,
+          userAgent: requestCtx?.userAgent,
+          action: AuditAction.ACCEPT_INVITE,
+          resource: "household-invite",
+          resourceId: invite.id,
+          changes: [],
+        },
+      });
+
       return { user: updated, personalHouseholdId: personal.id };
     });
 
@@ -519,6 +552,50 @@ export const householdService = {
   },
 
   /** Existing logged-in user joins a household via invite */
+  async delete(householdId: string, ctx: ActorCtx) {
+    await assertOwner(householdId, ctx.actorId);
+    return prisma.$transaction(async (tx) => {
+      const [members, assets, accounts, income, committed, discretionary, snapshots, goals] =
+        await Promise.all([
+          tx.member.count({ where: { householdId } }),
+          tx.asset.count({ where: { householdId } }),
+          tx.account.count({ where: { householdId } }),
+          tx.incomeSource.count({ where: { householdId } }),
+          tx.committedItem.count({ where: { householdId } }),
+          tx.discretionaryItem.count({ where: { householdId } }),
+          tx.snapshot.count({ where: { householdId } }),
+          tx.purchaseItem.count({ where: { householdId } }),
+        ]);
+
+      await tx.auditLog.create({
+        data: {
+          householdId: ctx.householdId,
+          actorId: ctx.actorId,
+          actorName: ctx.actorName,
+          ipAddress: ctx.ipAddress,
+          userAgent: ctx.userAgent,
+          action: AuditAction.DELETE_HOUSEHOLD,
+          resource: "household",
+          resourceId: householdId,
+          metadata: {
+            cascaded: {
+              members,
+              assets,
+              accounts,
+              income,
+              committed,
+              discretionary,
+              snapshots,
+              goals,
+            },
+          },
+        },
+      });
+
+      await tx.household.delete({ where: { id: householdId } });
+    });
+  },
+
   async joinViaInvite(token: string, existingUserId: string) {
     const invite = await this.validateInviteToken(token);
 

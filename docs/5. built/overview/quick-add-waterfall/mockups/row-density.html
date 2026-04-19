@@ -1,0 +1,221 @@
+<style>
+  .surface {
+    background: #080a14;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 16px;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    color: rgba(255,255,255,0.85);
+  }
+  .tier-head {
+    font-family: Outfit, system-ui;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 11px;
+    font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    margin-bottom: 6px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .tier-head.income { color: #0ea5e9; }
+  .tier-head.committed { color: #6366f1; }
+  .tier-head.discretionary { color: #a855f7; }
+  table { width: 100%; border-collapse: collapse; font-size: 11px; }
+  th {
+    text-align: left;
+    font-family: Outfit, system-ui;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    padding: 6px 8px;
+    font-weight: 600;
+  }
+  th.num, td.num { text-align: right; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  td {
+    padding: 7px 8px;
+    border-top: 1px solid rgba(255,255,255,0.04);
+    font-size: 11px;
+    color: rgba(255,255,255,0.8);
+  }
+  td.name { font-weight: 500; color: rgba(255,255,255,0.9); }
+  .chip {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: 10px;
+    font-size: 9px;
+    background: rgba(255,255,255,0.06);
+    color: rgba(255,255,255,0.55);
+    letter-spacing: 0.04em;
+  }
+  .chip.salary { background: rgba(14,165,233,0.12); color: #7dd3fc; }
+  .chip.rental { background: rgba(99,102,241,0.12); color: #a5b4fc; }
+  .chip.monthly { background: rgba(255,255,255,0.06); }
+  .chip.yearly { background: rgba(245,158,11,0.1); color: #fbbf24; }
+  .add-row td {
+    color: rgba(255,255,255,0.3);
+    font-style: italic;
+    padding: 10px 8px;
+  }
+  .mockup-caption {
+    font-size: 11px;
+    color: rgba(255,255,255,0.55);
+    margin-top: 10px;
+    line-height: 1.5;
+  }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .subcat-group {
+    font-family: Outfit, system-ui;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.35);
+    padding: 10px 8px 4px;
+    font-weight: 600;
+  }
+</style>
+
+<h2>How dense should each row be?</h2>
+<p class="subtitle">Fields we have per tier. Design principle 3 says "precision without density" — spacious, scannable, not spreadsheet-like.</p>
+
+<div class="split">
+  <div>
+    <div class="surface">
+      <div class="tier-head income"><span>● INCOME</span><span>£8,856/mo</span></div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:32%">Name</th>
+            <th style="width:18%">Type</th>
+            <th style="width:12%">Cadence</th>
+            <th style="width:14%">Owner</th>
+            <th class="num" style="width:12%">Amount</th>
+            <th class="num" style="width:12%">Per month</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">Ben — Salary</td><td><span class="chip salary">Salary</span></td><td>Monthly</td><td>Ben</td><td class="num">£4,200</td><td class="num">£4,200</td></tr>
+          <tr><td class="name">Alex — Salary</td><td><span class="chip salary">Salary</span></td><td>Monthly</td><td>Alex</td><td class="num">£3,900</td><td class="num">£3,900</td></tr>
+          <tr><td class="name">Rental — flat</td><td><span class="chip rental">Rental</span></td><td>Monthly</td><td>Joint</td><td class="num">£756</td><td class="num">£756</td></tr>
+          <tr class="add-row"><td colspan="6">+ add income…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mockup-caption"><strong>A — Full density (6 columns).</strong> Every tier-specific field is an inline column. Fast tab-through for power users; every data point visible without drilling in. Risks feeling spreadsheet-y, which the design principles warn against.</p>
+  </div>
+
+  <div>
+    <div class="surface">
+      <div class="tier-head income"><span>● INCOME</span><span>£8,856/mo</span></div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:50%">Name</th>
+            <th style="width:18%">Cadence</th>
+            <th class="num" style="width:16%">Amount</th>
+            <th class="num" style="width:16%">/month</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">Ben — Salary <span class="chip salary">Salary</span></td><td>Monthly</td><td class="num">£4,200</td><td class="num">£4,200</td></tr>
+          <tr><td class="name">Alex — Salary <span class="chip salary">Salary</span></td><td>Monthly</td><td class="num">£3,900</td><td class="num">£3,900</td></tr>
+          <tr><td class="name">Rental — flat <span class="chip rental">Rental</span></td><td>Monthly</td><td class="num">£756</td><td class="num">£756</td></tr>
+          <tr class="add-row"><td colspan="4">+ add income…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mockup-caption"><strong>B — Lean (4 columns).</strong> Name includes the type chip; owner and incomeType live in the row's expand-to-edit panel. Calmer scan; one extra click to edit owner/type. Matches "earn every pixel" and "precision without density".</p>
+  </div>
+</div>
+
+<h3 style="margin-top:28px;">The committed tier has the most complexity — due date appears only on yearly bills</h3>
+
+<div class="split">
+  <div>
+    <div class="surface">
+      <div class="tier-head committed"><span>● COMMITTED</span><span>£4,817/mo</span></div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40%">Name</th>
+            <th style="width:18%">Cadence</th>
+            <th style="width:14%">Due</th>
+            <th class="num" style="width:14%">Amount</th>
+            <th class="num" style="width:14%">/month</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="subcat-group" colspan="5">Housing</td></tr>
+          <tr><td class="name">Mortgage</td><td><span class="chip monthly">Monthly</span></td><td>—</td><td class="num">£1,450</td><td class="num">£1,450</td></tr>
+          <tr><td class="name">Council tax</td><td><span class="chip monthly">Monthly</span></td><td>—</td><td class="num">£210</td><td class="num">£210</td></tr>
+          <tr><td class="subcat-group" colspan="5">Insurance</td></tr>
+          <tr><td class="name">Home insurance</td><td><span class="chip yearly">Yearly</span></td><td>Jun</td><td class="num">£480</td><td class="num">£40</td></tr>
+          <tr><td class="name">Car insurance</td><td><span class="chip yearly">Yearly</span></td><td>Mar</td><td class="num">£720</td><td class="num">£60</td></tr>
+          <tr class="add-row"><td colspan="5">+ add committed…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mockup-caption"><strong>C — Grouped by subcategory.</strong> Rows cluster under subcategory labels (Housing, Insurance…). Due column is conditional — shown only on yearly/one-off rows. "/month" column is the waterfall-relevant figure (yearly ÷ 12) — this is the honest cascade number.</p>
+  </div>
+
+  <div>
+    <div class="surface">
+      <div class="tier-head committed"><span>● COMMITTED</span><span>£4,817/mo</span></div>
+      <table>
+        <thead>
+          <tr>
+            <th style="width:30%">Name</th>
+            <th style="width:20%">Subcategory</th>
+            <th style="width:14%">Cadence</th>
+            <th style="width:10%">Due</th>
+            <th class="num" style="width:13%">Amount</th>
+            <th class="num" style="width:13%">/month</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td class="name">Mortgage</td><td>Housing</td><td><span class="chip monthly">Monthly</span></td><td>—</td><td class="num">£1,450</td><td class="num">£1,450</td></tr>
+          <tr><td class="name">Council tax</td><td>Housing</td><td><span class="chip monthly">Monthly</span></td><td>—</td><td class="num">£210</td><td class="num">£210</td></tr>
+          <tr><td class="name">Home insurance</td><td>Insurance</td><td><span class="chip yearly">Yearly</span></td><td>Jun</td><td class="num">£480</td><td class="num">£40</td></tr>
+          <tr><td class="name">Car insurance</td><td>Insurance</td><td><span class="chip yearly">Yearly</span></td><td>Mar</td><td class="num">£720</td><td class="num">£60</td></tr>
+          <tr class="add-row"><td colspan="6">+ add committed…</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="mockup-caption"><strong>D — Flat with subcategory column.</strong> Subcategory is an inline cell, not a grouping header. Rows can be sorted and filtered freely. Loses the visual "bucket" feel but gains flexibility — a row can be reassigned to a different subcategory without rebuilding the table.</p>
+  </div>
+</div>
+
+<div class="options" data-multiselect style="margin-top:24px;">
+  <div class="option" data-choice="density-a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Density: Full (6 cols)</h3>
+      <p>All tier-specific fields inline — spreadsheet-y but fast.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="density-b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Density: Lean (4 cols)</h3>
+      <p>Name + cadence + amount + /month. Less-used fields in expand-to-edit.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="layout-c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Layout: Grouped by subcategory</h3>
+      <p>Subcategory headers, not columns. Stronger visual buckets.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="layout-d" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Layout: Flat with subcategory column</h3>
+      <p>Subcategory as cell; rows freely sortable/filterable.</p>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:12px;">Pick one density (A or B) and one layout (C or D). My lean: <strong>B + C</strong> — lean row + grouped by subcategory reinforces the waterfall's hierarchical buckets and stays calm.</p>
