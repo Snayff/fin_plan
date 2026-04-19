@@ -6,6 +6,8 @@ import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useSubcategories, useTierItems, type TierItemRow } from "@/hooks/useWaterfall";
 import { TIER_CONFIGS, type TierKey } from "./tierConfig";
+import { useFocusParam } from "@/features/search/useFocusParam";
+import { useAddParam } from "@/features/search/useAddParam";
 
 interface TierPageProps {
   tier: TierKey;
@@ -23,6 +25,19 @@ export default function TierPage({ tier }: TierPageProps) {
   const [searchParams] = useSearchParams();
   const { data: subcategories, isLoading: subsLoading } = useSubcategories(tier);
   const { data: allItems, isLoading: itemsLoading } = useTierItems(tier);
+
+  const hasAddParam = searchParams.get("add") === "1";
+  useAddParam((_kind) => {
+    // add param consumed — ItemArea initialIsAdding prop handles opening
+  });
+  useFocusParam((id) => {
+    const el = document.querySelector(`[data-search-focus="${id}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("search-focus-pulse");
+      setTimeout(() => el.classList.remove("search-focus-pulse"), 1200);
+    }
+  });
 
   // Group items by subcategoryId and compute monthly totals
   const subcategoryTotals = useMemo<Record<string, SubcategorySummary>>(() => {
@@ -98,6 +113,7 @@ export default function TierPage({ tier }: TierPageProps) {
             subcategories={(subcategories ?? []).map((s) => ({ id: s.id, name: s.name }))}
             items={selectedSummary?.items ?? []}
             isLoading={itemsLoading}
+            initialIsAdding={hasAddParam}
             onSubcategorySelect={setSelectedId}
           />
         }
