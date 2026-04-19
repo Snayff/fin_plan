@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from "bun:test";
 import { prisma } from "../config/database.js";
 import { waterfallService } from "./waterfall.service.js";
+import type { ActorCtx } from "./audit.service.js";
 import { createTestHousehold } from "../test/helpers/test-db.js";
 
 describe("waterfallService — linkedAccountId", () => {
@@ -9,10 +10,18 @@ describe("waterfallService — linkedAccountId", () => {
   let otherSubId: string;
   let savingsAccountId: string;
   let currentAccountId: string;
+  let ctx: ActorCtx;
 
   beforeEach(async () => {
     const hh = await createTestHousehold();
     householdId = hh.id;
+    ctx = {
+      householdId,
+      actorId: "test-user",
+      actorName: "Test User",
+      ipAddress: null,
+      userAgent: null,
+    };
     savingsSubId = (
       await prisma.subcategory.create({
         data: { householdId, tier: "discretionary", name: "Savings", sortOrder: 0, isLocked: true },
@@ -40,26 +49,34 @@ describe("waterfallService — linkedAccountId", () => {
   });
 
   it("accepts linkedAccountId when item is in Savings subcategory and account is Savings/S&S/Pension", async () => {
-    const item = await waterfallService.createDiscretionary(householdId, {
-      name: "ISA top-up",
-      amount: 250,
-      subcategoryId: savingsSubId,
-      spendType: "monthly",
-      linkedAccountId: savingsAccountId,
-    } as any);
+    const item = await waterfallService.createDiscretionary(
+      householdId,
+      {
+        name: "ISA top-up",
+        amount: 250,
+        subcategoryId: savingsSubId,
+        spendType: "monthly",
+        linkedAccountId: savingsAccountId,
+      } as any,
+      ctx
+    );
     expect((item as any).linkedAccountId).toBe(savingsAccountId);
   });
 
   it("rejects linking when subcategory is not Savings", async () => {
     let threw = false;
     try {
-      await waterfallService.createDiscretionary(householdId, {
-        name: "Not savings",
-        amount: 50,
-        subcategoryId: otherSubId,
-        spendType: "monthly",
-        linkedAccountId: savingsAccountId,
-      } as any);
+      await waterfallService.createDiscretionary(
+        householdId,
+        {
+          name: "Not savings",
+          amount: 50,
+          subcategoryId: otherSubId,
+          spendType: "monthly",
+          linkedAccountId: savingsAccountId,
+        } as any,
+        ctx
+      );
     } catch (e: any) {
       threw = true;
       expect(e.message).toMatch(/Savings subcategory/);
@@ -70,13 +87,17 @@ describe("waterfallService — linkedAccountId", () => {
   it("rejects linking to a Current account", async () => {
     let threw = false;
     try {
-      await waterfallService.createDiscretionary(householdId, {
-        name: "x",
-        amount: 10,
-        subcategoryId: savingsSubId,
-        spendType: "monthly",
-        linkedAccountId: currentAccountId,
-      } as any);
+      await waterfallService.createDiscretionary(
+        householdId,
+        {
+          name: "x",
+          amount: 10,
+          subcategoryId: savingsSubId,
+          spendType: "monthly",
+          linkedAccountId: currentAccountId,
+        } as any,
+        ctx
+      );
     } catch (e: any) {
       threw = true;
       expect(e.message).toMatch(/Savings, StocksAndShares, or Pension/);
@@ -90,13 +111,17 @@ describe("waterfallService — linkedAccountId", () => {
     const nonExistentAccountId = "cxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
     let threw = false;
     try {
-      await waterfallService.createDiscretionary(householdId, {
-        name: "x",
-        amount: 10,
-        subcategoryId: savingsSubId,
-        spendType: "monthly",
-        linkedAccountId: nonExistentAccountId,
-      } as any);
+      await waterfallService.createDiscretionary(
+        householdId,
+        {
+          name: "x",
+          amount: 10,
+          subcategoryId: savingsSubId,
+          spendType: "monthly",
+          linkedAccountId: nonExistentAccountId,
+        } as any,
+        ctx
+      );
     } catch (e: any) {
       threw = true;
       expect(e.message).toMatch(/not found/i);
@@ -110,9 +135,14 @@ describe("waterfallService — linkedAccountId", () => {
     });
     let threw = false;
     try {
-      await waterfallService.updateDiscretionary(householdId, plannerItem.id, {
-        linkedAccountId: savingsAccountId,
-      } as any);
+      await waterfallService.updateDiscretionary(
+        householdId,
+        plannerItem.id,
+        {
+          linkedAccountId: savingsAccountId,
+        } as any,
+        ctx
+      );
     } catch (e: any) {
       threw = true;
       expect(e.message).toMatch(/planner/i);
@@ -121,13 +151,17 @@ describe("waterfallService — linkedAccountId", () => {
   });
 
   it("listDiscretionary returns linkedAccount summary { id, name, type } for linked items", async () => {
-    const item = await waterfallService.createDiscretionary(householdId, {
-      name: "ISA top-up",
-      amount: 250,
-      subcategoryId: savingsSubId,
-      spendType: "monthly",
-      linkedAccountId: savingsAccountId,
-    } as any);
+    const item = await waterfallService.createDiscretionary(
+      householdId,
+      {
+        name: "ISA top-up",
+        amount: 250,
+        subcategoryId: savingsSubId,
+        spendType: "monthly",
+        linkedAccountId: savingsAccountId,
+      } as any,
+      ctx
+    );
     const items = await waterfallService.listDiscretionary(householdId);
     const found = items.find((i: any) => i.id === (item as any).id);
     expect(found?.linkedAccount).toEqual({
@@ -138,28 +172,39 @@ describe("waterfallService — linkedAccountId", () => {
   });
 
   it("listDiscretionary returns linkedAccount null for unlinked items", async () => {
-    const item = await waterfallService.createDiscretionary(householdId, {
-      name: "Misc spend",
-      amount: 50,
-      subcategoryId: otherSubId,
-      spendType: "monthly",
-    } as any);
+    const item = await waterfallService.createDiscretionary(
+      householdId,
+      {
+        name: "Misc spend",
+        amount: 50,
+        subcategoryId: otherSubId,
+        spendType: "monthly",
+      } as any,
+      ctx
+    );
     const items = await waterfallService.listDiscretionary(householdId);
     const found = items.find((i: any) => i.id === (item as any).id);
     expect(found?.linkedAccount).toBeNull();
   });
 
   it("auto-nulls linkedAccountId when an item is moved out of Savings", async () => {
-    const item = await waterfallService.createDiscretionary(householdId, {
-      name: "x",
-      amount: 100,
-      subcategoryId: savingsSubId,
-      spendType: "monthly",
-      linkedAccountId: savingsAccountId,
-    } as any);
-    const updated = await waterfallService.updateDiscretionary(householdId, (item as any).id, {
-      subcategoryId: otherSubId,
-    } as any);
+    const item = await waterfallService.createDiscretionary(
+      householdId,
+      {
+        name: "x",
+        amount: 100,
+        subcategoryId: savingsSubId,
+        spendType: "monthly",
+        linkedAccountId: savingsAccountId,
+      } as any,
+      ctx
+    );
+    const updated = await waterfallService.updateDiscretionary(
+      householdId,
+      (item as any).id,
+      { subcategoryId: otherSubId } as any,
+      ctx
+    );
     expect((updated as any).linkedAccountId).toBeNull();
   });
 });
