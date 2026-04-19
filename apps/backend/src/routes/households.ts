@@ -240,7 +240,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const userId = request.user!.userId;
       const { id } = request.params as { id: string };
       const data = createMemberSchema.parse(request.body);
-      const member = await memberService.createMember(id, userId, data);
+      const member = await memberService.createMember(id, userId, data, actorCtx(request));
       return reply.status(201).send({ member });
     }
   );
@@ -253,7 +253,13 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const userId = request.user!.userId;
       const { id, memberId } = request.params as { id: string; memberId: string };
       const data = updateMemberSchema.parse(request.body);
-      const member = await memberService.updateMember(id, userId, memberId, data);
+      const member = await memberService.updateMember(
+        id,
+        userId,
+        memberId,
+        data,
+        actorCtx(request)
+      );
       return reply.send({ member });
     }
   );
@@ -266,7 +272,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const userId = request.user!.userId;
       const { id, memberId } = request.params as { id: string; memberId: string };
       const { reassignToMemberId } = deleteMemberSchema.parse(request.body ?? {});
-      await memberService.deleteMember(id, userId, memberId, reassignToMemberId);
+      await memberService.deleteMember(id, userId, memberId, reassignToMemberId, actorCtx(request));
       return reply.send({ success: true });
     }
   );
