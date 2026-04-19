@@ -11,6 +11,9 @@ import { useStaleDataBanner } from "@/hooks/useStaleDataBanner";
 import { StaleDataBanner } from "@/components/common/StaleDataBanner";
 import { cn } from "@/lib/utils";
 import { GlossaryPopoverProvider } from "@/components/help/GlossaryPopoverContext";
+import { SearchTriggerIcon } from "@/features/search/SearchTriggerIcon";
+import { SearchPalette } from "@/features/search/SearchPalette";
+import { useSearchHotkey } from "@/features/search/useSearchHotkey";
 
 const NAV_ITEMS_GROUP1 = [
   { to: "/overview", label: "Overview", colorClass: "text-page-accent" },
@@ -33,8 +36,11 @@ const NAV_ITEMS_GROUP3 = [
 
 export default function Layout({ children }: { children: ReactNode }) {
   const logout = useAuthStore((s) => s.logout);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  useSearchHotkey(() => setSearchOpen(true));
 
   const handleSignOut = useCallback(async () => {
     await logout();
@@ -181,6 +187,7 @@ export default function Layout({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
           <div className="flex items-center gap-3 ml-auto">
+            <SearchTriggerIcon onOpen={() => setSearchOpen(true)} />
             <HouseholdSwitcher />
             <ProfileAvatar />
           </div>
@@ -195,6 +202,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       </main>
 
       <Toaster />
+      {userId && <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} userId={userId} />}
     </div>
   );
 }
