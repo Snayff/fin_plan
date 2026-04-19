@@ -419,7 +419,6 @@ export async function seedScenario<T extends ScenarioShape>(scenario: T): Promis
           | "StocksAndShares"
           | "Other",
         memberId: acc.memberId ?? (acc.ownerId as string) ?? null,
-        monthlyContribution: (acc.monthlyContribution as number) ?? 0,
         isCashflowLinked: (acc.isCashflowLinked as boolean) ?? false,
       },
     });
@@ -467,6 +466,24 @@ export async function seedScenario<T extends ScenarioShape>(scenario: T): Promis
   }
 
   return scenario;
+}
+
+// ─── User Seeding ───────────────────────────────────────────────────────────
+
+// ─── Lightweight Household Factory ─────────────────────────────────────────
+
+/**
+ * Creates a minimal household record (no users/members/settings) for schema-level tests.
+ * Returns the created household.
+ */
+export async function createTestHousehold(): Promise<{ id: string; name: string }> {
+  assertTestEnvironment();
+
+  const household = await prisma.household.create({
+    data: { name: `Test Household ${Date.now()}` },
+  });
+
+  return { id: household.id, name: household.name };
 }
 
 // ─── User Seeding ───────────────────────────────────────────────────────────
