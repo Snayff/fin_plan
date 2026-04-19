@@ -82,20 +82,20 @@ export async function giftsRoutes(fastify: FastifyInstance) {
 
   fastify.post("/people", pre, async (req, reply) => {
     const data = createGiftPersonSchema.parse(req.body);
-    const person = await giftsService.createPerson(req.householdId!, data);
+    const person = await giftsService.createPerson(req.householdId!, data, actorCtx(req));
     return reply.status(201).send(person);
   });
 
   fastify.patch("/people/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateGiftPersonSchema.parse(req.body);
-    const person = await giftsService.updatePerson(req.householdId!, id, data);
+    const person = await giftsService.updatePerson(req.householdId!, id, data, actorCtx(req));
     return reply.send(person);
   });
 
   fastify.delete("/people/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await giftsService.deletePerson(req.householdId!, id);
+    await giftsService.deletePerson(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
@@ -103,20 +103,20 @@ export async function giftsRoutes(fastify: FastifyInstance) {
 
   fastify.post("/events", pre, async (req, reply) => {
     const data = createGiftEventSchema.parse(req.body);
-    const event = await giftsService.createEvent(req.householdId!, data);
+    const event = await giftsService.createEvent(req.householdId!, data, actorCtx(req));
     return reply.status(201).send(event);
   });
 
   fastify.patch("/events/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = updateGiftEventSchema.parse(req.body);
-    const event = await giftsService.updateEvent(req.householdId!, id, data);
+    const event = await giftsService.updateEvent(req.householdId!, id, data, actorCtx(req));
     return reply.send(event);
   });
 
   fastify.delete("/events/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await giftsService.deleteEvent(req.householdId!, id);
+    await giftsService.deleteEvent(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 
@@ -142,7 +142,7 @@ export async function giftsRoutes(fastify: FastifyInstance) {
 
   fastify.post("/allocations/bulk", pre, async (req, reply) => {
     const data = bulkUpsertAllocationsSchema.parse(req.body);
-    const result = await giftsService.bulkUpsertAllocations(req.householdId!, data);
+    const result = await giftsService.bulkUpsertAllocations(req.householdId!, data, actorCtx(req));
     return reply.send(result);
   });
 

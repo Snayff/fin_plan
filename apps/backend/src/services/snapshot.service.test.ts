@@ -13,8 +13,15 @@ mock.module("./waterfall.service.js", () => ({
 
 const { snapshotService } = await import("./snapshot.service.js");
 
+const testCtx = {
+  householdId: "hh-1",
+  actorId: "user-1",
+  actorName: "Alice",
+};
+
 beforeEach(() => {
   resetPrismaMocks();
+  prismaMock.auditLog.create.mockResolvedValue({} as any);
 });
 
 describe("snapshotService.listSnapshots", () => {
@@ -55,7 +62,7 @@ describe("snapshotService.createSnapshot", () => {
   it("populates data from waterfallService and creates snapshot", async () => {
     prismaMock.snapshot.create.mockResolvedValue({ id: "s-1", name: "My Snapshot" } as any);
 
-    await snapshotService.createSnapshot("hh-1", { name: "My Snapshot" });
+    await snapshotService.createSnapshot("hh-1", { name: "My Snapshot" }, testCtx);
 
     expect(prismaMock.snapshot.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -70,9 +77,9 @@ describe("snapshotService.createSnapshot", () => {
   it("throws ConflictError on duplicate name (P2002)", async () => {
     prismaMock.snapshot.create.mockRejectedValue({ code: "P2002" });
 
-    await expect(snapshotService.createSnapshot("hh-1", { name: "Duplicate" })).rejects.toThrow(
-      "A snapshot with that name already exists"
-    );
+    await expect(
+      snapshotService.createSnapshot("hh-1", { name: "Duplicate" }, testCtx)
+    ).rejects.toThrow("A snapshot with that name already exists");
   });
 });
 
@@ -85,7 +92,7 @@ describe("snapshotService.renameSnapshot", () => {
     prismaMock.snapshot.update.mockRejectedValue({ code: "P2002" });
 
     await expect(
-      snapshotService.renameSnapshot("hh-1", "s-1", { name: "Duplicate" })
+      snapshotService.renameSnapshot("hh-1", "s-1", { name: "Duplicate" }, testCtx)
     ).rejects.toThrow("A snapshot with that name already exists");
   });
 });
@@ -98,7 +105,7 @@ describe("snapshotService.deleteSnapshot", () => {
     } as any);
     prismaMock.snapshot.delete.mockResolvedValue({} as any);
 
-    await snapshotService.deleteSnapshot("hh-1", "s-1");
+    await snapshotService.deleteSnapshot("hh-1", "s-1", testCtx);
 
     expect(prismaMock.snapshot.delete).toHaveBeenCalledWith({ where: { id: "s-1" } });
   });
@@ -138,6 +145,92 @@ describe("snapshotService.ensureBaselineSnapshot", () => {
     expect(prismaMock.snapshot.upsert).toHaveBeenCalledTimes(2);
     const call = prismaMock.snapshot.upsert.mock.calls[0][0];
     expect(call.update).toEqual({});
+  });
+});
+
+describe("snapshot audit logging", () => {
+  const ctx = {
+    householdId: "hh-1",
+    actorId: "user-1",
+    actorName: "Alice",
+  };
+
+  beforeEach(() => {
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+  });
+
+  it("writes a CREATE_SNAPSHOT audit entry", async () => {
+    prismaMock.snapshot.create.mockResolvedValue({
+      id: "s-new",
+      name: "Q1",
+      isAuto: false,
+      householdId: "hh-1",
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      data: {},
+    } as any);
+
+    await snapshotService.createSnapshot("hh-1", { name: "Q1" }, ctx);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "CREATE_SNAPSHOT",
+          resource: "snapshot",
+          resourceId: "s-new",
+          actorId: "user-1",
+        }),
+      })
+    );
+  });
+
+  it("writes an UPDATE_SNAPSHOT audit entry on rename", async () => {
+    prismaMock.snapshot.findUnique.mockResolvedValueOnce({
+      id: "s-1",
+      householdId: "hh-1",
+      isAuto: false,
+      name: "Old",
+    } as any);
+    prismaMock.snapshot.update.mockResolvedValue({
+      id: "s-1",
+      householdId: "hh-1",
+      name: "New",
+      isAuto: false,
+    } as any);
+
+    await snapshotService.renameSnapshot("hh-1", "s-1", { name: "New" }, ctx);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "UPDATE_SNAPSHOT",
+          resource: "snapshot",
+          resourceId: "s-1",
+        }),
+      })
+    );
+  });
+
+  it("writes a DELETE_SNAPSHOT audit entry", async () => {
+    prismaMock.snapshot.findUnique.mockResolvedValueOnce({
+      id: "s-1",
+      householdId: "hh-1",
+      isAuto: false,
+      name: "Q1",
+    } as any);
+    prismaMock.snapshot.delete.mockResolvedValue({} as any);
+
+    await snapshotService.deleteSnapshot("hh-1", "s-1", ctx);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DELETE_SNAPSHOT",
+          resource: "snapshot",
+          resourceId: "s-1",
+        }),
+      })
+    );
   });
 });
 

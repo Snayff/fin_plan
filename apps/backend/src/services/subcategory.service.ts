@@ -4,6 +4,8 @@ import type {
   ResetSubcategoriesInput,
 } from "@finplan/shared";
 import { prisma } from "../config/database.js";
+import { audited } from "./audit.service.js";
+import type { ActorCtx } from "./audit.service.js";
 
 const DEFAULT_SUBCATEGORIES = {
   income: [
@@ -165,14 +167,13 @@ export const subcategoryService = {
       }
     }
 
-    // Validate reassignment IDs belong to this household's tier
+    // Validate reassignment IDs belong to this household's tier (DB-sourced only)
     const existingIds = new Set(existing.map((s) => s.id));
-    const desiredIds = new Set(desired.filter((d) => d.id).map((d) => d.id!));
     for (const r of reassignments) {
       if (!existingIds.has(r.fromSubcategoryId)) {
         throw new Error(`Reassignment source "${r.fromSubcategoryId}" not found in household`);
       }
-      if (!desiredIds.has(r.toSubcategoryId) && !existingIds.has(r.toSubcategoryId)) {
+      if (!existingIds.has(r.toSubcategoryId)) {
         throw new Error(`Reassignment destination "${r.toSubcategoryId}" not found`);
       }
     }
@@ -228,6 +229,50 @@ export const subcategoryService = {
         }
       }
     });
+  },
+
+  async create(householdId: string, tier: WaterfallTier, name: string, ctx?: ActorCtx) {
+    const existing = await prisma.subcategory.count({ where: { householdId, tier } });
+    if (existing >= 7) {
+      const err = new Error("Maximum 7 subcategories per tier");
+      (err as any).code = "LIMIT_EXCEEDED";
+      throw err;
+    }
+    const maxSort = await prisma.subcategory.aggregate({
+      where: { householdId, tier },
+      _max: { sortOrder: true },
+    });
+    const nextSort = (maxSort._max.sortOrder ?? -1) + 1;
+    const data = {
+      householdId,
+      tier,
+      name: name.trim(),
+      sortOrder: nextSort,
+      isLocked: false,
+      isDefault: false,
+      lockedByPlanner: false,
+    };
+    try {
+      if (ctx) {
+        return await audited({
+          db: prisma,
+          ctx,
+          action: "CREATE_SUBCATEGORY",
+          resource: "subcategory",
+          resourceId: "",
+          beforeFetch: async () => null,
+          mutation: async (tx) => tx.subcategory.create({ data }),
+        });
+      }
+      return await prisma.subcategory.create({ data });
+    } catch (err: any) {
+      if (err.code === "P2002") {
+        const e = new Error("A subcategory with that name already exists");
+        (e as any).code = "DUPLICATE";
+        throw e;
+      }
+      throw err;
+    }
   },
 
   getDefaults() {

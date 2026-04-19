@@ -11,6 +11,7 @@ import { ItemDetailPanel } from "@/components/overview/ItemDetailPanel";
 import { IncomeTypePanel } from "@/components/overview/IncomeTypePanel";
 import { CommittedBillsPanel } from "@/components/overview/CommittedBillsPanel";
 import { FinancialSummaryPanel } from "@/components/overview/FinancialSummaryPanel";
+import OverviewEmptyState from "@/components/overview/OverviewEmptyState";
 
 interface SelectedItem {
   id: string;
@@ -49,7 +50,9 @@ export default function OverviewPage() {
               : null
       }
     />
-  ) : null;
+  ) : (
+    <OverviewEmptyState />
+  );
 
   const left = (
     <div className="flex flex-col h-full">

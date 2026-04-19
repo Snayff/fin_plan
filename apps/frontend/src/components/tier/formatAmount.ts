@@ -17,7 +17,9 @@ export function formatItemAmount(
     return { primary: formatCurrency(toGBP(amount), showPence), secondary: null, label: null };
   }
   if (spendType === "weekly") {
-    const monthly = showPence ? toMonthlyAmount(amount, "weekly") : Math.round(toMonthlyAmount(amount, "weekly"));
+    const monthly = showPence
+      ? toMonthlyAmount(amount, "weekly")
+      : Math.round(toMonthlyAmount(amount, "weekly"));
     return {
       primary: formatCurrency(toGBP(amount), showPence),
       secondary: `${formatCurrency(toGBP(monthly), showPence)}/mo`,
@@ -25,7 +27,9 @@ export function formatItemAmount(
     };
   }
   if (spendType === "quarterly") {
-    const monthly = showPence ? toMonthlyAmount(amount, "quarterly") : Math.round(toMonthlyAmount(amount, "quarterly"));
+    const monthly = showPence
+      ? toMonthlyAmount(amount, "quarterly")
+      : Math.round(toMonthlyAmount(amount, "quarterly"));
     return {
       primary: formatCurrency(toGBP(amount), showPence),
       secondary: `${formatCurrency(toGBP(monthly), showPence)}/mo`,
@@ -33,7 +37,9 @@ export function formatItemAmount(
     };
   }
   if (spendType === "yearly") {
-    const monthly = showPence ? toMonthlyAmount(amount, "yearly") : Math.round(toMonthlyAmount(amount, "yearly"));
+    const monthly = showPence
+      ? toMonthlyAmount(amount, "yearly")
+      : Math.round(toMonthlyAmount(amount, "yearly"));
     return {
       primary: formatCurrency(toGBP(amount), showPence),
       secondary: `${formatCurrency(toGBP(monthly), showPence)}/mo`,
@@ -41,7 +47,9 @@ export function formatItemAmount(
     };
   }
   // one_off
-  const monthly = showPence ? toMonthlyAmount(amount, "one_off") : Math.round(toMonthlyAmount(amount, "one_off"));
+  const monthly = showPence
+    ? toMonthlyAmount(amount, "one_off")
+    : Math.round(toMonthlyAmount(amount, "one_off"));
   return {
     primary: formatCurrency(toGBP(amount), showPence),
     secondary: `${formatCurrency(toGBP(monthly), showPence)}/mo`,
@@ -93,16 +101,15 @@ export function formatTwoLineAmount(
     ? toMonthlyAmount(amount, spendType)
     : Math.round(toMonthlyAmount(amount, spendType));
   const yearlyAmt = toYearlyAmount(amount, spendType);
-  const isMonthlyLike = spendType === "monthly" || spendType === "weekly";
 
   return {
     monthly: {
       value: `${formatCurrency(toGBP(monthlyAmt), showPence)}/mo`,
-      bright: isMonthlyLike,
+      bright: true,
     },
     yearly: {
       value: `${formatCurrency(toGBP(yearlyAmt), showPence)}/yr`,
-      bright: !isMonthlyLike,
+      bright: false,
     },
   };
 }

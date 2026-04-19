@@ -173,7 +173,6 @@ const ALL_TABLES = [
   "Snapshot",
   "import_backups",
   "ReviewSession",
-  "WaterfallSetupSession",
   // Household structure
   "HouseholdSettings",
   "household_invites",

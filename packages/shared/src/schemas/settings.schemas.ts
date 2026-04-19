@@ -23,6 +23,7 @@ export const updateSettingsSchema = z.object({
   vehicleRatePct: z.number().min(-100).max(100).optional(),
   otherAssetRatePct: z.number().min(-100).max(100).optional(),
   showPence: z.boolean().optional(),
+  waterfallTipDismissed: z.boolean().optional(),
 });
 
 export type StalenessThresholds = z.infer<typeof stalenessThresholdsSchema>;

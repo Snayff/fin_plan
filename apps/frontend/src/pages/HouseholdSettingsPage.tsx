@@ -14,6 +14,7 @@ import { GrowthRatesSection } from "@/components/settings/GrowthRatesSection";
 import { SubcategoriesSection } from "@/components/settings/SubcategoriesSection";
 import { DataSection } from "@/components/settings/DataSection";
 import { AuditLogSection } from "@/components/settings/AuditLogSection";
+import { RebuildWaterfallSection } from "@/components/settings/RebuildWaterfallSection";
 import { useAuthStore } from "@/stores/authStore";
 import { useHouseholdDetails } from "@/hooks/useSettings";
 
@@ -45,7 +46,10 @@ export default function HouseholdSettingsPage() {
       base.push({ id: "growth-rates", label: "Growth rates", group: "Financial" });
     }
     base.push({ id: "subcategories", label: "Subcategories", group: "Structure" });
-    if (role === "owner") base.push({ id: "data", label: "Data", group: "Advanced" });
+    if (role === "owner") {
+      base.push({ id: "data", label: "Data", group: "Advanced" });
+      base.push({ id: "rebuild-waterfall", label: "Rebuild waterfall", group: "Advanced" });
+    }
     if (role === "owner" || role === "admin") {
       base.push({ id: "audit-log", label: "Audit log", group: "Advanced" });
     }
@@ -85,6 +89,7 @@ export default function HouseholdSettingsPage() {
         {(role === "owner" || role === "admin") && <GrowthRatesSection />}
         <SubcategoriesSection />
         {role === "owner" && <DataSection />}
+        {role === "owner" && <RebuildWaterfallSection />}
         {(role === "owner" || role === "admin") && <AuditLogSection />}
       </SettingsRightPanel>
     </div>

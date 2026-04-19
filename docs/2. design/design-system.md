@@ -1007,15 +1007,34 @@ padding: 14px 16px
 
 ---
 
-### 3.6 Full-Screen Modes (Wizards)
+### 3.6 Full-Screen Focused Surfaces
 
-The Review Wizard and Waterfall Creation Wizard are exempt from the two-panel layout rule. They are focused, full-screen flows with dedicated step navigation.
+Full-screen focused surfaces are exempt from the two-panel layout rule (Anchor 17). Two sub-classes exist:
 
-**Rules that still apply inside wizards:**
+#### Wizards
+
+Step-based onboarding / review flows with dedicated forward/back navigation. Example: Review Wizard.
+
+- Dedicated step navigation chrome (Next / Back / Exit)
+- Progress indication visible throughout
+- Linear flow — back-only navigation between completed steps
+
+#### Workbench surfaces
+
+Dense, bulk-entry, single-page surfaces that reinforce a core mental model. Example: Full Waterfall (`/waterfall`) — three tier tables stacked in cascade order with per-row auto-save.
+
+- Minimal top-bar chrome — page title + close/back button only
+- No left panel; content lives in a full-width centered column
+- No multi-step chrome (no Next/Back/progress); the whole surface is one unit
+- Content must reinforce the cascade or another core anchor — e.g. waterfall connectors between tier tables, a read-only Surplus strip at the cascade terminus
+- Per-row auto-save is preferred so the surface has no dirty-state guard on exit
+
+**Rules that still apply inside all full-screen surfaces:**
 
 - `ButtonPair` rightmost-is-affirmative rule
 - Language rules (budgeted/planned, not spent/paid)
 - Staleness principles (informational, not blocking)
+- Calm-by-default — silence = approval when values are healthy
 
 ---
 
