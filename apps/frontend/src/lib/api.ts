@@ -1,4 +1,11 @@
+import { decodeAccessTokenExpMs } from "./jwt";
+
 const API_BASE_URL = import.meta.env.VITE_API_URL || "";
+
+// If the supplied access token expires within this window, refresh it before
+// issuing the request. Covers cases where the auth-store scheduler missed its
+// fire (e.g. backgrounded tab with throttled timers).
+const PREFLIGHT_REFRESH_WINDOW_MS = 5_000;
 
 export interface ApiError {
   message: string;
@@ -72,7 +79,8 @@ export class ApiClient {
     if (!isAuthEndpoint) {
       try {
         const { useAuthStore } = await import("../stores/authStore");
-        const token = useAuthStore.getState().accessToken;
+        const storedToken = useAuthStore.getState().accessToken;
+        const token = await this.resolveAccessToken(storedToken);
         if (token) {
           authHeaders = { Authorization: `Bearer ${token}` };
         }
@@ -166,6 +174,26 @@ export class ApiClient {
         statusCode: 0,
       } as ApiError;
     }
+  }
+
+  /**
+   * Pre-flight check: if the supplied access token is missing an `exp` claim
+   * we can decode, return it unchanged. If `exp` is within the refresh window
+   * (or already past), trigger a single shared refresh and return the new token.
+   *
+   * SECURITY: The decoded `exp` is treated as a UX hint only. The backend
+   * still validates the JWT signature and expiry on every request.
+   */
+  private async resolveAccessToken(token: string | null): Promise<string | null> {
+    if (!token) return null;
+
+    const expMs = decodeAccessTokenExpMs(token);
+    if (expMs === null) return token;
+
+    if (expMs - Date.now() > PREFLIGHT_REFRESH_WINDOW_MS) return token;
+
+    const refreshed = await this.handleTokenRefresh();
+    return refreshed ?? token;
   }
 
   private async handleTokenRefresh(): Promise<string | null> {
