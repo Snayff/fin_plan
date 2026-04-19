@@ -1,21 +1,22 @@
-import type { FastifyInstance, FastifyReply, FastifyRequest, RouteShorthandOptions } from 'fastify';
-import { z } from 'zod';
-import { authService } from '../services/auth.service';
-import { auditService } from '../services/audit.service';
-import { authMiddleware } from '../middleware/auth.middleware';
-import { config } from '../config/env';
-import { blacklistToken } from '../utils/tokenBlacklist';
-import { decodeToken } from '../utils/jwt';
+import type { FastifyInstance, FastifyReply, FastifyRequest, RouteShorthandOptions } from "fastify";
+import { z } from "zod";
+import { authService } from "../services/auth.service";
+import { auditService } from "../services/audit.service";
+import { authMiddleware } from "../middleware/auth.middleware";
+import { config } from "../config/env";
+import { blacklistToken } from "../utils/tokenBlacklist";
+import { decodeToken } from "../utils/jwt";
+import { AuditAction } from "@finplan/shared";
 
 function requestContext(request: FastifyRequest) {
-  return { ipAddress: request.ip, userAgent: request.headers['user-agent'] };
+  return { ipAddress: request.ip, userAgent: request.headers["user-agent"] };
 }
 
 /** Blacklist the access token from the current request so it can't be reused after logout. */
 function blacklistCurrentToken(request: FastifyRequest): void {
   const authHeader = request.headers.authorization;
   if (!authHeader) return;
-  const token = authHeader.split(' ')[1];
+  const token = authHeader.split(" ")[1];
   if (!token) return;
   const payload = decodeToken(token);
   if (payload?.jti) {
@@ -56,11 +57,11 @@ function setRefreshTokenCookie(
   const maxAgeSeconds =
     options?.maxAgeSeconds && options.maxAgeSeconds > 0 ? options.maxAgeSeconds : 7 * 24 * 60 * 60;
 
-  reply.setCookie('refreshToken', refreshToken, {
+  reply.setCookie("refreshToken", refreshToken, {
     httpOnly: true,
-    secure: config.NODE_ENV === 'production',
-    sameSite: 'strict',
-    path: '/api/auth/refresh',
+    secure: config.NODE_ENV === "production",
+    sameSite: "strict",
+    path: "/api/auth/refresh",
     ...(rememberMe ? { maxAge: maxAgeSeconds } : {}),
   });
 }
@@ -69,8 +70,8 @@ function setRefreshTokenCookie(
  * Clear refresh token cookie on logout
  */
 function clearRefreshTokenCookie(reply: FastifyReply) {
-  reply.clearCookie('refreshToken', {
-    path: '/api/auth/refresh',
+  reply.clearCookie("refreshToken", {
+    path: "/api/auth/refresh",
   });
 }
 
@@ -80,7 +81,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     config: {
       rateLimit: {
         max: 5,
-        timeWindow: '15 minutes',
+        timeWindow: "15 minutes",
       },
     },
   };
@@ -89,7 +90,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     config: {
       rateLimit: {
         max: 10,
-        timeWindow: '1 hour',
+        timeWindow: "1 hour",
       },
     },
   };
@@ -98,7 +99,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     config: {
       rateLimit: {
         max: 10,
-        timeWindow: '15 minutes',
+        timeWindow: "15 minutes",
       },
     },
   };
@@ -108,14 +109,14 @@ export async function authRoutes(fastify: FastifyInstance) {
    * Register a new user
    * Rate limit: 10 attempts per hour per IP
    */
-  fastify.post('/register', registerOpts, async (request, reply) => {
+  fastify.post("/register", registerOpts, async (request, reply) => {
     const body = registerSchema.parse(request.body);
     const result = await authService.register(body);
 
     auditService.log({
       userId: result.user.id,
-      action: 'REGISTER',
-      resource: 'user',
+      action: "REGISTER",
+      resource: "user",
       resourceId: result.user.id,
       ...requestContext(request),
     });
@@ -132,7 +133,7 @@ export async function authRoutes(fastify: FastifyInstance) {
    * Login user
    * Rate limit: 5 attempts per 15 minutes per IP
    */
-  fastify.post('/login', loginOpts, async (request, reply) => {
+  fastify.post("/login", loginOpts, async (request, reply) => {
     const body = loginSchema.parse(request.body);
     const ctx = requestContext(request);
 
@@ -144,8 +145,8 @@ export async function authRoutes(fastify: FastifyInstance) {
 
       auditService.log({
         userId: result.user.id,
-        action: 'LOGIN_SUCCESS',
-        resource: 'session',
+        action: "LOGIN_SUCCESS",
+        resource: "session",
         ...ctx,
       });
 
@@ -158,8 +159,8 @@ export async function authRoutes(fastify: FastifyInstance) {
       return reply.status(200).send(result);
     } catch (error) {
       auditService.log({
-        action: 'LOGIN_FAILED',
-        resource: 'session',
+        action: "LOGIN_FAILED",
+        resource: "session",
         metadata: { email: body.email },
         ...ctx,
       });
@@ -171,15 +172,15 @@ export async function authRoutes(fastify: FastifyInstance) {
    * GET /api/auth/me
    * Get current user (protected route)
    */
-  fastify.get('/me', { preHandler: authMiddleware }, async (request, reply) => {
+  fastify.get("/me", { preHandler: authMiddleware }, async (request, reply) => {
     const userId = request.user!.userId;
     const user = await authService.findUserById(userId);
 
     if (!user) {
       return reply.status(404).send({
         error: {
-          message: 'User not found',
-          code: 'NOT_FOUND',
+          message: "User not found",
+          code: "NOT_FOUND",
           statusCode: 404,
         },
       });
@@ -192,10 +193,20 @@ export async function authRoutes(fastify: FastifyInstance) {
    * PATCH /api/auth/me
    * Update current user profile (name)
    */
-  fastify.patch('/me', { preHandler: authMiddleware }, async (request, reply) => {
+  fastify.patch("/me", { preHandler: authMiddleware }, async (request, reply) => {
     const userId = request.user!.userId;
     const body = updateProfileSchema.parse(request.body);
+    const existingUser = await authService.findUserById(userId);
+    const oldName = existingUser?.name ?? null;
     const user = await authService.updateUserName(userId, body.name);
+    auditService.log({
+      userId,
+      action: AuditAction.UPDATE_PROFILE,
+      resource: "user",
+      resourceId: userId,
+      metadata: { before: { name: oldName }, after: { name: body.name } },
+      ...requestContext(request),
+    });
     return reply.status(200).send({ user });
   });
 
@@ -205,7 +216,7 @@ export async function authRoutes(fastify: FastifyInstance) {
    * Rate limit: 10 attempts per 15 minutes per IP
    * Supports BOTH cookie and request body for backward compatibility
    */
-  fastify.post('/refresh', refreshOpts, async (request, reply) => {
+  fastify.post("/refresh", refreshOpts, async (request, reply) => {
     const body = refreshSchema.parse(request.body);
 
     // Try cookie first, then body (backward compatibility)
@@ -214,8 +225,8 @@ export async function authRoutes(fastify: FastifyInstance) {
     if (!refreshToken) {
       return reply.status(400).send({
         error: {
-          message: 'Refresh token required',
-          code: 'MISSING_REFRESH_TOKEN',
+          message: "Refresh token required",
+          code: "MISSING_REFRESH_TOKEN",
           statusCode: 400,
         },
       });
@@ -225,8 +236,8 @@ export async function authRoutes(fastify: FastifyInstance) {
     const result = await authService.refreshAccessToken(refreshToken, ctx);
 
     auditService.log({
-      action: 'TOKEN_REFRESH',
-      resource: 'session',
+      action: "TOKEN_REFRESH",
+      resource: "session",
       ...ctx,
     });
 
@@ -246,7 +257,7 @@ export async function authRoutes(fastify: FastifyInstance) {
    * GET /api/auth/csrf-token
    * Get CSRF token for state-changing requests
    */
-  fastify.get('/csrf-token', async (_request, reply) => {
+  fastify.get("/csrf-token", async (_request, reply) => {
     const token = await reply.generateCsrf();
     return reply.send({ csrfToken: token });
   });
@@ -255,7 +266,7 @@ export async function authRoutes(fastify: FastifyInstance) {
    * POST /api/auth/logout
    * Logout user - clears refresh token cookie
    */
-  fastify.post('/logout', { preHandler: authMiddleware }, async (request, reply) => {
+  fastify.post("/logout", { preHandler: authMiddleware }, async (request, reply) => {
     const userId = request.user!.userId;
 
     // Blacklist the current access token so it can't be reused
@@ -266,22 +277,22 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     auditService.log({
       userId,
-      action: 'LOGOUT',
-      resource: 'session',
+      action: "LOGOUT",
+      resource: "session",
       ...requestContext(request),
     });
 
     // Clear refresh token cookie
     clearRefreshTokenCookie(reply);
 
-    return reply.status(200).send({ message: 'Logged out successfully' });
+    return reply.status(200).send({ message: "Logged out successfully" });
   });
 
   /**
    * GET /api/auth/sessions
    * List active sessions for the current user
    */
-  fastify.get('/sessions', { preHandler: authMiddleware }, async (request, reply) => {
+  fastify.get("/sessions", { preHandler: authMiddleware }, async (request, reply) => {
     const userId = request.user!.userId;
     const sessions = await authService.getUserSessions(userId);
     return reply.send({ sessions });
@@ -291,45 +302,45 @@ export async function authRoutes(fastify: FastifyInstance) {
    * DELETE /api/auth/sessions/:familyId
    * Revoke a specific session
    */
-  fastify.delete('/sessions/:familyId', { preHandler: authMiddleware }, async (request, reply) => {
+  fastify.delete("/sessions/:familyId", { preHandler: authMiddleware }, async (request, reply) => {
     const userId = request.user!.userId;
     const { familyId } = request.params as { familyId: string };
 
     const revoked = await authService.revokeSession(familyId, userId);
     if (!revoked) {
       return reply.status(404).send({
-        error: { message: 'Session not found', code: 'NOT_FOUND', statusCode: 404 },
+        error: { message: "Session not found", code: "NOT_FOUND", statusCode: 404 },
       });
     }
 
     auditService.log({
       userId,
-      action: 'SESSION_REVOKED',
-      resource: 'session',
+      action: "SESSION_REVOKED",
+      resource: "session",
       resourceId: familyId,
       ...requestContext(request),
     });
 
-    return reply.send({ message: 'Session revoked' });
+    return reply.send({ message: "Session revoked" });
   });
 
   /**
    * DELETE /api/auth/sessions
    * Revoke all sessions (logout everywhere)
    */
-  fastify.delete('/sessions', { preHandler: authMiddleware }, async (request, reply) => {
+  fastify.delete("/sessions", { preHandler: authMiddleware }, async (request, reply) => {
     const userId = request.user!.userId;
 
     await authService.revokeAllUserTokens(userId);
 
     auditService.log({
       userId,
-      action: 'ALL_SESSIONS_REVOKED',
-      resource: 'session',
+      action: "ALL_SESSIONS_REVOKED",
+      resource: "session",
       ...requestContext(request),
     });
 
     clearRefreshTokenCookie(reply);
-    return reply.send({ message: 'All sessions revoked' });
+    return reply.send({ message: "All sessions revoked" });
   });
 }
