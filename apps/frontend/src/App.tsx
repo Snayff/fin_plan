@@ -14,7 +14,8 @@ const AcceptInvitePage = lazy(() => import("./pages/auth/AcceptInvitePage"));
 
 // App pages
 const OverviewPage = lazy(() => import("./pages/OverviewPage"));
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
+const ProfileSettingsPage = lazy(() => import("./pages/ProfileSettingsPage"));
+const HouseholdSettingsPage = lazy(() => import("./pages/HouseholdSettingsPage"));
 const DesignRenewPage = lazy(() => import("./pages/DesignRenewPage"));
 const WelcomePage = lazy(() => import("./pages/WelcomePage"));
 const IncomePage = lazy(() => import("./pages/IncomePage"));
@@ -74,7 +75,9 @@ export function ProtectedAppRoutes() {
                     <Route path="/goals" element={<GoalsPage />} />
                     <Route path="/gifts" element={<GiftsPage />} />
                     <Route path="/help" element={<HelpPage />} />
-                    <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/settings" element={<Navigate to="/settings/profile" replace />} />
+                    <Route path="/settings/profile" element={<ProfileSettingsPage />} />
+                    <Route path="/settings/household" element={<HouseholdSettingsPage />} />
                     <Route path="/design-renew" element={<DesignRenewPage />} />
                     <Route path="/waterfall" element={<FullWaterfallPage />} />
 

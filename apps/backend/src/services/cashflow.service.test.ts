@@ -472,6 +472,155 @@ describe("cashflowService.getProjection", () => {
   });
 });
 
+describe("cashflowService.getProjection — weekly expansion", () => {
+  beforeEach(() => {
+    // £0 starting balance — no accounts linked
+    prismaMock.account.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+  });
+
+  it("emits an event every Wednesday for a weekly income source starting 1 Jan 2025", async () => {
+    // Wednesday 1 Jan 2025 is UTC day-of-week 3
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      {
+        id: "wi1",
+        name: "Weekly Pay",
+        frequency: "weekly",
+        dueDate: new Date("2025-01-01"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "income_source",
+        itemId: "wi1",
+        startDate: new Date("2025-01-01"),
+        endDate: null,
+        amount: 520,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2025,
+      startMonth: 1,
+      monthCount: 3,
+    });
+
+    // Total netChange across 3 months should equal the number of Wednesday events × 520
+    const totalNet = result.months.reduce((s, m) => s + m.netChange, 0);
+    // Jan has Wednesdays: 1,8,15,22,29 (5); Feb: 5,12,19,26 (4); Mar: 5,12,19,26 (4) = 13 total
+    expect(totalNet).toBeCloseTo(13 * 520, 0);
+  });
+
+  it("does not emit weekly events before the dueDate (start guard)", async () => {
+    // Weekly source starts 1 Feb 2025. Projection window starts 1 Jan 2025.
+    // Jan should have no events; Feb onwards should have events.
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      {
+        id: "wi2",
+        name: "Weekly Pay",
+        frequency: "weekly",
+        dueDate: new Date("2025-02-01"), // Saturday
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "income_source",
+        itemId: "wi2",
+        startDate: new Date("2025-02-01"),
+        endDate: null,
+        amount: 200,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2025,
+      startMonth: 1,
+      monthCount: 3,
+    });
+
+    // January must have zero net change (no events before dueDate)
+    expect(result.months[0]!.netChange).toBe(0);
+    // February and/or March should have positive netChange
+    const febPlusMar = result.months[1]!.netChange + result.months[2]!.netChange;
+    expect(febPlusMar).toBeGreaterThan(0);
+  });
+});
+
+describe("cashflowService.getProjection — quarterly expansion", () => {
+  beforeEach(() => {
+    prismaMock.account.findMany.mockResolvedValue([]);
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+  });
+
+  it("emits exactly 4 quarterly events over a 12-month window starting 15 Jan 2025", async () => {
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "qb1",
+        name: "Quarterly Service",
+        spendType: "quarterly",
+        dueDate: new Date("2025-01-15"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "committed_item",
+        itemId: "qb1",
+        startDate: new Date("2025-01-01"),
+        endDate: null,
+        amount: 300,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2025,
+      startMonth: 1,
+      monthCount: 12,
+    });
+
+    // 4 quarterly events (15 Jan, 15 Apr, 15 Jul, 15 Oct) × -300 = -1200 total
+    const totalNet = result.months.reduce((s, m) => s + m.netChange, 0);
+    expect(totalNet).toBeCloseTo(-4 * 300, 0);
+  });
+
+  it("quarterly events land on the correct months (Jan, Apr, Jul, Oct)", async () => {
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "qb2",
+        name: "Quarterly Fee",
+        spendType: "quarterly",
+        dueDate: new Date("2025-01-15"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "committed_item",
+        itemId: "qb2",
+        startDate: new Date("2025-01-01"),
+        endDate: null,
+        amount: 300,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2025,
+      startMonth: 1,
+      monthCount: 12,
+    });
+
+    // Months with events should be Jan(1), Apr(4), Jul(7), Oct(10) — net = -300 each
+    const eventMonths = result.months
+      .filter((m) => m.netChange !== 0)
+      .map((m) => m.month);
+    expect(eventMonths).toEqual([1, 4, 7, 10]);
+  });
+});
+
 describe("cashflowService.getMonthDetail", () => {
   beforeEach(() => {
     prismaMock.account.findMany.mockResolvedValue([

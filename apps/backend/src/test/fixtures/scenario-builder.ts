@@ -33,14 +33,14 @@ export interface ScenarioMemberConfig {
 export interface ScenarioIncomeConfig {
   name?: string;
   amount: number;
-  frequency?: "monthly" | "annual" | "one_off";
+  frequency?: "monthly" | "annual" | "one_off" | "weekly" | "quarterly";
   ownerIndex?: number;
 }
 
 export interface ScenarioCommittedConfig {
   name?: string;
   amount: number;
-  spendType?: "monthly" | "yearly" | "one_off";
+  spendType?: "monthly" | "yearly" | "one_off" | "weekly" | "quarterly";
 }
 
 export interface ScenarioDiscretionaryConfig {
@@ -311,6 +311,22 @@ export function buildMinimalScenario(): Scenario {
     incomeSources: [{ name: "Salary", amount: 3000 }],
     committedItems: [{ name: "Rent", amount: 1000 }],
     discretionaryItems: [{ name: "Groceries", amount: 200 }],
+  });
+}
+
+/** Solo owner with a weekly income source. */
+export function buildWeeklyIncomeScenario(amount: number = 520): Scenario {
+  return buildScenario({
+    householdName: "Weekly Income Household",
+    incomeSources: [{ name: "Weekly Salary", amount, frequency: "weekly" }],
+  });
+}
+
+/** Solo owner with a quarterly committed item. */
+export function buildQuarterlyBillScenario(amount: number = 300): Scenario {
+  return buildScenario({
+    householdName: "Quarterly Bill Household",
+    committedItems: [{ name: "Quarterly Service", amount, spendType: "quarterly" }],
   });
 }
 

@@ -15,6 +15,7 @@ const SYSTEM_FIELDS = new Set([
   "passwordHash",
   "twoFactorSecret",
   "twoFactorBackupCodes",
+  "twoFactorEnabled", // future-proofs for 2FA endpoints
   "refreshToken",
   "token",
   "password",
@@ -76,6 +77,36 @@ export type AuditChange = {
   after?: unknown;
 };
 
+const FLAT_JSON_ALLOWLIST: Record<string, Set<string>> = {
+  "household-settings": new Set(["stalenessThresholds"]),
+};
+
+function isFlatJsonField(resource: string | undefined, field: string): boolean {
+  if (!resource) return false;
+  return FLAT_JSON_ALLOWLIST[resource]?.has(field) ?? false;
+}
+
+function isRecord(v: unknown): v is Record<string, unknown> {
+  return v !== null && typeof v === "object" && !Array.isArray(v);
+}
+
+function descendJson(field: string, before: unknown, after: unknown): AuditChange[] {
+  const b = isRecord(before) ? before : {};
+  const a = isRecord(after) ? after : {};
+  const keys = new Set([...Object.keys(b), ...Object.keys(a)]);
+  const out: AuditChange[] = [];
+  for (const k of keys) {
+    const bv = b[k];
+    const av = a[k];
+    if (JSON.stringify(bv) === JSON.stringify(av)) continue;
+    const change: AuditChange = { field: `${field}.${k}` };
+    if (bv !== undefined) change.before = bv;
+    if (av !== undefined) change.after = av;
+    out.push(change);
+  }
+  return out;
+}
+
 export function computeDiff(
   before: Record<string, unknown> | null,
   after: Record<string, unknown> | null,
@@ -85,22 +116,30 @@ export function computeDiff(
 
   if (!before) {
     // CREATE — all after fields
-    return Object.entries(after!)
-      .filter(([field]) => !isHiddenField(field, resource))
-      .map(([field, value]) => ({
-        field,
-        after: value,
-      }));
+    const out: AuditChange[] = [];
+    for (const [field, value] of Object.entries(after!)) {
+      if (isHiddenField(field, resource)) continue;
+      if (isFlatJsonField(resource, field) && isRecord(value)) {
+        out.push(...descendJson(field, undefined, value));
+      } else {
+        out.push({ field, after: value });
+      }
+    }
+    return out;
   }
 
   if (!after) {
     // DELETE — all before fields
-    return Object.entries(before)
-      .filter(([field]) => !isHiddenField(field, resource))
-      .map(([field, value]) => ({
-        field,
-        before: value,
-      }));
+    const out: AuditChange[] = [];
+    for (const [field, value] of Object.entries(before)) {
+      if (isHiddenField(field, resource)) continue;
+      if (isFlatJsonField(resource, field) && isRecord(value)) {
+        out.push(...descendJson(field, value, undefined));
+      } else {
+        out.push({ field, before: value });
+      }
+    }
+    return out;
   }
 
   // UPDATE — changed fields only
@@ -112,7 +151,11 @@ export function computeDiff(
     const b = before[field];
     const a = after[field];
     if (JSON.stringify(b) !== JSON.stringify(a)) {
-      changes.push({ field, before: b, after: a });
+      if (isFlatJsonField(resource, field)) {
+        changes.push(...descendJson(field, b, a));
+      } else {
+        changes.push({ field, before: b, after: a });
+      }
     }
   }
 
@@ -124,7 +167,7 @@ export type AuditedParams<T> = {
   ctx: ActorCtx;
   action: string;
   resource: string;
-  resourceId: string;
+  resourceId: string | ((after: T) => string);
   beforeFetch: (tx: PrismaClient) => Promise<Record<string, unknown> | null>;
   mutation: (tx: PrismaClient) => Promise<T>;
 };
@@ -149,6 +192,8 @@ export async function audited<T>({
 
     const changes = computeDiff(beforeState, afterState, resource);
 
+    const resolvedResourceId = typeof resourceId === "function" ? resourceId(result) : resourceId;
+
     await (tx as any).auditLog.create({
       data: {
         householdId: ctx.householdId,
@@ -158,7 +203,7 @@ export async function audited<T>({
         userAgent: ctx.userAgent,
         action,
         resource,
-        resourceId,
+        resourceId: resolvedResourceId,
         changes,
       },
     });

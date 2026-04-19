@@ -32,7 +32,10 @@ export async function inviteRoutes(fastify: FastifyInstance) {
   fastify.post("/invite/:token/accept", async (request, reply) => {
     const { token } = request.params as { token: string };
     const body = acceptInviteSchema.parse(request.body);
-    const result = await householdService.acceptInvite(token, body);
+    const result = await householdService.acceptInvite(token, body, {
+      ipAddress: request.ip,
+      userAgent: request.headers["user-agent"],
+    });
 
     // Set refresh token cookie (mirrors auth routes pattern)
     reply.setCookie("refreshToken", result.refreshToken, {

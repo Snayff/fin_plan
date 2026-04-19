@@ -20,7 +20,10 @@ import { forecastRoutes } from "./routes/forecast.routes";
 import { giftsRoutes } from "./routes/gifts.routes";
 import { exportImportRoutes } from "./routes/export-import.routes.js";
 import { cashflowRoutes } from "./routes/cashflow.routes";
+import { securityActivityRoutes } from "./routes/security-activity.routes.js";
 import { errorHandler } from "./middleware/errorHandler";
+import { prisma } from "./config/database";
+import { startRetentionJob } from "./services/retention.service";
 
 export async function buildApp(opts?: { logger?: boolean | object }): Promise<FastifyInstance> {
   const server = Fastify({
@@ -103,6 +106,9 @@ export async function buildApp(opts?: { logger?: boolean | object }): Promise<Fa
   server.register(forecastRoutes, { prefix: "/api/forecast" });
   server.register(giftsRoutes, { prefix: "/api/gifts" });
   server.register(cashflowRoutes, { prefix: "/api/cashflow" });
+  server.register(securityActivityRoutes, { prefix: "/api" });
+
+  startRetentionJob(prisma);
 
   return server;
 }

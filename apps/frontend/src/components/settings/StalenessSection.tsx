@@ -1,71 +1,83 @@
-import { useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { StalenessThresholds } from "@finplan/shared";
 import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
-import { Section } from "./Section";
+import { SettingsSection } from "./SettingsSection";
+import { AutoSaveField } from "./AutoSaveField";
+import { useAutoSave } from "@/hooks/useAutoSave";
 
-const STALENESS_LABELS: Record<string, string> = {
+// Labels adapted to match the actual StalenessThresholds keys from @finplan/shared
+const LABELS: Record<keyof StalenessThresholds, string> = {
   income_source: "Income sources",
-  committed_bill: "Monthly bills",
-  yearly_bill: "Yearly bills",
-  discretionary_category: "Discretionary categories",
-  savings_allocation: "Savings allocations",
-  wealth_account: "Wealth accounts",
+  committed_item: "Committed items",
+  discretionary_item: "Discretionary items",
+  asset_item: "Asset items",
+  account_item: "Wealth accounts",
 };
+
+const DEFAULTS: Required<StalenessThresholds> = {
+  income_source: 12,
+  committed_item: 6,
+  discretionary_item: 12,
+  asset_item: 12,
+  account_item: 3,
+};
+
+function ThresholdField({
+  thresholdKey,
+  current,
+  onUpdate,
+}: {
+  thresholdKey: keyof StalenessThresholds;
+  current: Required<StalenessThresholds>;
+  onUpdate: (next: StalenessThresholds) => Promise<void>;
+}) {
+  const { value, setValue, status, errorMessage } = useAutoSave<number>({
+    initialValue: current[thresholdKey],
+    onSave: async (next) => onUpdate({ ...current, [thresholdKey]: next }),
+  });
+  return (
+    <AutoSaveField
+      label={LABELS[thresholdKey]}
+      htmlFor={`staleness-${thresholdKey}`}
+      status={status}
+      errorMessage={errorMessage}
+    >
+      <Input
+        id={`staleness-${thresholdKey}`}
+        type="number"
+        min={1}
+        value={value}
+        onChange={(e) => setValue(parseInt(e.target.value, 10) || 1)}
+        aria-invalid={status === "error"}
+      />
+    </AutoSaveField>
+  );
+}
 
 export function StalenessSection() {
   const { data: settings } = useSettings();
   const updateSettings = useUpdateSettings();
-
-  const defaults: StalenessThresholds = settings?.stalenessThresholds ?? {
-    income_source: 12,
-    committed_bill: 6,
-    yearly_bill: 12,
-    discretionary_category: 12,
-    savings_allocation: 12,
-    wealth_account: 3,
+  // Merge server values with defaults so all keys are always present
+  const current: Required<StalenessThresholds> = {
+    ...DEFAULTS,
+    ...settings?.stalenessThresholds,
   };
 
-  const [values, setValues] = useState<StalenessThresholds>(defaults);
-
-  function handleSave() {
-    updateSettings.mutate(
-      { stalenessThresholds: values },
-      { onSuccess: () => toast.success("Thresholds saved") }
-    );
-  }
+  const save = async (next: StalenessThresholds) => {
+    await updateSettings.mutateAsync({ stalenessThresholds: next });
+  };
 
   return (
-    <Section id="staleness" title="Staleness thresholds">
-      <p className="text-sm text-muted-foreground">
-        Number of months before each item type is considered stale.
-      </p>
-      <div className="grid grid-cols-2 gap-3 max-w-sm">
-        {Object.entries(STALENESS_LABELS).map(([key, label]) => (
-          <div key={key} className="space-y-1">
-            <label htmlFor={`staleness-${key}`} className="text-xs text-muted-foreground">
-              {label}
-            </label>
-            <Input
-              id={`staleness-${key}`}
-              type="number"
-              min={1}
-              value={values[key as keyof StalenessThresholds] ?? 12}
-              onChange={(e) =>
-                setValues((v) => ({
-                  ...v,
-                  [key as keyof StalenessThresholds]: parseInt(e.target.value) || 1,
-                }))
-              }
-            />
-          </div>
+    <SettingsSection
+      id="staleness"
+      title="Staleness thresholds"
+      description="Number of months before each item type is considered stale."
+    >
+      <div className="grid grid-cols-2 gap-3 max-w-lg">
+        {(Object.keys(LABELS) as Array<keyof StalenessThresholds>).map((k) => (
+          <ThresholdField key={k} thresholdKey={k} current={current} onUpdate={save} />
         ))}
       </div>
-      <Button size="sm" onClick={handleSave} disabled={updateSettings.isPending}>
-        {updateSettings.isPending ? "Saving…" : "Save"}
-      </Button>
-    </Section>
+    </SettingsSection>
   );
 }

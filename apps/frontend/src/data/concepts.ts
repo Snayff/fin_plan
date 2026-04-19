@@ -30,13 +30,13 @@ export const CONCEPT_ENTRIES: ConceptEntry[] = [
   },
   {
     id: "amortisation",
-    title: "Amortisation (÷12)",
+    title: "Amortisation (÷12, ÷3, × 52/12)",
     summary:
       "Some costs land once a year — car insurance, a TV licence, an annual subscription. Amortisation spreads that yearly cost evenly across 12 months, so each month's waterfall reflects a fair share of the bill, not just the month it arrives.\n\nFor example: a £1,200 yearly insurance bill becomes £100/month in your committed spend tier.",
     whyItMatters:
-      "finplan uses ÷12 automatically for annual bills in the Committed Spend tier. This prevents the false impression of a healthy surplus most months and a deficit in the month the big bill lands. Your waterfall reflects what you actually need to set aside each month.",
+      "finplan uses ÷12 automatically for annual bills in the Committed Spend tier. This prevents the false impression of a healthy surplus most months and a deficit in the month the big bill lands. Your waterfall reflects what you actually need to set aside each month. finplan also amortises quarterly amounts (÷3) and weekly amounts (× 52/12) so that any frequency of income or spend is converted to a consistent monthly figure in your waterfall.",
     visualType: "amortisation-comparison",
-    relatedTermIds: ["amortised", "committed-spend", "annual-income"],
+    relatedTermIds: ["amortised", "amortised_quarterly", "amortised_weekly", "committed-spend", "annual-income"],
     seeThisInFinplan: "/committed",
   },
   {

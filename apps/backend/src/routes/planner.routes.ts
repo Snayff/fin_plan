@@ -53,7 +53,8 @@ export async function plannerRoutes(fastify: FastifyInstance) {
     const budget = await plannerService.upsertYearBudget(
       req.householdId!,
       parseInt(year, 10),
-      data
+      data,
+      actorCtx(req)
     );
     return reply.send(budget);
   });

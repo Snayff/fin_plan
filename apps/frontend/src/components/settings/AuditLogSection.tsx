@@ -3,7 +3,7 @@ import { useAuthStore } from "@/stores/authStore";
 import { useAuditLog } from "@/hooks/useSettings";
 import { useHouseholdDetails } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
-import { Section } from "./Section";
+import { SettingsSection } from "./SettingsSection";
 import { AuditLogFilters } from "./AuditLogFilters";
 import { AuditLogTable } from "./AuditLogTable";
 import type { AuditEntry, ResourceSlug } from "@finplan/shared";
@@ -42,11 +42,11 @@ export function AuditLogSection() {
   const entries: AuditEntry[] = data?.pages.flatMap((p) => p.entries) ?? [];
 
   return (
-    <Section id="audit-log" title="Audit log">
-      <p className="text-sm text-muted-foreground">
-        A record of all changes made to your household data.
-      </p>
-
+    <SettingsSection
+      id="audit-log"
+      title="Audit log"
+      description="A record of all changes made to your household data."
+    >
       <AuditLogFilters filters={filters} members={members} onChange={setFilters} />
 
       {isError ? (
@@ -96,6 +96,9 @@ export function AuditLogSection() {
           </Button>
         </div>
       )}
-    </Section>
+      <p className="pt-3 text-xs text-muted-foreground">
+        Entries older than 180 days are automatically removed.
+      </p>
+    </SettingsSection>
   );
 }

@@ -1,6 +1,7 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { prismaMock, resetPrismaMocks } from "../test/mocks/prisma";
 import { buildMember } from "../test/fixtures";
+import type { ActorCtx } from "./audit.service";
 
 mock.module("../config/database", () => ({ prisma: prismaMock }));
 mock.module("./export.service", () => ({
@@ -430,6 +431,54 @@ describe("importService.importHousehold", () => {
     const { prismaMock } = await import("../test/mocks/prisma");
     // @ts-expect-error — asserting model is removed from the mock
     expect(prismaMock.waterfallSetupSession).toBeUndefined();
+  });
+
+  it("writes one IMPORT_DATA audit row with counts metadata on create_new", async () => {
+    const ctx: ActorCtx = {
+      householdId: "new-hh-id",
+      actorId: "u1",
+      actorName: "Alice",
+      ipAddress: "1.2.3.4",
+      userAgent: "test-agent",
+    };
+    prismaMock.user.findUnique.mockResolvedValue({ name: "Alice" });
+    prismaMock.household.create.mockResolvedValue({ id: "new-hh-id", name: "Imported Household" });
+    prismaMock.member.create.mockResolvedValue(
+      buildMember({
+        id: "m1",
+        householdId: "new-hh-id",
+        userId: "u1",
+        name: "Alice",
+        role: "owner",
+      })
+    );
+    prismaMock.householdSettings.upsert.mockResolvedValue({});
+    prismaMock.member.findMany.mockResolvedValue([
+      buildMember({
+        id: "m1",
+        householdId: "new-hh-id",
+        userId: "u1",
+        name: "Alice",
+        role: "owner",
+      }),
+    ]);
+    prismaMock.auditLog.create.mockResolvedValue({});
+
+    await importService.importHousehold("ignored", "u1", minimalExport, "create_new", ctx);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledTimes(1);
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "IMPORT_DATA",
+        resource: "household",
+        householdId: "new-hh-id",
+        actorId: "u1",
+        actorName: "Alice",
+        metadata: expect.objectContaining({
+          counts: expect.objectContaining({ incomeSources: expect.any(Number) }),
+        }),
+      }),
+    });
   });
 
   it("throws ValidationError and rolls back when an income source references an unknown subcategory", async () => {

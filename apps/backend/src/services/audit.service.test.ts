@@ -109,6 +109,14 @@ describe("computeDiff", () => {
     expect(diff).toEqual([{ field: "spendType", before: "monthly", after: "yearly" }]);
   });
 
+  it("captures weekly ↔ quarterly spendType transition in diff", () => {
+    const diff = computeDiff(
+      { id: "ci-1", spendType: "weekly" },
+      { id: "ci-1", spendType: "quarterly" }
+    );
+    expect(diff).toEqual([{ field: "spendType", before: "weekly", after: "quarterly" }]);
+  });
+
   it("excludes universal system fields on delete", () => {
     const diff = computeDiff({ id: "abc", householdId: "hh", name: "Old" }, null);
     expect(diff).toEqual([{ field: "name", before: "Old" }]);
@@ -188,5 +196,69 @@ describe("audited()", () => {
         mutation: async () => ({ id: "inc_1", amount: 200 }),
       })
     ).rejects.toThrow("DB error");
+  });
+});
+
+describe("computeDiff — FLAT_JSON_ALLOWLIST descent", () => {
+  it("descends one level into household-settings.stalenessThresholds", () => {
+    const before = {
+      stalenessThresholds: { income: 30, committed: 60, discretionary: 90 },
+      otherField: "unchanged",
+    };
+    const after = {
+      stalenessThresholds: { income: 45, committed: 60, discretionary: 90 },
+      otherField: "unchanged",
+    };
+    const changes = computeDiff(before, after, "household-settings");
+    expect(changes).toEqual([{ field: "stalenessThresholds.income", before: 30, after: 45 }]);
+  });
+
+  it("emits an opaque change for non-allowlisted JSON fields", () => {
+    const before = { metadata: { a: 1 } };
+    const after = { metadata: { a: 2 } };
+    const changes = computeDiff(before, after, "household-settings");
+    expect(changes).toEqual([{ field: "metadata", before: { a: 1 }, after: { a: 2 } }]);
+  });
+
+  it("emits sub-field creates when before has no allowlisted JSON blob", () => {
+    const before = { stalenessThresholds: null };
+    const after = { stalenessThresholds: { income: 30, committed: 60 } };
+    const changes = computeDiff(before, after, "household-settings");
+    expect(changes).toContainEqual({ field: "stalenessThresholds.income", after: 30 });
+    expect(changes).toContainEqual({ field: "stalenessThresholds.committed", after: 60 });
+  });
+});
+
+describe("SYSTEM_FIELDS — twoFactorEnabled is hidden", () => {
+  it("filters twoFactorEnabled from diff output", () => {
+    const before = { name: "A", twoFactorEnabled: false };
+    const after = { name: "B", twoFactorEnabled: true };
+    const changes = computeDiff(before, after, "user");
+    expect(changes.find((c) => c.field === "twoFactorEnabled")).toBeUndefined();
+    expect(changes.find((c) => c.field === "name")).toBeDefined();
+  });
+});
+
+describe("audited() — lazy resourceId", () => {
+  beforeEach(() => {
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+  });
+
+  it("resolves resourceId from a function when the mutation result is an object", async () => {
+    await audited({
+      db: prismaMock as any,
+      ctx,
+      action: "CREATE_SNAPSHOT",
+      resource: "snapshot",
+      resourceId: (after: { id: string }) => after.id,
+      beforeFetch: async () => null,
+      mutation: async () => ({ id: "snap-123", name: "Q1" }),
+    });
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ resourceId: "snap-123" }),
+      })
+    );
   });
 });

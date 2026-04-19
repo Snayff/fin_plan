@@ -96,14 +96,16 @@ describe("waterfallService.updateIncome", () => {
   it("updates the income source and sets lastReviewedAt", async () => {
     const id = "inc-1";
     const householdId = "hh-1";
+    const ctx = { householdId, actorId: "user-1", actorName: "Test" };
 
     prismaMock.incomeSource.findUnique.mockResolvedValue({
       id,
       householdId,
     } as any);
     prismaMock.incomeSource.update.mockResolvedValue({ id, name: "Salary" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await waterfallService.updateIncome(householdId, id, { name: "Salary" });
+    await waterfallService.updateIncome(householdId, id, { name: "Salary" }, ctx);
 
     expect(prismaMock.incomeSource.update).toHaveBeenCalledWith({
       where: { id },
@@ -386,6 +388,7 @@ describe("waterfallService.getWaterfallSummary — toGBP rounding", () => {
 
 describe("waterfallService.createCommitted (CommittedItem)", () => {
   it("creates a committed item with subcategoryId and notes", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
     prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-1" } as any);
     prismaMock.committedItem.create.mockResolvedValue({
       id: "ci-1",
@@ -397,13 +400,18 @@ describe("waterfallService.createCommitted (CommittedItem)", () => {
       notes: "Fixed rate until 2027",
     } as any);
     prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    const result = await waterfallService.createCommitted("hh-1", {
-      name: "Rent",
-      amount: 1200,
-      subcategoryId: "sub-1",
-      notes: "Fixed rate until 2027",
-    });
+    const result = await waterfallService.createCommitted(
+      "hh-1",
+      {
+        name: "Rent",
+        amount: 1200,
+        subcategoryId: "sub-1",
+        notes: "Fixed rate until 2027",
+      },
+      ctx
+    );
 
     expect(result.subcategoryId).toBe("sub-1");
     expect(result.notes).toBe("Fixed rate until 2027");
@@ -413,6 +421,7 @@ describe("waterfallService.createCommitted (CommittedItem)", () => {
 
 describe("waterfallService.createYearly (CommittedItem with spendType=yearly)", () => {
   it("creates a committed item with spendType=yearly and dueDate", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
     prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-1" } as any);
     prismaMock.committedItem.create.mockResolvedValue({
       id: "ci-2",
@@ -423,13 +432,18 @@ describe("waterfallService.createYearly (CommittedItem with spendType=yearly)", 
       dueDate: new Date("2026-03-15"),
     } as any);
     prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    const result = await waterfallService.createYearly("hh-1", {
-      name: "Insurance",
-      amount: 600,
-      subcategoryId: "sub-1",
-      dueDate: new Date("2026-03-15"),
-    });
+    const result = await waterfallService.createYearly(
+      "hh-1",
+      {
+        name: "Insurance",
+        amount: 600,
+        subcategoryId: "sub-1",
+        dueDate: new Date("2026-03-15"),
+      },
+      ctx
+    );
 
     expect(result.spendType).toBe("yearly");
     expect((result as any).dueDate).toEqual(new Date("2026-03-15"));
@@ -438,13 +452,15 @@ describe("waterfallService.createYearly (CommittedItem with spendType=yearly)", 
 
 describe("waterfallService.updateCommitted (CommittedItem)", () => {
   it("updates the committed item and sets lastReviewedAt", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
     prismaMock.committedItem.findUnique.mockResolvedValue({
       id: "ci-1",
       householdId: "hh-1",
     } as any);
     prismaMock.committedItem.update.mockResolvedValue({ id: "ci-1", name: "Updated Rent" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await waterfallService.updateCommitted("hh-1", "ci-1", { name: "Updated Rent" });
+    await waterfallService.updateCommitted("hh-1", "ci-1", { name: "Updated Rent" }, ctx);
 
     expect(prismaMock.committedItem.update).toHaveBeenCalledWith({
       where: { id: "ci-1" },
@@ -455,6 +471,7 @@ describe("waterfallService.updateCommitted (CommittedItem)", () => {
 
 describe("waterfallService.createDiscretionary (DiscretionaryItem)", () => {
   it("creates a discretionary item with subcategoryId", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
     prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-food" } as any);
     prismaMock.discretionaryItem.create.mockResolvedValue({
       id: "di-1",
@@ -466,12 +483,17 @@ describe("waterfallService.createDiscretionary (DiscretionaryItem)", () => {
       notes: null,
     } as any);
     prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    const result = await waterfallService.createDiscretionary("hh-1", {
-      name: "Groceries",
-      amount: 500,
-      subcategoryId: "sub-food",
-    });
+    const result = await waterfallService.createDiscretionary(
+      "hh-1",
+      {
+        name: "Groceries",
+        amount: 500,
+        subcategoryId: "sub-food",
+      },
+      ctx
+    );
 
     expect(result.subcategoryId).toBe("sub-food");
     expect(prismaMock.discretionaryItem.create).toHaveBeenCalled();
@@ -480,6 +502,7 @@ describe("waterfallService.createDiscretionary (DiscretionaryItem)", () => {
 
 describe("waterfallService.createSavings (DiscretionaryItem)", () => {
   it("creates a discretionary item", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
     prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-savings" } as any);
     prismaMock.discretionaryItem.create.mockResolvedValue({
       id: "di-2",
@@ -489,12 +512,17 @@ describe("waterfallService.createSavings (DiscretionaryItem)", () => {
       amount: 200,
     } as any);
     prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    const result = await waterfallService.createSavings("hh-1", {
-      name: "Emergency Fund",
-      amount: 200,
-      subcategoryId: "sub-savings",
-    });
+    const result = await waterfallService.createSavings(
+      "hh-1",
+      {
+        name: "Emergency Fund",
+        amount: 200,
+        subcategoryId: "sub-savings",
+      },
+      ctx
+    );
 
     expect(result.id).toBe("di-2");
   });
@@ -502,6 +530,7 @@ describe("waterfallService.createSavings (DiscretionaryItem)", () => {
 
 describe("waterfallService.updateDiscretionary (DiscretionaryItem)", () => {
   it("updates the discretionary item and sets lastReviewedAt", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
     prismaMock.discretionaryItem.findUnique.mockResolvedValue({
       id: "di-1",
       householdId: "hh-1",
@@ -510,8 +539,9 @@ describe("waterfallService.updateDiscretionary (DiscretionaryItem)", () => {
       id: "di-1",
       name: "Updated Groceries",
     } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await waterfallService.updateDiscretionary("hh-1", "di-1", { name: "Updated Groceries" });
+    await waterfallService.updateDiscretionary("hh-1", "di-1", { name: "Updated Groceries" }, ctx);
 
     expect(prismaMock.discretionaryItem.update).toHaveBeenCalledWith({
       where: { id: "di-1" },
@@ -586,8 +616,8 @@ describe("waterfallService.getWaterfallSummary — consolidated models", () => {
 
     expect(summary.committed.bills).toHaveLength(1);
     expect(summary.committed.bills[0]!.name).toBe("Rent");
-    expect(summary.committed.yearlyBills).toHaveLength(1);
-    expect(summary.committed.yearlyBills[0]!.name).toBe("Insurance");
+    expect(summary.committed.nonMonthlyBills).toHaveLength(1);
+    expect(summary.committed.nonMonthlyBills[0]!.name).toBe("Insurance");
   });
 
   it("splits discretionary items into categories and savings", async () => {
@@ -798,21 +828,22 @@ describe("waterfallService.createCommitted with audited()", () => {
     );
   });
 
-  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+  it("always writes AuditLog (ctx is required)", async () => {
     prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-1" } as any);
     prismaMock.committedItem.create.mockResolvedValue({
       id: "ci_1",
       amount: 1200,
     } as any);
     prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await waterfallService.createCommitted("hh_1", {
-      name: "Rent",
-      amount: 1200,
-      subcategoryId: "sub-1",
-    });
+    await waterfallService.createCommitted(
+      "hh_1",
+      { name: "Rent", amount: 1200, subcategoryId: "sub-1" },
+      actor
+    );
 
-    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+    expect(prismaMock.auditLog.create).toHaveBeenCalled();
   });
 });
 
@@ -849,21 +880,22 @@ describe("waterfallService.createDiscretionary with audited()", () => {
     );
   });
 
-  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+  it("always writes AuditLog (ctx is required)", async () => {
     prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-food" } as any);
     prismaMock.discretionaryItem.create.mockResolvedValue({
       id: "di_1",
       amount: 500,
     } as any);
     prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await waterfallService.createDiscretionary("hh_1", {
-      name: "Groceries",
-      amount: 500,
-      subcategoryId: "sub-food",
-    });
+    await waterfallService.createDiscretionary(
+      "hh_1",
+      { name: "Groceries", amount: 500, subcategoryId: "sub-food" },
+      actor
+    );
 
-    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+    expect(prismaMock.auditLog.create).toHaveBeenCalled();
   });
 });
 
@@ -945,25 +977,28 @@ describe("waterfallService.createIncome with audited()", () => {
     );
   });
 
-  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+  it("always writes AuditLog (ctx is required)", async () => {
     prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-1" } as any);
     prismaMock.incomeSource.create.mockResolvedValue({
       id: "inc_1",
       amount: 1000,
     } as any);
     prismaMock.waterfallHistory.create.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await waterfallService.createIncome("hh_1", {
-      name: "Salary",
-      amount: 1000,
-      subcategoryId: "sub-1",
-    });
+    await waterfallService.createIncome(
+      "hh_1",
+      { name: "Salary", amount: 1000, subcategoryId: "sub-1" },
+      actor
+    );
 
-    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+    expect(prismaMock.auditLog.create).toHaveBeenCalled();
   });
 });
 
 describe("waterfallService discretionary guards (planner-owned)", () => {
+  const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
+
   it("createDiscretionary rejects items in a planner-locked subcategory", async () => {
     prismaMock.subcategory.findFirst.mockResolvedValue({
       id: "sub-gifts",
@@ -973,7 +1008,11 @@ describe("waterfallService discretionary guards (planner-owned)", () => {
       lockedByPlanner: true,
     } as any);
     await expect(
-      waterfallService.createDiscretionary("hh-1", { subcategoryId: "sub-gifts", name: "X" } as any)
+      waterfallService.createDiscretionary(
+        "hh-1",
+        { subcategoryId: "sub-gifts", name: "X" } as any,
+        ctx
+      )
     ).rejects.toMatchObject({ name: "ValidationError" });
   });
 
@@ -984,7 +1023,7 @@ describe("waterfallService discretionary guards (planner-owned)", () => {
       isPlannerOwned: true,
     } as any);
     await expect(
-      waterfallService.updateDiscretionary("hh-1", "d1", { name: "Renamed" } as any)
+      waterfallService.updateDiscretionary("hh-1", "d1", { name: "Renamed" } as any, ctx)
     ).rejects.toMatchObject({ name: "ValidationError" });
   });
 
@@ -994,9 +1033,92 @@ describe("waterfallService discretionary guards (planner-owned)", () => {
       householdId: "hh-1",
       isPlannerOwned: true,
     } as any);
-    await expect(waterfallService.deleteDiscretionary("hh-1", "d1")).rejects.toMatchObject({
+    await expect(waterfallService.deleteDiscretionary("hh-1", "d1", ctx)).rejects.toMatchObject({
       name: "ValidationError",
     });
+  });
+});
+
+describe("waterfallService.getWaterfallSummary — weekly income", () => {
+  const makeWeeklySource = () => ({
+    id: "sw1",
+    householdId: "hh-1",
+    name: "Weekly Salary",
+    frequency: "weekly" as const,
+    incomeType: "salary" as const,
+    dueDate: new Date("2026-01-07"),
+    ownerId: null,
+    sortOrder: 0,
+    endedAt: null,
+    lastReviewedAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    subcategoryId: "sub-1",
+    notes: null,
+  });
+
+  beforeEach(() => {
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+  });
+
+  it("includes weekly income in income.total as monthly equivalent (amount × 52/12)", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([makeWeeklySource()] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      makePeriod("income_source", "sw1", 520),
+    ]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    // 520 × 52 / 12 = 2253.333... → toGBP → 2253.33
+    expect(summary.income.total).toBe(2253.33);
+  });
+
+  it("places weekly income source in income.monthly (monthlyLike bucket)", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([makeWeeklySource()] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      makePeriod("income_source", "sw1", 520),
+    ]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    expect(summary.income.monthly).toHaveLength(1);
+    expect(summary.income.monthly[0]!.frequency).toBe("weekly");
+    expect(summary.income.nonMonthly).toHaveLength(0);
+  });
+});
+
+describe("waterfallService.getWaterfallSummary — quarterly committed", () => {
+  it("includes quarterly committed item in nonMonthlyBills and monthlyAvg12 (amount/3)", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "qc1",
+        householdId: "hh-1",
+        name: "Quarterly Service",
+        spendType: "quarterly",
+        dueDate: new Date("2026-01-15"),
+        ownerId: null,
+        sortOrder: 0,
+        lastReviewedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        subcategoryId: "sub-1",
+        notes: null,
+      },
+    ] as any);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      makePeriod("committed_item", "qc1", 300),
+    ]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    // quarterly item: 300/3 = 100/month avg
+    expect(summary.committed.monthlyAvg12).toBe(100);
+    expect(summary.committed.monthlyTotal).toBe(0);
+    expect(summary.committed.nonMonthlyBills).toHaveLength(1);
+    expect(summary.committed.nonMonthlyBills[0]!.name).toBe("Quarterly Service");
   });
 });
 

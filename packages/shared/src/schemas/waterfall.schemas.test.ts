@@ -13,10 +13,12 @@ describe("SpendTypeEnum", () => {
     expect(SpendTypeEnum.safeParse("monthly").success).toBe(true);
     expect(SpendTypeEnum.safeParse("yearly").success).toBe(true);
     expect(SpendTypeEnum.safeParse("one_off").success).toBe(true);
+    expect(SpendTypeEnum.safeParse("weekly").success).toBe(true);
+    expect(SpendTypeEnum.safeParse("quarterly").success).toBe(true);
   });
 
-  it("rejects invalid spend type", () => {
-    expect(SpendTypeEnum.safeParse("weekly").success).toBe(false);
+  it("accepts weekly as valid spend type", () => {
+    expect(SpendTypeEnum.safeParse("weekly").success).toBe(true);
   });
 });
 

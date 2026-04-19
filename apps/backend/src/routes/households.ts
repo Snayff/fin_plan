@@ -16,6 +16,7 @@ import {
   createMemberSchema,
   updateMemberSchema,
   deleteMemberSchema,
+  AuditAction,
 } from "@finplan/shared";
 import { AuthorizationError, NotFoundError } from "../utils/errors.js";
 import { actorCtx } from "../lib/actor-ctx.js";
@@ -62,8 +63,14 @@ export async function householdRoutes(fastify: FastifyInstance) {
     const userId = request.user!.userId;
     const { id } = request.params as { id: string };
     const { name } = renameHouseholdSchema.parse(request.body);
-    const household = await householdService.renameHousehold(id, userId, name);
+    const household = await householdService.renameHousehold(id, userId, name, actorCtx(request));
     return reply.send({ household });
+  });
+
+  // Delete household (owner only) — cascades all household data
+  fastify.delete("/households/:id", { preHandler: [authMiddleware] }, async (request, reply) => {
+    await householdService.delete(request.householdId!, actorCtx(request));
+    return reply.status(204).send();
   });
 
   // Invite a member (owner only) — rate limited: 5 invites per hour per household
@@ -116,7 +123,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user!.userId;
       const { id, inviteId } = request.params as { id: string; inviteId: string };
-      await householdService.cancelInvite(id, userId, inviteId);
+      await householdService.cancelInvite(id, userId, inviteId, actorCtx(request));
       return reply.send({ success: true });
     }
   );
@@ -128,7 +135,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user!.userId;
       const { id } = request.params as { id: string };
-      await householdService.leaveHousehold(id, userId);
+      await householdService.leaveHousehold(id, userId, actorCtx(request));
       return reply.send({ success: true });
     }
   );
@@ -162,7 +169,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const updated = await audited({
         db: prisma,
         ctx: actorCtx(req),
-        action: "UPDATE_MEMBER_PROFILE",
+        action: AuditAction.UPDATE_MEMBER_PROFILE,
         resource: "household-member",
         resourceId: targetMember.id,
         beforeFetch: async (tx) =>
@@ -240,7 +247,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const userId = request.user!.userId;
       const { id } = request.params as { id: string };
       const data = createMemberSchema.parse(request.body);
-      const member = await memberService.createMember(id, userId, data);
+      const member = await memberService.createMember(id, userId, data, actorCtx(request));
       return reply.status(201).send({ member });
     }
   );
@@ -253,7 +260,13 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const userId = request.user!.userId;
       const { id, memberId } = request.params as { id: string; memberId: string };
       const data = updateMemberSchema.parse(request.body);
-      const member = await memberService.updateMember(id, userId, memberId, data);
+      const member = await memberService.updateMember(
+        id,
+        userId,
+        memberId,
+        data,
+        actorCtx(request)
+      );
       return reply.send({ member });
     }
   );
@@ -266,7 +279,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const userId = request.user!.userId;
       const { id, memberId } = request.params as { id: string; memberId: string };
       const { reassignToMemberId } = deleteMemberSchema.parse(request.body ?? {});
-      await memberService.deleteMember(id, userId, memberId, reassignToMemberId);
+      await memberService.deleteMember(id, userId, memberId, actorCtx(request), reassignToMemberId);
       return reply.send({ success: true });
     }
   );

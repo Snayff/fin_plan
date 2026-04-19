@@ -13,7 +13,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteAllWaterfall } from "@/hooks/useWaterfall";
-import { Section } from "./Section";
+import { SettingsSection } from "./SettingsSection";
 
 export function RebuildWaterfallSection() {
   const navigate = useNavigate();
@@ -35,7 +35,7 @@ export function RebuildWaterfallSection() {
   }
 
   return (
-    <Section id="rebuild-waterfall" title="Rebuild waterfall">
+    <SettingsSection id="rebuild-waterfall" title="Rebuild waterfall">
       <p className="text-sm text-muted-foreground">
         Delete all income sources, committed spend, and discretionary items so you can start over.
         This cannot be undone.
@@ -65,6 +65,6 @@ export function RebuildWaterfallSection() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </Section>
+    </SettingsSection>
   );
 }

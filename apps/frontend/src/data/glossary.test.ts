@@ -2,8 +2,8 @@ import { describe, it, expect } from "bun:test";
 import { GLOSSARY_ENTRIES, getGlossaryEntry, type GlossaryTag } from "./glossary";
 
 describe("GLOSSARY_ENTRIES", () => {
-  it("contains all 35 canonical entries", () => {
-    expect(GLOSSARY_ENTRIES.length).toBe(35);
+  it("contains all 37 canonical entries", () => {
+    expect(GLOSSARY_ENTRIES.length).toBe(37);
   });
 
   it("each entry has required fields", () => {

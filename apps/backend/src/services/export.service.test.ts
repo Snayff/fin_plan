@@ -6,6 +6,7 @@ mock.module("../config/database", () => ({ prisma: prismaMock }));
 
 import { exportService } from "./export.service";
 import { AuthorizationError, NotFoundError } from "../utils/errors";
+import type { ActorCtx } from "./audit.service";
 
 beforeEach(() => resetPrismaMocks());
 
@@ -77,6 +78,50 @@ describe("exportService.exportHousehold", () => {
     const result = await exportService.exportHousehold("household-1", "user-1");
     const parsed = householdExportSchema.safeParse(result);
     expect(parsed.success).toBe(true);
+  });
+
+  it("writes one EXPORT_DATA audit row after a successful export", async () => {
+    const ctx: ActorCtx = {
+      householdId: "household-1",
+      actorId: "user-1",
+      actorName: "Alice",
+      ipAddress: "1.2.3.4",
+      userAgent: "test-agent",
+    };
+    prismaMock.member.findFirst.mockResolvedValue(buildMember({ role: "owner" }));
+    prismaMock.household.findUnique.mockResolvedValue(buildHousehold({ name: "Test Household" }));
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+    prismaMock.member.findMany.mockResolvedValue([]);
+    prismaMock.subcategory.findMany.mockResolvedValue([]);
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.asset.findMany.mockResolvedValue([]);
+    prismaMock.account.findMany.mockResolvedValue([]);
+    prismaMock.purchaseItem.findMany.mockResolvedValue([]);
+    prismaMock.plannerYearBudget.findMany.mockResolvedValue([]);
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue(null);
+    prismaMock.giftPerson.findMany.mockResolvedValue([]);
+    prismaMock.giftEvent.findMany.mockResolvedValue([]);
+    prismaMock.giftAllocation.findMany.mockResolvedValue([]);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([]);
+    prismaMock.waterfallHistory.findMany.mockResolvedValue([]);
+    prismaMock.auditLog.create.mockResolvedValue({});
+
+    await exportService.exportHousehold("household-1", "user-1", ctx);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledTimes(1);
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        action: "EXPORT_DATA",
+        resource: "household",
+        resourceId: "household-1",
+        householdId: "household-1",
+        actorId: "user-1",
+        actorName: "Alice",
+        metadata: expect.objectContaining({ counts: expect.any(Object) }),
+      }),
+    });
   });
 
   it("resolves owner name from memberId for income sources and inlines periods", async () => {

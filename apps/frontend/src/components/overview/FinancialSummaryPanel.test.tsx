@@ -25,7 +25,7 @@ mock.module("@/hooks/useWaterfall", () => ({
 import { FinancialSummaryPanel } from "./FinancialSummaryPanel";
 
 const mockSummary: WaterfallSummary = {
-  income: { total: 5000, byType: [], bySubcategory: [], monthly: [], annual: [], oneOff: [] },
+  income: { total: 5000, byType: [], bySubcategory: [], monthly: [], nonMonthly: [], oneOff: [] },
   committed: {
     monthlyTotal: 2000,
     monthlyAvg12: 2000,
@@ -61,7 +61,7 @@ const mockSummary: WaterfallSummary = {
         subcategoryId: "s1",
       },
     ],
-    yearlyBills: [],
+    nonMonthlyBills: [],
   },
   discretionary: {
     total: 1500,

@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { waterfallService } from "@/services/waterfall.service";
 import { showError } from "@/lib/toast";
-import type { CreatePeriodInput, UpdatePeriodInput } from "@finplan/shared";
+import type { CreatePeriodInput, UpdatePeriodInput, SpendType, IncomeFrequency } from "@finplan/shared";
 
 export const WATERFALL_KEYS = {
   summary: ["waterfall", "summary"] as const,
@@ -126,9 +126,11 @@ export function useSubcategories(tier: "income" | "committed" | "discretionary")
   });
 }
 
-const spendTypeToFrequency: Record<string, "monthly" | "annual" | "one_off"> = {
+const spendTypeToFrequency: Record<string, IncomeFrequency> = {
   monthly: "monthly",
   yearly: "annual",
+  weekly: "weekly",
+  quarterly: "quarterly",
   one_off: "one_off",
 };
 
@@ -217,7 +219,7 @@ export interface TierItemRow {
   id: string;
   name: string;
   amount: number;
-  spendType: "monthly" | "yearly" | "one_off";
+  spendType: SpendType;
   subcategoryId: string;
   notes: string | null;
   /** Required for income/committed; nullable for discretionary (only set on one_off). */
@@ -230,9 +232,11 @@ export interface TierItemRow {
   nextPeriod?: { amount: number; startDate: Date } | null;
 }
 
-function normaliseIncomeFrequency(frequency: string): "monthly" | "yearly" | "one_off" {
+function normaliseIncomeFrequency(frequency: string): SpendType {
   if (frequency === "annual") return "yearly";
   if (frequency === "one_off") return "one_off";
+  if (frequency === "weekly") return "weekly";
+  if (frequency === "quarterly") return "quarterly";
   return "monthly";
 }
 
@@ -252,7 +256,7 @@ function mapTierItem(r: any, spendType: string): TierItemRow {
     id: r.id,
     name: r.name,
     amount: r.amount,
-    spendType: spendType as "monthly" | "yearly" | "one_off",
+    spendType: spendType as SpendType,
     subcategoryId: r.subcategoryId ?? "",
     notes: r.notes ?? null,
     dueDate: r.dueDate ? new Date(r.dueDate) : null,

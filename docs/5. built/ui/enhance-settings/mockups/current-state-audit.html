@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { margin: 0; padding: 24px; font-family: 'Nunito Sans', system-ui, sans-serif; background: #080a14; color: rgba(238,242,255,0.92); }
+  h1 { font-family: 'Outfit', system-ui, sans-serif; font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: #8b5cf6; margin: 0 0 8px; }
+  .subtitle { font-size: 13px; color: rgba(238,242,255,0.5); margin-bottom: 32px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .issue-card { background: #0d1120; border: 1px solid #1a1f35; border-radius: 8px; padding: 16px; }
+  .issue-card.critical { border-color: rgba(245,158,11,0.3); }
+  .issue-tag { display: inline-block; font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 4px; margin-bottom: 10px; }
+  .tag-bug { background: rgba(245,158,11,0.12); color: #f59e0b; }
+  .tag-ux { background: rgba(139,92,246,0.12); color: #8b5cf6; }
+  .tag-arch { background: rgba(14,165,233,0.12); color: #0ea5e9; }
+  .tag-design { background: rgba(168,85,247,0.12); color: #a855f7; }
+  .issue-title { font-family: 'Outfit', system-ui, sans-serif; font-size: 14px; font-weight: 700; margin-bottom: 6px; }
+  .issue-body { font-size: 12px; color: rgba(238,242,255,0.6); line-height: 1.6; }
+  .issue-body li { margin-bottom: 4px; }
+  .divider { height: 1px; background: #1a1f35; margin: 24px 0; }
+  .section-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(238,242,255,0.35); margin-bottom: 12px; }
+  .current-order { display: flex; flex-direction: column; gap: 4px; }
+  .order-item { display: flex; align-items: center; gap: 8px; padding: 6px 10px; background: #141b2e; border-radius: 4px; font-size: 12px; }
+  .order-num { width: 20px; height: 20px; border-radius: 50%; background: rgba(139,92,246,0.15); color: #8b5cf6; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .order-label { flex: 1; }
+  .order-badge { font-size: 10px; padding: 1px 6px; border-radius: 3px; }
+  .badge-ok { background: rgba(34,197,94,0.1); color: #22c55e; }
+  .badge-warn { background: rgba(245,158,11,0.1); color: #f59e0b; }
+  .badge-bad { background: rgba(239,68,68,0.1); color: #ef4444; }
+</style>
+</head>
+<body>
+
+<h1>Settings — Current State Audit</h1>
+<p class="subtitle">Problems I've identified before designing the enhanced version</p>
+
+<div class="grid">
+
+  <div class="issue-card critical">
+    <span class="issue-tag tag-bug">Bug</span>
+    <div class="issue-title">Nav highlight misalignment</div>
+    <div class="issue-body">
+      <ul>
+        <li>Active item uses <code>bg-accent text-accent-foreground</code> — a full background fill rather than the design system's indicator pattern</li>
+        <li>Should be: <code>bg-page-accent/14 border-l-2 border-page-accent rounded-r-sm</code></li>
+        <li>The click-to-scroll and scroll-spy are also slightly out of sync — clicking an item doesn't reliably set the active highlight</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="issue-card critical">
+    <span class="issue-tag tag-bug">Bug</span>
+    <div class="issue-title">Household dropdown off-screen</div>
+    <div class="issue-body">
+      <ul>
+        <li>The switcher dropdown uses <code>absolute top-full left-0</code> — positioned relative to the trigger element</li>
+        <li>Since the trigger is near the right edge of the nav bar, the dropdown can overflow the viewport on the right</li>
+        <li>Fix: use <code>right-0</code> instead of <code>left-0</code> to anchor to the right edge, or add a <code>max-h</code> + <code>overflow-y-auto</code> for long lists</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <span class="issue-tag tag-design">Design System</span>
+    <div class="issue-title">Left panel doesn't match design system</div>
+    <div class="issue-body">
+      <ul>
+        <li>Width is 192px (<code>w-48</code>) — design system specifies 360px for the left panel</li>
+        <li>No <code>PageHeader</code> component — using inline <code>&lt;p class="label-section"&gt;</code> instead</li>
+        <li>No left panel scroll structure (<code>flex flex-col h-full</code> with <code>flex-1 overflow-y-auto</code>)</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <span class="issue-tag tag-ux">UX</span>
+    <div class="issue-title">Excessive whitespace in right panel</div>
+    <div class="issue-body">
+      <ul>
+        <li>Content is constrained to <code>max-w-2xl</code> (672px) in a potentially very wide right panel</li>
+        <li>Settings sections render as a scrollable long page — sections feel disconnected</li>
+        <li>No visual hierarchy between sections — they blend together</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <span class="issue-tag tag-arch">Architecture</span>
+    <div class="issue-title">Household settings in disparate places</div>
+    <div class="issue-body">
+      <ul>
+        <li>Household <em>switching</em> is in the top nav (HouseholdSwitcher)</li>
+        <li>Household <em>management</em> (rename, invite, leave) is buried in Settings → Household</li>
+        <li>Creating a new household is in the top nav dropdown</li>
+        <li>These feel fragmented — user has to hunt for household-related actions</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="issue-card">
+    <span class="issue-tag tag-ux">UX</span>
+    <div class="issue-title">Inconsistent save pattern</div>
+    <div class="issue-body">
+      <ul>
+        <li><strong>Display</strong>: auto-saves on checkbox toggle ✓</li>
+        <li><strong>Profile</strong>: requires explicit Save button</li>
+        <li><strong>Staleness thresholds</strong>: requires explicit Save button</li>
+        <li><strong>Surplus benchmark</strong>: requires explicit Save button</li>
+        <li>Inconsistency creates cognitive friction — user doesn't know what will be lost on navigate</li>
+      </ul>
+    </div>
+  </div>
+
+</div>
+
+<div class="divider"></div>
+
+<div class="section-label">Current section order (problems highlighted)</div>
+<div class="current-order">
+  <div class="order-item"><div class="order-num">1</div><div class="order-label">Profile</div><span class="order-badge badge-ok">OK</span></div>
+  <div class="order-item"><div class="order-num">2</div><div class="order-label">Display</div><span class="order-badge badge-ok">OK</span></div>
+  <div class="order-item"><div class="order-num">3</div><div class="order-label">Subcategories</div><span class="order-badge badge-warn">Should come later — advanced</span></div>
+  <div class="order-item"><div class="order-num">4</div><div class="order-label">Staleness thresholds</div><span class="order-badge badge-warn">Fine but separated from related settings</span></div>
+  <div class="order-item"><div class="order-num">5</div><div class="order-label">Surplus benchmark</div><span class="order-badge badge-ok">OK</span></div>
+  <div class="order-item"><div class="order-num">6</div><div class="order-label">ISA settings</div><span class="order-badge badge-warn">Related to surplus/financial — OK here</span></div>
+  <div class="order-item"><div class="order-num">7</div><div class="order-label">Household</div><span class="order-badge badge-ok">OK</span></div>
+  <div class="order-item"><div class="order-num">8</div><div class="order-label">Data</div><span class="order-badge badge-warn">Owner-only — fine at bottom</span></div>
+  <div class="order-item"><div class="order-num">9</div><div class="order-label">Growth rates</div><span class="order-badge badge-bad">Bug: ref uses wrong id ("growth-rates" but section id is "audit-log")</span></div>
+  <div class="order-item"><div class="order-num">10</div><div class="order-label">Audit log</div><span class="order-badge badge-bad">Bug: ref uses wrong id</span></div>
+</div>
+
+</body>
+</html>
