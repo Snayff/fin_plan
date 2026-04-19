@@ -43,9 +43,16 @@ export const RetirementMemberProjectionSchema = z.object({
 });
 export type RetirementMemberProjection = z.infer<typeof RetirementMemberProjectionSchema>;
 
+export const MonthlyContributionsByScopeSchema = z.object({
+  netWorth: z.number(),
+  retirement: z.number(),
+});
+export type MonthlyContributionsByScope = z.infer<typeof MonthlyContributionsByScopeSchema>;
+
 export const ForecastProjectionSchema = z.object({
   netWorth: z.array(NetWorthPointSchema),
   surplus: z.array(SurplusPointSchema),
   retirement: z.array(RetirementMemberProjectionSchema),
+  monthlyContributionsByScope: MonthlyContributionsByScopeSchema,
 });
 export type ForecastProjection = z.infer<typeof ForecastProjectionSchema>;

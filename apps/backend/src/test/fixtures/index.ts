@@ -208,7 +208,6 @@ export function buildAccount(overrides: Record<string, any> = {}) {
     householdId: "household-1",
     name: "Test Current Account",
     accountType: "current" as const,
-    monthlyContribution: 0,
     isCashflowLinked: true,
     ownerId: null,
     notes: null,

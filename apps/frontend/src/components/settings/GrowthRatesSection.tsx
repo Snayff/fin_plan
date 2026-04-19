@@ -10,6 +10,9 @@ interface RateValues {
   investmentRatePct: number;
   pensionRatePct: number;
   inflationRatePct: number;
+  propertyRatePct: number;
+  vehicleRatePct: number;
+  otherAssetRatePct: number;
 }
 
 const DEFAULTS: RateValues = {
@@ -18,6 +21,9 @@ const DEFAULTS: RateValues = {
   investmentRatePct: 7,
   pensionRatePct: 6,
   inflationRatePct: 2.5,
+  propertyRatePct: 3.5,
+  vehicleRatePct: -15,
+  otherAssetRatePct: 0,
 };
 
 const LABELS: Record<keyof RateValues, string> = {
@@ -26,7 +32,13 @@ const LABELS: Record<keyof RateValues, string> = {
   investmentRatePct: "Default investment rate (%)",
   pensionRatePct: "Default pension rate (%)",
   inflationRatePct: "Inflation rate (%)",
+  propertyRatePct: "Default property growth rate (%)",
+  vehicleRatePct: "Default vehicle depreciation rate (%)",
+  otherAssetRatePct: "Default other asset rate (%)",
 };
+
+/** Fields that allow negative values (depreciation). */
+const ALLOWS_NEGATIVE = new Set<keyof RateValues>(["vehicleRatePct", "otherAssetRatePct"]);
 
 function RateField({
   rateKey,
@@ -42,6 +54,8 @@ function RateField({
     onSave: async (next) => onUpdate({ ...current, [rateKey]: next }),
   });
 
+  const min = ALLOWS_NEGATIVE.has(rateKey) ? -100 : 0;
+
   return (
     <AutoSaveField
       label={LABELS[rateKey]}
@@ -53,7 +67,7 @@ function RateField({
         id={`rate-${rateKey}`}
         type="number"
         step={0.1}
-        min={0}
+        min={min}
         max={100}
         value={value}
         onChange={(e) => setValue(parseFloat(e.target.value) || 0)}
@@ -62,6 +76,20 @@ function RateField({
     </AutoSaveField>
   );
 }
+
+const ACCOUNT_RATE_KEYS: Array<keyof RateValues> = [
+  "currentRatePct",
+  "savingsRatePct",
+  "investmentRatePct",
+  "pensionRatePct",
+  "inflationRatePct",
+];
+
+const ASSET_RATE_KEYS: Array<keyof RateValues> = [
+  "propertyRatePct",
+  "vehicleRatePct",
+  "otherAssetRatePct",
+];
 
 export function GrowthRatesSection() {
   const { data: settings } = useSettings();
@@ -73,6 +101,9 @@ export function GrowthRatesSection() {
     investmentRatePct: settings?.investmentRatePct ?? DEFAULTS.investmentRatePct,
     pensionRatePct: settings?.pensionRatePct ?? DEFAULTS.pensionRatePct,
     inflationRatePct: settings?.inflationRatePct ?? DEFAULTS.inflationRatePct,
+    propertyRatePct: settings?.propertyRatePct ?? DEFAULTS.propertyRatePct,
+    vehicleRatePct: settings?.vehicleRatePct ?? DEFAULTS.vehicleRatePct,
+    otherAssetRatePct: settings?.otherAssetRatePct ?? DEFAULTS.otherAssetRatePct,
   };
 
   const save = async (next: RateValues) => {
@@ -85,10 +116,23 @@ export function GrowthRatesSection() {
       title="Growth rates"
       description="Default annual growth rates used for projections."
     >
-      <div className="grid grid-cols-2 gap-3 max-w-lg">
-        {(Object.keys(LABELS) as Array<keyof RateValues>).map((k) => (
-          <RateField key={k} rateKey={k} current={current} onUpdate={save} />
-        ))}
+      <div className="flex flex-col gap-5 max-w-lg">
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.07em] text-text-muted mb-2">Accounts</p>
+          <div className="grid grid-cols-2 gap-3">
+            {ACCOUNT_RATE_KEYS.map((k) => (
+              <RateField key={k} rateKey={k} current={current} onUpdate={save} />
+            ))}
+          </div>
+        </div>
+        <div>
+          <p className="text-[11px] uppercase tracking-[0.07em] text-text-muted mb-2">Assets</p>
+          <div className="grid grid-cols-2 gap-3">
+            {ASSET_RATE_KEYS.map((k) => (
+              <RateField key={k} rateKey={k} current={current} onUpdate={save} />
+            ))}
+          </div>
+        </div>
       </div>
     </SettingsSection>
   );

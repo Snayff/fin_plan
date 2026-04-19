@@ -2,6 +2,7 @@ import { prisma } from "../config/database.js";
 import { audited } from "./audit.service.js";
 import type { ActorCtx } from "./audit.service.js";
 import { NotFoundError, ValidationError } from "../utils/errors.js";
+import { toMonthlyAmount } from "@finplan/shared";
 import type {
   AssetType,
   AccountType,
@@ -237,16 +238,48 @@ export const assetsService = {
       where: { householdId, type },
       include: {
         balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }] },
+        linkedItems: { select: { id: true, name: true, spendType: true } },
       },
       orderBy: { createdAt: "asc" },
     });
 
+    // Derive current monthly amounts for all linked discretionary items
+    const allLinkedItemIds = accounts.flatMap((a) => a.linkedItems.map((i) => i.id));
+    const now = new Date();
+    const activePeriods =
+      allLinkedItemIds.length > 0
+        ? await prisma.itemAmountPeriod.findMany({
+            where: {
+              itemType: "discretionary_item",
+              itemId: { in: allLinkedItemIds },
+              startDate: { lte: now },
+              OR: [{ endDate: null }, { endDate: { gt: now } }],
+            },
+          })
+        : [];
+
+    const amountByItemId = new Map<string, number>();
+    for (const period of activePeriods) {
+      // Last write wins if multiple active periods exist (safety guard)
+      amountByItemId.set(period.itemId, period.amount);
+    }
+
     return accounts.map((a) => {
       const latest = getLatestBalance(a.balances);
+      const linkedItems = a.linkedItems.map((item) => ({
+        ...item,
+        amount: amountByItemId.get(item.id) ?? 0,
+      }));
+      const monthlyContribution = linkedItems.reduce(
+        (sum, item) => sum + toMonthlyAmount(item.amount, item.spendType),
+        0
+      );
       return {
         ...a,
         currentBalance: latest?.value ?? 0,
         currentBalanceDate: latest?.date ?? null,
+        linkedItems,
+        monthlyContribution,
       };
     });
   },

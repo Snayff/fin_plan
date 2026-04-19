@@ -25,6 +25,41 @@ import { computeLifecycleState } from "./period.service.js";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
+const LINKABLE_ACCOUNT_TYPES = ["Savings", "StocksAndShares", "Pension"] as const;
+
+async function validateLinkedAccount(
+  householdId: string,
+  subcategoryId: string,
+  linkedAccountId: string,
+  opts: { isPlannerOwned?: boolean } = {}
+): Promise<void> {
+  if (opts.isPlannerOwned) {
+    throw new ValidationError("Planner-owned items cannot be linked to an account");
+  }
+  const subcategory = await prisma.subcategory.findFirst({
+    where: { id: subcategoryId, householdId, tier: "discretionary" },
+  });
+  if (!subcategory || subcategory.name !== "Savings") {
+    throw new ValidationError("Only items in the Savings subcategory can be linked to an account");
+  }
+  const account = await prisma.account.findFirst({
+    where: { id: linkedAccountId, householdId },
+  });
+  if (!account) throw new NotFoundError("Account not found");
+  if (!LINKABLE_ACCOUNT_TYPES.includes(account.type as any)) {
+    throw new ValidationError(
+      "Linked account must be of type Savings, StocksAndShares, or Pension"
+    );
+  }
+}
+
+async function getSavingsSubcategoryId(householdId: string): Promise<string | null> {
+  const sub = await prisma.subcategory.findFirst({
+    where: { householdId, tier: "discretionary", name: "Savings" },
+  });
+  return sub?.id ?? null;
+}
+
 function assertOwned(item: { householdId: string } | null, householdId: string, label: string) {
   if (!item) throw new NotFoundError(`${label} not found`);
   if (item.householdId !== householdId) throw new NotFoundError(`${label} not found`);
@@ -271,7 +306,10 @@ export const waterfallService = {
     const byType: IncomeByType[] = Array.from(typeMap.entries()).map(([type, sources]) => ({
       type,
       label: INCOME_TYPE_LABELS[type],
-      monthlyTotal: sources.reduce((sum, src) => sum + toMonthlyAmount(src.amount, src.frequency), 0),
+      monthlyTotal: sources.reduce(
+        (sum, src) => sum + toMonthlyAmount(src.amount, src.frequency),
+        0
+      ),
       sources,
     }));
 
@@ -364,10 +402,16 @@ export const waterfallService = {
       discretionary: {
         total: discretionaryTotal,
         bySubcategory: discretionaryBySubcategory,
-        categories: categoryItems.map((c) => ({ ...c, monthlyBudget: toMonthlyAmount(c.amount, c.spendType ?? "monthly") })),
+        categories: categoryItems.map((c) => ({
+          ...c,
+          monthlyBudget: toMonthlyAmount(c.amount, c.spendType ?? "monthly"),
+        })),
         savings: {
           total: savingsTotal,
-          allocations: savingsItems.map((a) => ({ ...a, monthlyAmount: toMonthlyAmount(a.amount, a.spendType ?? "monthly") })),
+          allocations: savingsItems.map((a) => ({
+            ...a,
+            monthlyAmount: toMonthlyAmount(a.amount, a.spendType ?? "monthly"),
+          })),
         },
       },
       surplus: {
@@ -659,6 +703,7 @@ export const waterfallService = {
     const items = await prisma.discretionaryItem.findMany({
       where: { householdId },
       orderBy: { sortOrder: "asc" },
+      include: { linkedAccount: { select: { id: true, name: true, type: true } } },
     });
     return enrichItemsWithPeriods(items, "discretionary_item");
   },
@@ -667,6 +712,7 @@ export const waterfallService = {
     const items = await prisma.discretionaryItem.findMany({
       where: { householdId, isPlannerOwned: false },
       orderBy: { sortOrder: "asc" },
+      include: { linkedAccount: { select: { id: true, name: true, type: true } } },
     });
     return enrichItemsWithPeriods(items, "discretionary_item");
   },
@@ -678,6 +724,9 @@ export const waterfallService = {
   ) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
     await validateSubcategoryNotPlannerLocked(householdId, data.subcategoryId);
+    if ((data as any).linkedAccountId) {
+      await validateLinkedAccount(householdId, data.subcategoryId, (data as any).linkedAccountId);
+    }
     const { amount: _amount, startDate: _startDate, endDate: _endDate, ...itemData } = data as any;
     return audited({
       db: prisma,
@@ -713,6 +762,24 @@ export const waterfallService = {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
     }
 
+    // Validate linkedAccountId if being set
+    if ((data as any).linkedAccountId) {
+      const targetSubcategoryId = data.subcategoryId ?? existing!.subcategoryId ?? "";
+      await validateLinkedAccount(householdId, targetSubcategoryId, (data as any).linkedAccountId, {
+        isPlannerOwned: !!(existing as any).isPlannerOwned,
+      });
+    }
+
+    // Auto-null linkedAccountId when item is moved out of Savings subcategory
+    const savingsSubId = await getSavingsSubcategoryId(householdId);
+    const isMovingOutOfSavings =
+      data.subcategoryId != null &&
+      data.subcategoryId !== savingsSubId &&
+      existing!.subcategoryId === savingsSubId;
+    const effectiveData: typeof data = isMovingOutOfSavings
+      ? { ...data, linkedAccountId: null }
+      : data;
+
     return audited({
       db: prisma,
       ctx,
@@ -727,7 +794,7 @@ export const waterfallService = {
       mutation: async (tx) => {
         const updated = await tx.discretionaryItem.update({
           where: { id },
-          data: { ...data, lastReviewedAt: new Date() },
+          data: { ...effectiveData, lastReviewedAt: new Date() },
         });
         return updated;
       },
@@ -775,6 +842,7 @@ export const waterfallService = {
     const items = await prisma.discretionaryItem.findMany({
       where: { householdId, subcategoryId: savingsSubcategory.id },
       orderBy: { sortOrder: "asc" },
+      include: { linkedAccount: { select: { id: true, name: true, type: true } } },
     });
     return enrichItemsWithPeriods(items, "discretionary_item");
   },

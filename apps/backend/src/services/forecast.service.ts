@@ -1,5 +1,6 @@
 import { prisma } from "../config/database.js";
 import { waterfallService } from "./waterfall.service.js";
+import { toMonthlyAmount } from "@finplan/shared";
 import type { ForecastProjection, ForecastHorizon } from "@finplan/shared";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -107,9 +108,13 @@ export const forecastService = {
     horizonYears: ForecastHorizon
   ): Promise<ForecastProjection> {
     const balanceInclude = { balances: { orderBy: { date: "desc" as const }, take: 1 } };
+    const linkedItemsInclude = { linkedItems: { select: { id: true, spendType: true } } };
 
     const [accounts, assets, settingsRow, members, waterfallSummary] = await Promise.all([
-      prisma.account.findMany({ where: { householdId }, include: balanceInclude }),
+      prisma.account.findMany({
+        where: { householdId },
+        include: { ...balanceInclude, ...linkedItemsInclude },
+      }),
       prisma.asset.findMany({ where: { householdId }, include: balanceInclude }),
       prisma.householdSettings.findUnique({ where: { householdId } }),
       prisma.member.findMany({
@@ -118,6 +123,33 @@ export const forecastService = {
       }),
       waterfallService.getWaterfallSummary(householdId),
     ]);
+
+    // Derive monthly contributions per account from linked discretionary items
+    const allLinkedItemIds = accounts.flatMap((a) => a.linkedItems.map((i) => i.id));
+    const now = new Date();
+    const activePeriods =
+      allLinkedItemIds.length > 0
+        ? await prisma.itemAmountPeriod.findMany({
+            where: {
+              itemType: "discretionary_item",
+              itemId: { in: allLinkedItemIds },
+              startDate: { lte: now },
+              OR: [{ endDate: null }, { endDate: { gt: now } }],
+            },
+          })
+        : [];
+    const amountByItemId = new Map<string, number>();
+    for (const period of activePeriods) {
+      amountByItemId.set(period.itemId, period.amount);
+    }
+    const monthlyContributionByAccountId = new Map<string, number>();
+    for (const acc of accounts) {
+      const total = acc.linkedItems.reduce(
+        (sum, item) => sum + toMonthlyAmount(amountByItemId.get(item.id) ?? 0, item.spendType),
+        0
+      );
+      monthlyContributionByAccountId.set(acc.id, total);
+    }
 
     const settings = {
       currentRatePct: settingsRow?.currentRatePct ?? DEFAULT_SETTINGS.currentRatePct,
@@ -131,7 +163,7 @@ export const forecastService = {
     // Normalise to projectable shapes
     const toProjectableAccount = (acc: (typeof accounts)[number]): ProjectableAccount => ({
       balance: acc.balances[0]?.value ?? 0,
-      monthlyContribution: acc.monthlyContribution,
+      monthlyContribution: monthlyContributionByAccountId.get(acc.id) ?? 0,
       growthRatePct: acc.growthRatePct,
       type: acc.type,
     });
@@ -193,6 +225,17 @@ export const forecastService = {
       };
     });
 
-    return { netWorth, surplus, retirement };
+    // ── Monthly contributions by scope ────────────────────────────────────────
+    // netWorth = all non-pension accounts; retirement = pension accounts only
+    const monthlyContributionsByScope = {
+      netWorth: accounts
+        .filter((a) => a.type !== "Pension")
+        .reduce((sum, a) => sum + (monthlyContributionByAccountId.get(a.id) ?? 0), 0),
+      retirement: accounts
+        .filter((a) => a.type === "Pension")
+        .reduce((sum, a) => sum + (monthlyContributionByAccountId.get(a.id) ?? 0), 0),
+    };
+
+    return { netWorth, surplus, retirement, monthlyContributionsByScope };
   },
 };

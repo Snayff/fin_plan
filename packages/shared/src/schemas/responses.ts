@@ -236,6 +236,8 @@ export const discretionaryItemResponseSchema = z
     sortOrder: z.number().int(),
     lastReviewedAt: isoDatetime,
     isPlannerOwned: z.boolean(),
+    linkedAccountId: z.string().nullable(),
+    linkedAccount: z.object({ id: z.string(), name: z.string(), type: z.string() }).nullable(),
     createdAt: isoDatetime,
     updatedAt: isoDatetime,
     // Enriched by enrichItemsWithPeriods

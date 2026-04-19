@@ -175,6 +175,9 @@ model HouseholdSettings {
   inflationRatePct    Float    @default(2.5)
   showPence             Boolean  @default(false)
   waterfallTipDismissed Boolean  @default(false)
+  propertyRatePct       Float    @default(3.5)
+  vehicleRatePct        Float    @default(-15)
+  otherAssetRatePct     Float    @default(0)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
@@ -278,12 +281,15 @@ model DiscretionaryItem {
   dueDate        DateTime?   @db.Date
   sortOrder      Int         @default(0)
   lastReviewedAt DateTime    @default(now())
-  isPlannerOwned Boolean     @default(false)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
+  isPlannerOwned  Boolean     @default(false)
+  linkedAccountId String?
+  linkedAccount   Account?    @relation("DiscretionaryAccountLink", fields: [linkedAccountId], references: [id], onDelete: SetNull)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
 
   @@index([householdId])
+  @@index([linkedAccountId])
 }
 
 enum WaterfallItemType {
@@ -356,7 +362,6 @@ model Account {
   name                String
   type                AccountType
   growthRatePct       Float?
-  monthlyContribution Float            @default(0)
   isCashflowLinked    Boolean          @default(false)
   lastReviewedAt      DateTime?
   createdAt           DateTime         @default(now())
@@ -364,6 +369,7 @@ model Account {
   household           Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
   member              Member?          @relation(fields: [memberId], references: [id], onDelete: SetNull)
   balances            AccountBalance[]
+  linkedItems         DiscretionaryItem[] @relation("DiscretionaryAccountLink")
 
   @@index([householdId])
   @@index([memberId])

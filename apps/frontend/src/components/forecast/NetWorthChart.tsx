@@ -22,9 +22,14 @@ interface RetirementMarker {
 interface NetWorthChartProps {
   data: NetWorthPoint[];
   retirementMarkers: RetirementMarker[];
+  monthlyContributions?: number;
 }
 
-export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
+export function NetWorthChart({
+  data,
+  retirementMarkers,
+  monthlyContributions,
+}: NetWorthChartProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
   const { data: settings } = useSettings();
   const showPence = settings?.showPence ?? false;
@@ -145,6 +150,14 @@ export function NetWorthChart({ data, retirementMarkers }: NetWorthChartProps) {
               {formatCurrency(last.real, showPence)}
             </p>
           </div>
+          {monthlyContributions != null && monthlyContributions > 0 && (
+            <div className="ml-auto">
+              <span className="text-xs text-text-tertiary">Contributions</span>
+              <p className="font-numeric text-sm text-page-accent/80 tabular-nums">
+                +{formatCurrency(monthlyContributions, showPence)}/mo
+              </p>
+            </div>
+          )}
         </div>
       )}
     </div>

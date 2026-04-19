@@ -230,6 +230,9 @@ export interface TierItemRow {
   lifecycleState?: "active" | "future" | "expired";
   periods?: Array<{ id: string; startDate: Date; endDate: Date | null; amount: number }>;
   nextPeriod?: { amount: number; startDate: Date } | null;
+  /** Populated for discretionary items in the Savings subcategory. */
+  linkedAccountId?: string | null;
+  linkedAccount?: { id: string; name: string; type: string } | null;
 }
 
 function normaliseIncomeFrequency(frequency: string): SpendType {
@@ -266,6 +269,8 @@ function mapTierItem(r: any, spendType: string): TierItemRow {
     lifecycleState: r.lifecycleState ?? "active",
     periods,
     nextPeriod,
+    linkedAccountId: r.linkedAccountId ?? null,
+    linkedAccount: r.linkedAccount ?? null,
   };
 }
 

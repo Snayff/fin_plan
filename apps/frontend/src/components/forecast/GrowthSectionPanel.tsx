@@ -43,7 +43,11 @@ export function GrowthSectionPanel() {
         ) : isError ? (
           CHART_ERROR
         ) : (
-          <NetWorthChart data={data?.netWorth ?? []} retirementMarkers={retirementMarkers} />
+          <NetWorthChart
+            data={data?.netWorth ?? []}
+            retirementMarkers={retirementMarkers}
+            monthlyContributions={data?.monthlyContributionsByScope?.netWorth}
+          />
         )}
         <div className="grid grid-cols-2 gap-4">
           {isLoading ? (
@@ -59,7 +63,11 @@ export function GrowthSectionPanel() {
           ) : (
             <>
               <SurplusAccumulationChart data={data?.surplus ?? []} />
-              <RetirementChart members={data?.retirement ?? []} horizonEndYear={horizonEndYear} />
+              <RetirementChart
+                members={data?.retirement ?? []}
+                horizonEndYear={horizonEndYear}
+                monthlyContributions={data?.monthlyContributionsByScope?.retirement}
+              />
             </>
           )}
         </div>

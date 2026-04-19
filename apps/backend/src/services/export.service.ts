@@ -260,7 +260,6 @@ export const exportService = {
             type: a.type,
             ownerName: a.memberId ? (memberNameByMemberId.get(a.memberId) ?? null) : null,
             growthRatePct: a.growthRatePct,
-            monthlyContribution: a.monthlyContribution,
             isCashflowLinked: a.isCashflowLinked,
             lastReviewedAt: a.lastReviewedAt ? a.lastReviewedAt.toISOString() : null,
             balances: a.balances.map((b) => ({
