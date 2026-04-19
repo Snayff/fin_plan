@@ -69,8 +69,7 @@ export default function HouseholdSettingsPage() {
     <div data-page="settings" className="relative flex h-full overflow-hidden">
       <SettingsLeftPanel
         title="Household"
-        subLabel={householdName}
-        subLabelClassName="text-foreground/65 font-semibold"
+        contextName={householdName}
         activeId={activeId}
         items={items}
         onNavClick={handleNavClick}

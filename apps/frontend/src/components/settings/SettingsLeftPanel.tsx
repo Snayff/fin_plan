@@ -10,7 +10,7 @@ export interface SettingsNavItem {
 interface SettingsLeftPanelProps {
   title: string;
   subLabel?: string;
-  subLabelClassName?: string;
+  contextName?: string;
   activeId: string;
   items: SettingsNavItem[];
   onNavClick: (id: string) => void;
@@ -19,7 +19,7 @@ interface SettingsLeftPanelProps {
 export function SettingsLeftPanel({
   title,
   subLabel,
-  subLabelClassName = "text-foreground/40",
+  contextName,
   activeId,
   items,
   onNavClick,
@@ -27,7 +27,6 @@ export function SettingsLeftPanel({
   const version = import.meta.env.VITE_APP_VERSION ?? "dev";
   const hasGroups = items.some((i) => i.group);
 
-  // Preserve declared order while grouping
   const groups = hasGroups
     ? items.reduce<{ key: string; items: SettingsNavItem[] }[]>((acc, item) => {
         const key = item.group ?? "";
@@ -41,9 +40,9 @@ export function SettingsLeftPanel({
   return (
     <aside className="flex flex-col h-full w-[360px] shrink-0 border-r">
       <div className="shrink-0">
-        <PageHeader title={title} />
+        <PageHeader title={title} contextName={contextName} />
         {subLabel && (
-          <p className={cn("px-4 -mt-2 pb-3 text-xs font-medium", subLabelClassName)}>{subLabel}</p>
+          <p className="px-4 -mt-2 pb-3 text-xs font-medium text-foreground/40">{subLabel}</p>
         )}
       </div>
       <nav aria-label="Settings sections" className="flex-1 min-h-0 overflow-y-auto">
