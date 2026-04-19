@@ -839,6 +839,20 @@ Total:      font-numeric text-lg font-semibold + totalColorClass (optional)
 - `colorClass` defaults to `text-page-accent`; tier pages pass their tier colour
 - Content below the header (nav lists, summaries, year selectors) uses `px-4` horizontal padding to align with the header
 
+#### Context Breadcrumb Header
+
+When a left panel represents a named instance (e.g. settings for a specific household), the active instance name may be shown inline in the `PageHeader` using the `contextName` prop:
+
+```
+HOUSEHOLD / Snaith
+```
+
+- Pass `contextName={instanceName}` to `PageHeader` — never add a separate `<p>` element for this purpose
+- The separator `/` renders at `text-foreground/25`
+- The instance name renders at `font-body text-xs font-normal normal-case tracking-normal text-foreground/45`
+- No hover state, no cursor change — this is static context, not a nav target
+- Do not use this pattern for navigational breadcrumbs; those use the `← Category / Item` pattern in right-panel headers
+
 #### Left Panel Navigation Anatomy
 
 Tab-style navigation lists (subcategory lists, forecast sections, gift modes) follow a single pattern:
@@ -1657,7 +1671,7 @@ There is no top-nav text link labelled "Settings" — each scope is reached from
 Both pages use a canonical `PageHeader` (§ 3.1) with `text-page-accent`.
 
 - **Profile Settings** — title "Profile"; sub-label "Your personal preferences" in `text-tertiary`, 11px, `font-body` 500. **Flat nav** (no groups): `Account`, `Display`.
-- **Household Settings** — title "Household"; sub-label = active household name in `text-secondary`, 11px, `font-body` 600. **Grouped nav**:
+- **Household Settings** — title "Household"; active household name displayed inline via the `contextName` prop on `PageHeader` (see Context Breadcrumb Header in § 3.1) — reads as static context, not a nav target. **Grouped nav**:
   - **General** — `Details`, `Members & invites`
   - **Financial** — `Surplus benchmark`, `ISA settings`, `Staleness thresholds`, `Growth rates`
   - **Structure** — `Subcategories`
