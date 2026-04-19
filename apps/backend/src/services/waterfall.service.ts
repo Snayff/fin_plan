@@ -771,6 +771,7 @@ export const waterfallService = {
     const items = await prisma.discretionaryItem.findMany({
       where: { householdId },
       orderBy: { sortOrder: "asc" },
+      include: { linkedAccount: { select: { id: true, name: true, type: true } } },
     });
     return enrichItemsWithPeriods(items, "discretionary_item");
   },
@@ -779,6 +780,7 @@ export const waterfallService = {
     const items = await prisma.discretionaryItem.findMany({
       where: { householdId, isPlannerOwned: false },
       orderBy: { sortOrder: "asc" },
+      include: { linkedAccount: { select: { id: true, name: true, type: true } } },
     });
     return enrichItemsWithPeriods(items, "discretionary_item");
   },
@@ -932,6 +934,7 @@ export const waterfallService = {
     const items = await prisma.discretionaryItem.findMany({
       where: { householdId, subcategoryId: savingsSubcategory.id },
       orderBy: { sortOrder: "asc" },
+      include: { linkedAccount: { select: { id: true, name: true, type: true } } },
     });
     return enrichItemsWithPeriods(items, "discretionary_item");
   },

@@ -120,6 +120,35 @@ describe("waterfallService — linkedAccountId", () => {
     expect(threw).toBe(true);
   });
 
+  it("listDiscretionary returns linkedAccount summary { id, name, type } for linked items", async () => {
+    const item = await waterfallService.createDiscretionary(householdId, {
+      name: "ISA top-up",
+      amount: 250,
+      subcategoryId: savingsSubId,
+      spendType: "monthly",
+      linkedAccountId: savingsAccountId,
+    } as any);
+    const items = await waterfallService.listDiscretionary(householdId);
+    const found = items.find((i: any) => i.id === (item as any).id);
+    expect(found?.linkedAccount).toEqual({
+      id: savingsAccountId,
+      name: "ISA",
+      type: "Savings",
+    });
+  });
+
+  it("listDiscretionary returns linkedAccount null for unlinked items", async () => {
+    const item = await waterfallService.createDiscretionary(householdId, {
+      name: "Misc spend",
+      amount: 50,
+      subcategoryId: otherSubId,
+      spendType: "monthly",
+    } as any);
+    const items = await waterfallService.listDiscretionary(householdId);
+    const found = items.find((i: any) => i.id === (item as any).id);
+    expect(found?.linkedAccount).toBeNull();
+  });
+
   it("auto-nulls linkedAccountId when an item is moved out of Savings", async () => {
     const item = await waterfallService.createDiscretionary(householdId, {
       name: "x",
