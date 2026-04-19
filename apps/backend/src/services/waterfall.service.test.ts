@@ -616,8 +616,8 @@ describe("waterfallService.getWaterfallSummary — consolidated models", () => {
 
     expect(summary.committed.bills).toHaveLength(1);
     expect(summary.committed.bills[0]!.name).toBe("Rent");
-    expect(summary.committed.yearlyBills).toHaveLength(1);
-    expect(summary.committed.yearlyBills[0]!.name).toBe("Insurance");
+    expect(summary.committed.nonMonthlyBills).toHaveLength(1);
+    expect(summary.committed.nonMonthlyBills[0]!.name).toBe("Insurance");
   });
 
   it("splits discretionary items into categories and savings", async () => {
@@ -1036,6 +1036,89 @@ describe("waterfallService discretionary guards (planner-owned)", () => {
     await expect(waterfallService.deleteDiscretionary("hh-1", "d1", ctx)).rejects.toMatchObject({
       name: "ValidationError",
     });
+  });
+});
+
+describe("waterfallService.getWaterfallSummary — weekly income", () => {
+  const makeWeeklySource = () => ({
+    id: "sw1",
+    householdId: "hh-1",
+    name: "Weekly Salary",
+    frequency: "weekly" as const,
+    incomeType: "salary" as const,
+    dueDate: new Date("2026-01-07"),
+    ownerId: null,
+    sortOrder: 0,
+    endedAt: null,
+    lastReviewedAt: new Date(),
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    subcategoryId: "sub-1",
+    notes: null,
+  });
+
+  beforeEach(() => {
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+  });
+
+  it("includes weekly income in income.total as monthly equivalent (amount × 52/12)", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([makeWeeklySource()] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      makePeriod("income_source", "sw1", 520),
+    ]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    // 520 × 52 / 12 = 2253.333... → toGBP → 2253.33
+    expect(summary.income.total).toBe(2253.33);
+  });
+
+  it("places weekly income source in income.monthly (monthlyLike bucket)", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([makeWeeklySource()] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      makePeriod("income_source", "sw1", 520),
+    ]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    expect(summary.income.monthly).toHaveLength(1);
+    expect(summary.income.monthly[0]!.frequency).toBe("weekly");
+    expect(summary.income.nonMonthly).toHaveLength(0);
+  });
+});
+
+describe("waterfallService.getWaterfallSummary — quarterly committed", () => {
+  it("includes quarterly committed item in nonMonthlyBills and monthlyAvg12 (amount/3)", async () => {
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "qc1",
+        householdId: "hh-1",
+        name: "Quarterly Service",
+        spendType: "quarterly",
+        dueDate: new Date("2026-01-15"),
+        ownerId: null,
+        sortOrder: 0,
+        lastReviewedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        subcategoryId: "sub-1",
+        notes: null,
+      },
+    ] as any);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      makePeriod("committed_item", "qc1", 300),
+    ]);
+
+    const summary = await waterfallService.getWaterfallSummary("hh-1");
+
+    // quarterly item: 300/3 = 100/month avg
+    expect(summary.committed.monthlyAvg12).toBe(100);
+    expect(summary.committed.monthlyTotal).toBe(0);
+    expect(summary.committed.nonMonthlyBills).toHaveLength(1);
+    expect(summary.committed.nonMonthlyBills[0]!.name).toBe("Quarterly Service");
   });
 });
 

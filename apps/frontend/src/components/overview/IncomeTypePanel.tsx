@@ -1,4 +1,5 @@
 import type { IncomeSourceRow } from "@finplan/shared";
+import { toMonthlyAmount } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
 import { cn } from "@/lib/utils";
 import { StalenessIndicator } from "@/components/common/StalenessIndicator";
@@ -58,8 +59,12 @@ export function IncomeTypePanel({
         ) : (
           <div className="space-y-1">
             {sources.map((src) => {
-              const isAnnual = src.frequency === "annual";
-              const displayAmount = isAnnual ? src.amount / 12 : src.amount;
+              const displayAmount = toMonthlyAmount(src.amount, src.frequency);
+              const amortisationMarker =
+                src.frequency === "annual" ? "÷12" :
+                src.frequency === "quarterly" ? "÷3" :
+                src.frequency === "weekly" ? "/wk" :
+                null;
               return (
                 <div
                   key={src.id}
@@ -81,10 +86,14 @@ export function IncomeTypePanel({
                       thresholdMonths={threshold}
                     />
                     <div className="flex items-center gap-1 font-numeric text-foreground/60">
-                      {isAnnual && (
-                        <span className="text-xs text-muted-foreground">
-                          <GlossaryTermMarker entryId="amortised">÷12</GlossaryTermMarker>
-                        </span>
+                      {amortisationMarker && (
+                        src.frequency === "weekly" ? (
+                          <span className="text-xs text-muted-foreground">{amortisationMarker}</span>
+                        ) : (
+                          <span className="text-xs text-muted-foreground">
+                            <GlossaryTermMarker entryId="amortised">{amortisationMarker}</GlossaryTermMarker>
+                          </span>
+                        )
                       )}
                       <span>{formatCurrency(displayAmount, showPence)}</span>
                     </div>

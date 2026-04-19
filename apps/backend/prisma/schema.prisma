@@ -184,6 +184,8 @@ enum IncomeFrequency {
   monthly
   annual
   one_off
+  weekly
+  quarterly
 }
 
 enum WaterfallTier {
@@ -196,6 +198,8 @@ enum SpendType {
   monthly
   yearly
   one_off
+  weekly
+  quarterly
 }
 
 enum IncomeType {

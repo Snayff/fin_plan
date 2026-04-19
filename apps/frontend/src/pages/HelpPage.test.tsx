@@ -18,7 +18,7 @@ describe("HelpPage", () => {
 
   it("pre-selects concept entry from ?entry= query param", () => {
     renderWithProviders(<HelpPage />, { initialEntries: ["/help?entry=amortisation"] });
-    expect(screen.getByRole("heading", { name: "Amortisation (÷12)" })).toBeTruthy();
+    expect(screen.getByRole("heading", { name: "Amortisation (÷12, ÷3, × 52/12)" })).toBeTruthy();
   });
 
   it("falls back to default entry for unknown ?entry= value", () => {
