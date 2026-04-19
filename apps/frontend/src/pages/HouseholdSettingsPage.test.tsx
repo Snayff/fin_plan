@@ -68,4 +68,11 @@ describe("HouseholdSettingsPage role-based visibility", () => {
     expect(screen.queryByRole("button", { name: "Growth rates" })).toBeNull();
     expect(screen.queryByRole("button", { name: "Audit log" })).toBeNull();
   });
+
+  it("shows household name inline in the page header heading", () => {
+    mockRole("owner");
+    renderWithProviders(<HouseholdSettingsPage />);
+    const heading = screen.getByRole("heading", { level: 1 });
+    expect(heading.textContent).toContain("Snaith");
+  });
 });
