@@ -16,6 +16,7 @@ import {
   createMemberSchema,
   updateMemberSchema,
   deleteMemberSchema,
+  AuditAction,
 } from "@finplan/shared";
 import { AuthorizationError, NotFoundError } from "../utils/errors.js";
 import { actorCtx } from "../lib/actor-ctx.js";
@@ -168,7 +169,7 @@ export async function householdRoutes(fastify: FastifyInstance) {
       const updated = await audited({
         db: prisma,
         ctx: actorCtx(req),
-        action: "UPDATE_MEMBER_PROFILE",
+        action: AuditAction.UPDATE_MEMBER_PROFILE,
         resource: "household-member",
         resourceId: targetMember.id,
         beforeFetch: async (tx) =>

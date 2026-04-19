@@ -105,7 +105,7 @@ export async function updateMemberRole(
   return audited({
     db: prisma,
     ctx,
-    action: "UPDATE_MEMBER_ROLE",
+    action: AuditAction.UPDATE_MEMBER_ROLE,
     resource: "household-member",
     resourceId: targetUserId,
     beforeFetch: async (tx) =>
@@ -230,7 +230,7 @@ export const householdService = {
     await audited({
       db: prisma,
       ctx,
-      action: "REMOVE_MEMBER",
+      action: AuditAction.REMOVE_MEMBER,
       resource: "household-member",
       resourceId: memberId,
       beforeFetch: async (tx) =>
@@ -313,7 +313,7 @@ export const householdService = {
     ownerUserId: string,
     email: string,
     role: "member" | "admin" = "member",
-    ctx?: ActorCtx
+    ctx: ActorCtx
   ) {
     const callerMembership = await prisma.member.findFirst({
       where: { householdId, userId: ownerUserId },
@@ -354,38 +354,25 @@ export const householdService = {
     const tokenHash = hashInviteToken(rawToken);
     const expiresAt = new Date(Date.now() + INVITE_EXPIRY_MS);
 
-    if (ctx) {
-      await audited({
-        db: prisma,
-        ctx,
-        action: "INVITE_MEMBER",
-        resource: "household-invite",
-        resourceId: tokenHash,
-        beforeFetch: async () => null,
-        mutation: async (tx) =>
-          tx.householdInvite.create({
-            data: {
-              householdId,
-              email: normalizedEmail,
-              tokenHash,
-              expiresAt,
-              createdByUserId: ownerUserId,
-              intendedRole: role,
-            },
-          }),
-      });
-    } else {
-      await prisma.householdInvite.create({
-        data: {
-          householdId,
-          email: normalizedEmail,
-          tokenHash,
-          expiresAt,
-          createdByUserId: ownerUserId,
-          intendedRole: role,
-        },
-      });
-    }
+    await audited({
+      db: prisma,
+      ctx,
+      action: AuditAction.INVITE_MEMBER,
+      resource: "household-invite",
+      resourceId: tokenHash,
+      beforeFetch: async () => null,
+      mutation: async (tx) =>
+        tx.householdInvite.create({
+          data: {
+            householdId,
+            email: normalizedEmail,
+            tokenHash,
+            expiresAt,
+            createdByUserId: ownerUserId,
+            intendedRole: role,
+          },
+        }),
+    });
 
     return { token: rawToken, email: normalizedEmail };
   },

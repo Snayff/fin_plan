@@ -28,7 +28,7 @@ export const plannerService = {
     return audited({
       db: prisma,
       ctx,
-      action: "CREATE_PLANNER_GOAL",
+      action: AuditAction.CREATE_PLANNER_GOAL,
       resource: "planner-goal",
       resourceId: (after: { id: string }) => after.id,
       beforeFetch: async () => null,
@@ -45,7 +45,7 @@ export const plannerService = {
     return audited({
       db: prisma,
       ctx,
-      action: "UPDATE_PLANNER_GOAL",
+      action: AuditAction.UPDATE_PLANNER_GOAL,
       resource: "planner-goal",
       resourceId: id,
       beforeFetch: async (tx) =>
@@ -60,7 +60,7 @@ export const plannerService = {
     await audited({
       db: prisma,
       ctx,
-      action: "DELETE_PLANNER_GOAL",
+      action: AuditAction.DELETE_PLANNER_GOAL,
       resource: "planner-goal",
       resourceId: id,
       beforeFetch: async (tx) =>

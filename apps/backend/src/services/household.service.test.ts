@@ -400,6 +400,8 @@ describe("householdService.inviteMember with audited()", () => {
 });
 
 describe("householdService.inviteMember", () => {
+  const ctx = { householdId: "household-1", actorId: "owner-user", actorName: "Owner" };
+
   it("stores normalized invite email when provided", async () => {
     const owner = buildUser();
     const household = buildHousehold();
@@ -415,11 +417,14 @@ describe("householdService.inviteMember", () => {
     prismaMock.householdInvite.create.mockResolvedValue(
       buildHouseholdInvite({ email: "invitee@test.com" })
     );
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
     const result = await householdService.inviteMember(
       household.id,
       owner.id,
-      " Invitee@Test.com "
+      " Invitee@Test.com ",
+      "member",
+      ctx
     );
 
     expect(prismaMock.householdInvite.create).toHaveBeenCalledWith(
@@ -449,7 +454,7 @@ describe("householdService.inviteMember", () => {
     prismaMock.household.findUnique.mockResolvedValue(household);
 
     await expect(
-      householdService.inviteMember(household.id, owner.id, "member@example.com")
+      householdService.inviteMember(household.id, owner.id, "member@example.com", "member", ctx)
     ).rejects.toThrow(ConflictError);
   });
 });
