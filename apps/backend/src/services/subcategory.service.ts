@@ -167,14 +167,13 @@ export const subcategoryService = {
       }
     }
 
-    // Validate reassignment IDs belong to this household's tier
+    // Validate reassignment IDs belong to this household's tier (DB-sourced only)
     const existingIds = new Set(existing.map((s) => s.id));
-    const desiredIds = new Set(desired.filter((d) => d.id).map((d) => d.id!));
     for (const r of reassignments) {
       if (!existingIds.has(r.fromSubcategoryId)) {
         throw new Error(`Reassignment source "${r.fromSubcategoryId}" not found in household`);
       }
-      if (!desiredIds.has(r.toSubcategoryId) && !existingIds.has(r.toSubcategoryId)) {
+      if (!existingIds.has(r.toSubcategoryId)) {
         throw new Error(`Reassignment destination "${r.toSubcategoryId}" not found`);
       }
     }
