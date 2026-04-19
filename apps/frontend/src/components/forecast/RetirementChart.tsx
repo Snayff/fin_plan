@@ -10,9 +10,14 @@ import type { RetirementMemberProjection } from "@finplan/shared";
 interface RetirementChartProps {
   members: RetirementMemberProjection[];
   horizonEndYear: number;
+  monthlyContributions?: number;
 }
 
-export function RetirementChart({ members, horizonEndYear }: RetirementChartProps) {
+export function RetirementChart({
+  members,
+  horizonEndYear,
+  monthlyContributions,
+}: RetirementChartProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
   const { data: settings } = useSettings();
   const showPence = settings?.showPence ?? false;
@@ -211,6 +216,11 @@ export function RetirementChart({ members, horizonEndYear }: RetirementChartProp
                       <span className="font-numeric text-sm font-semibold text-text-primary tabular-nums">
                         {formatCurrency(total, showPence)}
                       </span>
+                      {monthlyContributions != null && monthlyContributions > 0 && (
+                        <span className="ml-2 font-numeric text-xs text-page-accent/70 tabular-nums">
+                          +{formatCurrency(monthlyContributions, showPence)}/mo
+                        </span>
+                      )}
                     </div>
                   </div>
                 </>
