@@ -125,6 +125,11 @@ export function AssetAccountRow({
           <span className="text-sm text-text-secondary">{item.name}</span>
           <span className="text-[11px] text-text-tertiary">
             {typeLabel} · {memberName}
+            {itemKind === "account" && (item as AccountItem).monthlyContribution > 0 && (
+              <span className="ml-1.5 text-[10px] font-medium text-page-accent/70">
+                +{formatCurrency((item as AccountItem).monthlyContribution, showPence)}/mo
+              </span>
+            )}
           </span>
         </span>
 
@@ -234,6 +239,36 @@ export function AssetAccountRow({
                       />
                       {formatReviewDate(item.lastReviewedAt)} · {monthsAgo} months ago
                     </span>
+                  </div>
+                )}
+
+                {/* Linked contributions — accounts only */}
+                {itemKind === "account" && (item as AccountItem).linkedItems.length > 0 && (
+                  <div>
+                    <span className="block text-text-muted uppercase tracking-[0.07em] text-[10px] mb-1">
+                      Monthly Contributions
+                    </span>
+                    <div className="flex flex-col gap-1">
+                      {(item as AccountItem).linkedItems.map((li) => (
+                        <div key={li.id} className="flex justify-between text-xs">
+                          <span className="text-text-tertiary">{li.name}</span>
+                          <span className="font-numeric text-text-secondary">
+                            {formatCurrency(li.amount, showPence)}
+                            {li.spendType !== "monthly" && (
+                              <span className="ml-1 text-[10px] text-text-muted">
+                                /{li.spendType}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      ))}
+                      <div className="flex justify-between text-xs border-t border-foreground/5 pt-1 mt-0.5">
+                        <span className="text-text-muted">Total/mo</span>
+                        <span className="font-numeric font-medium text-page-accent/80">
+                          {formatCurrency((item as AccountItem).monthlyContribution, showPence)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 )}
 
