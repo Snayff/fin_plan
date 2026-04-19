@@ -167,6 +167,7 @@ export {
   RetirementPointSchema,
   RetirementMemberProjectionSchema,
   ForecastProjectionSchema,
+  MonthlyContributionsByScopeSchema,
   type ForecastHorizon,
   type ForecastQuery,
   type NetWorthPoint,
@@ -174,6 +175,7 @@ export {
   type RetirementPoint,
   type RetirementMemberProjection,
   type ForecastProjection,
+  type MonthlyContributionsByScope,
 } from "./forecast.schemas";
 
 // Gifts schemas and types
