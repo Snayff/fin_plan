@@ -50,6 +50,7 @@ describe("ForecastProjectionSchema", () => {
           series: [{ year: 2026, pension: 30000, savings: 10000, stocksAndShares: 5000 }],
         },
       ],
+      monthlyContributionsByScope: { netWorth: 300, retirement: 600 },
     };
     expect(ForecastProjectionSchema.safeParse(projection).success).toBe(true);
   });
@@ -66,6 +67,7 @@ describe("ForecastProjectionSchema", () => {
           series: [],
         },
       ],
+      monthlyContributionsByScope: { netWorth: 0, retirement: 0 },
     };
     expect(ForecastProjectionSchema.safeParse(projection).success).toBe(true);
   });
