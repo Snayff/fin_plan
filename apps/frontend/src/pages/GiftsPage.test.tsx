@@ -3,6 +3,10 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import GiftsPage from "./GiftsPage";
 
+mock.module("@/features/search/useAddParam", () => ({
+  useAddParam: () => {},
+}));
+
 mock.module("@/hooks/useGifts", () => ({
   useGiftsState: () => ({
     isLoading: false,

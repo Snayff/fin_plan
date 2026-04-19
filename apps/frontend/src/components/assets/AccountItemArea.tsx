@@ -26,14 +26,15 @@ const TYPE_LABELS: Record<AccountType, string> = {
 
 interface Props {
   type: AccountType;
+  initialIsAdding?: boolean;
 }
 
-export function AccountItemArea({ type }: Props) {
+export function AccountItemArea({ type, initialIsAdding }: Props) {
   const { data: items, isLoading, isError, refetch } = useAccountsByType(type);
   const { data: settings } = useSettings();
   const showPence = settings?.showPence ?? false;
 
-  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [isAddingItem, setIsAddingItem] = useState(initialIsAdding ?? false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [recordingId, setRecordingId] = useState<string | null>(null);
@@ -158,61 +159,62 @@ export function AccountItemArea({ type }: Props) {
 
         {/* Item list */}
         {items?.map((item) => (
-          <AssetAccountRow
-            key={item.id}
-            item={item}
-            itemKind="account"
-            stalenessThresholdMonths={3}
-            isExpanded={expandedId === item.id}
-            isEditing={editingId === item.id}
-            isRecording={recordingId === item.id}
-            isSavingEdit={updateAccount.isPending}
-            isSavingRecord={recordBalance.isPending}
-            isSavingConfirm={confirmAccount.isPending}
-            onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
-            onStartEdit={() => {
-              setEditingId(item.id);
-              setExpandedId(item.id);
-              setRecordingId(null);
-            }}
-            onStartRecord={() => {
-              setRecordingId(item.id);
-              setExpandedId(item.id);
-            }}
-            onCancelEdit={() => setEditingId(null)}
-            onCancelRecord={() => setRecordingId(null)}
-            onDeleteRequest={() => setDeletingId(item.id)}
-            onConfirm={async () => {
-              try {
-                await confirmAccount.mutateAsync(item.id);
-                setEditingId(null);
-              } catch {
-                // error handled by mutation onError (toast)
-              }
-            }}
-            onSaveEdit={async ({ name, memberId, growthRatePct }) => {
-              try {
-                await updateAccount.mutateAsync({
-                  accountId: item.id,
-                  data: { name, memberId, growthRatePct: growthRatePct ?? null },
-                });
-                setEditingId(null);
-              } catch {
-                // error handled by mutation onError (toast)
-              }
-            }}
-            onSaveRecord={async ({ value, date, note }) => {
-              try {
-                await recordBalance.mutateAsync({
-                  accountId: item.id,
-                  data: { value, date, note },
-                });
+          <div key={item.id} data-search-focus={item.id}>
+            <AssetAccountRow
+              item={item}
+              itemKind="account"
+              stalenessThresholdMonths={3}
+              isExpanded={expandedId === item.id}
+              isEditing={editingId === item.id}
+              isRecording={recordingId === item.id}
+              isSavingEdit={updateAccount.isPending}
+              isSavingRecord={recordBalance.isPending}
+              isSavingConfirm={confirmAccount.isPending}
+              onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
+              onStartEdit={() => {
+                setEditingId(item.id);
+                setExpandedId(item.id);
                 setRecordingId(null);
-              } catch {
-                // error handled by mutation onError (toast)
-              }
-            }}
-          />
+              }}
+              onStartRecord={() => {
+                setRecordingId(item.id);
+                setExpandedId(item.id);
+              }}
+              onCancelEdit={() => setEditingId(null)}
+              onCancelRecord={() => setRecordingId(null)}
+              onDeleteRequest={() => setDeletingId(item.id)}
+              onConfirm={async () => {
+                try {
+                  await confirmAccount.mutateAsync(item.id);
+                  setEditingId(null);
+                } catch {
+                  // error handled by mutation onError (toast)
+                }
+              }}
+              onSaveEdit={async ({ name, memberId, growthRatePct }) => {
+                try {
+                  await updateAccount.mutateAsync({
+                    accountId: item.id,
+                    data: { name, memberId, growthRatePct: growthRatePct ?? null },
+                  });
+                  setEditingId(null);
+                } catch {
+                  // error handled by mutation onError (toast)
+                }
+              }}
+              onSaveRecord={async ({ value, date, note }) => {
+                try {
+                  await recordBalance.mutateAsync({
+                    accountId: item.id,
+                    data: { value, date, note },
+                  });
+                  setRecordingId(null);
+                } catch {
+                  // error handled by mutation onError (toast)
+                }
+              }}
+            />
+          </div>
         ))}
       </div>
 
