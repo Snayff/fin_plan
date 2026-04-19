@@ -66,6 +66,12 @@ export async function householdRoutes(fastify: FastifyInstance) {
     return reply.send({ household });
   });
 
+  // Delete household (owner only) — cascades all household data
+  fastify.delete("/households/:id", { preHandler: [authMiddleware] }, async (request, reply) => {
+    await householdService.delete(request.householdId!, actorCtx(request));
+    return reply.status(204).send();
+  });
+
   // Invite a member (owner only) — rate limited: 5 invites per hour per household
   fastify.post(
     "/households/:id/invite",

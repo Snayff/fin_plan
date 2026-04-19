@@ -751,6 +751,40 @@ describe("householdService.acceptInvite with audit", () => {
   });
 });
 
+// ─── delete (DELETE_HOUSEHOLD) ───────────────────────────────────────────────
+
+describe("householdService.delete", () => {
+  it("writes exactly one DELETE_HOUSEHOLD row with cascaded counts", async () => {
+    prismaMock.member.findFirst.mockResolvedValue(buildMember({ role: "owner", userId: "user-1" }));
+    prismaMock.member.count.mockResolvedValue(3);
+    prismaMock.asset.count.mockResolvedValue(2);
+    prismaMock.account.count.mockResolvedValue(1);
+    prismaMock.incomeSource.count.mockResolvedValue(4);
+    prismaMock.committedItem.count.mockResolvedValue(5);
+    prismaMock.discretionaryItem.count.mockResolvedValue(0);
+    prismaMock.snapshot.count.mockResolvedValue(0);
+    prismaMock.purchaseItem.count.mockResolvedValue(0);
+    prismaMock.household.delete.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Alice" };
+    await householdService.delete("hh-1", ctx);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DELETE_HOUSEHOLD",
+          resource: "household",
+          resourceId: "hh-1",
+          metadata: expect.objectContaining({
+            cascaded: expect.objectContaining({ members: 3, assets: 2 }),
+          }),
+        }),
+      })
+    );
+  });
+});
+
 // ─── assertOwnerOrAdmin ──────────────────────────────────────────────────────
 
 describe("assertOwnerOrAdmin", () => {

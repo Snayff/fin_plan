@@ -588,6 +588,50 @@ export const householdService = {
   },
 
   /** Existing logged-in user joins a household via invite */
+  async delete(householdId: string, ctx: ActorCtx) {
+    await assertOwner(householdId, ctx.actorId);
+    return prisma.$transaction(async (tx) => {
+      const [members, assets, accounts, income, committed, discretionary, snapshots, goals] =
+        await Promise.all([
+          tx.member.count({ where: { householdId } }),
+          tx.asset.count({ where: { householdId } }),
+          tx.account.count({ where: { householdId } }),
+          tx.incomeSource.count({ where: { householdId } }),
+          tx.committedItem.count({ where: { householdId } }),
+          tx.discretionaryItem.count({ where: { householdId } }),
+          tx.snapshot.count({ where: { householdId } }),
+          tx.purchaseItem.count({ where: { householdId } }),
+        ]);
+
+      await tx.auditLog.create({
+        data: {
+          householdId: ctx.householdId,
+          actorId: ctx.actorId,
+          actorName: ctx.actorName,
+          ipAddress: ctx.ipAddress,
+          userAgent: ctx.userAgent,
+          action: AuditAction.DELETE_HOUSEHOLD,
+          resource: "household",
+          resourceId: householdId,
+          metadata: {
+            cascaded: {
+              members,
+              assets,
+              accounts,
+              income,
+              committed,
+              discretionary,
+              snapshots,
+              goals,
+            },
+          },
+        },
+      });
+
+      await tx.household.delete({ where: { id: householdId } });
+    });
+  },
+
   async joinViaInvite(token: string, existingUserId: string) {
     const invite = await this.validateInviteToken(token);
 
