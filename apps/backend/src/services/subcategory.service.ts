@@ -25,7 +25,7 @@ const DEFAULT_SUBCATEGORIES = {
     { name: "Fun", sortOrder: 1 },
     { name: "Clothes", sortOrder: 2 },
     { name: "Gifts", sortOrder: 3, isLocked: true },
-    { name: "Savings", sortOrder: 4 },
+    { name: "Savings", sortOrder: 4, isLocked: true },
     { name: "Other", sortOrder: 5 },
   ],
 } as const;
