@@ -1,0 +1,103 @@
+<h2>Area 1 revised — Contributions flow from Discretionary → Account</h2>
+<p class="subtitle">A waterfall-coherent model. <code>Account.monthlyContribution</code> becomes <em>derived</em> from linked discretionary items, not a free field.</p>
+
+<div class="mockup">
+  <div class="mockup-header">Flow</div>
+  <div class="mockup-body" style="padding:18px;background:#0b0b0e">
+
+    <div style="display:grid;grid-template-columns:1fr 60px 1fr;gap:12px;align-items:start">
+
+      <!-- Waterfall side -->
+      <div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px;background:rgba(255,255,255,0.02)">
+        <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8a8a93;margin-bottom:10px">Waterfall · Discretionary · Savings</div>
+
+        <div style="border-left:2px solid #7dd3fc;background:rgba(125,211,252,0.06);padding:8px 10px;border-radius:4px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:12px;color:#e4e4e7">ISA contribution</div>
+            <div style="font-size:10px;color:#8a8a93;margin-top:2px">🔗 Linked to: Vanguard S&amp;S ISA</div>
+          </div>
+          <div style="font-family:ui-monospace,monospace;font-size:12px;color:#e4e4e7">£400 /mo</div>
+        </div>
+
+        <div style="border-left:2px solid #7dd3fc;background:rgba(125,211,252,0.06);padding:8px 10px;border-radius:4px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:12px;color:#e4e4e7">Emergency fund top-up</div>
+            <div style="font-size:10px;color:#8a8a93;margin-top:2px">🔗 Linked to: Chase Saver</div>
+          </div>
+          <div style="font-family:ui-monospace,monospace;font-size:12px;color:#e4e4e7">£150 /mo</div>
+        </div>
+
+        <div style="border-left:2px solid rgba(255,255,255,0.1);padding:8px 10px;border-radius:4px;display:flex;justify-content:space-between;align-items:center;opacity:0.7">
+          <div>
+            <div style="font-size:12px;color:#e4e4e7">Holiday fund</div>
+            <div style="font-size:10px;color:#8a8a93;margin-top:2px">(no account link)</div>
+          </div>
+          <div style="font-family:ui-monospace,monospace;font-size:12px;color:#e4e4e7">£100 /mo</div>
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div style="display:flex;align-items:center;justify-content:center;padding-top:40px">
+        <div style="color:#a78bfa;font-size:22px">→</div>
+      </div>
+
+      <!-- Assets side -->
+      <div style="border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:12px;background:rgba(255,255,255,0.02)">
+        <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#8a8a93;margin-bottom:10px">Assets · Savings accounts</div>
+
+        <div style="border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:8px 10px;margin-bottom:8px;background:rgba(255,255,255,0.02)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-size:12px;color:#e4e4e7">Vanguard S&amp;S ISA</div>
+            <div style="font-family:ui-monospace,monospace;font-size:12px;color:#e4e4e7">£42,100</div>
+          </div>
+          <div style="font-size:10px;color:#a78bfa">🔗 £400 /mo from waterfall</div>
+          <div style="font-size:10px;color:#8a8a93;margin-top:2px">Growth: 7% p.a. (household default)</div>
+        </div>
+
+        <div style="border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:8px 10px;background:rgba(255,255,255,0.02)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+            <div style="font-size:12px;color:#e4e4e7">Chase Saver</div>
+            <div style="font-family:ui-monospace,monospace;font-size:12px;color:#e4e4e7">£8,300</div>
+          </div>
+          <div style="font-size:10px;color:#a78bfa">🔗 £150 /mo from waterfall</div>
+          <div style="font-size:10px;color:#8a8a93;margin-top:2px">Growth: 4% p.a. (household default)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:18px">
+  <h3>What this means mechanically</h3>
+  <ul style="font-size:13px;line-height:1.6">
+    <li><strong>Schema:</strong> add <code>DiscretionaryItem.linkedAccountId String?</code> (FK → Account). Keep or remove <code>Account.monthlyContribution</code>? (Open question — see below.)</li>
+    <li><strong>Contribution source of truth:</strong> derived at read time — <code>sum(DiscretionaryItem.currentAmount WHERE linkedAccountId = account.id)</code>. The Account model stops storing a free-typed number.</li>
+    <li><strong>Where the user sets it:</strong> on the <em>waterfall item</em>, not the account. The Assets page shows it read-only with a back-link icon.</li>
+    <li><strong>Growth rate vs user valuation:</strong> unchanged. Growth rate drives projections <em>between</em> user-recorded balance snapshots. When the user records a balance, that value becomes the new starting point.</li>
+    <li><strong>Constraint:</strong> linking only makes sense for Discretionary items in a "Savings"-type subcategory and Accounts of type Savings / S&amp;S / Pension.</li>
+  </ul>
+</div>
+
+<div class="options" style="margin-top:14px">
+  <div class="option" data-choice="full-derive" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Fully derive — remove <code>Account.monthlyContribution</code></h3>
+      <p>Cleanest model. One source of truth. Requires a migration to drop the field and a back-fill path (no existing users have used it yet, per the placeholder spec).</p>
+    </div>
+  </div>
+  <div class="option" data-choice="keep-field" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Keep the field — populate from links, allow manual override</h3>
+      <p>Escape hatch for users who don't want to model it in the waterfall. More complex; risks divergence.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="discuss" onclick="toggleSelect(this)">
+    <div class="letter">?</div>
+    <div class="content">
+      <h3>Discuss — there's a wrinkle we haven't covered</h3>
+      <p>e.g. subcategories aren't typed as "savings" yet, or spendType interactions, or…</p>
+    </div>
+  </div>
+</div>
