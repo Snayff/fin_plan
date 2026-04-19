@@ -68,7 +68,9 @@ export function HouseholdMembersSection() {
     });
   }
 
-  const inviteUrl = inviteResult ? `${window.location.origin}/invite/${inviteResult.token}` : null;
+  const inviteUrl = inviteResult
+    ? `${window.location.origin}/accept-invite/${inviteResult.token}`
+    : null;
 
   return (
     <SettingsSection

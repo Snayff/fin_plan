@@ -75,7 +75,16 @@ export class ApiClient {
 
     // Automatically include auth token from store if not explicitly provided and not auth endpoint
     let authHeaders = {};
-    const isAuthEndpoint = endpoint.startsWith("/api/auth");
+    const unauthenticated = [
+      "/api/auth/login",
+      "/api/auth/register",
+      "/api/auth/refresh",
+      "/api/auth/csrf-token",
+      "/api/auth/me",
+    ];
+    const isAuthEndpoint =
+      unauthenticated.some((p) => endpoint.startsWith(p)) ||
+      (endpoint.startsWith("/api/auth/invite/") && !endpoint.endsWith("/join"));
     if (!isAuthEndpoint) {
       try {
         const { useAuthStore } = await import("../stores/authStore");
