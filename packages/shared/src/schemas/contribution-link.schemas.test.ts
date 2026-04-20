@@ -55,8 +55,15 @@ describe("ForecastProjectionSchema — monthlyContributionsByScope", () => {
     const r = ForecastProjectionSchema.safeParse({
       netWorth: [],
       surplus: [],
+      savings: [],
+      stocksAndShares: [],
       retirement: [],
-      monthlyContributionsByScope: { netWorth: 500, retirement: 700 },
+      monthlyContributionsByScope: {
+        netWorth: 500,
+        retirement: 700,
+        savings: 500,
+        stocksAndShares: 0,
+      },
     });
     expect(r.success).toBe(true);
   });

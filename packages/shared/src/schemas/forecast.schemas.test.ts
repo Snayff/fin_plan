@@ -42,6 +42,14 @@ describe("ForecastProjectionSchema", () => {
         { year: 2026, cumulative: 0 },
         { year: 2027, cumulative: 12000 },
       ],
+      savings: [
+        { year: 2026, balance: 10000 },
+        { year: 2027, balance: 10800 },
+      ],
+      stocksAndShares: [
+        { year: 2026, balance: 5000 },
+        { year: 2027, balance: 5350 },
+      ],
       retirement: [
         {
           memberId: "user-1",
@@ -50,7 +58,12 @@ describe("ForecastProjectionSchema", () => {
           series: [{ year: 2026, pension: 30000, savings: 10000, stocksAndShares: 5000 }],
         },
       ],
-      monthlyContributionsByScope: { netWorth: 300, retirement: 600 },
+      monthlyContributionsByScope: {
+        netWorth: 300,
+        retirement: 600,
+        savings: 150,
+        stocksAndShares: 100,
+      },
     };
     expect(ForecastProjectionSchema.safeParse(projection).success).toBe(true);
   });
@@ -59,6 +72,8 @@ describe("ForecastProjectionSchema", () => {
     const projection = {
       netWorth: [],
       surplus: [],
+      savings: [],
+      stocksAndShares: [],
       retirement: [
         {
           memberId: "user-1",
@@ -67,7 +82,12 @@ describe("ForecastProjectionSchema", () => {
           series: [],
         },
       ],
-      monthlyContributionsByScope: { netWorth: 0, retirement: 0 },
+      monthlyContributionsByScope: {
+        netWorth: 0,
+        retirement: 0,
+        savings: 0,
+        stocksAndShares: 0,
+      },
     };
     expect(ForecastProjectionSchema.safeParse(projection).success).toBe(true);
   });

@@ -9,7 +9,15 @@ const forecastServiceMock = {
     Promise.resolve({
       netWorth: [{ year: 2026, nominal: 50000, real: 50000 }],
       surplus: [{ year: 2026, cumulative: 0 }],
+      savings: [{ year: 2026, balance: 0 }],
+      stocksAndShares: [{ year: 2026, balance: 0 }],
       retirement: [],
+      monthlyContributionsByScope: {
+        netWorth: 0,
+        retirement: 0,
+        savings: 0,
+        stocksAndShares: 0,
+      },
     })
   ),
 };
@@ -47,7 +55,15 @@ beforeEach(() => {
   forecastServiceMock.getProjections.mockResolvedValue({
     netWorth: [{ year: 2026, nominal: 50000, real: 50000 }],
     surplus: [{ year: 2026, cumulative: 0 }],
+    savings: [{ year: 2026, balance: 0 }],
+    stocksAndShares: [{ year: 2026, balance: 0 }],
     retirement: [],
+    monthlyContributionsByScope: {
+      netWorth: 0,
+      retirement: 0,
+      savings: 0,
+      stocksAndShares: 0,
+    },
   } as any);
 
   (authMiddleware as any).mockImplementation(async (request: any) => {

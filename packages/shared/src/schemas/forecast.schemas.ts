@@ -27,6 +27,12 @@ export const SurplusPointSchema = z.object({
 });
 export type SurplusPoint = z.infer<typeof SurplusPointSchema>;
 
+export const AccountBalancePointSchema = z.object({
+  year: z.number().int(),
+  balance: z.number(),
+});
+export type AccountBalancePoint = z.infer<typeof AccountBalancePointSchema>;
+
 export const RetirementPointSchema = z.object({
   year: z.number().int(),
   pension: z.number(),
@@ -46,12 +52,16 @@ export type RetirementMemberProjection = z.infer<typeof RetirementMemberProjecti
 export const MonthlyContributionsByScopeSchema = z.object({
   netWorth: z.number(),
   retirement: z.number(),
+  savings: z.number(),
+  stocksAndShares: z.number(),
 });
 export type MonthlyContributionsByScope = z.infer<typeof MonthlyContributionsByScopeSchema>;
 
 export const ForecastProjectionSchema = z.object({
   netWorth: z.array(NetWorthPointSchema),
   surplus: z.array(SurplusPointSchema),
+  savings: z.array(AccountBalancePointSchema),
+  stocksAndShares: z.array(AccountBalancePointSchema),
   retirement: z.array(RetirementMemberProjectionSchema),
   monthlyContributionsByScope: MonthlyContributionsByScopeSchema,
 });
