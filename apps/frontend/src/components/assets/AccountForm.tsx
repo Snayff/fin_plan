@@ -12,6 +12,14 @@ const GROWTH_RATE_SETTING_KEY: Partial<
   Pension: "pensionRatePct",
 };
 
+const NAME_PLACEHOLDER: Record<AccountType, string> = {
+  Current: "e.g. Barclays Current",
+  Savings: "e.g. Marcus Easy Access",
+  StocksAndShares: "e.g. Vanguard S&S ISA",
+  Pension: "e.g. Vanguard SIPP",
+  Other: "e.g. Premium Bonds, Crypto Wallet",
+};
+
 interface Props {
   mode: "add" | "edit";
   type: AccountType;
@@ -122,7 +130,7 @@ export function AccountForm({
           </label>
           <input
             type="text"
-            placeholder="e.g. Vanguard SIPP"
+            placeholder={NAME_PLACEHOLDER[type]}
             value={name}
             onChange={(e) => {
               setName(e.target.value);

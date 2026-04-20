@@ -13,6 +13,7 @@ import { useCreatePeriod, useDeletePeriod } from "@/hooks/useWaterfall";
 import type { TierConfig, TierKey } from "./tierConfig";
 import type { SpendType } from "./formatAmount";
 import { LinkedAccountPicker } from "./LinkedAccountPicker";
+import { getItemNamePlaceholder } from "./itemNamePlaceholder";
 
 const TIER_TO_PERIOD_ITEM_TYPE: Record<TierKey, string> = {
   income: "income_source",
@@ -129,10 +130,10 @@ export default function ItemForm({
     void qc.invalidateQueries({ queryKey: ["waterfall", "tier-items", tier] });
   }
 
+  const currentSubcategoryName = subcategories.find((s) => s.id === subcategoryId)?.name ?? "";
+
   // Show the account picker only for Savings subcategory in discretionary tier.
-  const isSavingsSubcategory =
-    tier === "discretionary" &&
-    subcategories.find((s) => s.id === subcategoryId)?.name === "Savings";
+  const isSavingsSubcategory = tier === "discretionary" && currentSubcategoryName === "Savings";
 
   // Auto-clear linked account if user moves item out of Savings subcategory.
   function handleSubcategoryChange(id: string) {
@@ -202,7 +203,7 @@ export default function ItemForm({
           </label>
           <input
             type="text"
-            placeholder="e.g. Netflix, Council Tax"
+            placeholder={getItemNamePlaceholder(currentSubcategoryName, tier)}
             value={name}
             onChange={(e) => setName(e.target.value)}
             aria-label="Name"

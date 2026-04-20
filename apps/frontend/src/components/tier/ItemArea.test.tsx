@@ -82,7 +82,7 @@ describe("ItemArea", () => {
     renderArea();
     fireEvent.click(screen.getByRole("button", { name: /\+ add/i }));
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("e.g. Netflix, Council Tax")).toBeTruthy();
+      expect(screen.getByPlaceholderText("e.g. Mortgage, Council Tax")).toBeTruthy();
     });
   });
 

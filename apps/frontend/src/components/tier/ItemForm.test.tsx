@@ -54,7 +54,7 @@ describe("ItemForm — add mode", () => {
         onCancel={() => {}}
       />
     );
-    expect(screen.getByPlaceholderText("e.g. Netflix, Council Tax")).toBeTruthy();
+    expect(screen.getByPlaceholderText("e.g. Mortgage, Council Tax")).toBeTruthy();
     expect(screen.getByPlaceholderText("0.00")).toBeTruthy();
     expect(screen.getByPlaceholderText("Any details worth remembering")).toBeTruthy();
   });
@@ -106,7 +106,7 @@ describe("ItemForm — add mode", () => {
         onCancel={() => {}}
       />
     );
-    fireEvent.change(screen.getByPlaceholderText("e.g. Netflix, Council Tax"), {
+    fireEvent.change(screen.getByPlaceholderText("e.g. Mortgage, Council Tax"), {
       target: { value: "Rent" },
     });
     fireEvent.change(screen.getByPlaceholderText("0.00"), { target: { value: "1200" } });
