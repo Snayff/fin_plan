@@ -120,3 +120,49 @@ describe("ItemArea", () => {
     expect(link.getAttribute("href")).toBe("/waterfall#committed");
   });
 });
+
+const giftsSubcategory = {
+  id: "sub-gifts",
+  name: "Gifts",
+  tier: "discretionary" as const,
+  sortOrder: 3,
+  isLocked: true,
+};
+
+function renderLockedGifts(itemList: typeof items = []) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={qc}>
+        <ItemArea
+          tier="discretionary"
+          config={TIER_CONFIGS.discretionary}
+          subcategory={giftsSubcategory}
+          subcategories={[{ id: "sub-gifts", name: "Gifts" }]}
+          items={itemList}
+          isLoading={false}
+          now={new Date("2026-01-15")}
+        />
+      </QueryClientProvider>
+    </MemoryRouter>
+  );
+}
+
+describe("ItemArea — locked Gifts subcategory", () => {
+  it("renders a lock icon next to the title", () => {
+    renderLockedGifts();
+    expect(screen.getByLabelText(/synced subcategory/i)).toBeTruthy();
+  });
+
+  it("shows an 'Open Gift Planner' link in the header", () => {
+    renderLockedGifts();
+    const link = screen.getByRole("link", { name: /open gift planner/i });
+    expect(link.getAttribute("href")).toBe("/gifts");
+  });
+
+  it("shows the locked empty-state card with an 'Open Gift Planner' button", () => {
+    renderLockedGifts();
+    expect(screen.getByText(/managed in the gift planner/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /open gift planner/i })).toBeTruthy();
+  });
+});

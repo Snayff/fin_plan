@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { Lock } from "lucide-react";
 import GhostAddButton from "./GhostAddButton";
 import ItemAreaRow from "./ItemAreaRow";
 import ItemForm from "./ItemForm";
@@ -26,6 +27,10 @@ interface SubcategoryInfo {
   sortOrder: number;
   isLocked: boolean;
 }
+
+const LOCKED_SUBCATEGORY_MANAGERS: Record<string, { label: string; path: string }> = {
+  gifts: { label: "Gift Planner", path: "/gifts" },
+};
 
 interface Props {
   tier: TierKey;
@@ -62,6 +67,7 @@ export default function ItemArea({
   const [selectedStates, setSelectedStates] = useState<Set<ItemLifecycleState>>(
     new Set(["active"])
   );
+  const navigate = useNavigate();
 
   const stateCounts = useMemo(() => {
     const counts: Record<ItemLifecycleState, number> = { active: 0, future: 0, expired: 0 };
@@ -115,6 +121,10 @@ export default function ItemArea({
 
   if (!subcategory) return null;
 
+  const lockedManager = subcategory.isLocked
+    ? LOCKED_SUBCATEGORY_MANAGERS[subcategory.name.toLowerCase().trim()]
+    : undefined;
+
   if (isLoading) {
     return (
       <div className="flex flex-col gap-3 p-4">
@@ -132,6 +142,9 @@ export default function ItemArea({
       <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/5">
         <div className="flex items-center gap-3">
           <h2 className="font-heading text-base font-bold text-foreground">{subcategory.name}</h2>
+          {subcategory.isLocked && (
+            <Lock className="h-3.5 w-3.5 text-foreground/40" aria-label="Synced subcategory" />
+          )}
           <span className="text-xs text-foreground/40">
             {items.length} {items.length === 1 ? "item" : "items"}
           </span>
@@ -146,15 +159,21 @@ export default function ItemArea({
           >
             View all
           </Link>
-          {!subcategory.isLocked && (
-            <GhostAddButton
-              onClick={() => {
-                setIsAddingItem(true);
-                setExpandedItemId(null);
-                setEditingItemId(null);
-              }}
-              disabled={isAddingItem}
-            />
+          <GhostAddButton
+            onClick={() => {
+              setIsAddingItem(true);
+              setExpandedItemId(null);
+              setEditingItemId(null);
+            }}
+            disabled={isAddingItem}
+          />
+          {subcategory.isLocked && lockedManager && (
+            <Link
+              to={lockedManager.path}
+              className="rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
+            >
+              Open {lockedManager.label}
+            </Link>
           )}
         </div>
       </div>
@@ -241,12 +260,27 @@ export default function ItemArea({
         </AnimatePresence>
 
         {/* Empty state */}
-        {items.length === 0 && !isAddingItem && (
+        {items.length === 0 && !isAddingItem && !subcategory.isLocked && (
           <GhostedListEmpty
             ctaHeading={getEmptyStateCopy(subcategory.name, tier).header}
             ctaText={getEmptyStateCopy(subcategory.name, tier).body}
             onCtaClick={() => setIsAddingItem(true)}
           />
+        )}
+
+        {/* Locked empty state — subcategory managed elsewhere (e.g. Gift Planner) */}
+        {items.length === 0 && subcategory.isLocked && lockedManager && (
+          <GhostedListEmpty
+            ctaHeading={`${subcategory.name} are managed in the ${lockedManager.label}`}
+            ctaText={`Your annual ${subcategory.name.toLowerCase()} budget syncs here automatically from the ${lockedManager.label}.`}
+            ctaButtonLabel={`Open ${lockedManager.label}`}
+            onCtaClick={() => navigate(lockedManager.path)}
+          />
+        )}
+
+        {/* Locked without known manager — informational only */}
+        {items.length === 0 && subcategory.isLocked && !lockedManager && (
+          <GhostedListEmpty ctaText={`${subcategory.name} is managed elsewhere.`} showCta={false} />
         )}
 
         {/* Filtered empty state — items exist but none match the current filter */}
