@@ -60,7 +60,6 @@ export default function AcceptInvitePage() {
         void qc.invalidateQueries();
         setTimeout(() => navigate("/overview"), 1500);
       } catch (err) {
-        joinStartedRef.current = false;
         setPageState({ status: "ready", householdName, emailRequired, maskedInvitedEmail });
         setError((err as ApiError).message || "Failed to join household");
       } finally {
