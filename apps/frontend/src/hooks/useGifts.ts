@@ -10,6 +10,7 @@ export const GIFTS_KEYS = {
   configPeople: (filter: string, year: number) => ["gifts", "configPeople", filter, year] as const,
   configEvents: () => ["gifts", "configEvents"] as const,
   quickAddMatrix: (year: number) => ["gifts", "quickAddMatrix", year] as const,
+  settings: () => ["gifts", "settings"] as const,
 };
 
 // ─── Queries ──────────────────────────────────────────────────────────────────
@@ -18,6 +19,14 @@ export function useGiftsState(year: number) {
   return useQuery({
     queryKey: GIFTS_KEYS.state(year),
     queryFn: () => giftsApi.getState(year),
+  });
+}
+
+export function useGiftPlannerSettings(options?: { enabled?: boolean }) {
+  return useQuery({
+    queryKey: GIFTS_KEYS.settings(),
+    queryFn: () => giftsApi.getSettings(),
+    enabled: options?.enabled ?? true,
   });
 }
 

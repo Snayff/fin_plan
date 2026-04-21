@@ -9,6 +9,7 @@ import type {
   SetGiftBudgetInput,
   SetGiftPlannerModeInput,
   GiftPlannerStateResponse,
+  GiftPlannerSettingsResponse,
   GiftPersonDetailResponse,
   GiftUpcomingResponse,
 } from "@finplan/shared";
@@ -17,6 +18,8 @@ export const giftsApi = {
   // ─── Queries ────────────────────────────────────────────────────────────────
   getState: (year: number) =>
     apiClient.get<GiftPlannerStateResponse>(`/api/gifts/state?year=${year}`),
+
+  getSettings: () => apiClient.get<GiftPlannerSettingsResponse>(`/api/gifts/settings`),
 
   getPerson: (id: string, year: number) =>
     apiClient.get<GiftPersonDetailResponse>(`/api/gifts/people/${id}?year=${year}`),

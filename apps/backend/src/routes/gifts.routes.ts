@@ -27,6 +27,14 @@ export async function giftsRoutes(fastify: FastifyInstance) {
 
   // ─── Reads ──────────────────────────────────────────────────────────────────
 
+  fastify.get("/settings", pre, async (req, reply) => {
+    const settings = await giftsService.getOrCreateSettings(req.householdId!);
+    return reply.send({
+      mode: settings.mode,
+      syncedDiscretionaryItemId: settings.syncedDiscretionaryItemId,
+    });
+  });
+
   fastify.get("/state", pre, async (req, reply) => {
     const { year } = req.query as { year?: string };
     const y = parseYear(year);

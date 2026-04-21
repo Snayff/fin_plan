@@ -1,10 +1,11 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import SubcategoryList from "./SubcategoryList";
-import ItemArea from "./ItemArea";
+import ItemArea, { type LockedManager } from "./ItemArea";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useSubcategories, useTierItems, type TierItemRow } from "@/hooks/useWaterfall";
+import { useGiftPlannerSettings } from "@/hooks/useGifts";
 import { TIER_CONFIGS, type TierKey } from "./tierConfig";
 import { useFocusParam } from "@/features/search/useFocusParam";
 import { useAddParam } from "@/features/search/useAddParam";
@@ -79,6 +80,14 @@ export default function TierPage({ tier }: TierPageProps) {
     ? (subcategoryTotals[resolvedSelectedId] ?? null)
     : null;
 
+  const isGiftsSubcategory =
+    tier === "discretionary" && selectedSubcategory?.name.toLowerCase().trim() === "gifts";
+  const { data: giftSettings } = useGiftPlannerSettings({ enabled: isGiftsSubcategory });
+  const lockedManager: LockedManager | undefined =
+    isGiftsSubcategory && giftSettings?.mode === "synced"
+      ? { label: "Gift Planner", path: "/gifts" }
+      : undefined;
+
   return (
     <div data-page={tier} data-testid={`tier-page-${tier}`} className="h-full">
       <TwoPanelLayout
@@ -115,6 +124,7 @@ export default function TierPage({ tier }: TierPageProps) {
             isLoading={itemsLoading}
             initialIsAdding={hasAddParam}
             onSubcategorySelect={setSelectedId}
+            lockedManager={lockedManager}
           />
         }
       />

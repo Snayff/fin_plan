@@ -129,7 +129,7 @@ const giftsSubcategory = {
   isLocked: true,
 };
 
-function renderLockedGifts(itemList: typeof items = []) {
+function renderGifts(opts: { synced: boolean; itemList?: typeof items }) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <MemoryRouter>
@@ -139,30 +139,59 @@ function renderLockedGifts(itemList: typeof items = []) {
           config={TIER_CONFIGS.discretionary}
           subcategory={giftsSubcategory}
           subcategories={[{ id: "sub-gifts", name: "Gifts" }]}
-          items={itemList}
+          items={opts.itemList ?? []}
           isLoading={false}
           now={new Date("2026-01-15")}
+          lockedManager={opts.synced ? { label: "Gift Planner", path: "/gifts" } : undefined}
         />
       </QueryClientProvider>
     </MemoryRouter>
   );
 }
 
-describe("ItemArea — locked Gifts subcategory", () => {
+describe("ItemArea — Gifts subcategory (Gift Planner synced)", () => {
   it("renders a lock icon next to the title", () => {
-    renderLockedGifts();
+    renderGifts({ synced: true });
     expect(screen.getByLabelText(/synced subcategory/i)).toBeTruthy();
   });
 
   it("shows an 'Open Gift Planner' link in the header", () => {
-    renderLockedGifts();
+    renderGifts({ synced: true });
     const link = screen.getByRole("link", { name: /open gift planner/i });
     expect(link.getAttribute("href")).toBe("/gifts");
   });
 
-  it("shows the locked empty-state card with an 'Open Gift Planner' button", () => {
-    renderLockedGifts();
+  it("hides the '+ Add' button in the header", () => {
+    renderGifts({ synced: true });
+    expect(screen.queryByRole("button", { name: /\+ add/i })).toBeNull();
+  });
+
+  it("shows the synced empty-state card with an 'Open Gift Planner' button", () => {
+    renderGifts({ synced: true });
     expect(screen.getByText(/managed in the gift planner/i)).toBeTruthy();
     expect(screen.getByRole("button", { name: /open gift planner/i })).toBeTruthy();
+  });
+});
+
+describe("ItemArea — Gifts subcategory (Gift Planner independent)", () => {
+  it("does not render the lock icon", () => {
+    renderGifts({ synced: false });
+    expect(screen.queryByLabelText(/synced subcategory/i)).toBeNull();
+  });
+
+  it("does not render the 'Open Gift Planner' link", () => {
+    renderGifts({ synced: false });
+    expect(screen.queryByRole("link", { name: /open gift planner/i })).toBeNull();
+  });
+
+  it("renders the '+ Add' button in the header", () => {
+    renderGifts({ synced: false });
+    // Empty-state CTA also renders a '+ Add' button, so at least one exists — the header one.
+    expect(screen.getAllByRole("button", { name: /\+ add/i }).length).toBeGreaterThan(0);
+  });
+
+  it("renders the normal empty-state card (not the synced one)", () => {
+    renderGifts({ synced: false });
+    expect(screen.queryByText(/managed in the gift planner/i)).toBeNull();
   });
 });
