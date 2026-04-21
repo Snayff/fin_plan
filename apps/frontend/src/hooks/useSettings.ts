@@ -29,6 +29,7 @@ export function useUpdateSettings() {
     mutationFn: (data: UpdateSettingsInput) => settingsService.updateSettings(data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.settings });
+      void queryClient.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }

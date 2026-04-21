@@ -35,6 +35,7 @@ export function useCreateAsset() {
     mutationFn: assetsApiService.createAsset,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -51,6 +52,7 @@ export function useUpdateAsset() {
     }) => assetsApiService.updateAsset(assetId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -61,6 +63,7 @@ export function useDeleteAsset() {
     mutationFn: assetsApiService.deleteAsset,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -77,6 +80,7 @@ export function useRecordAssetBalance() {
     }) => assetsApiService.recordAssetBalance(assetId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -87,6 +91,7 @@ export function useCreateAccount() {
     mutationFn: assetsApiService.createAccount,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -103,6 +108,7 @@ export function useUpdateAccount() {
     }) => assetsApiService.updateAccount(accountId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -113,6 +119,7 @@ export function useDeleteAccount() {
     mutationFn: assetsApiService.deleteAccount,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -129,6 +136,7 @@ export function useRecordAccountBalance() {
     }) => assetsApiService.recordAccountBalance(accountId, data),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -139,6 +147,7 @@ export function useConfirmAsset() {
     mutationFn: assetsApiService.confirmAsset,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -149,6 +158,7 @@ export function useConfirmAccount() {
     mutationFn: assetsApiService.confirmAccount,
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
+      qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }

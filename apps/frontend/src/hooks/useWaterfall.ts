@@ -1,7 +1,12 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { waterfallService } from "@/services/waterfall.service";
 import { showError } from "@/lib/toast";
-import type { CreatePeriodInput, UpdatePeriodInput, SpendType, IncomeFrequency } from "@finplan/shared";
+import type {
+  CreatePeriodInput,
+  UpdatePeriodInput,
+  SpendType,
+  IncomeFrequency,
+} from "@finplan/shared";
 
 export const WATERFALL_KEYS = {
   summary: ["waterfall", "summary"] as const,
@@ -74,6 +79,7 @@ export function useConfirmItem() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
+      void queryClient.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -110,6 +116,7 @@ export function useUpdateItem() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
+      void queryClient.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -151,6 +158,7 @@ export function useCreateItem(tier: "income" | "committed" | "discretionary") {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
     },
     onError: (error: unknown) => {
@@ -177,6 +185,7 @@ export function useConfirmWaterfallItem(
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
     },
   });
@@ -194,6 +203,7 @@ export function useDeleteItem(tier: "income" | "committed" | "discretionary", id
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
     },
   });
@@ -210,6 +220,7 @@ export function useTierUpdateItem(tier: "income" | "committed" | "discretionary"
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
     },
   });
@@ -377,6 +388,7 @@ export function useCreatePeriod(itemType: string, itemId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: PERIOD_KEYS.list(itemType, itemId) });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -389,6 +401,7 @@ export function useUpdatePeriod(itemType: string, itemId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: PERIOD_KEYS.list(itemType, itemId) });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -400,6 +413,7 @@ export function useDeletePeriod(itemType: string, itemId: string) {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: PERIOD_KEYS.list(itemType, itemId) });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -411,6 +425,7 @@ export function useDeleteAllWaterfall() {
     onSuccess: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
