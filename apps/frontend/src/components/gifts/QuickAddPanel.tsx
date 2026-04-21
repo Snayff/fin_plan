@@ -166,7 +166,20 @@ export function QuickAddPanel({ year, readOnly, onDirtyChange }: Props) {
       .filter(
         (c): c is { personId: string; eventId: string; year: number; planned: number } => c !== null
       );
-    bulk.mutate({ cells: payload });
+    bulk.mutate(
+      { cells: payload },
+      {
+        onSuccess: () => {
+          const next: Record<string, string> = {};
+          for (const [key, value] of Object.entries(cells)) {
+            const n = parseFloat(value);
+            if (!Number.isNaN(n) && n > 0) next[key] = String(n);
+          }
+          setCells(next);
+          setInitialCells(next);
+        },
+      }
+    );
   };
 
   const resetCells = useCallback(() => {
