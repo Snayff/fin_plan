@@ -115,10 +115,12 @@ export function computeDiff(
   if (!before && !after) return [];
 
   if (!before) {
-    // CREATE — all after fields
+    // CREATE — all populated after fields (skip null/undefined/empty strings
+    // since an unset field on create is noise, not a meaningful change).
     const out: AuditChange[] = [];
     for (const [field, value] of Object.entries(after!)) {
       if (isHiddenField(field, resource)) continue;
+      if (value === null || value === undefined || value === "") continue;
       if (isFlatJsonField(resource, field) && isRecord(value)) {
         out.push(...descendJson(field, undefined, value));
       } else {

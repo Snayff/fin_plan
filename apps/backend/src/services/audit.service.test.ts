@@ -77,6 +77,28 @@ describe("computeDiff", () => {
     ]);
   });
 
+  it("skips null/undefined/empty-string fields on create", () => {
+    const diff = computeDiff(null, {
+      name: "Tandem",
+      notes: null,
+      dueDate: undefined,
+      description: "",
+      spendType: "monthly",
+    });
+    expect(diff).toEqual([
+      { field: "name", after: "Tandem" },
+      { field: "spendType", after: "monthly" },
+    ]);
+  });
+
+  it("keeps null fields on delete (informative for a deletion record)", () => {
+    const diff = computeDiff({ name: "Old", notes: null }, null);
+    expect(diff).toEqual([
+      { field: "name", before: "Old" },
+      { field: "notes", before: null },
+    ]);
+  });
+
   it("detects deleted fields (no after state)", () => {
     const diff = computeDiff({ amount: 100 }, null);
     expect(diff).toEqual([{ field: "amount", before: 100 }]);
