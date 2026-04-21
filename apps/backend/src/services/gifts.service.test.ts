@@ -376,6 +376,55 @@ describe("giftsService.setAnnualBudget", () => {
     });
   });
 
+  it("in synced mode with null itemId self-heals by creating the planner-owned item", async () => {
+    const year = new Date().getFullYear();
+    prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
+      id: "s1",
+      householdId: "hh-1",
+      mode: "synced",
+      syncedDiscretionaryItemId: null,
+    } as any);
+    prismaMock.plannerYearBudget.upsert.mockResolvedValue({} as any);
+    prismaMock.subcategory.findFirst.mockResolvedValue({
+      id: "sub-gifts",
+      householdId: "hh-1",
+      tier: "discretionary",
+      name: "Gifts",
+    } as any);
+    prismaMock.plannerYearBudget.findUnique.mockResolvedValue({ giftBudget: 1500 } as any);
+    prismaMock.discretionaryItem.create.mockResolvedValue({ id: "d-new" } as any);
+    prismaMock.itemAmountPeriod.upsert.mockResolvedValue({} as any);
+    prismaMock.subcategory.update.mockResolvedValue({} as any);
+    prismaMock.giftPlannerSettings.update.mockResolvedValue({} as any);
+
+    await giftsService.setAnnualBudget("hh-1", year, { annualBudget: 1500 });
+
+    expect(prismaMock.discretionaryItem.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        householdId: "hh-1",
+        subcategoryId: "sub-gifts",
+        name: "Gifts",
+        spendType: "monthly",
+        isPlannerOwned: true,
+      }),
+    });
+    expect(prismaMock.giftPlannerSettings.update).toHaveBeenCalledWith({
+      where: { id: "s1" },
+      data: { mode: "synced", syncedDiscretionaryItemId: "d-new" },
+    });
+    expect(prismaMock.subcategory.update).toHaveBeenCalledWith({
+      where: { id: "sub-gifts" },
+      data: { lockedByPlanner: true },
+    });
+    const calls = prismaMock.itemAmountPeriod.upsert.mock.calls as any[];
+    const lastCall = calls[calls.length - 1][0];
+    expect(lastCall.where.itemType_itemId_startDate).toMatchObject({
+      itemType: "discretionary_item",
+      itemId: "d-new",
+    });
+    expect(lastCall.update.amount).toBe(1500);
+  });
+
   it("in synced mode also upserts ItemAmountPeriod for the planner-owned item", async () => {
     const year = new Date().getFullYear();
     prismaMock.giftPlannerSettings.findUnique.mockResolvedValue({
@@ -942,9 +991,10 @@ describe("giftsService.bulkUpsertAllocations — audit summary", () => {
       (c: any) => c[0]?.data?.action === "UPSERT_GIFT_ALLOCATIONS"
     );
     expect(bulkAuditCall).toBeDefined();
-    expect(bulkAuditCall![0].data.metadata).toMatchObject({
-      counts: { created: 1, updated: 1 },
-    });
+    expect(bulkAuditCall![0].data.changes).toEqual([
+      { field: "created", after: 1 },
+      { field: "updated", after: 1 },
+    ]);
     expect(
       auditCalls.filter((c: any) => c[0]?.data?.action === "UPSERT_GIFT_ALLOCATIONS")
     ).toHaveLength(1);

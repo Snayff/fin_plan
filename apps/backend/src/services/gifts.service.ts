@@ -30,6 +30,65 @@ export const giftsService = {
     });
   },
 
+  async _ensureSyncedDiscretionaryItem<
+    T extends { id: string; mode: string; syncedDiscretionaryItemId: string | null },
+  >(householdId: string, settings: T): Promise<T> {
+    if (settings.mode !== "synced" || settings.syncedDiscretionaryItemId) return settings;
+
+    const giftsSubcategory = await prisma.subcategory.findFirst({
+      where: { householdId, tier: "discretionary", name: "Gifts" },
+    });
+    if (!giftsSubcategory) throw new NotFoundError("Gifts subcategory not found");
+
+    const year = new Date().getFullYear();
+    const yearBudget = await prisma.plannerYearBudget.findUnique({
+      where: { householdId_year: { householdId, year } },
+    });
+    const annualBudget = yearBudget?.giftBudget ?? 0;
+    const startDate = new Date(Date.UTC(year, 0, 1));
+
+    const createdId = await prisma.$transaction(async (tx) => {
+      const created = await tx.discretionaryItem.create({
+        data: {
+          householdId,
+          subcategoryId: giftsSubcategory.id,
+          name: "Gifts",
+          spendType: "monthly",
+          isPlannerOwned: true,
+          lastReviewedAt: new Date(),
+        },
+      });
+      await tx.itemAmountPeriod.upsert({
+        where: {
+          itemType_itemId_startDate: {
+            itemType: "discretionary_item",
+            itemId: created.id,
+            startDate,
+          },
+        },
+        create: {
+          itemType: "discretionary_item",
+          itemId: created.id,
+          startDate,
+          endDate: null,
+          amount: annualBudget,
+        },
+        update: { amount: annualBudget },
+      });
+      await tx.subcategory.update({
+        where: { id: giftsSubcategory.id },
+        data: { lockedByPlanner: true },
+      });
+      await tx.giftPlannerSettings.update({
+        where: { id: settings.id },
+        data: { mode: "synced", syncedDiscretionaryItemId: created.id },
+      });
+      return created.id;
+    });
+
+    return { ...settings, mode: "synced", syncedDiscretionaryItemId: createdId } as T;
+  },
+
   // ─── People ─────────────────────────────────────────────────────────────────
   async listPeople(householdId: string) {
     return prisma.giftPerson.findMany({
@@ -247,7 +306,28 @@ export const giftsService = {
     input: UpsertGiftAllocationInput
   ) {
     this._assertCurrentYear(year);
-    const person = await prisma.giftPerson.findUnique({ where: { id: personId } });
+
+    // Resolve virtual `member:<id>` personId by finding or creating the
+    // backing GiftPerson record, mirroring bulkUpsertAllocations.
+    let resolvedPersonId = personId;
+    if (personId.startsWith("member:")) {
+      const memberId = personId.slice("member:".length);
+      const member = await prisma.member.findUnique({ where: { id: memberId } });
+      assertOwned(member, householdId, "Gift person");
+      const existing = await prisma.giftPerson.findFirst({
+        where: { householdId, memberId },
+      });
+      if (existing) {
+        resolvedPersonId = existing.id;
+      } else {
+        const created = await prisma.giftPerson.create({
+          data: { householdId, memberId, name: member!.name, sortOrder: 999 },
+        });
+        resolvedPersonId = created.id;
+      }
+    }
+
+    const person = await prisma.giftPerson.findUnique({ where: { id: resolvedPersonId } });
     assertOwned(person, householdId, "Gift person");
     const event = await prisma.giftEvent.findUnique({ where: { id: eventId } });
     assertOwned(event, householdId, "Gift event");
@@ -264,14 +344,14 @@ export const giftsService = {
     return prisma.giftAllocation.upsert({
       where: {
         giftPersonId_giftEventId_year: {
-          giftPersonId: personId,
+          giftPersonId: resolvedPersonId,
           giftEventId: eventId,
           year,
         },
       },
       create: {
         householdId,
-        giftPersonId: personId,
+        giftPersonId: resolvedPersonId,
         giftEventId: eventId,
         year,
         planned: input.planned ?? 0,
@@ -376,6 +456,10 @@ export const giftsService = {
           update: { planned: cell.planned },
         });
       }
+      const changes = [
+        ...(created > 0 ? [{ field: "created", after: created }] : []),
+        ...(updated > 0 ? [{ field: "updated", after: updated }] : []),
+      ];
       await tx.auditLog.create({
         data: {
           householdId: ctx.householdId,
@@ -386,7 +470,7 @@ export const giftsService = {
           action: AuditAction.UPSERT_GIFT_ALLOCATIONS,
           resource: "gift-allocation",
           resourceId: "bulk",
-          metadata: { counts: { created, updated } },
+          changes,
         },
       });
     });
@@ -396,12 +480,16 @@ export const giftsService = {
   // ─── Budget ─────────────────────────────────────────────────────────────────
   async setAnnualBudget(householdId: string, year: number, input: SetGiftBudgetInput) {
     this._assertCurrentYear(year);
-    const settings = await this.getOrCreateSettings(householdId);
+    let settings = await this.getOrCreateSettings(householdId);
     await prisma.plannerYearBudget.upsert({
       where: { householdId_year: { householdId, year } },
       create: { householdId, year, giftBudget: input.annualBudget },
       update: { giftBudget: input.annualBudget },
     });
+
+    if (settings.mode === "synced" && !settings.syncedDiscretionaryItemId) {
+      settings = await this._ensureSyncedDiscretionaryItem(householdId, settings);
+    }
 
     if (settings.mode === "synced" && settings.syncedDiscretionaryItemId) {
       const startDate = new Date(Date.UTC(year, 0, 1));
@@ -429,6 +517,59 @@ export const giftsService = {
 
   // ─── Reads ──────────────────────────────────────────────────────────────────
   async getPersonDetail(householdId: string, personId: string, year: number) {
+    // Virtual `member:<memberId>` IDs are returned by getPlannerState for
+    // household members that don't yet have a GiftPerson record. Resolve to an
+    // existing GiftPerson if one has since been created, otherwise synthesize
+    // an empty detail view without creating state on a read.
+    if (personId.startsWith("member:")) {
+      const memberId = personId.slice("member:".length);
+      const member = await prisma.member.findUnique({ where: { id: memberId } });
+      assertOwned(member, householdId, "Gift person");
+      const linked = await prisma.giftPerson.findFirst({
+        where: { householdId, memberId },
+      });
+      if (linked) {
+        personId = linked.id;
+      } else {
+        const events = await prisma.giftEvent.findMany({
+          where: { householdId },
+          orderBy: [{ isLocked: "desc" }, { sortOrder: "asc" }],
+        });
+        const rows = events.map((e) => ({
+          id: null,
+          giftPersonId: personId,
+          giftEventId: e.id,
+          eventName: e.name,
+          eventDateType: e.dateType,
+          eventIsLocked: e.isLocked,
+          year,
+          planned: 0,
+          spent: null,
+          status: "planned" as const,
+          notes: null,
+          dateMonth: null,
+          dateDay: null,
+          resolvedMonth: e.dateType === "shared" ? (e.dateMonth ?? null) : null,
+          resolvedDay: e.dateType === "shared" ? (e.dateDay ?? null) : null,
+        }));
+        return {
+          person: {
+            id: personId,
+            name: member!.name,
+            notes: null,
+            sortOrder: 999,
+            isHouseholdMember: true,
+            plannedCount: 0,
+            boughtCount: 0,
+            plannedTotal: 0,
+            spentTotal: 0,
+            hasOverspend: false,
+          },
+          allocations: rows,
+        };
+      }
+    }
+
     const person = await prisma.giftPerson.findUnique({ where: { id: personId } });
     assertOwned(person, householdId, "Gift person");
     const [events, allocations] = await Promise.all([
@@ -874,7 +1015,10 @@ export const giftsService = {
       });
     }
 
-    const settings = await this.getOrCreateSettings(householdId);
+    let settings = await this.getOrCreateSettings(householdId);
+    if (settings.mode === "synced" && !settings.syncedDiscretionaryItemId) {
+      settings = await this._ensureSyncedDiscretionaryItem(householdId, settings);
+    }
     if (settings.mode === "synced" && settings.syncedDiscretionaryItemId) {
       await prisma.itemAmountPeriod.upsert({
         where: {
@@ -938,51 +1082,10 @@ export const giftsService = {
     }
 
     // independent → synced
-    const year = new Date().getFullYear();
-    const yearBudget = await prisma.plannerYearBudget.findUnique({
-      where: { householdId_year: { householdId, year } },
+    return this._ensureSyncedDiscretionaryItem(householdId, {
+      ...settings,
+      mode: "synced",
+      syncedDiscretionaryItemId: null,
     });
-    const annualBudget = yearBudget?.giftBudget ?? 0;
-    const startDate = new Date(Date.UTC(year, 0, 1));
-
-    const result = await prisma.$transaction(async (tx) => {
-      const created = await tx.discretionaryItem.create({
-        data: {
-          householdId,
-          subcategoryId: giftsSubcategory.id,
-          name: "Gifts",
-          spendType: "monthly",
-          isPlannerOwned: true,
-          lastReviewedAt: new Date(),
-        },
-      });
-      await tx.itemAmountPeriod.upsert({
-        where: {
-          itemType_itemId_startDate: {
-            itemType: "discretionary_item",
-            itemId: created.id,
-            startDate,
-          },
-        },
-        create: {
-          itemType: "discretionary_item",
-          itemId: created.id,
-          startDate,
-          endDate: null,
-          amount: annualBudget,
-        },
-        update: { amount: annualBudget },
-      });
-      await tx.subcategory.update({
-        where: { id: giftsSubcategory.id },
-        data: { lockedByPlanner: true },
-      });
-      await tx.giftPlannerSettings.update({
-        where: { id: settings.id },
-        data: { mode: "synced", syncedDiscretionaryItemId: created.id },
-      });
-      return created;
-    });
-    return { ...settings, mode: "synced" as const, syncedDiscretionaryItemId: result.id };
   },
 };
