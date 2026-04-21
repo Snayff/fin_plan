@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import type { SparklinePoint } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
 import { useSettings } from "@/hooks/useSettings";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { SummarySparkline } from "./SummarySparkline";
 
 interface NetWorthCardProps {
@@ -38,7 +39,8 @@ export function NetWorthCard({ netWorth, sparklineData }: NetWorthCardProps) {
             Track your wealth over time
           </h3>
           <p className="text-xs text-text-tertiary mb-3 max-w-xs">
-            Add a savings, investment or pension account to see your net worth.
+            Add a savings, investment or pension account to see your{" "}
+            <GlossaryTermMarker entryId="net-worth">net worth</GlossaryTermMarker>.
           </p>
           <Link
             to="/assets"

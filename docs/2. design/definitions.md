@@ -74,7 +74,7 @@
 
 **Appears in**: Yearly Bills row in the waterfall (÷12 label), Annual Income entries, cashflow calendar header
 
-**Tooltip**: An annual amount spread evenly across 12 months. finplan uses this so your monthly waterfall reflects a fair share of bills or income that don't land every month.
+**Tooltip**: An annual amount spread evenly across 12 months. finplan uses this so your monthly waterfall reflects a fair share of bills or income that don't land every month. Quarterly amounts are divided by 3; weekly amounts are multiplied by 52 ÷ 12 (≈ 4.33).
 
 ---
 
@@ -162,7 +162,31 @@
 
 **Appears in**: Settings page, Tier item groupings, Item forms
 
-**Tooltip**: A user-defined grouping within a waterfall tier — for example, Housing or Utilities within Committed Spend. Subcategories help you organise items without affecting the waterfall arithmetic. Manage them in Settings → Subcategories.
+**Tooltip**: A user-defined grouping within a tier — for example, Housing or Utilities within Committed Spend. Subcategories help you organise items without affecting the waterfall arithmetic. Manage them in Settings → Subcategories.
+
+---
+
+## Waterfall Tier
+
+**Appears in**: Overview page, Tier pages (Income, Committed, Discretionary, Surplus), Settings — Subcategories
+
+**Tooltip**: One of the four layers of the finplan waterfall: Income, Committed Spend, Discretionary Spend, and Surplus. Subcategories live inside a tier, and items are organised by subcategory within each tier.
+
+---
+
+## Yearly Bill
+
+**Appears in**: Committed page (Yearly Bills grouping), Overview waterfall, Cashflow shortfall indicator
+
+**Tooltip**: A committed outgoing paid once per year — for example, annual insurance or a yearly subscription. Shown in the monthly waterfall as an amortised £/12 share, and flagged in cashflow if the full payment could push a month below zero.
+
+---
+
+## Review
+
+**Appears in**: Review Wizard, item rows (right panel), item detail view
+
+**Tooltip**: A periodic prompt that walks you through confirming whether each item's recorded value is still correct. Completing a Review refreshes an item's staleness and optionally saves a snapshot of your waterfall at that point in time.
 
 ---
 

@@ -3,6 +3,7 @@ import type { StalenessThresholds } from "@finplan/shared";
 import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
 import { SettingsSection } from "./SettingsSection";
 import { AutoSaveField } from "./AutoSaveField";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { useAutoSave } from "@/hooks/useAutoSave";
 
 // Labels adapted to match the actual StalenessThresholds keys from @finplan/shared
@@ -71,7 +72,12 @@ export function StalenessSection() {
     <SettingsSection
       id="staleness"
       title="Staleness thresholds"
-      description="Number of months before each item type is considered stale."
+      description={
+        <>
+          Number of months before each item type is considered{" "}
+          <GlossaryTermMarker entryId="staleness">stale</GlossaryTermMarker>.
+        </>
+      }
     >
       <div className="grid grid-cols-2 gap-3 max-w-lg">
         {(Object.keys(LABELS) as Array<keyof StalenessThresholds>).map((k) => (

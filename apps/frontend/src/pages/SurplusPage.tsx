@@ -125,8 +125,12 @@ export default function SurplusPage() {
                       >
                         <span className="mt-0.5 h-1.5 w-1.5 shrink-0 rounded-full bg-attention" />
                         <span>
-                          Your surplus is below your {benchmarkPct}% benchmark. A monthly surplus of
-                          around {benchmarkPct}% of income is a common planning benchmark.
+                          Your surplus is below your {benchmarkPct}%{" "}
+                          <GlossaryTermMarker entryId="surplus-benchmark">
+                            benchmark
+                          </GlossaryTermMarker>
+                          . A monthly surplus of around {benchmarkPct}% of income is a common
+                          planning benchmark.
                         </span>
                       </div>
                     )}

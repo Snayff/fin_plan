@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
 import { SettingsSection } from "./SettingsSection";
 import { AutoSaveField } from "./AutoSaveField";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { useAutoSave } from "@/hooks/useAutoSave";
 
 export function SurplusSection() {
@@ -17,7 +18,14 @@ export function SurplusSection() {
     <SettingsSection
       id="surplus"
       title="Surplus benchmark"
-      description="Percentage of net income that should remain as surplus before a cashflow attention is surfaced."
+      description={
+        <>
+          Percentage of <GlossaryTermMarker entryId="net-income">net income</GlossaryTermMarker>{" "}
+          that should remain as <GlossaryTermMarker entryId="surplus">surplus</GlossaryTermMarker>{" "}
+          before a <GlossaryTermMarker entryId="cashflow">cashflow</GlossaryTermMarker> attention is
+          surfaced.
+        </>
+      }
     >
       <AutoSaveField
         label="Benchmark"

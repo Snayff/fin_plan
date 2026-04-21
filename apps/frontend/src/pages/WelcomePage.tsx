@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { useAuthStore } from "@/stores/authStore";
 import { householdService } from "@/services/household.service";
 import { authService } from "@/services/auth.service";
@@ -68,9 +69,14 @@ export default function WelcomePage() {
             <div className="space-y-3">
               <h1 className="text-3xl font-bold tracking-tight">Welcome to finplan</h1>
               <p className="text-muted-foreground leading-relaxed">
-                finplan helps you see exactly where your money goes each month using a simple
-                waterfall: income flows down through committed bills, discretionary spending, and
-                savings — revealing your true surplus.
+                finplan helps you see exactly where your money goes each month using a simple{" "}
+                <GlossaryTermMarker entryId="waterfall">waterfall</GlossaryTermMarker>:{" "}
+                <GlossaryTermMarker entryId="net-income">income</GlossaryTermMarker> flows down
+                through <GlossaryTermMarker entryId="committed-spend">committed</GlossaryTermMarker>{" "}
+                bills,{" "}
+                <GlossaryTermMarker entryId="discretionary-spend">discretionary</GlossaryTermMarker>{" "}
+                spending, and savings — revealing your true{" "}
+                <GlossaryTermMarker entryId="surplus">surplus</GlossaryTermMarker>.
               </p>
             </div>
             <Button size="lg" onClick={() => setPhase("name")}>

@@ -17,31 +17,11 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     id: "amortised",
     term: "Amortised (÷12)",
     definition:
-      "An annual amount spread evenly across 12 months. finplan uses this so your monthly waterfall reflects a fair share of bills or income that don't land every month.",
+      "An annual amount spread evenly across 12 months. finplan uses this so your monthly waterfall reflects a fair share of bills or income that don't land every month. Quarterly amounts are divided by 3; weekly amounts are multiplied by 52 ÷ 12 (≈ 4.33).",
     tag: "financial",
     relatedConceptIds: ["amortisation"],
-    relatedTermIds: ["annual-income"],
+    relatedTermIds: ["annual-income", "yearly-bill"],
     appearsIn: ["Committed Spend waterfall", "Annual Income entries", "Cashflow calendar"],
-  },
-  {
-    id: "amortised_quarterly",
-    term: "Amortised Quarterly (÷3)",
-    definition:
-      "A quarterly amount converted to its monthly equivalent by dividing by 3. A £900 quarterly bill averages £300/month across your waterfall.",
-    tag: "financial",
-    relatedConceptIds: ["amortisation"],
-    relatedTermIds: ["amortised"],
-    appearsIn: ["Committed Spend waterfall", "Income entries"],
-  },
-  {
-    id: "amortised_weekly",
-    term: "Amortised Weekly (× 52/12)",
-    definition:
-      "A weekly amount converted to its monthly equivalent by multiplying by 52 ÷ 12 (≈ 4.33). A weekly salary of £500 contributes approximately £2,167/month to your waterfall.",
-    tag: "financial",
-    relatedConceptIds: ["amortisation"],
-    relatedTermIds: ["amortised"],
-    appearsIn: ["Income entries", "Committed Spend waterfall"],
   },
   {
     id: "gifts-annual-budget",
@@ -264,6 +244,16 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     appearsIn: ["Growth chart"],
   },
   {
+    id: "review",
+    term: "Review",
+    definition:
+      "A periodic prompt that walks you through confirming whether each item's recorded value is still correct. Completing a Review refreshes an item's staleness and optionally saves a snapshot of your waterfall at that point in time.",
+    tag: "finplan",
+    relatedConceptIds: [],
+    relatedTermIds: ["staleness", "snapshot"],
+    appearsIn: ["Review Wizard", "Item rows"],
+  },
+  {
     id: "gifts-shared-date",
     term: "Shared Date Type",
     definition:
@@ -306,10 +296,10 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
     id: "subcategory",
     term: "Subcategory",
     definition:
-      "A user-defined grouping within a waterfall tier — for example, Housing or Utilities within Committed Spend. Subcategories help you organise items without affecting the waterfall arithmetic. Manage them in Settings → Subcategories.",
+      "A user-defined grouping within a tier — for example, Housing or Utilities within Committed Spend. Subcategories help you organise items without affecting the waterfall arithmetic. Manage them in Settings → Subcategories.",
     tag: "finplan",
     relatedConceptIds: ["waterfall"],
-    relatedTermIds: ["committed-spend", "discretionary-spend"],
+    relatedTermIds: ["tier", "committed-spend", "discretionary-spend"],
     appearsIn: ["Settings page", "Tier item groupings", "Item forms"],
   },
   {
@@ -379,8 +369,28 @@ export const GLOSSARY_ENTRIES: GlossaryEntry[] = [
       "The way finplan structures your finances — income at the top, committed spend deducted first, then discretionary spend, leaving your surplus at the bottom. Think of money flowing downwards through each layer.",
     tag: "finplan",
     relatedConceptIds: [],
-    relatedTermIds: ["committed-spend", "discretionary-spend", "surplus"],
+    relatedTermIds: ["tier", "committed-spend", "discretionary-spend", "surplus"],
     appearsIn: ["Overview page", "Waterfall Creation Wizard"],
+  },
+  {
+    id: "tier",
+    term: "Waterfall Tier",
+    definition:
+      "One of the four layers of the finplan waterfall: Income, Committed Spend, Discretionary Spend, and Surplus. Subcategories live inside a tier, and items are organised by subcategory within each tier.",
+    tag: "finplan",
+    relatedConceptIds: ["waterfall"],
+    relatedTermIds: ["waterfall", "subcategory", "committed-spend", "discretionary-spend"],
+    appearsIn: ["Overview page", "Tier pages", "Settings — Subcategories"],
+  },
+  {
+    id: "yearly-bill",
+    term: "Yearly Bill",
+    definition:
+      "A committed outgoing paid once per year — for example, annual insurance or a yearly subscription. Shown in the monthly waterfall as an amortised £/12 share, and flagged in cashflow if the full payment could push a month below zero.",
+    tag: "finplan",
+    relatedConceptIds: ["amortisation", "cashflow-forecasting"],
+    relatedTermIds: ["amortised", "committed-spend", "cashflow"],
+    appearsIn: ["Committed page", "Overview waterfall", "Cashflow shortfall indicator"],
   },
 ];
 

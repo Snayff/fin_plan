@@ -3,6 +3,7 @@ import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { SettingsSection } from "./SettingsSection";
 import { AutoSaveField } from "./AutoSaveField";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 
 interface RateValues {
   currentRatePct: number;
@@ -114,7 +115,12 @@ export function GrowthRatesSection() {
     <SettingsSection
       id="growth-rates"
       title="Growth rates"
-      description="Default annual growth rates used for projections."
+      description={
+        <>
+          Default annual growth rates used for{" "}
+          <GlossaryTermMarker entryId="projection">projections</GlossaryTermMarker>.
+        </>
+      }
     >
       <div className="flex flex-col gap-5 max-w-lg">
         <div>

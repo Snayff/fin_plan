@@ -1,9 +1,7 @@
 import {
   Select,
   SelectContent,
-  SelectGroup,
   SelectItem,
-  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
@@ -20,11 +18,6 @@ const labelClass = "text-text-muted uppercase tracking-[0.07em] text-[10px]";
 
 export function LinkedAccountPicker({ value, onChange }: Props) {
   const { data: savingsAccounts = [] } = useAccountsByType("Savings");
-  const { data: ssAccounts = [] } = useAccountsByType("StocksAndShares");
-  const { data: pensionAccounts = [] } = useAccountsByType("Pension");
-
-  const hasAnyAccounts =
-    savingsAccounts.length > 0 || ssAccounts.length > 0 || pensionAccounts.length > 0;
 
   return (
     <div className="col-span-2 flex flex-col gap-1">
@@ -44,44 +37,17 @@ export function LinkedAccountPicker({ value, onChange }: Props) {
             <span className="text-text-muted italic">None</span>
           </SelectItem>
 
-          {!hasAnyAccounts && (
+          {savingsAccounts.length === 0 && (
             <div className="px-3 py-2 text-xs text-text-muted italic">
-              No savings, S&S or pension accounts found
+              No savings accounts found
             </div>
           )}
 
-          {savingsAccounts.length > 0 && (
-            <SelectGroup>
-              <SelectLabel>Savings</SelectLabel>
-              {savingsAccounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          )}
-
-          {ssAccounts.length > 0 && (
-            <SelectGroup>
-              <SelectLabel>Stocks &amp; Shares</SelectLabel>
-              {ssAccounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          )}
-
-          {pensionAccounts.length > 0 && (
-            <SelectGroup>
-              <SelectLabel>Pension</SelectLabel>
-              {pensionAccounts.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {a.name}
-                </SelectItem>
-              ))}
-            </SelectGroup>
-          )}
+          {savingsAccounts.map((a) => (
+            <SelectItem key={a.id} value={a.id}>
+              {a.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>

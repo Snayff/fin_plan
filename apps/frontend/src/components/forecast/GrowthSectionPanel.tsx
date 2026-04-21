@@ -5,6 +5,7 @@ import { NetWorthChart } from "@/components/forecast/NetWorthChart";
 import { SurplusAccumulationChart } from "@/components/forecast/SurplusAccumulationChart";
 import { AccountAccumulationChart } from "@/components/forecast/AccountAccumulationChart";
 import { RetirementSummary } from "@/components/forecast/RetirementSummary";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { useForecast } from "@/hooks/useForecast";
 
 const CHART_SKELETON = (
@@ -72,7 +73,12 @@ export function GrowthSectionPanel() {
                 data={data?.savings ?? []}
                 monthlyContributions={data?.monthlyContributionsByScope?.savings}
                 accent={{ stroke: "#6366f1", gradId: "savingsGrad" }}
-                emptyMessage="Add a savings account to see your projection"
+                emptyMessage={
+                  <>
+                    Add a savings account to see your{" "}
+                    <GlossaryTermMarker entryId="projection">projection</GlossaryTermMarker>
+                  </>
+                }
               />
               <AccountAccumulationChart
                 label="Stocks & Shares Accumulation"

@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 interface SettingsSectionProps {
   id: string;
   title: string;
-  description?: string;
+  description?: ReactNode;
   children: ReactNode;
   className?: string;
 }

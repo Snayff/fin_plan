@@ -3,6 +3,7 @@ import { useSettings, useUpdateSettings } from "@/hooks/useSettings";
 import { useAutoSave } from "@/hooks/useAutoSave";
 import { SettingsSection } from "./SettingsSection";
 import { AutoSaveField } from "./AutoSaveField";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 
 export function IsaSection() {
   const { data: settings } = useSettings();
@@ -16,7 +17,18 @@ export function IsaSection() {
   });
 
   return (
-    <SettingsSection id="isa" title="ISA settings">
+    <SettingsSection
+      id="isa"
+      title="ISA settings"
+      description={
+        <>
+          Maximum <GlossaryTermMarker entryId="isa-allowance">ISA allowance</GlossaryTermMarker> —
+          what you can contribute across all{" "}
+          <GlossaryTermMarker entryId="isa">ISAs</GlossaryTermMarker> in a single{" "}
+          <GlossaryTermMarker entryId="tax-year">tax year</GlossaryTermMarker>.
+        </>
+      }
+    >
       <AutoSaveField
         label="Annual limit (£)"
         htmlFor="isa-limit"

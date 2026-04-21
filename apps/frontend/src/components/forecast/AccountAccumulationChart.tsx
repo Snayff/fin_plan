@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 import { formatCurrency } from "@/utils/format";
 import { useSettings } from "@/hooks/useSettings";
@@ -9,7 +10,7 @@ interface AccountAccumulationChartProps {
   data: AccountBalancePoint[];
   monthlyContributions?: number;
   accent: { stroke: string; gradId: string };
-  emptyMessage: string;
+  emptyMessage: ReactNode;
 }
 
 export function AccountAccumulationChart({

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 
 const GHOSTED_TIERS = [
   { label: "Income", colorClass: "text-tier-income" },
@@ -30,7 +31,10 @@ export default function OverviewEmptyState() {
           Build your waterfall
         </h3>
         <p className="text-xs text-text-tertiary mb-3">
-          Add your income, committed spend, and discretionary budgets to see your monthly cascade.
+          Add your <GlossaryTermMarker entryId="net-income">income</GlossaryTermMarker>,{" "}
+          <GlossaryTermMarker entryId="committed-spend">committed spend</GlossaryTermMarker>, and{" "}
+          <GlossaryTermMarker entryId="discretionary-spend">discretionary</GlossaryTermMarker>{" "}
+          budgets to see your monthly cascade.
         </p>
         <Link
           to="/waterfall"

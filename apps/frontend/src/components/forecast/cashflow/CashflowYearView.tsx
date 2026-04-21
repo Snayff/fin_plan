@@ -1,8 +1,10 @@
+import type { ReactNode } from "react";
 import { format } from "date-fns";
 import type { CashflowProjection, CashflowProjectionMonth } from "@finplan/shared";
 import { CashflowYearBar } from "./CashflowYearBar";
 import { formatCurrency } from "@/utils/format";
 import { useSettings } from "@/hooks/useSettings";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { cn } from "@/lib/utils";
 
 interface CashflowYearViewProps {
@@ -18,7 +20,7 @@ function HeadlineCard({
   amber,
   sub,
 }: {
-  label: string;
+  label: ReactNode;
   value: string;
   amber?: boolean;
   sub?: string;
@@ -69,7 +71,7 @@ export function CashflowYearView({
           value={formatCurrency(projectedEndBalance, showPence)}
         />
         <HeadlineCard
-          label="Tightest dip"
+          label={<GlossaryTermMarker entryId="tightest-dip">Tightest dip</GlossaryTermMarker>}
           value={formatCurrency(tightestDip.value, showPence)}
           amber={tightestDip.value < 0}
           sub={format(new Date(tightestDip.date), "d MMM yyyy")}

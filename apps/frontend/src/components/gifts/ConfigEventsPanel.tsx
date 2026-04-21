@@ -91,7 +91,9 @@ export function ConfigEventsPanel({ readOnly }: Props) {
       <div className="flex-1 min-h-0 overflow-y-auto p-6">
         {/* Locked events */}
         <section>
-          <h3 className={labelClass}>Locked</h3>
+          <h3 className={labelClass}>
+            <GlossaryTermMarker entryId="gifts-locked-event">Locked</GlossaryTermMarker>
+          </h3>
           <ul className="mt-2 divide-y divide-foreground/5">
             {locked.map((e: any) => (
               <li
