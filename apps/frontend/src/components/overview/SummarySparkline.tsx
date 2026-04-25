@@ -28,7 +28,7 @@ function SparklineTooltip({
   const dateLabel = parsed && isValid(parsed) ? format(parsed, "MMM yyyy") : null;
 
   return (
-    <div className="bg-[#0d1021] border border-white/10 rounded px-2 py-1 text-xs leading-snug">
+    <div className="bg-surface-overlay border border-[hsl(var(--surface-overlay-border))] rounded px-2 py-1 text-xs leading-snug">
       {dateLabel && <div className="text-white/50">{dateLabel}</div>}
       <div style={{ color }}>{formatCurrency(value, showPence)}</div>
     </div>
