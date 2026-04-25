@@ -31,7 +31,7 @@ bun run lint / type-check / test / build
 ```
 apps/
   backend/    # Fastify + Prisma + tRPC + JWT auth
-  frontend/   # React 18 + Vite + Tailwind + TanStack Query + Zustand + RxDB
+  frontend/   # React 18 + Vite + Tailwind + TanStack Query + Zustand
 packages/
   shared/     # Zod schemas and TypeScript types — imported by both apps
 docs/
@@ -54,6 +54,7 @@ docs/
 - **Database changes:** Always use `bun run db:migrate` (interactive Prisma migrations) — never edit schema without a migration
 - **No hardcoded colours:** Always use Tailwind design tokens — never hex values or `rgba()` in component code
 - **No dashed borders:** Never use `border-dashed` in component code. The design system uses solid borders exclusively. Only two exceptions exist: `SnapshotDot` (auto vs manual distinction) and `CashflowYearBar` (today marker). All add/ghost buttons must follow the `GhostAddButton` pattern with solid borders.
+- **Design-system enforcement:** Two layers catch drift automatically. `apps/frontend/eslint.config.js` blocks hex/`rgba()`/`border-dashed` in `className` strings and `min-h-screen`/missing-`min-h-0` in pages. `apps/frontend/src/design-system.test.tsx` asserts structural invariants (`PageHeader` presence, `TwoPanelLayout` delegation, `GhostAddButton` in curated right-panel headers, left-panel scroll anatomy). Add new pages to `EXEMPT_PAGES` only when they're legitimately special-cased (full-screen, auth).
 
 ---
 
