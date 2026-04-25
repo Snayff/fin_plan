@@ -7,11 +7,8 @@ import { SecurityActivityQuerySchema } from "@finplan/shared";
 export async function securityActivityRoutes(app: FastifyInstance) {
   app.get("/security-activity", { preHandler: [authMiddleware] }, async (request, reply) => {
     const userId = request.user!.userId;
-    const query = SecurityActivityQuerySchema.safeParse(request.query);
-    if (!query.success) {
-      return reply.status(400).send({ error: query.error.flatten() });
-    }
-    const result = await querySecurityActivity(prisma, { userId, ...query.data });
+    const query = SecurityActivityQuerySchema.parse(request.query);
+    const result = await querySecurityActivity(prisma, { userId, ...query });
     return reply.send(result);
   });
 }

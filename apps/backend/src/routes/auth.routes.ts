@@ -6,6 +6,7 @@ import { authMiddleware } from "../middleware/auth.middleware";
 import { config } from "../config/env";
 import { blacklistToken } from "../utils/tokenBlacklist";
 import { decodeToken } from "../utils/jwt";
+import { NotFoundError, ValidationError } from "../utils/errors";
 import { AuditAction } from "@finplan/shared";
 
 function requestContext(request: FastifyRequest) {
@@ -177,13 +178,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     const user = await authService.findUserById(userId);
 
     if (!user) {
-      return reply.status(404).send({
-        error: {
-          message: "User not found",
-          code: "NOT_FOUND",
-          statusCode: 404,
-        },
-      });
+      throw new NotFoundError("User not found");
     }
 
     return reply.status(200).send({ user });
@@ -223,13 +218,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     const refreshToken = request.cookies.refreshToken || body.refreshToken;
 
     if (!refreshToken) {
-      return reply.status(400).send({
-        error: {
-          message: "Refresh token required",
-          code: "MISSING_REFRESH_TOKEN",
-          statusCode: 400,
-        },
-      });
+      throw new ValidationError("Refresh token required");
     }
 
     const ctx = requestContext(request);
@@ -308,9 +297,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     const revoked = await authService.revokeSession(familyId, userId);
     if (!revoked) {
-      return reply.status(404).send({
-        error: { message: "Session not found", code: "NOT_FOUND", statusCode: 404 },
-      });
+      throw new NotFoundError("Session not found");
     }
 
     auditService.log({

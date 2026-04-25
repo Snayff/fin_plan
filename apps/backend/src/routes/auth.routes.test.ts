@@ -301,7 +301,7 @@ describe("POST /api/auth/refresh", () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json().error.code).toBe("MISSING_REFRESH_TOKEN");
+    expect(response.json().error.code).toBe("VALIDATION_ERROR");
   });
 
   it("returns 401 for invalid refresh token", async () => {

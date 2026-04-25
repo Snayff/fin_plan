@@ -204,27 +204,17 @@ export async function householdRoutes(fastify: FastifyInstance) {
 
       // Security: caller must belong to the active household matching the route param
       if (householdId !== request.householdId) {
-        return reply.status(403).send({ error: "Forbidden" });
+        throw new AuthorizationError("Forbidden");
       }
 
       const { role: newRole } = updateMemberRoleSchema.parse(request.body);
 
-      try {
-        const updated = await updateMemberRole(
-          prisma,
-          { householdId, callerId, targetUserId, newRole },
-          actorCtx(request)
-        );
-        return reply.send({ member: updated });
-      } catch (err) {
-        if (err instanceof AuthorizationError) {
-          return reply.status(403).send({ error: err.message });
-        }
-        if (err instanceof NotFoundError) {
-          return reply.status(404).send({ error: err.message });
-        }
-        throw err;
-      }
+      const updated = await updateMemberRole(
+        prisma,
+        { householdId, callerId, targetUserId, newRole },
+        actorCtx(request)
+      );
+      return reply.send({ member: updated });
     }
   );
 

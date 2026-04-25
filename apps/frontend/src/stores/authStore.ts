@@ -122,7 +122,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         get().setUser(user, accessToken);
       } catch (error) {
         const apiError = error as ApiError;
-        // 400 MISSING_REFRESH_TOKEN is expected when no session exists — treat silently
+        // 400 VALIDATION_ERROR (missing refresh token) is expected when no session exists — treat silently
         if (apiError.statusCode !== 400) {
           if (import.meta.env.DEV)
             console.warn("[auth] Unexpected error during token refresh:", error);
