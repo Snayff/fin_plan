@@ -11,6 +11,7 @@ import {
 } from "../../hooks/useAssets.js";
 import { AssetAccountRow } from "./AssetAccountRow.js";
 import { AssetForm } from "./AssetForm.js";
+import GhostAddButton from "@/components/tier/GhostAddButton";
 import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { formatCurrency } from "@/utils/format";
@@ -87,18 +88,14 @@ export function AssetItemArea({ type, initialIsAdding }: Props) {
             {formatCurrency(typeTotal, showPence)}
           </span>
         </div>
-        <button
-          type="button"
+        <GhostAddButton
           onClick={() => {
             setIsAddingItem(true);
             setExpandedId(null);
             setEditingId(null);
           }}
           disabled={isAddingItem}
-          className="rounded-md border px-3 py-1 text-xs font-medium transition-all duration-150 border-foreground/20 text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          + Add
-        </button>
+        />
       </div>
 
       {/* Content */}
