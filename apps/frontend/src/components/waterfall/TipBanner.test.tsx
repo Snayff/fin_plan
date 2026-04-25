@@ -5,7 +5,14 @@ import { TipBanner } from "./TipBanner";
 describe("TipBanner", () => {
   it("renders tip text", () => {
     render(<TipBanner onDismiss={() => {}} />);
-    expect(screen.getByText(/Start with your income/i)).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        (_content, element) =>
+          element?.tagName.toLowerCase() === "span" &&
+          element.className.includes("flex-1") &&
+          /Start with your income/i.test(element.textContent ?? "")
+      )
+    ).toBeInTheDocument();
   });
 
   it("calls onDismiss when the close button is clicked", () => {

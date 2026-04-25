@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatCurrency } from "@/utils/format";
+import { InfoTip } from "@/components/ui/InfoTip";
 import { SubcategoryGroup } from "./SubcategoryGroup";
 import { AddSubcategoryButton } from "./AddSubcategoryButton";
 import type { TierItemRow } from "@/hooks/useWaterfall";
@@ -132,7 +133,14 @@ export function WaterfallTierTable({
                 <th className="px-3 py-2 text-left font-heading font-semibold">Due</th>
               )}
               <th className="px-3 py-2 text-right font-heading font-semibold">Amount</th>
-              <th className="px-3 py-2 text-right font-heading font-semibold">/month</th>
+              <th className="px-3 py-2 text-right font-heading font-semibold">
+                <InfoTip
+                  text="Monthly equivalent — each item's amount converted to a monthly figure (annual ÷ 12, weekly × 52 ÷ 12, etc.) so different cadences can be compared on the same scale."
+                  side="top"
+                >
+                  /month
+                </InfoTip>
+              </th>
               <th className="w-8" />
             </tr>
           </thead>

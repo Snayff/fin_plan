@@ -7,6 +7,7 @@ let _searchParams = new URLSearchParams();
 
 mock.module("react-router-dom", () => ({
   useSearchParams: () => [_searchParams, () => {}],
+  useNavigate: () => () => {},
   Link: ({
     to,
     children,
