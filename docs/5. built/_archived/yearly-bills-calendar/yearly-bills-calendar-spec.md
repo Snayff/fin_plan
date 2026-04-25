@@ -1,11 +1,15 @@
 ---
 feature: yearly-bills-calendar
-status: backlog
+status: superseded
+superseded_by: overview/cashflow-tab
+superseded_date: 2026-04-20
 priority: high
 deferred: false
 phase: 7
 implemented_date:
 ---
+
+> **Superseded** (2026-04-20): This feature was never implemented as specified. Its intent — a 12-month cashflow projection with shortfall detection — has been absorbed into the **Cashflow tab** on the Forecast page. See `docs/5. built/overview/cashflow-tab/` for the shipped implementation, which is broader (day-level precision, linked accounts, covers income + committed + discretionary) and lives outside the Committed waterfall. Original spec retained below for historical context.
 
 # Yearly Bills — Cashflow Calendar
 
@@ -104,10 +108,3 @@ interface CashflowMonth {
 > · Draw £{abs(pot)} from existing savings when the bills fall due"
 
 NudgeCard is arithmetic-only — one per shortfall month, no recommendations.
-
-## Remaining Work
-
-Backend cashflow endpoint, 12-month pot progression, bill deductions, shortfall detection, amber highlighting, and breadcrumb navigation are fully implemented. Outstanding:
-
-- [ ] Display `oneOffIncome` entries in the calendar UI — the backend calculates and returns them in `CashflowMonth.oneOffIncome[]` but the frontend does not render them
-- [ ] NudgeCard message: implement the spec's arithmetic message template — "{month} looks tight — {n} bills land (£{total} total), pot starts at £{pot}…" — currently shows a generic "Some months have a shortfall. Options:" message without month-specific context
