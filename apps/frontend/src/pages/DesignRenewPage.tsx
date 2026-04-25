@@ -1,7 +1,7 @@
 /**
  * DesignRenewPage — dev only, accessible at /design-renew during development.
  * Visual reference for the renew finplan design system.
- * Design rules: docs/renew-finplan/design/design-system.md
+ * Design rules: docs/2. design/design-system.md
  * Token source: src/config/design-tokens.ts
  */
 import { ComponentRenewPatterns } from "@/components/design/renew/ComponentRenewPatterns";
