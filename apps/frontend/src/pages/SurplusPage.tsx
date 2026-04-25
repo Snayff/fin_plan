@@ -30,7 +30,7 @@ export default function SurplusPage() {
               total={!isLoading ? surplus : null}
               totalColorClass="text-tier-surplus"
             />
-            <div className="flex-1 overflow-y-auto">
+            <div className="flex-1 min-h-0 overflow-y-auto">
               <div className="flex flex-col gap-6 px-4 pb-4">
                 {!isLoading && (
                   <>
