@@ -130,7 +130,8 @@ export function WaterfallLeftPanel({
   };
 
   return (
-    <motion.div
+    <motion.nav
+      aria-label="Waterfall items"
       className="space-y-4 p-4 text-sm"
       variants={containerVariants}
       initial={reduced ? false : "initial"}
@@ -307,6 +308,6 @@ export function WaterfallLeftPanel({
           )}
         </div>
       </motion.div>
-    </motion.div>
+    </motion.nav>
   );
 }

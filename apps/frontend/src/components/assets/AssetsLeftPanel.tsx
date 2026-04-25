@@ -34,7 +34,7 @@ export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType 
       <PageHeader title="Assets" total={grandTotal} />
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto">
+      <nav aria-label="Assets and accounts" className="flex-1 overflow-y-auto">
         {/* Assets group */}
         <p
           role="group"
@@ -116,7 +116,7 @@ export function AssetsLeftPanel({ summary, selected, onSelect, staleCountByType 
             </button>
           );
         })}
-      </div>
+      </nav>
 
       {/* Footer */}
       <div className="border-t border-foreground/10 px-4 py-3 flex justify-between text-sm">
