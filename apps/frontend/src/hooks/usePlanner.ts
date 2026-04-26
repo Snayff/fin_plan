@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { plannerService } from "@/services/planner.service";
 import { waterfallService } from "@/services/waterfall.service";
+import { showError } from "@/lib/toast";
 
 export const PLANNER_KEYS = {
   purchases: (year: number) => ["planner", "purchases", year],
@@ -34,6 +35,9 @@ export function useCreatePurchase() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["planner", "purchases"] });
     },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to create purchase");
+    },
   });
 }
 
@@ -51,6 +55,9 @@ export function useUpdatePurchase() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["planner", "purchases"] });
     },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to update purchase");
+    },
   });
 }
 
@@ -61,6 +68,9 @@ export function useDeletePurchase() {
     mutationFn: (id: string) => plannerService.deletePurchase(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["planner", "purchases"] });
+    },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to delete purchase");
     },
   });
 }
@@ -75,6 +85,9 @@ export function useUpsertBudget(year: number) {
       waterfallService.upsertYearBudget(year, data),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: PLANNER_KEYS.budget(year) });
+    },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to update budget");
     },
   });
 }
