@@ -54,3 +54,51 @@ describe("useCreateGiftPerson onError", () => {
     expect(mockShowError).toHaveBeenCalledWith("Person already exists");
   });
 });
+
+describe("useUpsertAllocation invalidation scope", () => {
+  it("invalidates only allocation-affected query keys, not all gift queries", async () => {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+
+    // Seed 8 gift queries
+    qc.setQueryData(["gifts", "state", 2026], { sentinel: "state" });
+    qc.setQueryData(["gifts", "quickAddMatrix", 2026], { sentinel: "matrix" });
+    qc.setQueryData(["gifts", "person", "p1", 2026], { sentinel: "person" });
+    qc.setQueryData(["gifts", "upcoming", 2026], { sentinel: "upcoming" });
+    qc.setQueryData(["gifts", "settings"], { sentinel: "settings" });
+    qc.setQueryData(["gifts", "years"], { sentinel: "years" });
+    qc.setQueryData(["gifts", "configEvents"], { sentinel: "configEvents" });
+    qc.setQueryData(["gifts", "configPeople", "all", 2026], { sentinel: "configPeople" });
+
+    const invalidated = new Set<string>();
+    const orig = qc.invalidateQueries.bind(qc);
+    qc.invalidateQueries = (filters: any) => {
+      invalidated.add(JSON.stringify(filters?.queryKey));
+      return orig(filters);
+    };
+
+    const localWrapper = ({ children }: { children: any }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    const { useUpsertAllocation: hook } = await import("./useGifts");
+    const { result } = renderHook(() => hook(), { wrapper: localWrapper });
+
+    await act(async () => {
+      await result.current.mutateAsync({
+        personId: "p1",
+        eventId: "e1",
+        year: 2026,
+        data: { planned: 50 } as any,
+      });
+    });
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // Should NOT have invalidated `["gifts"]` blanket key
+    expect(invalidated.has(JSON.stringify(["gifts"]))).toBe(false);
+    // Should have invalidated each narrow key
+    expect(invalidated.has(JSON.stringify(["gifts", "state", 2026]))).toBe(true);
+    expect(invalidated.has(JSON.stringify(["gifts", "quickAddMatrix", 2026]))).toBe(true);
+  });
+});
