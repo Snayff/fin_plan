@@ -891,19 +891,23 @@ export const cashflowService = {
       while (eIdx < events.length && events[eIdx]!.date.getTime() === cursor.getTime()) {
         const ev = events[eIdx]!;
         const newBalance = running + ev.amount;
-        if (ev.amount < 0 && newBalance < 0) {
+        if (
+          ev.amount < 0 &&
+          newBalance < 0 &&
+          ev.itemType !== "income_source" &&
+          ev.itemType !== "asset_liquidation" &&
+          ev.itemType !== "account_liquidation"
+        ) {
           const tierKey: "committed" | "discretionary" =
             ev.itemType === "discretionary_item" ? "discretionary" : "committed";
-          if (ev.itemType !== "income_source") {
-            uncovered.push({
-              itemType: ev.itemType as "committed_item" | "discretionary_item",
-              itemId: ev.itemId,
-              itemName: ev.label,
-              tierKey,
-              dueDate: toIsoDate(ev.date),
-              amount: -ev.amount,
-            });
-          }
+          uncovered.push({
+            itemType: ev.itemType,
+            itemId: ev.itemId ?? "",
+            itemName: ev.label,
+            tierKey,
+            dueDate: toIsoDate(ev.date),
+            amount: -ev.amount,
+          });
         }
         running = newBalance;
         eIdx++;
