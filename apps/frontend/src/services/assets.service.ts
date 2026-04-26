@@ -57,6 +57,7 @@ export interface AccountItem {
   isOverCap: boolean;
   hasSpareCapacityNudge: boolean;
   higherRateTarget: { id: string; name: string; growthRatePct: number } | null;
+  effectiveGrowthRatePct: number | null;
   linkedItems: LinkedContributionItem[];
   balances: Array<{
     id: string;

@@ -340,6 +340,7 @@ export const assetsService = {
         isOverCap,
         hasSpareCapacityNudge,
         higherRateTarget,
+        effectiveGrowthRatePct: effectiveRate(a),
       };
     });
   },

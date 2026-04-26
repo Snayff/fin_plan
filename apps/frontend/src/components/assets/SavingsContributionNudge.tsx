@@ -32,7 +32,7 @@ export function SavingsContributionNudge({ account, showPence }: Props) {
   if (account.hasSpareCapacityNudge && account.higherRateTarget && account.spareMonthly != null) {
     const spare = account.spareMonthly;
     const target = account.higherRateTarget;
-    const myRate = account.growthRatePct ?? 0;
+    const myRate = account.effectiveGrowthRatePct ?? 0;
     const annualUplift = Math.round((spare * 12 * (target.growthRatePct - myRate)) / 100);
     return (
       <NudgeCard
