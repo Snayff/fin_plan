@@ -144,14 +144,17 @@ export const memberService = {
     }
 
     // Check if member has assigned items
-    const [incomeCount, committedCount, assetCount, accountCount] = await Promise.all([
-      prisma.incomeSource.count({ where: { householdId, ownerId: memberId } }),
-      prisma.committedItem.count({ where: { householdId, ownerId: memberId } }),
-      prisma.asset.count({ where: { householdId, memberId: memberId } }),
-      prisma.account.count({ where: { householdId, memberId: memberId } }),
-    ]);
+    const [incomeCount, committedCount, discretionaryCount, assetCount, accountCount] =
+      await Promise.all([
+        prisma.incomeSource.count({ where: { householdId, memberId } }),
+        prisma.committedItem.count({ where: { householdId, memberId } }),
+        prisma.discretionaryItem.count({ where: { householdId, memberId } }),
+        prisma.asset.count({ where: { householdId, memberId } }),
+        prisma.account.count({ where: { householdId, memberId } }),
+      ]);
 
-    const totalItems = incomeCount + committedCount + assetCount + accountCount;
+    const totalItems =
+      incomeCount + committedCount + discretionaryCount + assetCount + accountCount;
 
     if (totalItems > 0 && !reassignToMemberId) {
       throw new ValidationError(
@@ -169,19 +172,23 @@ export const memberService = {
 
         await Promise.all([
           tx.incomeSource.updateMany({
-            where: { householdId, ownerId: memberId },
-            data: { ownerId: reassignToMemberId },
+            where: { householdId, memberId },
+            data: { memberId: reassignToMemberId },
           }),
           tx.committedItem.updateMany({
-            where: { householdId, ownerId: memberId },
-            data: { ownerId: reassignToMemberId },
+            where: { householdId, memberId },
+            data: { memberId: reassignToMemberId },
+          }),
+          tx.discretionaryItem.updateMany({
+            where: { householdId, memberId },
+            data: { memberId: reassignToMemberId },
           }),
           tx.asset.updateMany({
-            where: { householdId, memberId: memberId },
+            where: { householdId, memberId },
             data: { memberId: reassignToMemberId },
           }),
           tx.account.updateMany({
-            where: { householdId, memberId: memberId },
+            where: { householdId, memberId },
             data: { memberId: reassignToMemberId },
           }),
         ]);
@@ -211,12 +218,20 @@ export const memberService = {
   },
 
   async getItemCountsForMember(householdId: string, memberId: string) {
-    const [income, committed, assets, accounts] = await Promise.all([
-      prisma.incomeSource.count({ where: { householdId, ownerId: memberId } }),
-      prisma.committedItem.count({ where: { householdId, ownerId: memberId } }),
-      prisma.asset.count({ where: { householdId, memberId: memberId } }),
-      prisma.account.count({ where: { householdId, memberId: memberId } }),
+    const [income, committed, discretionary, assets, accounts] = await Promise.all([
+      prisma.incomeSource.count({ where: { householdId, memberId } }),
+      prisma.committedItem.count({ where: { householdId, memberId } }),
+      prisma.discretionaryItem.count({ where: { householdId, memberId } }),
+      prisma.asset.count({ where: { householdId, memberId } }),
+      prisma.account.count({ where: { householdId, memberId } }),
     ]);
-    return { total: income + committed + assets + accounts, income, committed, assets, accounts };
+    return {
+      total: income + committed + discretionary + assets + accounts,
+      income,
+      committed,
+      discretionary,
+      assets,
+      accounts,
+    };
   },
 };

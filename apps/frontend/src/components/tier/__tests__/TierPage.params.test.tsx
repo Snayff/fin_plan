@@ -16,6 +16,7 @@ mock.module("@/hooks/useWaterfall", () => ({
 
 mock.module("@/hooks/useSettings", () => ({
   useSettings: mock(() => ({ data: { showPence: false } })),
+  useHouseholdMembers: mock(() => ({ data: [] })),
 }));
 
 function renderAt(url: string) {

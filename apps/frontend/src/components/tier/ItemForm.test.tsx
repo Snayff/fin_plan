@@ -114,6 +114,26 @@ describe("ItemForm — add mode", () => {
     expect(savedData).toBeTruthy();
     expect(savedData.name).toBe("Rent");
     expect(savedData.amount).toBe(1200);
+    // Defaults memberId to null ("Household") when no member selected
+    expect(savedData.memberId).toBe(null);
+  });
+
+  it("renders the Assigned-to field with members", () => {
+    renderWithClient(
+      <ItemForm
+        mode="add"
+        config={TIER_CONFIGS.income}
+        subcategories={subcategories}
+        members={[
+          { id: "m1", firstName: "Alice" },
+          { id: "m2", firstName: "Bob" },
+        ]}
+        initialSubcategoryId="sub-housing"
+        onSave={() => {}}
+        onCancel={() => {}}
+      />
+    );
+    expect(screen.getByLabelText("Assigned to")).toBeTruthy();
   });
 
   it("calls onCancel when Cancel is clicked", () => {

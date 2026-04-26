@@ -94,7 +94,7 @@ function assertNotPlannerOwned(item: { isPlannerOwned?: boolean } | null) {
 
 async function validateMemberOwnership(householdId: string, memberId: string) {
   const member = await prisma.member.findFirst({
-    where: { householdId, userId: memberId },
+    where: { householdId, id: memberId },
   });
   if (!member) throw new NotFoundError("Household member not found");
 }
@@ -438,8 +438,8 @@ export const waterfallService = {
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "income");
     }
-    if (data.ownerId) {
-      await validateMemberOwnership(householdId, data.ownerId);
+    if (data.memberId) {
+      await validateMemberOwnership(householdId, data.memberId);
     }
     const { amount: _amount, startDate: _startDate, endDate: _endDate, ...itemData } = data as any;
     return audited({
@@ -469,8 +469,8 @@ export const waterfallService = {
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "income");
     }
-    if (data.ownerId) {
-      await validateMemberOwnership(householdId, data.ownerId);
+    if (data.memberId) {
+      await validateMemberOwnership(householdId, data.memberId);
     }
 
     return audited({
@@ -527,8 +527,8 @@ export const waterfallService = {
 
   async createCommitted(householdId: string, data: CreateCommittedItemInput, ctx: ActorCtx) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
-    if (data.ownerId) {
-      await validateMemberOwnership(householdId, data.ownerId);
+    if (data.memberId) {
+      await validateMemberOwnership(householdId, data.memberId);
     }
     const { amount: _amount, startDate: _startDate, endDate: _endDate, ...itemData } = data as any;
     return audited({
@@ -563,8 +563,8 @@ export const waterfallService = {
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
     }
-    if (data.ownerId) {
-      await validateMemberOwnership(householdId, data.ownerId);
+    if (data.memberId) {
+      await validateMemberOwnership(householdId, data.memberId);
     }
 
     return audited({
@@ -621,6 +621,9 @@ export const waterfallService = {
 
   async createYearly(householdId: string, data: CreateCommittedItemInput, ctx: ActorCtx) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
+    if (data.memberId) {
+      await validateMemberOwnership(householdId, data.memberId);
+    }
     const { amount: _amount, startDate: _startDate, endDate: _endDate, ...itemData } = data as any;
     return audited({
       db: prisma,
@@ -653,6 +656,9 @@ export const waterfallService = {
     assertOwned(existing, householdId, "Committed item");
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "committed");
+    }
+    if (data.memberId) {
+      await validateMemberOwnership(householdId, data.memberId);
     }
 
     return audited({
@@ -727,6 +733,9 @@ export const waterfallService = {
     if ((data as any).linkedAccountId) {
       await validateLinkedAccount(householdId, data.subcategoryId, (data as any).linkedAccountId);
     }
+    if ((data as any).memberId) {
+      await validateMemberOwnership(householdId, (data as any).memberId);
+    }
     const { amount: _amount, startDate: _startDate, endDate: _endDate, ...itemData } = data as any;
     return audited({
       db: prisma,
@@ -760,6 +769,9 @@ export const waterfallService = {
     assertNotPlannerOwned(existing as any);
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
+    }
+    if ((data as any).memberId) {
+      await validateMemberOwnership(householdId, (data as any).memberId);
     }
 
     // Validate linkedAccountId if being set
@@ -849,6 +861,9 @@ export const waterfallService = {
 
   async createSavings(householdId: string, data: CreateDiscretionaryItemInput, ctx: ActorCtx) {
     await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
+    if ((data as any).memberId) {
+      await validateMemberOwnership(householdId, (data as any).memberId);
+    }
     const { amount: _amount, startDate: _startDate, endDate: _endDate, ...itemData } = data as any;
     return audited({
       db: prisma,
@@ -881,6 +896,9 @@ export const waterfallService = {
     assertOwned(existing, householdId, "Savings allocation");
     if (data.subcategoryId) {
       await validateSubcategoryOwnership(householdId, data.subcategoryId, "discretionary");
+    }
+    if ((data as any).memberId) {
+      await validateMemberOwnership(householdId, (data as any).memberId);
     }
 
     return audited({

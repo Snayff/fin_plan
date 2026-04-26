@@ -53,7 +53,7 @@ const mockSummary: WaterfallSummary = {
         householdId: "h1",
         name: "Mortgage",
         amount: 1200,
-        ownerId: null,
+        memberId: null,
         sortOrder: 0,
         lastReviewedAt: new Date(),
         createdAt: new Date(),

@@ -5,6 +5,7 @@ import ItemArea, { type LockedManager } from "./ItemArea";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { PageHeader } from "@/components/common/PageHeader";
 import { useSubcategories, useTierItems, type TierItemRow } from "@/hooks/useWaterfall";
+import { useHouseholdMembers } from "@/hooks/useSettings";
 import { useGiftPlannerSettings } from "@/hooks/useGifts";
 import { TIER_CONFIGS, type TierKey } from "./tierConfig";
 import { useFocusParam } from "@/features/search/useFocusParam";
@@ -26,6 +27,7 @@ export default function TierPage({ tier }: TierPageProps) {
   const [searchParams] = useSearchParams();
   const { data: subcategories, isLoading: subsLoading } = useSubcategories(tier);
   const { data: allItems, isLoading: itemsLoading } = useTierItems(tier);
+  const { data: members } = useHouseholdMembers();
 
   const hasAddParam = searchParams.get("add") === "1";
   useAddParam((_kind) => {
@@ -120,6 +122,7 @@ export default function TierPage({ tier }: TierPageProps) {
             config={config}
             subcategory={selectedSubcategory}
             subcategories={(subcategories ?? []).map((s) => ({ id: s.id, name: s.name }))}
+            members={members.map((m) => ({ id: m.id, firstName: m.firstName }))}
             items={selectedSummary?.items ?? []}
             isLoading={itemsLoading}
             initialIsAdding={hasAddParam}

@@ -15,7 +15,6 @@ interface SubcategoryRow {
 
 interface Member {
   id: string;
-  userId: string;
   firstName: string;
   name: string;
 }
@@ -75,6 +74,7 @@ export function WaterfallTierTable({
       subcategoryId,
       notes: null,
       dueDate: null,
+      memberId: null,
       lastReviewedAt: new Date(),
       createdAt: new Date(),
       sortOrder: 9999,
@@ -127,11 +127,10 @@ export function WaterfallTierTable({
                 <th className="px-3 py-2 text-left font-heading font-semibold">Type</th>
               )}
               <th className="px-3 py-2 text-left font-heading font-semibold">Cadence</th>
-              {tier === "income" ? (
-                <th className="px-3 py-2 text-left font-heading font-semibold">Owner</th>
-              ) : (
+              {tier !== "income" && (
                 <th className="px-3 py-2 text-left font-heading font-semibold">Due</th>
               )}
+              <th className="px-3 py-2 text-left font-heading font-semibold">Assigned to</th>
               <th className="px-3 py-2 text-right font-heading font-semibold">Amount</th>
               <th className="px-3 py-2 text-right font-heading font-semibold">
                 <InfoTip

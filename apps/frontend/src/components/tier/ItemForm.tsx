@@ -33,6 +33,11 @@ interface SubcategoryOption {
   name: string;
 }
 
+interface MemberOption {
+  id: string;
+  firstName: string;
+}
+
 interface ItemData {
   name: string;
   amount: number;
@@ -41,6 +46,8 @@ interface ItemData {
   notes: string | null;
   /** Required for income/committed; null for discretionary unless one_off. */
   dueDate: string | null;
+  /** References Member.id. null = "Household" (no specific member). */
+  memberId: string | null;
   /** Only set when item is in the Savings discretionary subcategory. */
   linkedAccountId?: string | null;
 }
@@ -79,6 +86,7 @@ type EditModeProps = {
 type Props = (AddModeProps | EditModeProps) & {
   config: TierConfig;
   subcategories: SubcategoryOption[];
+  members?: MemberOption[];
   initialSubcategoryId: string;
   onSave: (data: ItemData) => void;
   onCancel: () => void;
@@ -90,6 +98,7 @@ export default function ItemForm({
   item,
   config,
   subcategories,
+  members = [],
   initialSubcategoryId,
   onSave,
   onCancel,
@@ -113,6 +122,7 @@ export default function ItemForm({
   const [linkedAccountId, setLinkedAccountId] = useState<string | null>(
     item?.linkedAccountId ?? null
   );
+  const [memberId, setMemberId] = useState<string | null>(item?.memberId ?? null);
   const [amountError, setAmountError] = useState<string | null>(null);
   const [amountFocused, setAmountFocused] = useState(false);
 
@@ -179,6 +189,7 @@ export default function ItemForm({
       subcategoryId,
       notes: notes.trim() || null,
       dueDate: showDueDate ? dueDate : null,
+      memberId,
       linkedAccountId: isSavingsSubcategory ? linkedAccountId : null,
     });
   }
@@ -299,6 +310,30 @@ export default function ItemForm({
         {isSavingsSubcategory && (
           <LinkedAccountPicker value={linkedAccountId} onChange={setLinkedAccountId} />
         )}
+
+        {/* Member */}
+        <div className="col-span-2 flex flex-col gap-1">
+          <label className={labelClass}>Assigned to</label>
+          <Select
+            value={memberId ?? "__household__"}
+            onValueChange={(v) => setMemberId(v === "__household__" ? null : v)}
+          >
+            <SelectTrigger
+              aria-label="Assigned to"
+              className="h-auto rounded-md border-foreground/10 bg-foreground/[0.04] py-1.5 text-sm focus:ring-page-accent/40"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__household__">Household</SelectItem>
+              {members.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {m.firstName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Notes */}
         <div className="col-span-2 flex flex-col gap-1">

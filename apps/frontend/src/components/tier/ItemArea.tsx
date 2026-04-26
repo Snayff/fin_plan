@@ -33,11 +33,17 @@ export interface LockedManager {
   path: string;
 }
 
+interface MemberOption {
+  id: string;
+  firstName: string;
+}
+
 interface Props {
   tier: TierKey;
   config: TierConfig;
   subcategory: SubcategoryInfo | null;
   subcategories: SubcategoryOption[];
+  members?: MemberOption[];
   items: TierItemRow[];
   isLoading: boolean;
   now?: Date;
@@ -52,6 +58,7 @@ export default function ItemArea({
   config,
   subcategory,
   subcategories,
+  members = [],
   items,
   isLoading,
   now = new Date(),
@@ -238,6 +245,7 @@ export default function ItemArea({
                 mode="add"
                 config={config}
                 subcategories={subcategories}
+                members={members}
                 initialSubcategoryId={subcategory.id}
                 isSaving={createItem.isPending}
                 onSave={async (data) => {
@@ -304,6 +312,7 @@ export default function ItemArea({
               item={item}
               subcategoryName={subcategory.name}
               subcategories={subcategories}
+              members={members}
               expandedItemId={expandedItemId}
               editingItemId={editingItemId}
               onToggleExpand={(id) => setExpandedItemId(expandedItemId === id ? null : id)}

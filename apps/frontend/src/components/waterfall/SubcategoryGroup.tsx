@@ -12,12 +12,11 @@ interface Subcategory {
 
 interface Member {
   id: string;
-  userId: string;
   firstName: string;
   name: string;
 }
 
-type TierItemRowWithExtra = TierItemRow & { ownerId?: string | null; isDraft?: boolean };
+type TierItemRowWithExtra = TierItemRow & { isDraft?: boolean };
 
 interface Props {
   tier: Tier;
@@ -48,7 +47,7 @@ export function SubcategoryGroup({
   onSaveAmount,
 }: Props) {
   const total = monthlyTotal(items);
-  const colSpan = tier === "income" ? 7 : 6;
+  const colSpan = 7;
 
   return (
     <>

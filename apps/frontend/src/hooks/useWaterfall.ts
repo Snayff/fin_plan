@@ -238,6 +238,8 @@ export interface TierItemRow {
   lastReviewedAt: Date;
   createdAt: Date;
   sortOrder: number;
+  /** References Member.id. null = no specific member ("Household"). */
+  memberId: string | null;
   lifecycleState?: "active" | "future" | "expired";
   periods?: Array<{ id: string; startDate: Date; endDate: Date | null; amount: number }>;
   nextPeriod?: { amount: number; startDate: Date } | null;
@@ -277,6 +279,7 @@ function mapTierItem(r: any, spendType: string): TierItemRow {
     lastReviewedAt: new Date(r.lastReviewedAt),
     createdAt: new Date(r.createdAt),
     sortOrder: r.sortOrder ?? 0,
+    memberId: r.memberId ?? null,
     lifecycleState: r.lifecycleState ?? "active",
     periods,
     nextPeriod,
