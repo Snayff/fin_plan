@@ -376,6 +376,7 @@ model Account {
   name                     String
   type                     AccountType
   growthRatePct            Float?
+  monthlyContributionLimit Float?
   isCashflowLinked         Boolean             @default(false)
   lastReviewedAt           DateTime?
   disposedAt               DateTime?           @db.Date

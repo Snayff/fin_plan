@@ -34,6 +34,7 @@ interface Props {
   initialName?: string;
   initialMemberId?: string | null;
   initialGrowthRatePct?: number | null;
+  initialMonthlyContributionLimit?: number | null;
   initialDisposedAt?: string | null;
   initialDisposalAccountId?: string | null;
   isSaving?: boolean;
@@ -43,6 +44,7 @@ interface Props {
     name: string;
     memberId: string | null;
     growthRatePct: number | null;
+    monthlyContributionLimit: number | null;
     disposedAt: string | null;
     disposalAccountId: string | null;
     initialValue?: number;
@@ -63,6 +65,7 @@ export function AccountForm({
   initialName = "",
   initialMemberId = null,
   initialGrowthRatePct = null,
+  initialMonthlyContributionLimit = null,
   initialDisposedAt = null,
   initialDisposalAccountId = null,
   isSaving,
@@ -78,10 +81,14 @@ export function AccountForm({
   const [growthRatePct, setGrowthRatePct] = useState(
     initialGrowthRatePct != null ? initialGrowthRatePct.toString() : ""
   );
+  const [limitRaw, setLimitRaw] = useState(
+    initialMonthlyContributionLimit != null ? initialMonthlyContributionLimit.toString() : ""
+  );
   const [initialValue, setInitialValue] = useState<string>("");
   const [valueFocused, setValueFocused] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [rateError, setRateError] = useState<string | null>(null);
+  const [limitError, setLimitError] = useState<string | null>(null);
 
   // Disposal state
   const [disposalOpen, setDisposalOpen] = useState<boolean>(initialDisposedAt != null);
@@ -133,6 +140,17 @@ export function AccountForm({
       setRateError(null);
     }
 
+    let parsedLimit: number | null = null;
+    if (type === "Savings" && limitRaw.trim() !== "") {
+      const n = parseFloat(limitRaw);
+      if (isNaN(n) || n < 0) {
+        setLimitError("Must be a non-negative number");
+        valid = false;
+      } else {
+        parsedLimit = n;
+      }
+    }
+
     // Disposal validation: both fields together, or both cleared.
     const dateSet = disposalOpen && disposedAt.trim() !== "";
     const acctSet = disposalOpen && disposalAccountId != null && disposalAccountId !== "";
@@ -149,6 +167,7 @@ export function AccountForm({
       name: name.trim(),
       memberId,
       growthRatePct: parsedRate,
+      monthlyContributionLimit: parsedLimit,
       disposedAt: dateSet ? disposedAt : null,
       disposalAccountId: acctSet ? disposalAccountId : null,
       ...(mode === "add" && parsedValue !== undefined && !isNaN(parsedValue)
@@ -239,6 +258,35 @@ export function AccountForm({
             ) : (
               <p className="text-[11px] text-text-muted">
                 Leave blank to use household default ({rateLabel})
+              </p>
+            )}
+          </div>
+        )}
+
+        {type === "Savings" && (
+          <div className="col-span-2 flex flex-col gap-1">
+            <label className={labelClass}>Monthly contribution limit (optional)</label>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              value={limitRaw}
+              onChange={(e) => {
+                setLimitRaw(e.target.value);
+                setLimitError(null);
+              }}
+              placeholder="£0"
+              aria-label="Monthly contribution limit"
+              className={[inputClass, "font-numeric", limitError ? "border-amber-400/60" : ""].join(
+                " "
+              )}
+            />
+            {limitError ? (
+              <p className="-mt-0.5 text-xs text-amber-400">{limitError}</p>
+            ) : (
+              <p className="text-[11px] text-text-muted">
+                The most this account lets you pay in each month. finplan uses this to flag spare
+                capacity and surface higher-rate alternatives.
               </p>
             )}
           </div>

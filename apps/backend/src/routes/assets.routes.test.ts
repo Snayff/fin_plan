@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, mock } from "bun:test";
 import Fastify from "fastify";
 import { buildTestApp } from "../test/helpers/fastify.js";
+import { ValidationError } from "../utils/errors.js";
 
 const mockAssetsService = {
   getSummary: mock(() => Promise.resolve({ assetTotals: {}, accountTotals: {}, grandTotal: 0 })),
@@ -147,5 +148,42 @@ describe("DELETE /api/assets/assets/:assetId", () => {
     const res = await app.inject({ method: "DELETE", url: "/api/assets/assets/a-1" });
     expect(res.statusCode).toBe(200);
     expect(mockAssetsService.deleteAsset).toHaveBeenCalledWith("hh-1", "a-1", expect.any(Object));
+  });
+});
+
+describe("PATCH /api/assets/accounts/:id — monthlyContributionLimit guard", () => {
+  it("returns 400 when service rejects a non-null limit on a non-Savings account", async () => {
+    mockAssetsService.updateAccount.mockImplementationOnce(() => {
+      throw new ValidationError("monthlyContributionLimit is only valid on Savings accounts");
+    });
+    const app = await buildTestApp();
+    app.register(assetsRoutes, { prefix: "/api/assets" });
+    await app.ready();
+
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/assets/accounts/ac-1",
+      payload: { monthlyContributionLimit: 200 },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("returns 200 when setting a limit on a Savings account", async () => {
+    mockAssetsService.updateAccount.mockResolvedValueOnce({
+      id: "ac-1",
+      type: "Savings",
+      monthlyContributionLimit: 200,
+    } as any);
+    const app = await buildTestApp();
+    app.register(assetsRoutes, { prefix: "/api/assets" });
+    await app.ready();
+
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/assets/accounts/ac-1",
+      payload: { monthlyContributionLimit: 200 },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json().monthlyContributionLimit).toBe(200);
   });
 });

@@ -38,6 +38,7 @@ export interface LinkedContributionItem {
   name: string;
   spendType: string;
   amount: number;
+  lumpSumExceedsCap: boolean;
 }
 
 export interface AccountItem {
@@ -55,6 +56,12 @@ export interface AccountItem {
   currentBalance: number;
   currentBalanceDate: string | null;
   monthlyContribution: number;
+  monthlyContributionLimit: number | null;
+  spareMonthly: number | null;
+  isOverCap: boolean;
+  hasSpareCapacityNudge: boolean;
+  higherRateTarget: { id: string; name: string; growthRatePct: number } | null;
+  effectiveGrowthRatePct: number | null;
   linkedItems: LinkedContributionItem[];
   balances: Array<{
     id: string;

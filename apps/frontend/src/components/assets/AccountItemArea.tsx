@@ -20,6 +20,7 @@ function formatDisposedDate(dateStr: string | null): string {
 }
 import { AssetAccountRow } from "./AssetAccountRow.js";
 import { AccountForm } from "./AccountForm.js";
+import { SavingsContributionNudge } from "./SavingsContributionNudge.js";
 import GhostAddButton from "@/components/tier/GhostAddButton";
 import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -140,13 +141,22 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                 mode="add"
                 type={type}
                 isSaving={createAccount.isPending}
-                onSave={async ({ name, memberId, growthRatePct, disposedAt, disposalAccountId, initialValue }) => {
+                onSave={async ({
+                  name,
+                  memberId,
+                  growthRatePct,
+                  monthlyContributionLimit,
+                  disposedAt,
+                  disposalAccountId,
+                  initialValue,
+                }) => {
                   try {
                     await createAccount.mutateAsync({
                       name,
                       type,
                       memberId: memberId ?? undefined,
                       growthRatePct: growthRatePct ?? undefined,
+                      monthlyContributionLimit: monthlyContributionLimit ?? undefined,
                       initialValue,
                       disposedAt: disposedAt ?? undefined,
                       disposalAccountId: disposalAccountId ?? undefined,
@@ -206,7 +216,14 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                   // error handled by mutation onError (toast)
                 }
               }}
-              onSaveEdit={async ({ name, memberId, growthRatePct, disposedAt, disposalAccountId }) => {
+              onSaveEdit={async ({
+                name,
+                memberId,
+                growthRatePct,
+                monthlyContributionLimit,
+                disposedAt,
+                disposalAccountId,
+              }) => {
                 try {
                   await updateAccount.mutateAsync({
                     accountId: item.id,
@@ -214,6 +231,9 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                       name,
                       memberId,
                       growthRatePct: growthRatePct ?? null,
+                      ...(monthlyContributionLimit !== undefined
+                        ? { monthlyContributionLimit }
+                        : {}),
                       disposedAt: disposedAt ?? undefined,
                       disposalAccountId: disposalAccountId ?? undefined,
                     },
@@ -235,6 +255,11 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                 }
               }}
             />
+            {type === "Savings" && expandedId === item.id && editingId !== item.id && (
+              <div className="px-4 pt-2">
+                <SavingsContributionNudge account={item} showPence={showPence} />
+              </div>
+            )}
           </div>
         ))}
 
@@ -248,17 +273,23 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
               aria-expanded={disposedOpen}
             >
               <span>{disposedOpen ? "▾" : "▸"}</span>
-              <span>
-                Disposed ({disposedItems.length})
-              </span>
+              <span>Disposed ({disposedItems.length})</span>
             </button>
             <AnimatePresence initial={false}>
               {disposedOpen && (
                 <motion.div
                   key="disposed-list"
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1, transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] } }}
-                  exit={{ height: 0, opacity: 0, transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] } }}
+                  animate={{
+                    height: "auto",
+                    opacity: 1,
+                    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+                  }}
+                  exit={{
+                    height: 0,
+                    opacity: 0,
+                    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+                  }}
                   style={{ overflow: "hidden" }}
                 >
                   {disposedItems.map((item) => (
