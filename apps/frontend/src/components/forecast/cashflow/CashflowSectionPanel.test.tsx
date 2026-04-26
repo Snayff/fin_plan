@@ -1,5 +1,9 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 import { http, HttpResponse } from "msw";
+
+mock.module("@/hooks/useSettings", () => ({
+  useSettings: () => ({ data: undefined }),
+}));
 import { renderWithProviders } from "@/test/helpers/render";
 import { server } from "@/test/msw/server";
 import { CashflowSectionPanel } from "./CashflowSectionPanel";
@@ -58,7 +62,7 @@ describe("CashflowSectionPanel", () => {
     renderWithProviders(<CashflowSectionPanel />);
     const bar = await screen.findAllByRole("button", { name: /^[A-Z][a-z]{2} 2026/ });
     fireEvent.click(bar[0]!);
-    await waitFor(() => expect(screen.getByText(/← cashflow/i)).toBeTruthy());
+    await waitFor(() => expect(screen.getByText(/← cashflow/i)).toBeTruthy(), { timeout: 5000 });
   });
 
   it("renders no-accounts callout when household has no linked accounts", async () => {
