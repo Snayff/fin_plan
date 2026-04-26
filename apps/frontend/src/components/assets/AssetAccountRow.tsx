@@ -32,6 +32,7 @@ interface BaseProps {
     name: string;
     memberId: string | null;
     growthRatePct?: number | null;
+    monthlyContributionLimit?: number | null;
   }) => void;
   onSaveRecord: (data: { value: number; date: string; note: string | null }) => void;
 }
@@ -176,6 +177,9 @@ export function AssetAccountRow({
                 initialName={item.name}
                 initialMemberId={item.memberId ?? null}
                 initialGrowthRatePct={(item as AccountItem).growthRatePct ?? null}
+                initialMonthlyContributionLimit={
+                  (item as AccountItem).monthlyContributionLimit ?? null
+                }
                 isSaving={isSavingEdit}
                 isSavingConfirm={isSavingConfirm}
                 isStale={stale}

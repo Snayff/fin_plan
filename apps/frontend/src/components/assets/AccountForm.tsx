@@ -26,6 +26,7 @@ interface Props {
   initialName?: string;
   initialMemberId?: string | null;
   initialGrowthRatePct?: number | null;
+  initialMonthlyContributionLimit?: number | null;
   isSaving?: boolean;
   isSavingConfirm?: boolean;
   isStale?: boolean;
@@ -33,6 +34,7 @@ interface Props {
     name: string;
     memberId: string | null;
     growthRatePct: number | null;
+    monthlyContributionLimit: number | null;
     initialValue?: number;
   }) => void;
   onCancel: () => void;
@@ -50,6 +52,7 @@ export function AccountForm({
   initialName = "",
   initialMemberId = null,
   initialGrowthRatePct = null,
+  initialMonthlyContributionLimit = null,
   isSaving,
   isSavingConfirm,
   isStale,
@@ -63,10 +66,14 @@ export function AccountForm({
   const [growthRatePct, setGrowthRatePct] = useState(
     initialGrowthRatePct != null ? initialGrowthRatePct.toString() : ""
   );
+  const [limitRaw, setLimitRaw] = useState(
+    initialMonthlyContributionLimit != null ? initialMonthlyContributionLimit.toString() : ""
+  );
   const [initialValue, setInitialValue] = useState<string>("");
   const [valueFocused, setValueFocused] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
   const [rateError, setRateError] = useState<string | null>(null);
+  const [limitError, setLimitError] = useState<string | null>(null);
 
   const { data: members } = useHouseholdMembers();
   const { data: settings } = useSettings();
@@ -108,12 +115,24 @@ export function AccountForm({
       setRateError(null);
     }
 
+    let parsedLimit: number | null = null;
+    if (type === "Savings" && limitRaw.trim() !== "") {
+      const n = parseFloat(limitRaw);
+      if (isNaN(n) || n < 0) {
+        setLimitError("Must be a non-negative number");
+        valid = false;
+      } else {
+        parsedLimit = n;
+      }
+    }
+
     if (!valid) return;
     const parsedValue = initialValue.trim() === "" ? undefined : parseValue(initialValue);
     onSave({
       name: name.trim(),
       memberId,
       growthRatePct: parsedRate,
+      monthlyContributionLimit: parsedLimit,
       ...(mode === "add" && parsedValue !== undefined && !isNaN(parsedValue)
         ? { initialValue: parsedValue }
         : {}),
@@ -202,6 +221,35 @@ export function AccountForm({
             ) : (
               <p className="text-[11px] text-text-muted">
                 Leave blank to use household default ({rateLabel})
+              </p>
+            )}
+          </div>
+        )}
+
+        {type === "Savings" && (
+          <div className="col-span-2 flex flex-col gap-1">
+            <label className={labelClass}>Monthly contribution limit (optional)</label>
+            <input
+              type="number"
+              step="1"
+              min="0"
+              value={limitRaw}
+              onChange={(e) => {
+                setLimitRaw(e.target.value);
+                setLimitError(null);
+              }}
+              placeholder="£0"
+              aria-label="Monthly contribution limit"
+              className={[inputClass, "font-numeric", limitError ? "border-amber-400/60" : ""].join(
+                " "
+              )}
+            />
+            {limitError ? (
+              <p className="-mt-0.5 text-xs text-amber-400">{limitError}</p>
+            ) : (
+              <p className="text-[11px] text-text-muted">
+                The most this account lets you pay in each month. finplan uses this to flag spare
+                capacity and surface higher-rate alternatives.
               </p>
             )}
           </div>
