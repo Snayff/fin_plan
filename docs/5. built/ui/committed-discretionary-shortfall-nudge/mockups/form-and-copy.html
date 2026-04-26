@@ -1,0 +1,180 @@
+<h2>What does the nudge actually look like?</h2>
+<p class="subtitle">Two surfaces, two micro-decisions. Pick your preferred variant on each row — or tell me a different combination.</p>
+
+<style>
+  .stage {
+    background: #0e1220;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 14px 16px;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    color: #e6e8ee;
+  }
+  .stage-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .tier-name {
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: #6366f1;
+  }
+  .num { font-variant-numeric: tabular-nums; font-size: 13px; color: rgba(230,232,238,0.7); }
+  .strip {
+    padding: 8px 16px;
+    background: rgba(245,158,11,0.04);
+    border-bottom: 1px solid rgba(245,158,11,0.18);
+    border-top: 1px solid rgba(245,158,11,0.08);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #f59e0b;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #f59e0b;
+    flex-shrink: 0;
+  }
+  .badge-amber {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #f59e0b;
+    font-size: 11px;
+  }
+  .grid-row {
+    margin: 28px 0;
+    padding-bottom: 24px;
+    border-bottom: 1px dashed rgba(255,255,255,0.06);
+  }
+  .grid-row:last-of-type { border-bottom: none; }
+  .row-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(230,232,238,0.85);
+    margin-bottom: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .row-label .where {
+    color: rgba(230,232,238,0.45);
+    font-size: 11px;
+    font-weight: 400;
+  }
+  .variants {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  .variant {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .variant-label {
+    font-size: 11px;
+    color: rgba(230,232,238,0.5);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+</style>
+
+<div class="grid-row">
+  <div class="row-label">A) Overview waterfall — Committed tier row badge <span class="where">(same pattern on Discretionary)</span></div>
+  <div class="variants">
+
+    <div class="variant">
+      <div class="variant-label">A1 — text + dot</div>
+      <div class="stage">
+        <div class="stage-row">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="tier-name">COMMITTED</span>
+            <span class="badge-amber"><span class="dot"></span>shortfall</span>
+          </div>
+          <span class="num">£4,817</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-label">A2 — dot only</div>
+      <div class="stage">
+        <div class="stage-row">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="tier-name">COMMITTED</span>
+            <span class="dot"></span>
+          </div>
+          <span class="num">£4,817</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-label">A3 — countdown</div>
+      <div class="stage">
+        <div class="stage-row">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="tier-name">COMMITTED</span>
+            <span class="badge-amber"><span class="dot"></span>shortfall in 12d</span>
+          </div>
+          <span class="num">£4,817</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="grid-row">
+  <div class="row-label">B) Tier page — strip below PageHeader <span class="where">(Committed + Discretionary pages)</span></div>
+  <div class="variants">
+
+    <div class="variant">
+      <div class="variant-label">B1 — short, hover for detail</div>
+      <div class="stage" style="padding:0;">
+        <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;">
+          <span class="tier-name">COMMITTED</span>
+          <span class="num">£4,817</span>
+        </div>
+        <div class="strip"><span class="dot"></span><span>Projected shortfall in 12 days</span></div>
+        <div style="padding:10px 16px;color:rgba(230,232,238,0.5);font-size:12px;">Yearly Bills · Mortgage · …</div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-label">B2 — number visible</div>
+      <div class="stage" style="padding:0;">
+        <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;">
+          <span class="tier-name">COMMITTED</span>
+          <span class="num">£4,817</span>
+        </div>
+        <div class="strip"><span class="dot"></span><span>Pot dips to <strong>−£123</strong> on 8 May</span></div>
+        <div style="padding:10px 16px;color:rgba(230,232,238,0.5);font-size:12px;">Yearly Bills · Mortgage · …</div>
+      </div>
+    </div>
+
+    <div class="variant">
+      <div class="variant-label">B3 — minimal pill, top-right</div>
+      <div class="stage" style="padding:0;">
+        <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:center;">
+          <div style="display:flex;align-items:center;gap:10px;">
+            <span class="tier-name">COMMITTED</span>
+            <span class="badge-amber" style="border:1px solid rgba(245,158,11,0.18);background:rgba(245,158,11,0.04);padding:2px 8px;border-radius:999px;"><span class="dot"></span>shortfall</span>
+          </div>
+          <span class="num">£4,817</span>
+        </div>
+        <div style="padding:10px 16px;color:rgba(230,232,238,0.5);font-size:12px;">Yearly Bills · Mortgage · …</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:24px;">Reply with the pair, e.g. <code>A1 + B2</code>, or describe a different combination.</p>

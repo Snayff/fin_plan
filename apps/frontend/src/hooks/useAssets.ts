@@ -44,8 +44,9 @@ export function useCreateAsset() {
   return useMutation({
     mutationFn: assetsApiService.createAsset,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -61,8 +62,9 @@ export function useUpdateAsset() {
       data: Parameters<typeof assetsApiService.updateAsset>[1];
     }) => assetsApiService.updateAsset(assetId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -72,8 +74,9 @@ export function useDeleteAsset() {
   return useMutation({
     mutationFn: assetsApiService.deleteAsset,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -89,8 +92,9 @@ export function useRecordAssetBalance() {
       data: Parameters<typeof assetsApiService.recordAssetBalance>[1];
     }) => assetsApiService.recordAssetBalance(assetId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -100,8 +104,9 @@ export function useCreateAccount() {
   return useMutation({
     mutationFn: assetsApiService.createAccount,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -117,8 +122,9 @@ export function useUpdateAccount() {
       data: Parameters<typeof assetsApiService.updateAccount>[1];
     }) => assetsApiService.updateAccount(accountId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -128,8 +134,9 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: assetsApiService.deleteAccount,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -145,8 +152,9 @@ export function useRecordAccountBalance() {
       data: Parameters<typeof assetsApiService.recordAccountBalance>[1];
     }) => assetsApiService.recordAccountBalance(accountId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -156,8 +164,9 @@ export function useConfirmAsset() {
   return useMutation({
     mutationFn: assetsApiService.confirmAsset,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -183,8 +192,9 @@ export function useConfirmAccount() {
   return useMutation({
     mutationFn: assetsApiService.confirmAccount,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
