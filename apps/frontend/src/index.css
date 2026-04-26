@@ -68,11 +68,13 @@
 
     /* Waterfall tier colours — semantically protected */
     --tier-income: 199 86% 49%; /* #0ea5e9 — energetic electric blue */
+    --tier-income-subtle: 199 40% 18%;
     --tier-committed: 239 84% 67%; /* #6366f1 — settled indigo */
     --tier-committed-subtle: 239 40% 18%;
     --tier-discretionary: 271 91% 65%; /* #a855f7 — expressive purple */
     --tier-discretionary-subtle: 271 40% 18%;
     --tier-surplus: 175 72% 57%; /* #4adcd0 — rewarding teal-mint */
+    --tier-surplus-subtle: 175 40% 18%;
 
     /* Callout gradients — engagement and special highlights */
     --callout-primary-from: 199 86% 49%; /* #0ea5e9 (blue) */
@@ -247,6 +249,24 @@
     100% {
       transform: translateX(100%);
     }
+  }
+
+  .animate-shimmer {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .animate-shimmer::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(238, 242, 255, 0.06) 50%,
+      transparent 100%
+    );
+    animation: shimmer 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   /* Achievement animation */
