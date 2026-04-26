@@ -163,3 +163,37 @@ describe("POST /api/cashflow/linkable-accounts/bulk", () => {
     expect(res.statusCode).toBe(200);
   });
 });
+
+describe("GET /api/cashflow/shortfall", () => {
+  it("returns shortfall payload for authenticated user", async () => {
+    prismaMock.account.findMany.mockResolvedValue([] as any);
+    prismaMock.incomeSource.findMany.mockResolvedValue([] as any);
+    prismaMock.committedItem.findMany.mockResolvedValue([] as any);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/cashflow/shortfall?windowDays=30",
+    });
+    expect(res.statusCode).toBe(200);
+    const body = res.json();
+    expect(body).toHaveProperty("items");
+    expect(body).toHaveProperty("balanceToday");
+    expect(body).toHaveProperty("lowest");
+    expect(body).toHaveProperty("linkedAccountCount");
+    expect(Array.isArray(body.items)).toBe(true);
+  });
+
+  it("rejects windowDays > 90", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/cashflow/shortfall?windowDays=120",
+    });
+    expect(res.statusCode).toBe(400);
+  });
+});
