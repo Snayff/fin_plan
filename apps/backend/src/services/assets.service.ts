@@ -60,6 +60,12 @@ async function assertMemberInHousehold(householdId: string, memberId: string) {
 const ASSET_TYPES: AssetType[] = ["Property", "Vehicle", "Other"];
 const ACCOUNT_TYPES: AccountType[] = ["Current", "Savings", "Pension", "StocksAndShares", "Other"];
 
+function assertLimitOnlyOnSavings(type: AccountType | undefined, limit: unknown) {
+  if (limit !== undefined && limit !== null && type !== "Savings") {
+    throw new ValidationError("monthlyContributionLimit is only valid on Savings accounts");
+  }
+}
+
 // ── Summary ───────────────────────────────────────────────────────────────────
 
 export const assetsService = {
@@ -288,6 +294,7 @@ export const assetsService = {
     if (data.memberId) {
       await assertMemberInHousehold(householdId, data.memberId);
     }
+    assertLimitOnlyOnSavings(data.type, (data as Record<string, unknown>).monthlyContributionLimit);
     const { initialValue, ...accountData } = data;
     return audited({
       db: prisma,
@@ -335,7 +342,19 @@ export const assetsService = {
           string,
           unknown
         > | null>,
-      mutation: async (tx) => tx.account.update({ where: { id: accountId }, data }),
+      mutation: async (tx) => {
+        const existing = await tx.account.findUnique({ where: { id: accountId } });
+        const effectiveType = ((data as Record<string, unknown>).type ?? existing?.type) as
+          | AccountType
+          | undefined;
+        const incomingLimit = (data as Record<string, unknown>).monthlyContributionLimit;
+        assertLimitOnlyOnSavings(effectiveType, incomingLimit);
+        const patch: Record<string, unknown> = { ...data };
+        if (effectiveType !== "Savings" && existing?.monthlyContributionLimit != null) {
+          patch.monthlyContributionLimit = null;
+        }
+        return tx.account.update({ where: { id: accountId }, data: patch });
+      },
     });
   },
 

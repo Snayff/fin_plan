@@ -385,3 +385,57 @@ describe("assetsService.deleteAccount", () => {
     });
   });
 });
+
+describe("assetsService.createAccount — monthlyContributionLimit guard", () => {
+  it("rejects a non-null limit on a non-Savings account", async () => {
+    await expect(
+      assetsService.createAccount(
+        HOUSEHOLD_ID,
+        { name: "Halifax", type: "Current", monthlyContributionLimit: 200 } as any,
+        mockCtx
+      )
+    ).rejects.toThrow(/Savings/);
+  });
+
+  it("accepts a non-null limit on a Savings account", async () => {
+    prismaMock.account.create.mockResolvedValue({ id: "a-1" } as any);
+    await expect(
+      assetsService.createAccount(
+        HOUSEHOLD_ID,
+        { name: "Marcus", type: "Savings", monthlyContributionLimit: 200 } as any,
+        mockCtx
+      )
+    ).resolves.toBeDefined();
+  });
+});
+
+describe("assetsService.updateAccount — monthlyContributionLimit guard", () => {
+  it("nulls the limit when type changes away from Savings", async () => {
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: ACCOUNT_ID,
+      householdId: HOUSEHOLD_ID,
+      type: "Savings",
+      monthlyContributionLimit: 200,
+    } as any);
+    prismaMock.account.update.mockResolvedValue({ id: ACCOUNT_ID } as any);
+    await assetsService.updateAccount(HOUSEHOLD_ID, ACCOUNT_ID, { type: "Other" } as any, mockCtx);
+    const call = prismaMock.account.update.mock.calls.at(-1)?.[0];
+    expect(call?.data.monthlyContributionLimit).toBe(null);
+  });
+
+  it("rejects setting a non-null limit on a non-Savings account", async () => {
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: ACCOUNT_ID,
+      householdId: HOUSEHOLD_ID,
+      type: "Current",
+    } as any);
+    await expect(
+      assetsService.updateAccount(
+        HOUSEHOLD_ID,
+        ACCOUNT_ID,
+        { monthlyContributionLimit: 200 } as any,
+        mockCtx
+      )
+    ).rejects.toThrow(/Savings/);
+  });
+});
