@@ -367,3 +367,11 @@ _Note: the tooltip is dynamic — it shows the actual snapshot name and date on 
 **Appears in**: Config → Events panel, Add Event form
 
 **Tooltip**: The same date for everyone — for example, Christmas is always 25 December regardless of the recipient.
+
+---
+
+## Monthly contribution limit
+
+**Appears in**: Account form (Savings), Account detail panel
+
+**Tooltip**: The most this account lets you pay in each month. finplan uses this to flag spare capacity and surface higher-rate alternatives among your other savings accounts.
