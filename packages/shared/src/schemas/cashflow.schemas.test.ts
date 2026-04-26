@@ -3,6 +3,7 @@ import {
   cashflowProjectionQuerySchema,
   cashflowMonthDetailQuerySchema,
   bulkUpdateLinkedAccountsSchema,
+  cashflowShortfallQuerySchema,
 } from "./cashflow.schemas";
 
 describe("cashflowProjectionQuerySchema", () => {
@@ -44,8 +45,6 @@ describe("bulkUpdateLinkedAccountsSchema", () => {
     expect(result.updates).toHaveLength(2);
   });
 });
-
-import { cashflowShortfallQuerySchema } from "./cashflow.schemas";
 
 describe("cashflowShortfallQuerySchema", () => {
   it("defaults windowDays to 30 when omitted", () => {
