@@ -6,6 +6,23 @@ Full-stack TypeScript monorepo: Fastify backend + React/Vite frontend + shared Z
 
 ---
 
+## Git Workflow
+
+- **Always work on feature branches in worktrees.** Never commit directly to `main`/`prod`. Direct commits to `stage` are permitted only for hotfixes (see auto-memory `project_branching.md`); for all other work, branch off and PR in.
+- Before starting work, verify the current branch with `git branch --show-current`.
+- When opening PRs, target the correct base — `stage` by default, never `prod`/`main` unless explicitly instructed.
+
+---
+
+## Code Quality
+
+- After every edit, run `bun run lint && bun run type-check` before committing. (Never use npm — see Commands.)
+- Fix **all** lint errors, including unused imports. No partial fixes left behind.
+- When investigating CI failures, read the **full** CI output — don't stop at the first error.
+- **Implement batch changes incrementally.** After each file or logical group of changes, run lint and type-check before continuing. If anything fails, fix it before moving on.
+
+---
+
 ## Commands
 
 All commands use `bun run`. Never use npm or pnpm.
@@ -69,6 +86,28 @@ All pages use `TwoPanelLayout`. Panel headers follow strict patterns defined in 
 - **Left panel footer:** `border-t border-foreground/10 px-4 py-3`
 - **Right panel headers:** `px-4 py-3 border-b border-foreground/5`, title in `<h2>` with `font-heading text-base font-bold text-foreground`
 - **Right panel add buttons:** use `GhostAddButton` pattern (`components/tier/GhostAddButton.tsx`) — never custom button styles
+
+---
+
+## UI/Design Standards
+
+See `docs/2. design/design-system.md` for full details. Key invariants:
+
+- No dashed borders (covered in Conventions above) — use solid borders or background-colour differentiation.
+- All right panels must include `min-h-0` for proper scroll containment (paired with `flex-1 overflow-y-auto`).
+- Use the shared subheading utility classes — never ad-hoc text styling.
+- Tooltip / glossary placement follows the rules in `design-system.md`.
+- Design-pattern documentation lives in `design-system.md`, **not** in this file.
+
+---
+
+## Project Structure / Domain Rules
+
+Structural layout is in **Architecture** above. Domain rules:
+
+- **Contributions** flow from the Discretionary waterfall — never directly from account forms.
+- **Household members always exist** (at minimum, the current user). Never branch on "empty household".
+- **`formatCurrency` requires the `showPence` setting** — verify the prop is threaded through to every sub-component that calls it.
 
 ---
 

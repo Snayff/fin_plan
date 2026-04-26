@@ -60,6 +60,7 @@ docs/scratch/
 # claude
 .claude/skills
 .claude/worktrees
+.claude/settings.local.json
 settings
 !apps/frontend/src/components/settings/
 !apps/backend/src/**/settings/
