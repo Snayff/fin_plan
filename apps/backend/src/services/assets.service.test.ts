@@ -386,6 +386,134 @@ describe("assetsService.deleteAccount", () => {
   });
 });
 
+describe("assetsService.listAccountsByType — derived limit fields", () => {
+  it("derives spareMonthly, hasSpareCapacityNudge, higherRateTarget, and isOverCap", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a-low",
+        name: "Lloyds Club",
+        type: "Savings",
+        memberId: "m-1",
+        growthRatePct: 3.5,
+        monthlyContributionLimit: 200,
+        balances: [],
+        linkedItems: [{ id: "li-1", name: "Saver", spendType: "monthly" }],
+      },
+      {
+        id: "a-high",
+        name: "Marcus Easy Access",
+        type: "Savings",
+        memberId: "m-1",
+        growthRatePct: 4.6,
+        monthlyContributionLimit: null,
+        balances: [],
+        linkedItems: [],
+      },
+      {
+        id: "a-other",
+        name: "Bob's Saver",
+        type: "Savings",
+        memberId: "m-2",
+        growthRatePct: 6.0,
+        monthlyContributionLimit: null,
+        balances: [],
+        linkedItems: [],
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      { itemId: "li-1", amount: 125 },
+    ] as any);
+
+    const accounts = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Savings");
+    const low = accounts.find((a) => a.id === "a-low")!;
+    expect(low.monthlyContribution).toBe(125);
+    expect(low.spareMonthly).toBe(75);
+    expect(low.isOverCap).toBe(false);
+    expect(low.hasSpareCapacityNudge).toBe(true);
+    expect(low.higherRateTarget?.id).toBe("a-high");
+    expect(low.higherRateTarget?.growthRatePct).toBe(4.6);
+
+    const high = accounts.find((a) => a.id === "a-high")!;
+    expect(high.spareMonthly).toBeNull();
+    expect(high.hasSpareCapacityNudge).toBe(false);
+    expect(high.higherRateTarget).toBeNull();
+  });
+
+  it("flags a single linked item whose raw amount exceeds the cap", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a-1",
+        name: "Lloyds Club",
+        type: "Savings",
+        memberId: null,
+        growthRatePct: 3.5,
+        monthlyContributionLimit: 200,
+        balances: [],
+        linkedItems: [{ id: "li-yearly", name: "ISA top-up", spendType: "annual" }],
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      { itemId: "li-yearly", amount: 1200 },
+    ] as any);
+    const [acc] = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Savings");
+    expect(acc!.linkedItems[0]!.lumpSumExceedsCap).toBe(true);
+    expect(acc!.monthlyContribution).toBeCloseTo(100);
+    expect(acc!.isOverCap).toBe(false);
+  });
+
+  it("computes isOverCap and suppresses spare-capacity nudge when over-cap", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a-1",
+        name: "Lloyds Club",
+        type: "Savings",
+        memberId: null,
+        growthRatePct: 3.5,
+        monthlyContributionLimit: 200,
+        balances: [],
+        linkedItems: [{ id: "li-1", name: "Saver", spendType: "monthly" }],
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      { itemId: "li-1", amount: 250 },
+    ] as any);
+    const [acc] = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Savings");
+    expect(acc!.isOverCap).toBe(true);
+    expect(acc!.hasSpareCapacityNudge).toBe(false);
+    expect(acc!.spareMonthly).toBe(-50);
+  });
+
+  it("excludes candidates whose effective rate cannot be resolved", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a-low",
+        name: "L",
+        type: "Savings",
+        memberId: null,
+        growthRatePct: 3.5,
+        monthlyContributionLimit: 200,
+        balances: [],
+        linkedItems: [],
+      },
+      {
+        id: "a-norate",
+        name: "N",
+        type: "Savings",
+        memberId: null,
+        growthRatePct: null,
+        monthlyContributionLimit: null,
+        balances: [],
+        linkedItems: [],
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null as any);
+    const [low] = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Savings");
+    expect(low!.higherRateTarget).toBeNull();
+    expect(low!.hasSpareCapacityNudge).toBe(false);
+  });
+});
+
 describe("assetsService.createAccount — monthlyContributionLimit guard", () => {
   it("rejects a non-null limit on a non-Savings account", async () => {
     await expect(

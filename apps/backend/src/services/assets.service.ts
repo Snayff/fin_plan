@@ -249,7 +249,6 @@ export const assetsService = {
       orderBy: { createdAt: "asc" },
     });
 
-    // Derive current monthly amounts for all linked discretionary items
     const allLinkedItemIds = accounts.flatMap((a) => a.linkedItems.map((i) => i.id));
     const now = new Date();
     const activePeriods =
@@ -266,26 +265,81 @@ export const assetsService = {
 
     const amountByItemId = new Map<string, number>();
     for (const period of activePeriods) {
-      // Last write wins if multiple active periods exist (safety guard)
       amountByItemId.set(period.itemId, period.amount);
+    }
+
+    let savingsDefaultRate: number | null = null;
+    if (type === "Savings") {
+      const settings = await prisma.householdSettings.findUnique({ where: { householdId } });
+      savingsDefaultRate = settings?.savingsRatePct ?? null;
+    }
+
+    function effectiveRate(a: { growthRatePct: number | null }): number | null {
+      return a.growthRatePct ?? savingsDefaultRate;
     }
 
     return accounts.map((a) => {
       const latest = getLatestBalance(a.balances);
-      const linkedItems = a.linkedItems.map((item) => ({
-        ...item,
-        amount: amountByItemId.get(item.id) ?? 0,
-      }));
+      const linkedItems = a.linkedItems.map((item) => {
+        const amount = amountByItemId.get(item.id) ?? 0;
+        const lumpSumExceedsCap =
+          a.monthlyContributionLimit != null && amount > a.monthlyContributionLimit;
+        return { ...item, amount, lumpSumExceedsCap };
+      });
       const monthlyContribution = linkedItems.reduce(
         (sum, item) => sum + toMonthlyAmount(item.amount, item.spendType),
         0
       );
+
+      const limit = a.monthlyContributionLimit;
+      const spareMonthly = limit != null ? limit - monthlyContribution : null;
+      const isOverCap = limit != null && monthlyContribution > limit;
+      let higherRateTarget: { id: string; name: string; growthRatePct: number } | null = null;
+      let hasSpareCapacityNudge = false;
+
+      if (type === "Savings" && limit != null && spareMonthly != null && spareMonthly >= 25) {
+        const myRate = effectiveRate(a);
+        if (myRate != null) {
+          const candidates = accounts
+            .filter((c) => c.id !== a.id)
+            .filter((c) => c.memberId === a.memberId || c.memberId === null);
+          const eligible = candidates
+            .map((c) => ({ c, rate: effectiveRate(c) }))
+            .filter((x): x is { c: (typeof accounts)[number]; rate: number } => x.rate != null)
+            .filter((x) => x.rate > myRate)
+            .filter((x) => {
+              if (x.c.monthlyContributionLimit == null) return true;
+              const cIds = x.c.linkedItems.map((i) => i.id);
+              const cMonthly = cIds.reduce(
+                (sum, id) =>
+                  sum +
+                  toMonthlyAmount(
+                    amountByItemId.get(id) ?? 0,
+                    x.c.linkedItems.find((i) => i.id === id)!.spendType
+                  ),
+                0
+              );
+              return x.c.monthlyContributionLimit - cMonthly > 0;
+            })
+            .sort((a, b) => b.rate - a.rate || a.c.name.localeCompare(b.c.name));
+          const winner = eligible[0];
+          if (winner) {
+            higherRateTarget = { id: winner.c.id, name: winner.c.name, growthRatePct: winner.rate };
+            hasSpareCapacityNudge = true;
+          }
+        }
+      }
+
       return {
         ...a,
         currentBalance: latest?.value ?? 0,
         currentBalanceDate: latest?.date ?? null,
         linkedItems,
         monthlyContribution,
+        spareMonthly,
+        isOverCap,
+        hasSpareCapacityNudge,
+        higherRateTarget,
       };
     });
   },
