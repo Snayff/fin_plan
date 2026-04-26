@@ -71,6 +71,7 @@ export const createAccountSchema = z
     type: accountTypeSchema,
     memberId: z.string().nullable().optional(),
     growthRatePct: z.number().min(0).max(100).nullable().optional(),
+    monthlyContributionLimit: z.number().min(0).nullable().optional(),
     isCashflowLinked: z.boolean().optional(),
     initialValue: z.number().positive().optional(),
     ...disposalPair,
@@ -82,6 +83,7 @@ export const updateAccountSchema = z
     name: z.string().min(1).max(100).trim().optional(),
     memberId: z.string().nullable().optional(),
     growthRatePct: z.number().min(0).max(100).nullable().optional(),
+    monthlyContributionLimit: z.number().min(0).nullable().optional(),
     isCashflowLinked: z.boolean().optional(),
     ...disposalPair,
   })
