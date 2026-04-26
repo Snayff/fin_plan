@@ -94,8 +94,8 @@ export const exportService = {
           tx.giftAllocation.findMany({ where: { householdId } }),
         ]);
 
-        // Build lookup map keyed by Member.id. Both waterfall item ownerId and
-        // asset/account memberId reference Member.id.
+        // Build lookup map keyed by Member.id. Waterfall item memberId and
+        // asset/account memberId both reference Member.id.
         const memberNameByMemberId = new Map<string, string>();
         for (const m of members) {
           memberNameByMemberId.set(m.id, m.name);
@@ -203,7 +203,7 @@ export const exportService = {
             frequency: i.frequency,
             incomeType: i.incomeType,
             dueDate: i.dueDate,
-            ownerName: i.ownerId ? (memberNameByMemberId.get(i.ownerId) ?? null) : null,
+            ownerName: i.memberId ? (memberNameByMemberId.get(i.memberId) ?? null) : null,
             sortOrder: i.sortOrder,
             lastReviewedAt: i.lastReviewedAt.toISOString(),
             notes: i.notes,
@@ -214,7 +214,7 @@ export const exportService = {
             name: i.name,
             spendType: i.spendType,
             notes: i.notes,
-            ownerName: i.ownerId ? (memberNameByMemberId.get(i.ownerId) ?? null) : null,
+            ownerName: i.memberId ? (memberNameByMemberId.get(i.memberId) ?? null) : null,
             dueDate: i.dueDate,
             sortOrder: i.sortOrder,
             lastReviewedAt: i.lastReviewedAt.toISOString(),
@@ -225,6 +225,7 @@ export const exportService = {
             name: i.name,
             spendType: i.spendType,
             notes: i.notes,
+            ownerName: i.memberId ? (memberNameByMemberId.get(i.memberId) ?? null) : null,
             dueDate: i.dueDate,
             sortOrder: i.sortOrder,
             lastReviewedAt: i.lastReviewedAt.toISOString(),

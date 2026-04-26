@@ -108,11 +108,7 @@ export default function FullWaterfallPage() {
     };
 
   // ── Derived state ─────────────────────────────────────────────────────────
-  // Coerce userId from string|null to string so it satisfies WaterfallTierTable's Member interface
-  const memberList = members.data.map((m) => ({
-    ...m,
-    userId: m.userId ?? "",
-  }));
+  const memberList = members.data;
 
   const summaryData = waterfall.summary.data;
   const incomeTotal = summaryData?.income.total ?? 0;

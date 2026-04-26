@@ -70,6 +70,33 @@ describe("ItemRow", () => {
     expect(screen.getByText(/Housing/)).toBeTruthy();
   });
 
+  it("shows 'Household' on metadata line when memberId is null", () => {
+    renderWithProviders(
+      <ItemRow
+        item={{ ...baseItem, memberId: null }}
+        config={TIER_CONFIGS.committed}
+        isExpanded={false}
+        onToggle={() => {}}
+        now={new Date("2026-01-15T00:00:00Z")}
+      />
+    );
+    expect(screen.getByText(/Household/)).toBeTruthy();
+  });
+
+  it("resolves member firstName from memberId", () => {
+    renderWithProviders(
+      <ItemRow
+        item={{ ...baseItem, memberId: "m1" }}
+        config={TIER_CONFIGS.income}
+        isExpanded={false}
+        onToggle={() => {}}
+        now={new Date("2026-01-15T00:00:00Z")}
+        members={[{ id: "m1", firstName: "Alice" }]}
+      />
+    );
+    expect(screen.getByText(/Alice/)).toBeTruthy();
+  });
+
   it("one-off item shows single amount without /mo suffix and no yearly", () => {
     renderWithProviders(
       <ItemRow

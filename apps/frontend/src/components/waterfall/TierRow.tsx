@@ -4,19 +4,17 @@ import type { TierItemRow } from "@/hooks/useWaterfall";
 
 interface Member {
   id: string;
-  userId: string;
   firstName: string;
   name: string;
 }
 
-interface TierItemRowWithOwner extends TierItemRow {
-  ownerId?: string | null;
+interface TierItemRowWithDraft extends TierItemRow {
   isDraft?: boolean;
 }
 
 interface Props {
   tier: "income" | "committed" | "discretionary";
-  item: TierItemRowWithOwner;
+  item: TierItemRowWithDraft;
   members: Member[];
   onSaveName: (name: string) => Promise<unknown>;
   onSaveAmount: (amount: number) => Promise<unknown>;
@@ -38,7 +36,7 @@ const MONTH_NAMES = [
   "Dec",
 ];
 
-function formatDueDate(item: TierItemRowWithOwner): string {
+function formatDueDate(item: TierItemRowWithDraft): string {
   if (item.spendType === "monthly") return "—";
   if (item.spendType === "one_off" && item.dueDate) {
     const d = new Date(item.dueDate);
@@ -86,10 +84,10 @@ export function TierRow({ tier, item, members, onSaveName, onSaveAmount, onDelet
     }
   };
 
-  const ownerLabel = (() => {
-    if (item.ownerId == null) return "Joint";
-    const member = members.find((m) => m.id === item.ownerId || m.userId === item.ownerId);
-    return member?.firstName ?? "Joint";
+  const memberLabel = (() => {
+    if (item.memberId == null) return "Household";
+    const member = members.find((m) => m.id === item.memberId);
+    return member?.firstName ?? "Household";
   })();
 
   const isDraftIncomplete = item.isDraft && (!item.name || !item.amount);
@@ -143,21 +141,18 @@ export function TierRow({ tier, item, members, onSaveName, onSaveAmount, onDelet
 
         {/* Tier-specific columns */}
         {tier === "income" ? (
-          <>
-            {/* Type */}
-            <td className="px-2 py-1.5 text-sm text-text-tertiary capitalize">
-              {item.spendType === "one_off" ? "One-off" : item.spendType}
-            </td>
-
-            {/* Owner */}
-            <td className="px-2 py-1.5 text-sm text-text-tertiary">{ownerLabel}</td>
-          </>
+          <td className="px-2 py-1.5 text-sm text-text-tertiary capitalize">
+            {item.spendType === "one_off" ? "One-off" : item.spendType}
+          </td>
         ) : (
           /* Due column for committed / discretionary */
           <td data-testid="cell-due" className="px-2 py-1.5 text-sm text-text-tertiary">
             {formatDueDate(item)}
           </td>
         )}
+
+        {/* Assigned to (member) — all tiers */}
+        <td className="px-2 py-1.5 text-sm text-text-tertiary">{memberLabel}</td>
 
         {/* /month equivalent */}
         <td className="px-2 py-1.5 text-right font-numeric tabular-nums text-sm text-text-tertiary">
@@ -206,7 +201,7 @@ export function TierRow({ tier, item, members, onSaveName, onSaveAmount, onDelet
       {/* Inline confirm UI — avoids needing a portal */}
       {confirmOpen && (
         <tr>
-          <td colSpan={tier === "income" ? 7 : 6} className="px-2 py-2">
+          <td colSpan={7} className="px-2 py-2">
             <div className="flex items-center gap-3 rounded border border-destructive/20 bg-destructive/5 px-3 py-2 text-sm">
               <span className="flex-1 text-text-secondary">
                 Delete <strong className="font-medium">{item.name}</strong>? This cannot be undone.

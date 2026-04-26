@@ -61,6 +61,7 @@ const exportDiscretionaryItemSchema = z.object({
   name: z.string(),
   spendType: SpendTypeEnum,
   notes: z.string().nullable().optional(),
+  ownerName: z.string().nullable().optional(),
   dueDate: z.coerce.date().nullable(),
   sortOrder: z.number().int(),
   lastReviewedAt: z.string().datetime(),

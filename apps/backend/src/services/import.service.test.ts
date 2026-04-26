@@ -280,7 +280,7 @@ describe("importService.importHousehold", () => {
         householdId: "new-hh-id",
         subcategoryId: "sub-rent",
         name: "Flat rent",
-        ownerId: "member-alice",
+        memberId: "member-alice",
       }),
     });
 

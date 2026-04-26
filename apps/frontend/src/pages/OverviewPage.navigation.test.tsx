@@ -34,7 +34,7 @@ mock.module("@/hooks/useWaterfall", () => ({
             frequency: "monthly",
             incomeType: "regular",
             expectedMonth: null,
-            ownerId: null,
+            memberId: null,
             sortOrder: 0,
             endedAt: null,
             lastReviewedAt: new Date(),

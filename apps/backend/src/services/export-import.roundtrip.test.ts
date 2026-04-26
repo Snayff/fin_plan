@@ -110,7 +110,7 @@ function setupExportMocks() {
       frequency: "monthly",
       incomeType: "salary",
       dueDate: new Date("2026-04-01"),
-      ownerId: "member-alice",
+      memberId: "member-alice",
       sortOrder: 0,
       lastReviewedAt: new Date("2026-01-15T00:00:00Z"),
       notes: "Primary income",
@@ -127,7 +127,7 @@ function setupExportMocks() {
       name: "Electric",
       spendType: "monthly",
       notes: null,
-      ownerId: "member-bob",
+      memberId: "member-bob",
       dueDate: new Date("2026-04-01"),
       sortOrder: 0,
       lastReviewedAt: new Date("2026-02-01T00:00:00Z"),
@@ -561,7 +561,7 @@ describe("export → import round-trip", () => {
       }),
     });
 
-    // Income source created with resolved subcategoryId and ownerId
+    // Income source created with resolved subcategoryId and memberId
     expect(prismaMock.incomeSource.create).toHaveBeenCalledTimes(1);
     expect(prismaMock.incomeSource.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -570,12 +570,12 @@ describe("export → import round-trip", () => {
         name: "Day job",
         frequency: "monthly",
         incomeType: "salary",
-        ownerId: "new-member-alice",
+        memberId: "new-member-alice",
         notes: "Primary income",
       }),
     });
 
-    // Committed item created with resolved subcategoryId and ownerId (Bob)
+    // Committed item created with resolved subcategoryId and memberId (Bob)
     expect(prismaMock.committedItem.create).toHaveBeenCalledTimes(1);
     expect(prismaMock.committedItem.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -583,7 +583,7 @@ describe("export → import round-trip", () => {
         subcategoryId: "new-sub-bills",
         name: "Electric",
         spendType: "monthly",
-        ownerId: "new-member-bob",
+        memberId: "new-member-bob",
       }),
     });
 

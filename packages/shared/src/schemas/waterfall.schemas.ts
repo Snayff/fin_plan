@@ -66,7 +66,7 @@ export const createCommittedItemSchema = z.object({
   subcategoryId: z.string().min(1),
   spendType: SpendTypeEnum.default("monthly"),
   notes: z.string().max(500).nullable().optional(),
-  ownerId: z.string().optional(),
+  memberId: z.string().nullable().optional(),
   dueDate: z.coerce.date(),
   sortOrder: z.number().int().optional(),
   startDate: z.coerce.date().optional(),
@@ -78,7 +78,7 @@ export const updateCommittedItemSchema = z.object({
   subcategoryId: z.string().min(1).optional(),
   spendType: SpendTypeEnum.optional(),
   notes: z.string().max(500).nullable().optional(),
-  ownerId: z.string().nullable().optional(),
+  memberId: z.string().nullable().optional(),
   dueDate: z.coerce.date().optional(),
   sortOrder: z.number().int().optional(),
 });
@@ -94,6 +94,7 @@ export const createDiscretionaryItemSchema = z.object({
   subcategoryId: z.string().min(1),
   spendType: SpendTypeEnum.default("monthly"),
   notes: z.string().max(500).nullable().optional(),
+  memberId: z.string().nullable().optional(),
   dueDate: z.coerce.date().nullable().optional(),
   sortOrder: z.number().int().optional(),
   startDate: z.coerce.date().optional(),
@@ -106,6 +107,7 @@ export const updateDiscretionaryItemSchema = z.object({
   subcategoryId: z.string().min(1).optional(),
   spendType: SpendTypeEnum.optional(),
   notes: z.string().max(500).nullable().optional(),
+  memberId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
   linkedAccountId: z.string().nullable().optional(),
 });
@@ -121,7 +123,7 @@ export const createIncomeSourceSchema = z.object({
   frequency: IncomeFrequencyEnum,
   incomeType: IncomeTypeEnum.default("other"),
   dueDate: z.coerce.date(),
-  ownerId: z.string().optional(),
+  memberId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
   subcategoryId: z.string().min(1).optional(),
   notes: z.string().max(500).nullable().optional(),
@@ -134,7 +136,7 @@ export const updateIncomeSourceSchema = z.object({
   frequency: IncomeFrequencyEnum.optional(),
   incomeType: IncomeTypeEnum.optional(),
   dueDate: z.coerce.date().optional(),
-  ownerId: z.string().nullable().optional(),
+  memberId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
   subcategoryId: z.string().min(1).optional(),
   notes: z.string().max(500).nullable().optional(),
@@ -148,14 +150,14 @@ export type UpdateIncomeSourceInput = z.infer<typeof updateIncomeSourceSchema>;
 export const createCommittedBillSchema = z.object({
   name: z.string().min(1).trim(),
   amount: z.number().positive(),
-  ownerId: z.string().optional(),
+  memberId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
 });
 
 export const updateCommittedBillSchema = z.object({
   name: z.string().min(1).trim().optional(),
   amount: z.number().positive().optional(),
-  ownerId: z.string().nullable().optional(),
+  memberId: z.string().nullable().optional(),
   sortOrder: z.number().int().optional(),
 });
 
@@ -273,7 +275,7 @@ export interface IncomeSourceRow {
   frequency: IncomeFrequency;
   incomeType: IncomeType;
   dueDate: Date;
-  ownerId: string | null;
+  memberId: string | null;
   sortOrder: number;
   lifecycleState: ItemLifecycleState;
   lastReviewedAt: Date;
@@ -288,7 +290,7 @@ export interface CommittedBillRow {
   householdId: string;
   name: string;
   amount: number;
-  ownerId: string | null;
+  memberId: string | null;
   sortOrder: number;
   lastReviewedAt: Date;
   createdAt: Date;
@@ -312,7 +314,7 @@ export interface YearlyBillRow {
   spendType?: SpendType;
   subcategoryId?: string;
   notes?: string | null;
-  ownerId?: string | null;
+  memberId?: string | null;
 }
 
 export interface DiscretionaryCategoryRow {
@@ -327,6 +329,7 @@ export interface DiscretionaryCategoryRow {
   spendType?: SpendType;
   subcategoryId?: string;
   notes?: string | null;
+  memberId?: string | null;
 }
 
 export interface SavingsAllocationRow {
@@ -341,6 +344,7 @@ export interface SavingsAllocationRow {
   spendType?: SpendType;
   subcategoryId?: string;
   notes?: string | null;
+  memberId?: string | null;
 }
 
 export interface CashflowMonth {

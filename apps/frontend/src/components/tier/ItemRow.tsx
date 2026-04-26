@@ -21,9 +21,15 @@ interface WaterfallItem {
   notes: string | null;
   lastReviewedAt: Date;
   sortOrder: number;
+  memberId?: string | null;
   lifecycleState?: ItemLifecycleState;
   nextPeriod?: { amount: number; startDate: string | Date } | null;
   periods?: ItemPeriod[];
+}
+
+interface MemberInfo {
+  id: string;
+  firstName: string;
 }
 
 interface Props {
@@ -33,6 +39,7 @@ interface Props {
   onToggle: () => void;
   now: Date;
   stalenessMonths?: number;
+  members?: MemberInfo[];
   children?: React.ReactNode;
 }
 
@@ -43,12 +50,17 @@ export default function ItemRow({
   onToggle,
   now,
   stalenessMonths = 12,
+  members = [],
   children,
 }: Props) {
   const { data: settings } = useSettings();
   const showPence = settings?.showPence ?? false;
   const amounts = formatTwoLineAmount(item.amount, item.spendType, showPence);
   const stale = isStale(item.lastReviewedAt, now, stalenessMonths);
+
+  const memberLabel = item.memberId
+    ? (members.find((m) => m.id === item.memberId)?.firstName ?? "Household")
+    : "Household";
 
   const lifecycleClass =
     item.lifecycleState === "future"
@@ -98,7 +110,7 @@ export default function ItemRow({
             )}
           </span>
           <span className="text-[11px] text-text-tertiary">
-            {SPEND_TYPE_LABELS[item.spendType]} · {item.subcategoryName}
+            {SPEND_TYPE_LABELS[item.spendType]} · {item.subcategoryName} · {memberLabel}
           </span>
         </span>
 

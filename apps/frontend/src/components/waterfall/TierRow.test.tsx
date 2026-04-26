@@ -10,6 +10,7 @@ const mockItem = {
   subcategoryId: "sub-1",
   notes: null,
   dueDate: null,
+  memberId: null,
   lastReviewedAt: new Date(),
   createdAt: new Date(),
   sortOrder: 0,
@@ -35,13 +36,13 @@ describe("TierRow (income)", () => {
     expect(screen.getByDisplayValue("4200")).toBeInTheDocument();
   });
 
-  it("shows 'Joint' in Owner column when ownerId is null", () => {
+  it("shows 'Household' in Assigned-to column when memberId is null", () => {
     render(
       <table>
         <tbody>
           <TierRow
             tier="income"
-            item={{ ...mockItem, ownerId: null } as any}
+            item={{ ...mockItem, memberId: null } as any}
             members={[]}
             onSaveName={mock(() => Promise.resolve())}
             onSaveAmount={mock(() => Promise.resolve())}
@@ -50,7 +51,25 @@ describe("TierRow (income)", () => {
         </tbody>
       </table>
     );
-    expect(screen.getByText("Joint")).toBeInTheDocument();
+    expect(screen.getByText("Household")).toBeInTheDocument();
+  });
+
+  it("resolves member firstName from memberId on committed tier", () => {
+    render(
+      <table>
+        <tbody>
+          <TierRow
+            tier="committed"
+            item={{ ...mockItem, memberId: "m1" } as any}
+            members={[{ id: "m1", firstName: "Alice", name: "Alice Smith" }]}
+            onSaveName={mock(() => Promise.resolve())}
+            onSaveAmount={mock(() => Promise.resolve())}
+            onDelete={mock(() => Promise.resolve())}
+          />
+        </tbody>
+      </table>
+    );
+    expect(screen.getByText("Alice")).toBeInTheDocument();
   });
 
   it("reveals trash icon button", () => {

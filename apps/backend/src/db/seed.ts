@@ -75,7 +75,7 @@ async function main() {
 
   const hId = household.id;
 
-  // Get the owner's Member record (needed for ownerId references)
+  // Get the owner's Member record (needed for memberId references)
   const ownerMember = await prisma.member.findFirst({
     where: { householdId: hId, userId: user.id },
   });
@@ -124,7 +124,7 @@ async function main() {
       frequency: "monthly" as const,
       incomeType: "salary" as const,
       subcategoryId: incomeSalaryId,
-      ownerId: ownerMember?.id ?? null,
+      memberId: ownerMember?.id ?? null,
       sortOrder: 0,
       dueDate: new Date("2026-01-25"),
     },

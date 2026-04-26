@@ -20,7 +20,7 @@ describe("WaterfallTierTable", () => {
     expect(screen.getByText("INCOME")).toBeInTheDocument();
     expect(screen.getByText(/£8,856/)).toBeInTheDocument();
     expect(screen.getByText("Type")).toBeInTheDocument();
-    expect(screen.getByText("Owner")).toBeInTheDocument();
+    expect(screen.getByText("Assigned to")).toBeInTheDocument();
   });
 
   it("buckets orphaned items (unknown subcategoryId) under 'Uncategorised'", () => {

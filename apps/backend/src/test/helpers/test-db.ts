@@ -331,7 +331,7 @@ export async function seedScenario<T extends ScenarioShape>(scenario: T): Promis
             | "benefits"
             | "other") ?? "other",
         dueDate: inc.dueDate,
-        ownerId: (inc.ownerId as string) ?? null,
+        memberId: (inc.memberId as string) ?? (inc.ownerId as string) ?? null,
         sortOrder: (inc.sortOrder as number) ?? 0,
         notes: (inc.notes as string) ?? null,
       },
@@ -359,7 +359,7 @@ export async function seedScenario<T extends ScenarioShape>(scenario: T): Promis
         name: ci.name,
         spendType: ci.spendType as "monthly" | "yearly" | "one_off",
         notes: (ci.notes as string) ?? null,
-        ownerId: (ci.ownerId as string) ?? null,
+        memberId: (ci.memberId as string) ?? (ci.ownerId as string) ?? null,
         dueDate: ci.dueDate,
         sortOrder: (ci.sortOrder as number) ?? 0,
       },
@@ -387,6 +387,7 @@ export async function seedScenario<T extends ScenarioShape>(scenario: T): Promis
         name: di.name,
         spendType: di.spendType as "monthly" | "yearly" | "one_off",
         notes: (di.notes as string) ?? null,
+        memberId: ((di as Record<string, unknown>).memberId as string | null) ?? null,
         sortOrder: (di.sortOrder as number) ?? 0,
       },
     });
