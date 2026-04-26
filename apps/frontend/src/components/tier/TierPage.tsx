@@ -4,9 +4,12 @@ import SubcategoryList from "./SubcategoryList";
 import ItemArea, { type LockedManager } from "./ItemArea";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { PageHeader } from "@/components/common/PageHeader";
+import { AttentionStrip } from "@/components/common/AttentionStrip";
+import { ShortfallTooltip } from "@/components/common/ShortfallTooltip";
 import { useSubcategories, useTierItems, type TierItemRow } from "@/hooks/useWaterfall";
-import { useHouseholdMembers } from "@/hooks/useSettings";
+import { useHouseholdMembers, useSettings } from "@/hooks/useSettings";
 import { useGiftPlannerSettings } from "@/hooks/useGifts";
+import { useTierShortfall } from "@/hooks/useShortfall";
 import { TIER_CONFIGS, type TierKey } from "./tierConfig";
 import { useFocusParam } from "@/features/search/useFocusParam";
 import { useAddParam } from "@/features/search/useAddParam";
@@ -28,6 +31,8 @@ export default function TierPage({ tier }: TierPageProps) {
   const { data: subcategories, isLoading: subsLoading } = useSubcategories(tier);
   const { data: allItems, isLoading: itemsLoading } = useTierItems(tier);
   const { data: members } = useHouseholdMembers();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
 
   const hasAddParam = searchParams.get("add") === "1";
   useAddParam((_kind) => {
@@ -82,6 +87,12 @@ export default function TierPage({ tier }: TierPageProps) {
     ? (subcategoryTotals[resolvedSelectedId] ?? null)
     : null;
 
+  const isShortfallTier = tier === "committed" || tier === "discretionary";
+  const shortfall = useTierShortfall(isShortfallTier ? tier : "committed", {
+    isSnapshot: !isShortfallTier,
+  });
+  const showShortfallStrip = isShortfallTier && shortfall.isLive && shortfall.count > 0;
+
   const isGiftsSubcategory =
     tier === "discretionary" && selectedSubcategory?.name.toLowerCase().trim() === "gifts";
   const { data: giftSettings } = useGiftPlannerSettings({ enabled: isGiftsSubcategory });
@@ -101,6 +112,27 @@ export default function TierPage({ tier }: TierPageProps) {
               total={tierTotal}
               totalColorClass={config.textClass}
             />
+            {showShortfallStrip && shortfall.lowest && (
+              <AttentionStrip
+                ariaLabel={`Cashflow shortfall: ${shortfall.count} item${shortfall.count === 1 ? "" : "s"} in the next 30 days`}
+                body={
+                  <>
+                    Cashflow won't cover{" "}
+                    <strong>
+                      {shortfall.count} item{shortfall.count === 1 ? "" : "s"}
+                    </strong>
+                  </>
+                }
+                tooltip={
+                  <ShortfallTooltip
+                    items={shortfall.items}
+                    balanceToday={shortfall.balanceToday}
+                    lowest={shortfall.lowest}
+                    showPence={showPence}
+                  />
+                }
+              />
+            )}
             <div className="flex-1 overflow-y-auto">
               <SubcategoryList
                 tier={tier}

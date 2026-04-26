@@ -63,6 +63,7 @@ export function useUpdateLinkedAccount() {
       void qc.invalidateQueries({ queryKey: CASHFLOW_KEYS.linkable });
       void qc.invalidateQueries({ queryKey: ["cashflow", "projection"] });
       void qc.invalidateQueries({ queryKey: ["cashflow", "month"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -95,6 +96,7 @@ export function useBulkUpdateLinkedAccounts() {
       void qc.invalidateQueries({ queryKey: CASHFLOW_KEYS.linkable });
       void qc.invalidateQueries({ queryKey: ["cashflow", "projection"] });
       void qc.invalidateQueries({ queryKey: ["cashflow", "month"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }

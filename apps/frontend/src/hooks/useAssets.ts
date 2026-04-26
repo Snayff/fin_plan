@@ -45,8 +45,9 @@ export function useCreateAsset() {
   return useMutation({
     mutationFn: assetsApiService.createAsset,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to create asset");
@@ -65,8 +66,9 @@ export function useUpdateAsset() {
       data: Parameters<typeof assetsApiService.updateAsset>[1];
     }) => assetsApiService.updateAsset(assetId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to update asset");
@@ -79,8 +81,9 @@ export function useDeleteAsset() {
   return useMutation({
     mutationFn: assetsApiService.deleteAsset,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to delete asset");
@@ -99,8 +102,9 @@ export function useRecordAssetBalance() {
       data: Parameters<typeof assetsApiService.recordAssetBalance>[1];
     }) => assetsApiService.recordAssetBalance(assetId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to record balance");
@@ -113,8 +117,9 @@ export function useCreateAccount() {
   return useMutation({
     mutationFn: assetsApiService.createAccount,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to create account");
@@ -133,8 +138,9 @@ export function useUpdateAccount() {
       data: Parameters<typeof assetsApiService.updateAccount>[1];
     }) => assetsApiService.updateAccount(accountId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to update account");
@@ -147,8 +153,9 @@ export function useDeleteAccount() {
   return useMutation({
     mutationFn: assetsApiService.deleteAccount,
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to delete account");
@@ -167,8 +174,9 @@ export function useRecordAccountBalance() {
       data: Parameters<typeof assetsApiService.recordAccountBalance>[1];
     }) => assetsApiService.recordAccountBalance(accountId, data),
     onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to record balance");
@@ -214,6 +222,7 @@ export function useConfirmAsset() {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ["assets"] });
       void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
@@ -252,6 +261,7 @@ export function useConfirmAccount() {
     onSettled: () => {
       void qc.invalidateQueries({ queryKey: ["assets"] });
       void qc.invalidateQueries({ queryKey: ["forecast"] });
+      void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
     },
   });
 }
