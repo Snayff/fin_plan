@@ -25,8 +25,10 @@ export function ShortfallBadge({
       <Tooltip>
         <TooltipTrigger asChild>
           <span
+            role="button"
             tabIndex={0}
             aria-label={label}
+            aria-haspopup="true"
             className="inline-flex items-center gap-1 text-xs text-attention focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring rounded-sm"
           >
             <span
