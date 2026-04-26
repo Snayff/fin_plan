@@ -1,4 +1,4 @@
-import { apiClient } from '../lib/api';
+import { apiClient } from "../lib/api";
 
 export interface User {
   id: string;
@@ -30,32 +30,31 @@ export interface LoginData {
 export interface AuthResponse {
   user: User;
   accessToken: string;
-  refreshToken: string;
 }
 
 export const authService = {
   async register(data: RegisterData): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>('/api/auth/register', data);
+    return apiClient.post<AuthResponse>("/api/auth/register", data);
   },
 
   async login(data: LoginData): Promise<AuthResponse> {
-    return apiClient.post<AuthResponse>('/api/auth/login', data);
+    return apiClient.post<AuthResponse>("/api/auth/login", data);
   },
 
   async logout(token: string): Promise<void> {
-    await apiClient.post('/api/auth/logout', {}, token);
+    await apiClient.post("/api/auth/logout", {}, token);
   },
 
   async getCurrentUser(token: string): Promise<{ user: User }> {
-    return apiClient.get<{ user: User }>('/api/auth/me', token);
+    return apiClient.get<{ user: User }>("/api/auth/me", token);
   },
 
   async updateProfile(token: string, data: { name: string }): Promise<{ user: User }> {
-    return apiClient.patch<{ user: User }>('/api/auth/me', data, token);
+    return apiClient.patch<{ user: User }>("/api/auth/me", data, token);
   },
 
   async refreshToken(): Promise<{ accessToken: string }> {
     // No longer pass refreshToken - it's in httpOnly cookie
-    return apiClient.post<{ accessToken: string }>('/api/auth/refresh', {});
+    return apiClient.post<{ accessToken: string }>("/api/auth/refresh", {});
   },
 };

@@ -92,7 +92,7 @@ describe("Auth Journey", () => {
     expect(registerBody.user.email).toBe(TEST_USER.email);
     expect(registerBody.user.name).toBe(TEST_USER.name);
     expect(registerBody.accessToken).toBeString();
-    expect(registerBody.refreshToken).toBeString();
+    expect(registerBody.refreshToken).toBeUndefined();
     // Sensitive fields must not leak
     expect(registerBody.user.passwordHash).toBeUndefined();
 
@@ -117,7 +117,7 @@ describe("Auth Journey", () => {
     expect(loginBody.user).toBeDefined();
     expect(loginBody.user.email).toBe(TEST_USER.email);
     expect(loginBody.accessToken).toBeString();
-    expect(loginBody.refreshToken).toBeString();
+    expect(loginBody.refreshToken).toBeUndefined();
 
     const accessToken = loginBody.accessToken as string;
 

@@ -117,7 +117,7 @@ describe("useAuthStore", () => {
       let loadingDuringRequest = false;
       (authService.login as any).mockImplementation(async () => {
         loadingDuringRequest = useAuthStore.getState().isLoading;
-        return { user: mockUser, accessToken: "token", refreshToken: "refresh" };
+        return { user: mockUser, accessToken: "token" };
       });
 
       await useAuthStore.getState().login({ email: "test@test.com", password: "password123456" });
@@ -128,7 +128,6 @@ describe("useAuthStore", () => {
       (authService.login as any).mockResolvedValue({
         user: mockUser,
         accessToken: "access-token",
-        refreshToken: "refresh-token",
       });
 
       await useAuthStore.getState().login({ email: "test@test.com", password: "password123456" });

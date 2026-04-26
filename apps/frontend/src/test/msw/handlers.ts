@@ -74,10 +74,10 @@ export const authHandlers = [
   // CSRF endpoint is intentionally public — no auth required
   http.get("/api/auth/csrf-token", () => HttpResponse.json({ csrfToken: "test-csrf-token" })),
   http.post("/api/auth/login", () =>
-    HttpResponse.json({ user: mockUser, accessToken: "test-token", refreshToken: "refresh-token" })
+    HttpResponse.json({ user: mockUser, accessToken: "test-token" })
   ),
   http.post("/api/auth/register", () =>
-    HttpResponse.json({ user: mockUser, accessToken: "test-token", refreshToken: "refresh-token" })
+    HttpResponse.json({ user: mockUser, accessToken: "test-token" })
   ),
   http.post("/api/auth/logout", () => new HttpResponse(null, { status: 200 })),
   http.post("/api/auth/refresh", () => HttpResponse.json({ accessToken: "new-access-token" })),

@@ -85,6 +85,19 @@ describe("POST /api/auth/register", () => {
     expect(body.user.email).toBe("test@test.com");
   });
 
+  it("does not expose refreshToken in response body", async () => {
+    (authService.register as any).mockResolvedValue(mockAuthResponse);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload: { email: "test@test.com", password: "password123456", name: "Test User" },
+    });
+
+    const body = response.json();
+    expect(body.refreshToken).toBeUndefined();
+  });
+
   it("sets refreshToken cookie", async () => {
     (authService.register as any).mockResolvedValue(mockAuthResponse);
 
@@ -146,6 +159,19 @@ describe("POST /api/auth/login", () => {
     const body = response.json();
     expect(body.accessToken).toBe("access-token");
     expect(body.user.email).toBe("test@test.com");
+  });
+
+  it("does not expose refreshToken in response body", async () => {
+    (authService.login as any).mockResolvedValue(mockAuthResponse);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "test@test.com", password: "password123456" },
+    });
+
+    const body = response.json();
+    expect(body.refreshToken).toBeUndefined();
   });
 
   it("sets refreshToken cookie", async () => {

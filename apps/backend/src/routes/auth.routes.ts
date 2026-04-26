@@ -125,8 +125,8 @@ export async function authRoutes(fastify: FastifyInstance) {
     // Set refresh token in httpOnly cookie
     setRefreshTokenCookie(reply, result.refreshToken, { rememberMe: false });
 
-    // Return response with BOTH formats for backward compatibility
-    return reply.status(201).send(result);
+    const { refreshToken: _rt, ...publicResult } = result;
+    return reply.status(201).send(publicResult);
   });
 
   /**
@@ -156,8 +156,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         rememberMe: body.rememberMe,
       });
 
-      // Return response with BOTH formats for backward compatibility
-      return reply.status(200).send(result);
+      const { refreshToken: _rt, ...publicResult } = result;
+      return reply.status(200).send(publicResult);
     } catch (error) {
       auditService.log({
         action: "LOGIN_FAILED",
