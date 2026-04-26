@@ -347,15 +347,10 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
 
   fastify.get("/subcategories/:tier", pre, async (req, reply) => {
     const { tier } = req.params as { tier: string };
-    const parsed = WaterfallTierEnum.safeParse(tier);
-    if (!parsed.success) {
-      return reply
-        .status(400)
-        .send({ error: "Invalid tier. Must be: income, committed, or discretionary" });
-    }
+    const parsedTier = WaterfallTierEnum.parse(tier);
     const householdId = req.householdId!;
     await subcategoryService.ensureSubcategories(householdId);
-    const subcategories = await subcategoryService.listByTier(householdId, parsed.data);
+    const subcategories = await subcategoryService.listByTier(householdId, parsedTier);
     return reply.send(subcategories);
   });
 
@@ -363,72 +358,36 @@ export async function waterfallRoutes(fastify: FastifyInstance) {
 
   fastify.get("/subcategories/:tier/counts", pre, async (req, reply) => {
     const { tier } = req.params as { tier: string };
-    const parsed = WaterfallTierEnum.safeParse(tier);
-    if (!parsed.success) {
-      return reply.status(400).send({ error: "Invalid tier" });
-    }
-    const counts = await subcategoryService.getItemCounts(req.householdId!, parsed.data);
+    const parsedTier = WaterfallTierEnum.parse(tier);
+    const counts = await subcategoryService.getItemCounts(req.householdId!, parsedTier);
     return reply.send(counts);
   });
 
   fastify.put("/subcategories/:tier", preMutation, async (req, reply) => {
     const { tier } = req.params as { tier: string };
-    const tierParsed = WaterfallTierEnum.safeParse(tier);
-    if (!tierParsed.success) {
-      return reply.status(400).send({ error: "Invalid tier" });
-    }
-    const bodyParsed = batchSaveSubcategoriesSchema.safeParse(req.body);
-    if (!bodyParsed.success) {
-      return reply.status(400).send({ error: bodyParsed.error.message });
-    }
-    try {
-      await subcategoryService.batchSave(req.householdId!, tierParsed.data, bodyParsed.data);
-    } catch (err: any) {
-      return reply.status(400).send({ error: err.message });
-    }
-    const updated = await subcategoryService.listByTier(req.householdId!, tierParsed.data);
+    const parsedTier = WaterfallTierEnum.parse(tier);
+    const body = batchSaveSubcategoriesSchema.parse(req.body);
+    await subcategoryService.batchSave(req.householdId!, parsedTier, body);
+    const updated = await subcategoryService.listByTier(req.householdId!, parsedTier);
     return reply.send(updated);
   });
 
   fastify.post("/subcategories/:tier", preMutation, async (req, reply) => {
     const { tier } = req.params as { tier: string };
-    const tierParsed = WaterfallTierEnum.safeParse(tier);
-    if (!tierParsed.success) {
-      return reply.status(400).send({ error: "Invalid tier" });
-    }
-    const bodyParsed = createSubcategorySchema.safeParse(req.body);
-    if (!bodyParsed.success) {
-      return reply.status(400).send({ error: bodyParsed.error.message });
-    }
-    try {
-      const sub = await subcategoryService.create(
-        req.householdId!,
-        tierParsed.data,
-        bodyParsed.data.name,
-        actorCtx(req)
-      );
-      return reply.status(201).send(sub);
-    } catch (err: any) {
-      if (err.code === "DUPLICATE") {
-        return reply.status(409).send({ error: err.message });
-      }
-      if (err.code === "LIMIT_EXCEEDED") {
-        return reply.status(400).send({ error: err.message });
-      }
-      throw err;
-    }
+    const parsedTier = WaterfallTierEnum.parse(tier);
+    const body = createSubcategorySchema.parse(req.body);
+    const sub = await subcategoryService.create(
+      req.householdId!,
+      parsedTier,
+      body.name,
+      actorCtx(req)
+    );
+    return reply.status(201).send(sub);
   });
 
   fastify.post("/subcategories/reset", preMutation, async (req, reply) => {
-    const bodyParsed = resetSubcategoriesSchema.safeParse(req.body);
-    if (!bodyParsed.success) {
-      return reply.status(400).send({ error: bodyParsed.error.message });
-    }
-    try {
-      await subcategoryService.resetToDefaults(req.householdId!, bodyParsed.data);
-    } catch (err: any) {
-      return reply.status(400).send({ error: err.message });
-    }
+    const body = resetSubcategoriesSchema.parse(req.body);
+    await subcategoryService.resetToDefaults(req.householdId!, body);
     return reply.send({ success: true });
   });
 }

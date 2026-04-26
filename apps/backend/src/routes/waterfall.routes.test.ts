@@ -2,7 +2,7 @@ import { describe, it, expect, mock, beforeEach, beforeAll, afterAll } from "bun
 import type { FastifyInstance } from "fastify";
 import { buildTestApp } from "../test/helpers/fastify";
 import { errorHandler } from "../middleware/errorHandler";
-import { AuthenticationError } from "../utils/errors";
+import { AuthenticationError, ConflictError } from "../utils/errors";
 
 const waterfallServiceMock = {
   getWaterfallSummary: mock(() =>
@@ -844,8 +844,7 @@ describe("POST /api/waterfall/subcategories/:tier", () => {
   });
 
   it("rejects duplicate names in same tier with 409", async () => {
-    const dupErr = new Error("A subcategory with that name already exists");
-    (dupErr as any).code = "DUPLICATE";
+    const dupErr = new ConflictError("A subcategory with that name already exists");
     subcategoryServiceMock.create.mockRejectedValue(dupErr);
 
     const res = await app.inject({
