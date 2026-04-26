@@ -11,6 +11,9 @@ import type {
   CashflowProjection,
   CashflowMonthDetail,
   CashflowEventItemType,
+  CashflowShortfall,
+  CashflowShortfallQuery,
+  ShortfallItem,
 } from "@finplan/shared";
 
 const LINKABLE_TYPES = ["Current", "Savings"] as const;
@@ -42,6 +45,7 @@ interface ProjectionEvent {
   amount: number; // signed
   itemType: CashflowEventItemType;
   label: string;
+  itemId: string;
 }
 
 /** Disposal source row used to derive a one-off liquidation cashflow event. */
@@ -105,6 +109,7 @@ function buildLiquidationEvent(
     amount: Math.round(projectedValue * 100) / 100,
     itemType: source.kind === "asset" ? "asset_liquidation" : "account_liquidation",
     label: `Sell ${source.name}`,
+    itemId: source.id,
   };
 }
 
@@ -160,6 +165,7 @@ function buildEvents(
               amount: sign * amount,
               itemType,
               label: item.name,
+              itemId: item.id,
             });
         }
         cursor.setUTCMonth(cursor.getUTCMonth() + 1);
@@ -181,6 +187,7 @@ function buildEvents(
             amount: sign * amount,
             itemType,
             label: item.name,
+            itemId: item.id,
           });
         cursor.setUTCDate(cursor.getUTCDate() + 7);
       }
@@ -196,7 +203,13 @@ function buildEvents(
         if (occ >= from && occ >= due) {
           const amount = periodActiveOn(periods, occ);
           if (amount > 0)
-            events.push({ date: occ, amount: sign * amount, itemType, label: item.name });
+            events.push({
+              date: occ,
+              amount: sign * amount,
+              itemType,
+              label: item.name,
+              itemId: item.id,
+            });
         }
         year++;
       }
@@ -222,7 +235,13 @@ function buildEvents(
         if (occ >= from && occ >= due) {
           const amount = periodActiveOn(periods, occ);
           if (amount > 0)
-            events.push({ date: occ, amount: sign * amount, itemType, label: item.name });
+            events.push({
+              date: occ,
+              amount: sign * amount,
+              itemType,
+              label: item.name,
+              itemId: item.id,
+            });
         }
         curMonth += 3;
         if (curMonth >= 12) {
@@ -235,7 +254,13 @@ function buildEvents(
       if (due >= from && due < to) {
         const amount = periodActiveOn(periods, due);
         if (amount > 0)
-          events.push({ date: due, amount: sign * amount, itemType, label: item.name });
+          events.push({
+            date: due,
+            amount: sign * amount,
+            itemType,
+            label: item.name,
+            itemId: item.id,
+          });
       }
     }
   }
@@ -254,6 +279,7 @@ function buildEvents(
           amount: -amount,
           itemType: "discretionary_item",
           label: d.name,
+          itemId: d.id,
         });
     }
   }
@@ -756,6 +782,149 @@ export const cashflowService = {
       monthlyDiscretionaryTotal,
       dailyTrace,
       events: eventRows,
+    };
+  },
+
+  async getShortfallItems(
+    householdId: string,
+    query: CashflowShortfallQuery
+  ): Promise<CashflowShortfall> {
+    const windowDays = query.windowDays;
+
+    const linked = await prisma.account.findMany({
+      where: { householdId, isCashflowLinked: true, type: { in: ["Current", "Savings"] } },
+      include: {
+        balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 1 },
+      },
+    });
+    const latestBalances = linked
+      .map((a) => a.balances[0])
+      .filter((b): b is NonNullable<typeof b> => b != null);
+    const startingBalance = latestBalances.reduce((s, b) => s + b.value, 0);
+
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+    const windowEnd = new Date(today);
+    windowEnd.setUTCDate(windowEnd.getUTCDate() + windowDays);
+
+    const { income, committed, discretionary, periodsByKey, disposalSources } =
+      await loadPlanContext(householdId);
+    const linkedAccountIds = new Set(linked.map((a) => a.id));
+
+    // Anchor-replay to compute today's projected balance
+    const youngest =
+      latestBalances.length > 0 ? latestBalances.reduce((y, b) => (b.date > y.date ? b : y)) : null;
+    const anchor = youngest?.date ?? today;
+
+    let balanceToday = startingBalance;
+    if (anchor < today) {
+      const replay = buildEvents(
+        anchor,
+        today,
+        income,
+        committed,
+        discretionary,
+        periodsByKey,
+        disposalSources,
+        linkedAccountIds
+      );
+      const cursor = new Date(anchor);
+      for (const e of replay) {
+        while (cursor < e.date) {
+          const baseline = computeMonthlyDiscretionaryBaseline(discretionary, periodsByKey, cursor);
+          balanceToday -= baseline / daysInMonth(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1);
+          cursor.setUTCDate(cursor.getUTCDate() + 1);
+        }
+        balanceToday += e.amount;
+      }
+      while (cursor < today) {
+        const baseline = computeMonthlyDiscretionaryBaseline(discretionary, periodsByKey, cursor);
+        balanceToday -= baseline / daysInMonth(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1);
+        cursor.setUTCDate(cursor.getUTCDate() + 1);
+      }
+    } else if (anchor > today) {
+      const replay = buildEvents(
+        today,
+        anchor,
+        income,
+        committed,
+        discretionary,
+        periodsByKey,
+        disposalSources,
+        linkedAccountIds
+      );
+      const eventsByDay = new Map<number, number>();
+      for (const e of replay) {
+        const key = e.date.getTime();
+        eventsByDay.set(key, (eventsByDay.get(key) ?? 0) + e.amount);
+      }
+      const cursor = new Date(anchor);
+      while (cursor > today) {
+        cursor.setUTCDate(cursor.getUTCDate() - 1);
+        const baseline = computeMonthlyDiscretionaryBaseline(discretionary, periodsByKey, cursor);
+        balanceToday += baseline / daysInMonth(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1);
+        const evAmount = eventsByDay.get(cursor.getTime());
+        if (evAmount !== undefined) balanceToday -= evAmount;
+      }
+    }
+
+    // Walk events within the window
+    const events = buildEvents(
+      today,
+      windowEnd,
+      income,
+      committed,
+      discretionary,
+      periodsByKey,
+      disposalSources,
+      linkedAccountIds
+    );
+    const uncovered: ShortfallItem[] = [];
+    let running = balanceToday;
+    let lowestValue = balanceToday;
+    let lowestDate = today;
+    const cursor = new Date(today);
+    let eIdx = 0;
+    while (cursor < windowEnd) {
+      const baseline = computeMonthlyDiscretionaryBaseline(discretionary, periodsByKey, cursor);
+      running -= baseline / daysInMonth(cursor.getUTCFullYear(), cursor.getUTCMonth() + 1);
+      while (eIdx < events.length && events[eIdx]!.date.getTime() === cursor.getTime()) {
+        const ev = events[eIdx]!;
+        const newBalance = running + ev.amount;
+        if (ev.amount < 0 && newBalance < 0) {
+          const tierKey: "committed" | "discretionary" =
+            ev.itemType === "discretionary_item" ? "discretionary" : "committed";
+          if (ev.itemType !== "income_source") {
+            uncovered.push({
+              itemType: ev.itemType as "committed_item" | "discretionary_item",
+              itemId: ev.itemId,
+              itemName: ev.label,
+              tierKey,
+              dueDate: toIsoDate(ev.date),
+              amount: -ev.amount,
+            });
+          }
+        }
+        running = newBalance;
+        eIdx++;
+      }
+      if (running < lowestValue) {
+        lowestValue = running;
+        lowestDate = new Date(cursor);
+      }
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+
+    uncovered.sort((a, b) => {
+      const d = a.dueDate.localeCompare(b.dueDate);
+      return d !== 0 ? d : a.itemName.localeCompare(b.itemName);
+    });
+
+    return {
+      items: uncovered,
+      balanceToday,
+      lowest: { value: lowestValue, date: toIsoDate(lowestDate) },
+      linkedAccountCount: linked.length,
     };
   },
 };
