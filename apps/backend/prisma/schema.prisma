@@ -371,8 +371,9 @@ model Account {
   memberId            String?
   name                String
   type                AccountType
-  growthRatePct       Float?
-  isCashflowLinked    Boolean          @default(false)
+  growthRatePct              Float?
+  monthlyContributionLimit   Float?
+  isCashflowLinked           Boolean          @default(false)
   lastReviewedAt      DateTime?
   createdAt           DateTime         @default(now())
   updatedAt           DateTime         @updatedAt
