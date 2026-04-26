@@ -36,6 +36,7 @@ mock.module("../services/household.service", () => ({
     removeMember: mock(() => {}),
     cancelInvite: mock(() => {}),
     leaveHousehold: mock(() => {}),
+    delete: mock(() => {}),
   },
   assertOwnerOrAdmin: mock((role: string) => {
     if (role !== "owner" && role !== "admin") {
@@ -187,6 +188,7 @@ beforeEach(() => {
   (householdService.removeMember as any).mockResolvedValue(undefined);
   (householdService.cancelInvite as any).mockResolvedValue(undefined);
   (householdService.leaveHousehold as any).mockResolvedValue(undefined);
+  (householdService.delete as any).mockResolvedValue(undefined);
 
   mockCallerMember = { role: "owner" };
   mockTargetMember = { id: "member-target-1" };
@@ -629,6 +631,64 @@ describe("DELETE /api/households/:id/leave", () => {
     });
 
     expect(response.statusCode).toBe(401);
+  });
+});
+
+describe("DELETE /api/households/:id (delete household)", () => {
+  it("returns 204 on owner success", async () => {
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/households/household-1",
+      headers: authHeaders,
+    });
+
+    expect(response.statusCode).toBe(204);
+    expect(householdService.delete).toHaveBeenCalledWith(
+      "household-1",
+      expect.objectContaining({ actorId: "user-1", householdId: "household-1" })
+    );
+  });
+
+  it("scopes deletion via the active householdId from middleware (not the URL param)", async () => {
+    // Even if a different :id is supplied, the service is called with req.householdId.
+    // This locks in the security convention: never trust URL params for data scoping.
+    await app.inject({
+      method: "DELETE",
+      url: "/api/households/some-other-id",
+      headers: authHeaders,
+    });
+
+    expect(householdService.delete).toHaveBeenCalledWith(
+      "household-1",
+      expect.objectContaining({ actorId: "user-1" })
+    );
+  });
+
+  it("returns 401 without auth", async () => {
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/households/household-1",
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(householdService.delete).not.toHaveBeenCalled();
+  });
+
+  it("returns 403 when service throws AuthorizationError", async () => {
+    (householdService.delete as any).mockRejectedValueOnce(
+      Object.assign(new Error("Only household owners can perform this action"), {
+        statusCode: 403,
+        code: "FORBIDDEN",
+      })
+    );
+
+    const response = await app.inject({
+      method: "DELETE",
+      url: "/api/households/household-1",
+      headers: authHeaders,
+    });
+
+    expect(response.statusCode).toBe(403);
   });
 });
 

@@ -149,6 +149,24 @@ export function useLeaveHousehold() {
   });
 }
 
+export function useDeleteHousehold() {
+  const queryClient = useQueryClient();
+  const accessToken = useAuthStore((s) => s.accessToken);
+  const setUser = useAuthStore((s) => s.setUser);
+
+  return useMutation({
+    mutationFn: (householdId: string) => householdService.deleteHousehold(householdId),
+    onSuccess: async (_data, householdId) => {
+      // The user's activeHouseholdId is auto-cleared by the FK ON DELETE SET NULL,
+      // so re-fetching the user lets the auth state reflect the post-deletion reality.
+      const { user } = await authService.getCurrentUser(accessToken!);
+      setUser(user, accessToken!);
+      void queryClient.invalidateQueries({ queryKey: ["households"] });
+      void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+  });
+}
+
 export function useAuditLog(filters: Omit<AuditLogQuery, "cursor" | "limit">) {
   return useInfiniteQuery({
     queryKey: ["audit-log", filters],

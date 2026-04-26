@@ -116,6 +116,10 @@ export const householdService = {
     return apiClient.delete<{ success: boolean }>(`/api/households/${householdId}/leave`);
   },
 
+  async deleteHousehold(householdId: string): Promise<void> {
+    await apiClient.delete<void>(`/api/households/${householdId}`);
+  },
+
   async validateInvite(token: string): Promise<InviteInfo> {
     return apiClient.get<InviteInfo>(`/api/auth/invite/${token}`);
   },

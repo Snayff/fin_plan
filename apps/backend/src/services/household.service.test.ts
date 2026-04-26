@@ -910,3 +910,92 @@ describe("updateMemberRole", () => {
     ).rejects.toThrow(AuthorizationError);
   });
 });
+
+// ─── delete (household) ──────────────────────────────────────────────────────
+
+describe("householdService.delete", () => {
+  const actor = {
+    householdId: "household-1",
+    actorId: "owner-user-id",
+    actorName: "Owner",
+  };
+
+  function mockCascadeCounts(counts: Record<string, number> = {}) {
+    const value = (key: string) => counts[key] ?? 0;
+    prismaMock.member.count.mockResolvedValue(value("members") as never);
+    prismaMock.asset.count.mockResolvedValue(value("assets") as never);
+    prismaMock.account.count.mockResolvedValue(value("accounts") as never);
+    prismaMock.incomeSource.count.mockResolvedValue(value("income") as never);
+    prismaMock.committedItem.count.mockResolvedValue(value("committed") as never);
+    prismaMock.discretionaryItem.count.mockResolvedValue(value("discretionary") as never);
+    prismaMock.snapshot.count.mockResolvedValue(value("snapshots") as never);
+    prismaMock.purchaseItem.count.mockResolvedValue(value("goals") as never);
+  }
+
+  it("writes a DELETE_HOUSEHOLD audit row with cascade counts and deletes the household", async () => {
+    const ownerMember = buildMember({
+      householdId: "household-1",
+      userId: "owner-user-id",
+      role: "owner",
+    });
+    prismaMock.member.findFirst.mockResolvedValue(ownerMember);
+    mockCascadeCounts({
+      members: 2,
+      assets: 3,
+      accounts: 4,
+      income: 1,
+      committed: 5,
+      discretionary: 6,
+      snapshots: 7,
+      goals: 8,
+    });
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+    prismaMock.household.delete.mockResolvedValue({} as any);
+
+    await householdService.delete("household-1", actor);
+
+    expect(prismaMock.auditLog.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          action: "DELETE_HOUSEHOLD",
+          resource: "household",
+          resourceId: "household-1",
+          actorId: "owner-user-id",
+          metadata: expect.objectContaining({
+            cascaded: expect.objectContaining({
+              members: 2,
+              assets: 3,
+              accounts: 4,
+              income: 1,
+              committed: 5,
+              discretionary: 6,
+              snapshots: 7,
+              goals: 8,
+            }),
+          }),
+        }),
+      })
+    );
+    expect(prismaMock.household.delete).toHaveBeenCalledWith({ where: { id: "household-1" } });
+  });
+
+  it("throws AuthorizationError when caller is not an owner", async () => {
+    const adminMember = buildMember({
+      householdId: "household-1",
+      userId: "owner-user-id",
+      role: "admin",
+    });
+    prismaMock.member.findFirst.mockResolvedValue(adminMember);
+
+    await expect(householdService.delete("household-1", actor)).rejects.toThrow(AuthorizationError);
+    expect(prismaMock.household.delete).not.toHaveBeenCalled();
+    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+  });
+
+  it("throws AuthorizationError when caller is not a member at all", async () => {
+    prismaMock.member.findFirst.mockResolvedValue(null);
+
+    await expect(householdService.delete("household-1", actor)).rejects.toThrow(AuthorizationError);
+    expect(prismaMock.household.delete).not.toHaveBeenCalled();
+  });
+});
