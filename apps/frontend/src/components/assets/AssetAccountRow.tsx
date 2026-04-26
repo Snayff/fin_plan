@@ -118,7 +118,15 @@ export function AssetAccountRow({
       >
         {/* Stale dot — fixed-width left column */}
         <span className="w-2 shrink-0 flex items-center justify-center">
-          {stale && <span className="h-1.5 w-1.5 rounded-full bg-attention shrink-0" aria-hidden />}
+          {(() => {
+            const a = item as AccountItem;
+            const hasLimitNudge =
+              itemKind === "account" && (a.isOverCap || a.hasSpareCapacityNudge);
+            const showDot = stale || hasLimitNudge;
+            return showDot ? (
+              <span className="h-1.5 w-1.5 rounded-full bg-attention shrink-0" aria-hidden />
+            ) : null;
+          })()}
         </span>
 
         {/* Left: name + metadata */}
@@ -255,7 +263,17 @@ export function AssetAccountRow({
                     <div className="flex flex-col gap-1">
                       {(item as AccountItem).linkedItems.map((li) => (
                         <div key={li.id} className="flex justify-between text-xs">
-                          <span className="text-text-tertiary">{li.name}</span>
+                          <span className="text-text-tertiary">
+                            {li.name}
+                            {li.lumpSumExceedsCap && (
+                              <span
+                                className="ml-1.5 text-[10px] text-attention"
+                                aria-label="Single payment exceeds the monthly cap"
+                              >
+                                · over cap (raw)
+                              </span>
+                            )}
+                          </span>
                           <span className="font-numeric text-text-secondary">
                             {formatCurrency(li.amount, showPence)}
                             {li.spendType !== "monthly" && (
@@ -266,12 +284,52 @@ export function AssetAccountRow({
                           </span>
                         </div>
                       ))}
-                      <div className="flex justify-between text-xs border-t border-foreground/5 pt-1 mt-0.5">
-                        <span className="text-text-muted">Total/mo</span>
-                        <span className="font-numeric font-medium text-page-accent/80">
-                          {formatCurrency((item as AccountItem).monthlyContribution, showPence)}
-                        </span>
-                      </div>
+                      {(() => {
+                        const a = item as AccountItem;
+                        if (a.monthlyContributionLimit == null) {
+                          return (
+                            <div className="flex justify-between text-xs border-t border-foreground/5 pt-1 mt-0.5">
+                              <span className="text-text-muted">Total/mo</span>
+                              <span className="font-numeric font-medium text-page-accent/80">
+                                {formatCurrency(a.monthlyContribution, showPence)}
+                              </span>
+                            </div>
+                          );
+                        }
+                        const used = a.monthlyContribution;
+                        const limit = a.monthlyContributionLimit;
+                        const pct = Math.min(100, Math.max(0, (used / limit) * 100));
+                        return (
+                          <>
+                            <div className="flex justify-between text-xs border-t border-foreground/5 pt-1 mt-0.5">
+                              <span className="text-text-muted">Total/mo</span>
+                              <span
+                                className={[
+                                  "font-numeric font-medium",
+                                  a.isOverCap ? "text-attention" : "text-page-accent/80",
+                                ].join(" ")}
+                              >
+                                {formatCurrency(used, showPence)} /{" "}
+                                {formatCurrency(limit, showPence)}
+                              </span>
+                            </div>
+                            <div className="h-1 mt-1 rounded-sm bg-foreground/[0.05] overflow-hidden">
+                              <div
+                                className={[
+                                  "h-full rounded-sm",
+                                  a.isOverCap ? "bg-attention" : "bg-tier-discretionary",
+                                ].join(" ")}
+                                style={{ width: `${pct}%` }}
+                              />
+                            </div>
+                            {a.isOverCap && (
+                              <p className="text-[11px] text-attention mt-1">
+                                Over cap by {formatCurrency(used - limit, showPence)}/mo
+                              </p>
+                            )}
+                          </>
+                        );
+                      })()}
                     </div>
                   </div>
                 )}
