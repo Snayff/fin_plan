@@ -3,14 +3,14 @@ import { NotFoundError, ValidationError } from "../utils/errors.js";
 import { audited, computeDiff } from "./audit.service.js";
 import type { ActorCtx } from "./audit.service.js";
 import { findEffectivePeriod } from "./period.service.js";
-import {
-  toMonthlyAmount,
-} from "@finplan/shared";
+import { compoundForwardYears } from "./forecast.service.js";
+import { toMonthlyAmount } from "@finplan/shared";
 import type {
   LinkableAccountRow,
   BulkUpdateLinkedAccountsInput,
   CashflowProjection,
   CashflowMonthDetail,
+  CashflowEventItemType,
 } from "@finplan/shared";
 
 const LINKABLE_TYPES = ["Current", "Savings"] as const;
@@ -40,8 +40,72 @@ function toIsoDate(d: Date): string {
 interface ProjectionEvent {
   date: Date;
   amount: number; // signed
-  itemType: "income_source" | "committed_item" | "discretionary_item";
+  itemType: CashflowEventItemType;
   label: string;
+}
+
+/** Disposal source row used to derive a one-off liquidation cashflow event. */
+interface DisposalSource {
+  kind: "asset" | "account";
+  id: string;
+  name: string;
+  disposedAt: Date;
+  disposalAccountId: string;
+  startBalance: number;
+  startBalanceDate: Date | null; // null if no balance recorded yet
+  /** Effective annual growth rate (decimal, e.g. 0.05 for 5%). */
+  annualRate: number;
+}
+
+const DEFAULT_RATES = {
+  currentRatePct: 0,
+  savingsRatePct: 4,
+  investmentRatePct: 7,
+  pensionRatePct: 6,
+};
+
+function defaultAccountRate(type: string, override: number | null): number {
+  if (override != null) return override / 100;
+  switch (type) {
+    case "Current":
+      return DEFAULT_RATES.currentRatePct / 100;
+    case "Savings":
+      return DEFAULT_RATES.savingsRatePct / 100;
+    case "StocksAndShares":
+      return DEFAULT_RATES.investmentRatePct / 100;
+    case "Pension":
+      return DEFAULT_RATES.pensionRatePct / 100;
+    default:
+      return 0;
+  }
+}
+
+/**
+ * Compute a liquidation event for a disposal source whose date falls inside the
+ * visible window AND whose target account is cashflow-linked. Returns null if
+ * the disposal is outside the window or has no recorded starting balance.
+ */
+function buildLiquidationEvent(
+  source: DisposalSource,
+  from: Date,
+  to: Date,
+  linkedAccountIds: Set<string>,
+  now: Date
+): ProjectionEvent | null {
+  if (!linkedAccountIds.has(source.disposalAccountId)) return null;
+  if (source.disposedAt < from || source.disposedAt >= to) return null;
+  // No balance recorded → skip (we can't project from nothing).
+  if (source.startBalanceDate == null) return null;
+  const yearsForward =
+    (source.disposedAt.getTime() - Math.max(source.startBalanceDate.getTime(), now.getTime())) /
+    (365.25 * 24 * 60 * 60 * 1000);
+  const projectedValue = compoundForwardYears(source.startBalance, source.annualRate, yearsForward);
+  return {
+    date: source.disposedAt,
+    amount: Math.round(projectedValue * 100) / 100,
+    itemType: source.kind === "asset" ? "asset_liquidation" : "account_liquidation",
+    label: `Sell ${source.name}`,
+  };
 }
 
 interface ProjectionInput {
@@ -69,7 +133,10 @@ function buildEvents(
   income: Array<any>,
   committed: Array<any>,
   discretionary: Array<any>,
-  periodsByKey: Map<string, any[]>
+  periodsByKey: Map<string, any[]>,
+  disposalSources: DisposalSource[] = [],
+  linkedAccountIds: Set<string> = new Set(),
+  now: Date = new Date()
 ): ProjectionEvent[] {
   const events: ProjectionEvent[] = [];
 
@@ -144,7 +211,10 @@ function buildEvents(
         const occ = new Date(Date.UTC(curYear, curMonth, day));
         if (occ >= anchorDate) break;
         curMonth += 3;
-        if (curMonth >= 12) { curYear++; curMonth -= 12; }
+        if (curMonth >= 12) {
+          curYear++;
+          curMonth -= 12;
+        }
       }
       while (true) {
         const occ = new Date(Date.UTC(curYear, curMonth, day));
@@ -155,7 +225,10 @@ function buildEvents(
             events.push({ date: occ, amount: sign * amount, itemType, label: item.name });
         }
         curMonth += 3;
-        if (curMonth >= 12) { curYear++; curMonth -= 12; }
+        if (curMonth >= 12) {
+          curYear++;
+          curMonth -= 12;
+        }
       }
     } else {
       // one_off
@@ -185,8 +258,73 @@ function buildEvents(
     }
   }
 
+  for (const source of disposalSources) {
+    const ev = buildLiquidationEvent(source, from, to, linkedAccountIds, now);
+    if (ev) events.push(ev);
+  }
+
   events.sort((a, b) => a.date.getTime() - b.date.getTime());
   return events;
+}
+
+/**
+ * Load disposal sources (assets + accounts with `disposedAt` set) for the
+ * household, joined with their latest balance and effective annual rate.
+ */
+async function loadDisposalSources(householdId: string): Promise<DisposalSource[]> {
+  const [assets, accounts, settingsRow] = await Promise.all([
+    prisma.asset.findMany({
+      where: { householdId, disposedAt: { not: null }, disposalAccountId: { not: null } },
+      include: { balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 1 } },
+    }),
+    prisma.account.findMany({
+      where: { householdId, disposedAt: { not: null }, disposalAccountId: { not: null } },
+      include: { balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }], take: 1 } },
+    }),
+    prisma.householdSettings.findUnique({ where: { householdId } }),
+  ]);
+
+  const overrides = {
+    currentRatePct: settingsRow?.currentRatePct ?? DEFAULT_RATES.currentRatePct,
+    savingsRatePct: settingsRow?.savingsRatePct ?? DEFAULT_RATES.savingsRatePct,
+    investmentRatePct: settingsRow?.investmentRatePct ?? DEFAULT_RATES.investmentRatePct,
+    pensionRatePct: settingsRow?.pensionRatePct ?? DEFAULT_RATES.pensionRatePct,
+  };
+  void overrides; // reserved for future per-type override hooks
+
+  const sources: DisposalSource[] = [];
+
+  for (const a of assets) {
+    if (!a.disposedAt || !a.disposalAccountId) continue;
+    const latest = a.balances[0];
+    sources.push({
+      kind: "asset",
+      id: a.id,
+      name: a.name,
+      disposedAt: a.disposedAt,
+      disposalAccountId: a.disposalAccountId,
+      startBalance: latest?.value ?? 0,
+      startBalanceDate: latest?.date ?? null,
+      annualRate: a.growthRatePct != null ? a.growthRatePct / 100 : 0,
+    });
+  }
+
+  for (const acc of accounts) {
+    if (!acc.disposedAt || !acc.disposalAccountId) continue;
+    const latest = acc.balances[0];
+    sources.push({
+      kind: "account",
+      id: acc.id,
+      name: acc.name,
+      disposedAt: acc.disposedAt,
+      disposalAccountId: acc.disposalAccountId,
+      startBalance: latest?.value ?? 0,
+      startBalanceDate: latest?.date ?? null,
+      annualRate: defaultAccountRate(acc.type, acc.growthRatePct),
+    });
+  }
+
+  return sources;
 }
 
 function computeMonthlyDiscretionaryBaseline(
@@ -205,10 +343,11 @@ function computeMonthlyDiscretionaryBaseline(
 }
 
 async function loadPlanContext(householdId: string) {
-  const [income, committed, discretionary] = await Promise.all([
+  const [income, committed, discretionary, disposalSources] = await Promise.all([
     prisma.incomeSource.findMany({ where: { householdId } }),
     prisma.committedItem.findMany({ where: { householdId } }),
     prisma.discretionaryItem.findMany({ where: { householdId } }),
+    loadDisposalSources(householdId),
   ]);
   const allRefs = [
     ...income.map((i) => ({ type: "income_source", id: i.id })),
@@ -229,7 +368,7 @@ async function loadPlanContext(householdId: string) {
     arr.push(p);
     periodsByKey.set(k, arr);
   }
-  return { income, committed, discretionary, periodsByKey };
+  return { income, committed, discretionary, periodsByKey, disposalSources };
 }
 
 export const cashflowService = {
@@ -367,7 +506,9 @@ export const cashflowService = {
     today.setUTCHours(0, 0, 0, 0);
     const anchor = youngest?.date ?? today;
 
-    const { income, committed, discretionary, periodsByKey } = await loadPlanContext(householdId);
+    const { income, committed, discretionary, periodsByKey, disposalSources } =
+      await loadPlanContext(householdId);
+    const linkedAccountIds = new Set(linked.map((a) => a.id));
 
     const startYear = input.startYear ?? today.getUTCFullYear();
     const startMonth = input.startMonth ?? today.getUTCMonth() + 1;
@@ -389,7 +530,10 @@ export const cashflowService = {
         income,
         committed,
         discretionary,
-        periodsByKey
+        periodsByKey,
+        disposalSources,
+        linkedAccountIds,
+        today
       );
       const cursor = new Date(anchor);
       for (const e of replayEvents) {
@@ -412,7 +556,10 @@ export const cashflowService = {
         income,
         committed,
         discretionary,
-        periodsByKey
+        periodsByKey,
+        disposalSources,
+        linkedAccountIds,
+        today
       );
       const eventsByDay = new Map<number, number>();
       for (const e of replayEvents) {
@@ -447,7 +594,10 @@ export const cashflowService = {
         income,
         committed,
         discretionary,
-        periodsByKey
+        periodsByKey,
+        disposalSources,
+        linkedAccountIds,
+        today
       );
 
       const dailyBaseline =
@@ -543,7 +693,13 @@ export const cashflowService = {
       throw new NotFoundError("Month is outside the projection window");
     }
 
-    const { income, committed, discretionary, periodsByKey } = await loadPlanContext(householdId);
+    const { income, committed, discretionary, periodsByKey, disposalSources } =
+      await loadPlanContext(householdId);
+    const linkedAccounts = await prisma.account.findMany({
+      where: { householdId, isCashflowLinked: true, type: { in: ["Current", "Savings"] } },
+      select: { id: true },
+    });
+    const linkedAccountIds = new Set(linkedAccounts.map((a) => a.id));
 
     const monthStart = startOfMonth(targetYear, targetMonth);
     const monthEnd = new Date(Date.UTC(targetYear, targetMonth, 1));
@@ -553,7 +709,10 @@ export const cashflowService = {
       income,
       committed,
       discretionary,
-      periodsByKey
+      periodsByKey,
+      disposalSources,
+      linkedAccountIds,
+      today
     );
 
     const monthlyDiscretionaryTotal = computeMonthlyDiscretionaryBaseline(

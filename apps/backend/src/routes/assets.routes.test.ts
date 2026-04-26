@@ -61,7 +61,9 @@ describe("GET /api/assets/assets/:type", () => {
 
     const res = await app.inject({ method: "GET", url: "/api/assets/assets/Property" });
     expect(res.statusCode).toBe(200);
-    expect(mockAssetsService.listAssetsByType).toHaveBeenCalledWith("hh-1", "Property");
+    expect(mockAssetsService.listAssetsByType).toHaveBeenCalledWith("hh-1", "Property", {
+      includeDisposed: false,
+    });
   });
 });
 
@@ -130,7 +132,9 @@ describe("GET /api/assets/accounts/:type", () => {
 
     const res = await app.inject({ method: "GET", url: "/api/assets/accounts/Pension" });
     expect(res.statusCode).toBe(200);
-    expect(mockAssetsService.listAccountsByType).toHaveBeenCalledWith("hh-1", "Pension");
+    expect(mockAssetsService.listAccountsByType).toHaveBeenCalledWith("hh-1", "Pension", {
+      includeDisposed: false,
+    });
   });
 });
 

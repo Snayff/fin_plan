@@ -9,47 +9,87 @@ export const accountTypeSchema = z.enum([
   "Other",
 ]);
 
-// Asset CRUD
-export const createAssetSchema = z.object({
-  name: z.string().min(1).max(100).trim(),
-  type: assetTypeSchema,
-  memberId: z.string().nullable().optional(),
-  growthRatePct: z.number().min(-100).max(100).nullable().optional(),
-  initialValue: z.number().positive().optional(),
-});
+// ─── Disposal helpers ────────────────────────────────────────────────────────
+// `disposedAt` and `disposalAccountId` must be set together (or both cleared).
+// undefined = field not in the patch (no change); null = explicit clear.
+const isoDateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD");
 
-export const updateAssetSchema = z.object({
-  name: z.string().min(1).max(100).trim().optional(),
-  memberId: z.string().nullable().optional(),
-  growthRatePct: z.number().min(-100).max(100).nullable().optional(),
-});
+const disposalPair = {
+  disposedAt: isoDateString.nullable().optional(),
+  disposalAccountId: z.string().min(1).nullable().optional(),
+};
+
+type DisposalShape = { disposedAt?: string | null; disposalAccountId?: string | null };
+
+function disposalRefine(data: DisposalShape): boolean {
+  const dateProvided = data.disposedAt !== undefined;
+  const acctProvided = data.disposalAccountId !== undefined;
+  if (!dateProvided && !acctProvided) return true;
+  // When either field is in the patch, both must be present and match (both set or both null).
+  if (dateProvided !== acctProvided) return false;
+  const dateSet = data.disposedAt != null;
+  const acctSet = data.disposalAccountId != null;
+  return dateSet === acctSet;
+}
+
+const disposalRefineMessage: { message: string; path: (string | number)[] } = {
+  message: "disposedAt and disposalAccountId must be set or cleared together",
+  path: ["disposedAt"],
+};
+
+// Asset CRUD
+export const createAssetSchema = z
+  .object({
+    name: z.string().min(1).max(100).trim(),
+    type: assetTypeSchema,
+    memberId: z.string().nullable().optional(),
+    growthRatePct: z.number().min(-100).max(100).nullable().optional(),
+    initialValue: z.number().positive().optional(),
+    ...disposalPair,
+  })
+  .refine(disposalRefine, disposalRefineMessage);
+
+export const updateAssetSchema = z
+  .object({
+    name: z.string().min(1).max(100).trim().optional(),
+    memberId: z.string().nullable().optional(),
+    growthRatePct: z.number().min(-100).max(100).nullable().optional(),
+    ...disposalPair,
+  })
+  .refine(disposalRefine, disposalRefineMessage);
 
 export const recordAssetBalanceSchema = z.object({
   value: z.number().positive(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+  date: isoDateString,
   note: z.string().max(500).nullable().optional(),
 });
 
 // Account CRUD
-export const createAccountSchema = z.object({
-  name: z.string().min(1).max(100).trim(),
-  type: accountTypeSchema,
-  memberId: z.string().nullable().optional(),
-  growthRatePct: z.number().min(0).max(100).nullable().optional(),
-  isCashflowLinked: z.boolean().optional(),
-  initialValue: z.number().positive().optional(),
-});
+export const createAccountSchema = z
+  .object({
+    name: z.string().min(1).max(100).trim(),
+    type: accountTypeSchema,
+    memberId: z.string().nullable().optional(),
+    growthRatePct: z.number().min(0).max(100).nullable().optional(),
+    isCashflowLinked: z.boolean().optional(),
+    initialValue: z.number().positive().optional(),
+    ...disposalPair,
+  })
+  .refine(disposalRefine, disposalRefineMessage);
 
-export const updateAccountSchema = z.object({
-  name: z.string().min(1).max(100).trim().optional(),
-  memberId: z.string().nullable().optional(),
-  growthRatePct: z.number().min(0).max(100).nullable().optional(),
-  isCashflowLinked: z.boolean().optional(),
-});
+export const updateAccountSchema = z
+  .object({
+    name: z.string().min(1).max(100).trim().optional(),
+    memberId: z.string().nullable().optional(),
+    growthRatePct: z.number().min(0).max(100).nullable().optional(),
+    isCashflowLinked: z.boolean().optional(),
+    ...disposalPair,
+  })
+  .refine(disposalRefine, disposalRefineMessage);
 
 export const recordAccountBalanceSchema = z.object({
   value: z.number().positive(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+  date: isoDateString,
   note: z.string().max(500).nullable().optional(),
 });
 

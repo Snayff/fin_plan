@@ -235,6 +235,9 @@ describe("cashflowService.getProjection", () => {
     prismaMock.committedItem.findMany.mockResolvedValue([]);
     prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
     prismaMock.itemAmountPeriod.findMany.mockResolvedValue([]);
+    // loadDisposalSources now queries asset.findMany — default to empty (no disposals)
+    prismaMock.asset.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
   });
 
   it("returns starting balance equal to sum of latest linked balances", async () => {
@@ -478,6 +481,8 @@ describe("cashflowService.getProjection — weekly expansion", () => {
     prismaMock.account.findMany.mockResolvedValue([]);
     prismaMock.committedItem.findMany.mockResolvedValue([]);
     prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.asset.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
   });
 
   it("emits an event every Wednesday for a weekly income source starting 1 Jan 2025", async () => {
@@ -554,6 +559,8 @@ describe("cashflowService.getProjection — quarterly expansion", () => {
     prismaMock.account.findMany.mockResolvedValue([]);
     prismaMock.incomeSource.findMany.mockResolvedValue([]);
     prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.asset.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
   });
 
   it("emits exactly 4 quarterly events over a 12-month window starting 15 Jan 2025", async () => {
@@ -614,10 +621,100 @@ describe("cashflowService.getProjection — quarterly expansion", () => {
     });
 
     // Months with events should be Jan(1), Apr(4), Jul(7), Oct(10) — net = -300 each
-    const eventMonths = result.months
-      .filter((m) => m.netChange !== 0)
-      .map((m) => m.month);
+    const eventMonths = result.months.filter((m) => m.netChange !== 0).map((m) => m.month);
     expect(eventMonths).toEqual([1, 4, 7, 10]);
+  });
+});
+
+// ── Disposal liquidation events ───────────────────────────────────────────────
+
+describe("cashflowService.getProjection — disposal liquidation events", () => {
+  it("asset disposal within window targeting a linked account adds positive netChange", async () => {
+    // Linked Current account — balance recorded 2026-05-01 (anchor)
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "linked-1",
+        type: "Current",
+        isCashflowLinked: true,
+        disposedAt: null,
+        disposalAccountId: null,
+        balances: [
+          { value: 1000, date: new Date("2026-05-01"), createdAt: new Date("2026-05-01") },
+        ],
+      },
+    ] as any);
+    // Asset with 0% growth disposed 2026-05-15, proceeds go to linked-1
+    prismaMock.asset.findMany.mockResolvedValue([
+      {
+        id: "house-1",
+        name: "Family Home",
+        type: "Property",
+        householdId: "hh-1",
+        growthRatePct: 0,
+        disposedAt: new Date("2026-05-15"),
+        disposalAccountId: "linked-1",
+        balances: [{ value: 50000, date: new Date("2026-05-01"), createdAt: new Date() }],
+      },
+    ] as any);
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2026,
+      startMonth: 5,
+      monthCount: 2,
+    });
+
+    // May 2026: liquidation of 50k lands in this month → netChange strongly positive
+    const may = result.months.find((m) => m.year === 2026 && m.month === 5)!;
+    expect(may).toBeDefined();
+    expect(may.netChange).toBeGreaterThan(0);
+    expect(may.netChange).toBeCloseTo(50000, -1); // approx 50k (0% rate so no growth)
+  });
+
+  it("asset disposal targeting an unlinked account does NOT appear in cashflow events", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "linked-1",
+        type: "Current",
+        isCashflowLinked: true,
+        disposedAt: null,
+        disposalAccountId: null,
+        balances: [
+          { value: 1000, date: new Date("2026-05-01"), createdAt: new Date("2026-05-01") },
+        ],
+      },
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([
+      {
+        id: "house-1",
+        name: "Family Home",
+        type: "Property",
+        householdId: "hh-1",
+        growthRatePct: 0,
+        disposedAt: new Date("2026-05-15"),
+        disposalAccountId: "unlinked-pension", // NOT in linkedAccountIds
+        balances: [{ value: 50000, date: new Date("2026-05-01"), createdAt: new Date() }],
+      },
+    ] as any);
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2026,
+      startMonth: 5,
+      monthCount: 1,
+    });
+
+    const may = result.months.find((m) => m.year === 2026 && m.month === 5)!;
+    // No liquidation event → netChange ≈ 0 (no income/spend either)
+    expect(may.netChange).toBeCloseTo(0, 0);
   });
 });
 
@@ -653,6 +750,9 @@ describe("cashflowService.getMonthDetail", () => {
         amount: 3000,
       },
     ] as any);
+    // loadDisposalSources now queries asset.findMany — default to empty (no disposals)
+    prismaMock.asset.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
   });
 
   it("returns events for the target month with running balance after each", async () => {

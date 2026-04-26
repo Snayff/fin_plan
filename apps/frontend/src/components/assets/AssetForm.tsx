@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useHouseholdMembers, useSettings } from "../../hooks/useSettings.js";
+import { useAllAccounts } from "../../hooks/useAssets.js";
 import { formatCurrency } from "@/utils/format";
 
 interface Props {
@@ -7,6 +8,8 @@ interface Props {
   initialName?: string;
   initialMemberId?: string | null;
   initialGrowthRatePct?: number | null;
+  initialDisposedAt?: string | null;
+  initialDisposalAccountId?: string | null;
   isSaving?: boolean;
   isSavingConfirm?: boolean;
   isStale?: boolean;
@@ -14,6 +17,8 @@ interface Props {
     name: string;
     memberId: string | null;
     growthRatePct: number | null;
+    disposedAt: string | null;
+    disposalAccountId: string | null;
     initialValue?: number;
   }) => void;
   onCancel: () => void;
@@ -25,11 +30,19 @@ const labelClass = "text-text-muted uppercase tracking-[0.07em] text-[10px]";
 const inputClass =
   "rounded-md border border-foreground/10 bg-foreground/[0.04] px-3 py-1.5 text-sm text-text-secondary placeholder:italic placeholder:text-text-muted focus:outline-none focus:border-page-accent/60";
 
+function isoDateOnly(value: string | null | undefined): string {
+  if (!value) return "";
+  // Server returns full ISO; the <input type="date"> needs YYYY-MM-DD
+  return value.length >= 10 ? value.slice(0, 10) : value;
+}
+
 export function AssetForm({
   mode,
   initialName = "",
   initialMemberId = null,
   initialGrowthRatePct = null,
+  initialDisposedAt = null,
+  initialDisposalAccountId = null,
   isSaving,
   isSavingConfirm,
   isStale,
@@ -47,8 +60,17 @@ export function AssetForm({
   const [valueFocused, setValueFocused] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
 
+  // Disposal state — start expanded if the asset already has a disposal date.
+  const [disposalOpen, setDisposalOpen] = useState<boolean>(initialDisposedAt != null);
+  const [disposedAt, setDisposedAt] = useState<string>(isoDateOnly(initialDisposedAt));
+  const [disposalAccountId, setDisposalAccountId] = useState<string | null>(
+    initialDisposalAccountId
+  );
+  const [disposalError, setDisposalError] = useState<string | null>(null);
+
   const { data: members } = useHouseholdMembers();
   const { data: settings } = useSettings();
+  const { data: accounts } = useAllAccounts();
   const showPence = settings?.showPence ?? false;
 
   const displayValue =
@@ -69,12 +91,25 @@ export function AssetForm({
       return;
     }
     setNameError(null);
+
+    // Disposal validation: both fields together, or both cleared.
+    const dateSet = disposalOpen && disposedAt.trim() !== "";
+    const acctSet = disposalOpen && disposalAccountId != null && disposalAccountId !== "";
+    if (disposalOpen && dateSet !== acctSet) {
+      setDisposalError("Set both a date and a target account, or clear both.");
+      return;
+    }
+    setDisposalError(null);
+
     const parsedGrowth = growthRatePct.trim() === "" ? null : Number(growthRatePct);
     const parsedValue = initialValue.trim() === "" ? undefined : parseValue(initialValue);
+
     onSave({
       name: name.trim(),
       memberId,
       growthRatePct: parsedGrowth,
+      disposedAt: dateSet ? disposedAt : null,
+      disposalAccountId: acctSet ? disposalAccountId : null,
       ...(mode === "add" && parsedValue !== undefined ? { initialValue: parsedValue } : {}),
     });
   }
@@ -152,6 +187,66 @@ export function AssetForm({
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Planned disposal — collapsible */}
+        <div className="col-span-2 flex flex-col gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              const next = !disposalOpen;
+              setDisposalOpen(next);
+              if (!next) {
+                setDisposedAt("");
+                setDisposalAccountId(null);
+                setDisposalError(null);
+              }
+            }}
+            className="self-start text-xs text-text-tertiary hover:text-text-secondary transition-colors"
+            aria-expanded={disposalOpen}
+          >
+            {disposalOpen ? "− Planned disposal" : "+ Planned disposal"}
+          </button>
+
+          {disposalOpen && (
+            <div className="grid grid-cols-2 gap-3 pl-1">
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Disposal date</label>
+                <input
+                  type="date"
+                  value={disposedAt}
+                  onChange={(e) => {
+                    setDisposedAt(e.target.value);
+                    setDisposalError(null);
+                  }}
+                  aria-label="Disposal date"
+                  className={inputClass}
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className={labelClass}>Proceeds go to</label>
+                <select
+                  value={disposalAccountId ?? ""}
+                  onChange={(e) => {
+                    setDisposalAccountId(e.target.value || null);
+                    setDisposalError(null);
+                  }}
+                  aria-label="Proceeds go to"
+                  className={inputClass}
+                >
+                  <option value="">Select account…</option>
+                  {accounts.map((a) => (
+                    <option key={a.id} value={a.id}>
+                      {a.name} ({a.type})
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {disposalError && (
+                <p className="col-span-2 -mt-1 text-xs text-amber-400">{disposalError}</p>
+              )}
+            </div>
+          )}
         </div>
       </div>
 

@@ -222,6 +222,22 @@
 
 ---
 
+## Disposal Date
+
+**Appears in**: Asset and Account edit forms (Planned disposal section), asset/account row badge, Cashflow event list
+
+**Tooltip**: The date on which you plan to sell or close this asset or account. From this date onward the item is excluded from your forecast and its projected value is added as a one-off inflow to the chosen target account.
+
+---
+
+## Liquidation
+
+**Appears in**: Cashflow event list (event type badge), Forecast page
+
+**Tooltip**: The conversion of an asset or account to cash on its disposal date. finplan projects the item's value up to that date using its growth rate, then transfers the proceeds to the account you selected.
+
+---
+
 # Functional Icon Tooltips
 
 > These tooltips appear on hover over icon-only UI elements — icons that carry meaning but are not accompanied by visible label text. They explain what tapping or clicking the icon does (or what it represents), in plain English.

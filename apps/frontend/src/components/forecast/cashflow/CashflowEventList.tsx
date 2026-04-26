@@ -16,6 +16,8 @@ export function CashflowEventList({ events }: CashflowEventListProps) {
     <ul className="divide-y divide-border">
       {events.map((e, idx) => {
         const sign = e.amount >= 0 ? "+" : "-";
+        const isLiquidation =
+          e.itemType === "asset_liquidation" || e.itemType === "account_liquidation";
         return (
           <li
             key={`${e.date}-${idx}`}
@@ -23,10 +25,25 @@ export function CashflowEventList({ events }: CashflowEventListProps) {
           >
             <span className="flex items-center gap-3">
               <span className="text-text-tertiary w-12">{format(new Date(e.date), "d MMM")}</span>
-              <span className="text-foreground">{e.label}</span>
+              <span className="flex items-center gap-1.5">
+                {isLiquidation && (
+                  <span
+                    className="h-1.5 w-1.5 rounded-full bg-teal-400 shrink-0"
+                    aria-hidden
+                  />
+                )}
+                <span className={isLiquidation ? "text-teal-300" : "text-foreground"}>
+                  {e.label}
+                </span>
+              </span>
             </span>
             <span className="flex items-center gap-4">
-              <span className="font-numeric text-text-secondary">
+              <span
+                className={[
+                  "font-numeric",
+                  isLiquidation ? "text-teal-400" : "text-text-secondary",
+                ].join(" ")}
+              >
                 {sign}
                 {formatCurrency(Math.abs(e.amount), showPence)}
               </span>
