@@ -55,6 +55,89 @@ describe("useCreateGiftPerson onError", () => {
   });
 });
 
+describe("useUpsertAllocation optimistic", () => {
+  it("updates allocations[] in quickAddMatrix cache before server resolves", async () => {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    qc.setQueryData(["gifts", "quickAddMatrix", 2026], {
+      people: [{ id: "p1", name: "Alex", memberId: null }],
+      events: [{ id: "e1", name: "Birthday" }],
+      allocations: [{ personId: "p1", eventId: "e1", planned: 20 }],
+      budget: { annual: 500, currentPlanned: 20 },
+    });
+
+    let resolveUpsert: (v: unknown) => void;
+    const mod = await import("@/services/gifts.service");
+    (mod.giftsApi.upsertAllocation as any).mockImplementationOnce(
+      () => new Promise((r) => (resolveUpsert = r))
+    );
+
+    const localWrapper = ({ children }: { children: any }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    const { useUpsertAllocation } = await import("./useGifts");
+    const { result } = renderHook(() => useUpsertAllocation(), { wrapper: localWrapper });
+
+    act(() => {
+      result.current.mutate({
+        personId: "p1",
+        eventId: "e1",
+        year: 2026,
+        data: { planned: 75 } as any,
+      });
+    });
+
+    await waitFor(() => {
+      const data = qc.getQueryData<any>(["gifts", "quickAddMatrix", 2026]);
+      const alloc = data?.allocations.find((a: any) => a.personId === "p1" && a.eventId === "e1");
+      expect(alloc?.planned).toBe(75);
+    });
+
+    resolveUpsert!({});
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+
+  it("rolls back on mutation failure", async () => {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    qc.setQueryData(["gifts", "quickAddMatrix", 2026], {
+      people: [{ id: "p1", name: "Alex", memberId: null }],
+      events: [{ id: "e1", name: "Birthday" }],
+      allocations: [{ personId: "p1", eventId: "e1", planned: 20 }],
+      budget: { annual: 500, currentPlanned: 20 },
+    });
+
+    const mod = await import("@/services/gifts.service");
+    (mod.giftsApi.upsertAllocation as any).mockRejectedValueOnce(new Error("nope"));
+
+    const localWrapper = ({ children }: { children: any }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    const { useUpsertAllocation } = await import("./useGifts");
+    const { result } = renderHook(() => useUpsertAllocation(), { wrapper: localWrapper });
+
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({
+          personId: "p1",
+          eventId: "e1",
+          year: 2026,
+          data: { planned: 75 } as any,
+        });
+      } catch {
+        /* expected */
+      }
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    const data = qc.getQueryData<any>(["gifts", "quickAddMatrix", 2026]);
+    const alloc = data?.allocations.find((a: any) => a.personId === "p1" && a.eventId === "e1");
+    expect(alloc?.planned).toBe(20); // rolled back
+  });
+});
+
 describe("useUpsertAllocation invalidation scope", () => {
   it("invalidates only allocation-affected query keys, not all gift queries", async () => {
     const qc = new QueryClient({

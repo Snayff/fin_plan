@@ -182,6 +182,14 @@ export function useDeleteGiftEvent() {
 
 // ─── Allocation Mutations ─────────────────────────────────────────────────────
 
+type QuickAddAllocation = { personId: string; eventId: string; planned: number };
+type QuickAddMatrix = {
+  people: { id: string; name: string; memberId: string | null }[];
+  events: { id: string; name: string }[];
+  allocations: QuickAddAllocation[];
+  budget: { annual: number; currentPlanned: number };
+};
+
 export function useUpsertAllocation() {
   const queryClient = useQueryClient();
 
@@ -197,14 +205,39 @@ export function useUpsertAllocation() {
       year: number;
       data: Parameters<typeof giftsApi.upsertAllocation>[3];
     }) => giftsApi.upsertAllocation(personId, eventId, year, data),
-    onSuccess: (_data, { personId, year }) => {
+    onMutate: async ({ personId, eventId, year, data }) => {
+      const matrixKey = GIFTS_KEYS.quickAddMatrix(year);
+      await queryClient.cancelQueries({ queryKey: matrixKey });
+      const snapshot = queryClient.getQueryData<QuickAddMatrix>(matrixKey);
+      if (snapshot?.allocations) {
+        const planned = (data as { planned?: number }).planned ?? 0;
+        const others = snapshot.allocations.filter(
+          (a) => !(a.personId === personId && a.eventId === eventId)
+        );
+        const updatedAllocations: QuickAddAllocation[] = [
+          ...others,
+          { personId, eventId, planned },
+        ];
+        const newPlannedTotal = updatedAllocations.reduce((sum, a) => sum + a.planned, 0);
+        queryClient.setQueryData<QuickAddMatrix>(matrixKey, {
+          ...snapshot,
+          allocations: updatedAllocations,
+          budget: { ...snapshot.budget, currentPlanned: newPlannedTotal },
+        });
+      }
+      return { snapshot, year };
+    },
+    onError: (error: unknown, _vars, ctx) => {
+      if (ctx?.snapshot && ctx.year !== undefined) {
+        queryClient.setQueryData(GIFTS_KEYS.quickAddMatrix(ctx.year), ctx.snapshot);
+      }
+      showError(error instanceof Error ? error.message : "Failed to update allocation");
+    },
+    onSettled: (_data, _err, { personId, year }) => {
       void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.state(year) });
       void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.quickAddMatrix(year) });
       void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.person(personId, year) });
       void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.upcoming(year) });
-    },
-    onError: (error: unknown) => {
-      showError(error instanceof Error ? error.message : "Failed to update allocation");
     },
   });
 }
@@ -214,14 +247,14 @@ export function useBulkUpsertAllocations() {
 
   return useMutation({
     mutationFn: (data: Parameters<typeof giftsApi.bulkUpsert>[0]) => giftsApi.bulkUpsert(data),
-    onSuccess: () => {
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to update allocations");
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["gifts", "state"] });
       void queryClient.invalidateQueries({ queryKey: ["gifts", "quickAddMatrix"] });
       void queryClient.invalidateQueries({ queryKey: ["gifts", "person"] });
       void queryClient.invalidateQueries({ queryKey: ["gifts", "upcoming"] });
-    },
-    onError: (error: unknown) => {
-      showError(error instanceof Error ? error.message : "Failed to update allocations");
     },
   });
 }
