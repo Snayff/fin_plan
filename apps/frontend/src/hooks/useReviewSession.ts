@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { reviewSessionService } from "@/services/review-session.service";
 import { waterfallService } from "@/services/waterfall.service";
+import { showError } from "@/lib/toast";
 
 // ─── Session hooks ─────────────────────────────────────────────────────────────
 
@@ -18,6 +19,9 @@ export function useCreateReviewSession() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["review-session"] });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to start review");
+    },
   });
 }
 
@@ -29,6 +33,9 @@ export function useUpdateReviewSession() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["review-session"] });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to save review progress");
+    },
   });
 }
 
@@ -38,6 +45,9 @@ export function useDeleteReviewSession() {
     mutationFn: () => reviewSessionService.deleteSession(),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: ["review-session"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to discard review");
     },
   });
 }
