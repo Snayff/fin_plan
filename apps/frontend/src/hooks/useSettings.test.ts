@@ -100,3 +100,45 @@ describe("useUpdateSettings onError", () => {
     expect(mockShowError).toHaveBeenCalledWith("Save failed");
   });
 });
+
+describe("useUpdateMemberRole optimistic", () => {
+  it("flips role in household details cache before server resolves, rolls back on error", async () => {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    qc.setQueryData(["household", "h1"], {
+      household: {
+        memberProfiles: [
+          { id: "m1", userId: "u1", name: "Alex", role: "member" },
+          { id: "m2", userId: "u2", name: "Sam", role: "admin" },
+        ],
+      },
+    });
+
+    const mod = await import("@/services/auditLog.service");
+    (mod.updateMemberRole as any).mockRejectedValueOnce(new Error("forbidden"));
+    mockShowError.mockClear();
+
+    const localWrapper = ({ children }: { children: any }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    const { useUpdateMemberRole } = await import("./useSettings");
+    const { result } = renderHook(() => useUpdateMemberRole("h1"), {
+      wrapper: localWrapper,
+    });
+
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({ targetUserId: "u1", role: "admin" });
+      } catch {
+        /* expected */
+      }
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    const data = qc.getQueryData<any>(["household", "h1"]);
+    const m1 = data.household.memberProfiles.find((m: any) => m.userId === "u1");
+    expect(m1.role).toBe("member"); // rolled back
+    expect(mockShowError).toHaveBeenCalledWith("forbidden");
+  });
+});

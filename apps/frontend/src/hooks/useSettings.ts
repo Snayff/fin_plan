@@ -309,17 +309,45 @@ export function useDismissWaterfallTip() {
   });
 }
 
+type HouseholdDetails = {
+  household: {
+    memberProfiles: Array<{ id: string; userId: string; name: string; role: "member" | "admin" }>;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
+
 export function useUpdateMemberRole(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ targetUserId, role }: { targetUserId: string; role: "member" | "admin" }) =>
       updateMemberRole(targetUserId, role, householdId),
-    onSuccess: () => {
+    onMutate: async ({ targetUserId, role }) => {
+      const key = SETTINGS_KEYS.household(householdId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const snapshot = queryClient.getQueryData<HouseholdDetails>(key);
+      if (snapshot) {
+        queryClient.setQueryData<HouseholdDetails>(key, {
+          ...snapshot,
+          household: {
+            ...snapshot.household,
+            memberProfiles: snapshot.household.memberProfiles.map((m) =>
+              m.userId === targetUserId ? { ...m, role } : m
+            ),
+          },
+        });
+      }
+      return { snapshot };
+    },
+    onError: (error: unknown, _vars, ctx) => {
+      if (ctx?.snapshot) {
+        queryClient.setQueryData(SETTINGS_KEYS.household(householdId), ctx.snapshot);
+      }
+      showError(error instanceof Error ? error.message : "Failed to update role");
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["household-members"] });
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
-    },
-    onError: (err: Error) => {
-      showError(err.message ?? "Failed to update role");
     },
   });
 }
