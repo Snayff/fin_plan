@@ -287,13 +287,28 @@ export function useSetGiftMode() {
 
   return useMutation({
     mutationFn: (data: Parameters<typeof giftsApi.setMode>[0]) => giftsApi.setMode(data),
-    onSuccess: () => {
+    onMutate: async (data) => {
+      const settingsKey = GIFTS_KEYS.settings();
+      await queryClient.cancelQueries({ queryKey: settingsKey });
+      const snapshot = queryClient.getQueryData<{ mode?: string }>(settingsKey);
+      if (snapshot) {
+        queryClient.setQueryData(settingsKey, {
+          ...snapshot,
+          mode: (data as { mode?: string }).mode,
+        });
+      }
+      return { snapshot };
+    },
+    onError: (error: unknown, _vars, ctx) => {
+      if (ctx?.snapshot) {
+        queryClient.setQueryData(GIFTS_KEYS.settings(), ctx.snapshot);
+      }
+      showError(error instanceof Error ? error.message : "Failed to change mode");
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.settings() });
       void queryClient.invalidateQueries({ queryKey: ["gifts", "state"] });
       void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.years() });
-    },
-    onError: (error: unknown) => {
-      showError(error instanceof Error ? error.message : "Failed to change mode");
     },
   });
 }

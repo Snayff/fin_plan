@@ -185,3 +185,32 @@ describe("useUpsertAllocation invalidation scope", () => {
     expect(invalidated.has(JSON.stringify(["gifts", "quickAddMatrix", 2026]))).toBe(true);
   });
 });
+
+describe("useSetGiftMode optimistic", () => {
+  it("flips mode in settings cache before server resolves, rolls back on error", async () => {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    qc.setQueryData(["gifts", "settings"], { mode: "quick" });
+
+    const mod = await import("@/services/gifts.service");
+    (mod.giftsApi.setMode as any).mockRejectedValueOnce(new Error("denied"));
+
+    const localWrapper = ({ children }: { children: any }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    const { useSetGiftMode } = await import("./useGifts");
+    const { result } = renderHook(() => useSetGiftMode(), { wrapper: localWrapper });
+
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({ mode: "detailed" } as any);
+      } catch {
+        /* expected */
+      }
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(qc.getQueryData<any>(["gifts", "settings"])?.mode).toBe("quick"); // rolled back
+  });
+});
