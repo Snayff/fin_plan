@@ -1,5 +1,6 @@
 import { useQueries, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { assetsApiService, type AccountItem } from "../services/assets.service.js";
+import { showError } from "@/lib/toast";
 import type { AssetType, AccountType } from "@finplan/shared";
 
 const ALL_ACCOUNT_TYPES: AccountType[] = [
@@ -47,6 +48,9 @@ export function useCreateAsset() {
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["forecast"] });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to create asset");
+    },
   });
 }
 
@@ -64,6 +68,9 @@ export function useUpdateAsset() {
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["forecast"] });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to update asset");
+    },
   });
 }
 
@@ -74,6 +81,9 @@ export function useDeleteAsset() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["forecast"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to delete asset");
     },
   });
 }
@@ -92,6 +102,9 @@ export function useRecordAssetBalance() {
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["forecast"] });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to record balance");
+    },
   });
 }
 
@@ -102,6 +115,9 @@ export function useCreateAccount() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["forecast"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to create account");
     },
   });
 }
@@ -120,6 +136,9 @@ export function useUpdateAccount() {
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["forecast"] });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to update account");
+    },
   });
 }
 
@@ -130,6 +149,9 @@ export function useDeleteAccount() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["forecast"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to delete account");
     },
   });
 }
@@ -148,6 +170,9 @@ export function useRecordAccountBalance() {
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["forecast"] });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to record balance");
+    },
   });
 }
 
@@ -158,6 +183,9 @@ export function useConfirmAsset() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["forecast"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to confirm asset");
     },
   });
 }
@@ -185,6 +213,9 @@ export function useConfirmAccount() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["assets"] });
       qc.invalidateQueries({ queryKey: ["forecast"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to confirm account");
     },
   });
 }
