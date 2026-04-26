@@ -49,6 +49,7 @@ export default function OverviewPage() {
               ? "aggregate:committed_bills"
               : null
       }
+      isSnapshot={false}
     />
   ) : (
     <OverviewEmptyState />
