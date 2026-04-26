@@ -1,8 +1,29 @@
 import { describe, it, expect, mock } from "bun:test";
 import { render, screen } from "@testing-library/react";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import TierPage from "../TierPage";
+
+// Control searchParams directly to avoid cross-file mock interference from
+// TierPage.test.tsx which also mocks react-router-dom in the same bun process.
+let _searchParams = new URLSearchParams();
+
+mock.module("react-router-dom", () => ({
+  useSearchParams: () => [_searchParams, (_next: URLSearchParams) => { _searchParams = _next; }],
+  useNavigate: () => () => {},
+  Link: ({
+    to,
+    children,
+    ...props
+  }: {
+    to: string;
+    children: React.ReactNode;
+    [k: string]: unknown;
+  }) => (
+    <a href={String(to)} {...props}>
+      {children}
+    </a>
+  ),
+}));
 
 mock.module("@/hooks/useWaterfall", () => ({
   useSubcategories: mock(() => ({
@@ -19,27 +40,35 @@ mock.module("@/hooks/useSettings", () => ({
   useHouseholdMembers: mock(() => ({ data: [] })),
 }));
 
-function renderAt(url: string) {
+mock.module("@/hooks/useShortfall", () => ({
+  useTierShortfall: mock(() => ({
+    items: [],
+    count: 0,
+    daysToFirst: null,
+    balanceToday: 0,
+    lowest: null,
+    isLive: false,
+  })),
+}));
+
+function renderAt(searchParams: URLSearchParams) {
+  _searchParams = searchParams;
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={qc}>
-      <MemoryRouter initialEntries={[url]}>
-        <Routes>
-          <Route path="/committed" element={<TierPage tier="committed" />} />
-        </Routes>
-      </MemoryRouter>
+      <TierPage tier="committed" />
     </QueryClientProvider>
   );
 }
 
 describe("TierPage ?add=1", () => {
   it("opens the add-item form when navigated with ?add=1", () => {
-    renderAt("/committed?add=1");
+    renderAt(new URLSearchParams("add=1"));
     expect(screen.getByLabelText("Name")).toBeTruthy();
   });
 
   it("does not show the add-item form when no ?add param", () => {
-    renderAt("/committed");
+    renderAt(new URLSearchParams());
     expect(screen.queryByLabelText("Name")).toBeNull();
   });
 });
