@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./apps/backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U finplan"]
+      test: ["CMD-SHELL", "pg_isready -U finplan -d finplan_dev"]
       interval: 10s
       timeout: 5s
       retries: 5
