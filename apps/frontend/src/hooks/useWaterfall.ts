@@ -188,14 +188,29 @@ export function useConfirmWaterfallItem(
       if (tier === "committed") return waterfallService.confirmCommitted(id);
       return waterfallService.confirmDiscretionary(id);
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      const itemsKey = TIER_ITEM_KEYS.items(tier);
+      await qc.cancelQueries({ queryKey: itemsKey });
+      const snapshot = qc.getQueryData<TierItemRow[]>(itemsKey);
+      if (snapshot) {
+        const now = new Date();
+        qc.setQueryData<TierItemRow[]>(itemsKey, (prev) =>
+          (prev ?? []).map((r) => (r.id === id ? { ...r, lastReviewedAt: now } : r))
+        );
+      }
+      return { snapshot };
+    },
+    onError: (error: unknown, _vars, ctx) => {
+      if (ctx?.snapshot) {
+        qc.setQueryData(TIER_ITEM_KEYS.items(tier), ctx.snapshot);
+      }
+      showError(error instanceof Error ? error.message : "Failed to confirm item");
+    },
+    onSettled: () => {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
       void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
-    },
-    onError: (error: unknown) => {
-      showError(error instanceof Error ? error.message : "Failed to confirm item");
     },
   });
 }

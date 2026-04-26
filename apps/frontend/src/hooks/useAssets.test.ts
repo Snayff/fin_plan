@@ -56,3 +56,41 @@ describe("useCreateAsset onError", () => {
     expect(mockShowError).toHaveBeenCalledWith("Validation failed");
   });
 });
+
+describe("useConfirmAsset optimistic", () => {
+  it("bumps lastReviewedAt for the targeted asset row", async () => {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    const before = new Date("2026-01-01T00:00:00.000Z");
+    qc.setQueryData(
+      ["assets", "assets", "property"],
+      [{ id: "a1", name: "House", lastReviewedAt: before }]
+    );
+
+    let resolveConfirm: (v: unknown) => void;
+    const mod = await import("../services/assets.service.js");
+    (mod.assetsApiService.confirmAsset as any).mockImplementationOnce(
+      () => new Promise((r) => (resolveConfirm = r))
+    );
+
+    const localWrapper = ({ children }: { children: any }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    const { useConfirmAsset } = await import("./useAssets");
+    const { result } = renderHook(() => useConfirmAsset(), { wrapper: localWrapper });
+
+    act(() => {
+      result.current.mutate("a1" as any);
+    });
+
+    await waitFor(() => {
+      const data = qc.getQueryData<any[]>(["assets", "assets", "property"]);
+      const row = data?.find((r) => r.id === "a1");
+      expect(new Date(row.lastReviewedAt).getTime()).toBeGreaterThan(before.getTime());
+    });
+
+    resolveConfirm!({});
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});

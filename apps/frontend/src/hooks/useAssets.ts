@@ -176,16 +176,44 @@ export function useRecordAccountBalance() {
   });
 }
 
+type AssetRow = { id: string; lastReviewedAt: Date | string; [key: string]: unknown };
+
+function bumpLastReviewedAt(
+  prefix: ["assets", "assets" | "accounts"],
+  qc: ReturnType<typeof useQueryClient>,
+  id: string
+) {
+  const now = new Date();
+  const all = qc.getQueriesData<AssetRow[]>({ queryKey: prefix });
+  const snapshots = all.map(([key, data]) => ({ key, data }));
+  for (const { key, data } of snapshots) {
+    if (!Array.isArray(data)) continue;
+    qc.setQueryData<AssetRow[]>(
+      key,
+      data.map((r) => (r.id === id ? { ...r, lastReviewedAt: now } : r))
+    );
+  }
+  return snapshots;
+}
+
 export function useConfirmAsset() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: assetsApiService.confirmAsset,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ["assets", "assets"] });
+      const snapshots = bumpLastReviewedAt(["assets", "assets"], qc, id);
+      return { snapshots };
     },
-    onError: (error: unknown) => {
+    onError: (error: unknown, _vars, ctx) => {
+      if (ctx?.snapshots) {
+        for (const { key, data } of ctx.snapshots) qc.setQueryData(key, data);
+      }
       showError(error instanceof Error ? error.message : "Failed to confirm asset");
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }
@@ -210,12 +238,20 @@ export function useConfirmAccount() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: assetsApiService.confirmAccount,
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ["assets"] });
-      qc.invalidateQueries({ queryKey: ["forecast"] });
+    onMutate: async (id: string) => {
+      await qc.cancelQueries({ queryKey: ["assets", "accounts"] });
+      const snapshots = bumpLastReviewedAt(["assets", "accounts"], qc, id);
+      return { snapshots };
     },
-    onError: (error: unknown) => {
+    onError: (error: unknown, _vars, ctx) => {
+      if (ctx?.snapshots) {
+        for (const { key, data } of ctx.snapshots) qc.setQueryData(key, data);
+      }
       showError(error instanceof Error ? error.message : "Failed to confirm account");
+    },
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ["assets"] });
+      void qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
 }

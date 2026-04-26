@@ -55,3 +55,43 @@ describe("waterfallService.createSubcategory", () => {
     expect(typeof (mod.waterfallService as any).createSubcategory).toBeDefined();
   });
 });
+
+describe("useConfirmWaterfallItem optimistic", () => {
+  it("bumps lastReviewedAt for the targeted row before server resolves", async () => {
+    const qc = new QueryClient({
+      defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
+    });
+    const before = new Date("2026-01-01T00:00:00.000Z");
+    qc.setQueryData(
+      ["waterfall", "tier-items", "income"],
+      [{ id: "i1", name: "Salary", lastReviewedAt: before, amount: 100 }]
+    );
+
+    let resolveConfirm: (v: unknown) => void;
+    const mod = await import("@/services/waterfall.service");
+    (mod.waterfallService.confirmIncome as any).mockImplementationOnce(
+      () => new Promise((r) => (resolveConfirm = r))
+    );
+
+    const localWrapper = ({ children }: { children: any }) =>
+      createElement(QueryClientProvider, { client: qc }, children);
+
+    const { useConfirmWaterfallItem } = await import("./useWaterfall");
+    const { result } = renderHook(() => useConfirmWaterfallItem("income", "i1"), {
+      wrapper: localWrapper,
+    });
+
+    act(() => {
+      result.current.mutate();
+    });
+
+    await waitFor(() => {
+      const data = qc.getQueryData<any[]>(["waterfall", "tier-items", "income"]);
+      const row = data?.find((r) => r.id === "i1");
+      expect(new Date(row.lastReviewedAt).getTime()).toBeGreaterThan(before.getTime());
+    });
+
+    resolveConfirm!({});
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});
