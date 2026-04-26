@@ -9,6 +9,15 @@ import {
   useRecordAccountBalance,
   useConfirmAccount,
 } from "../../hooks/useAssets.js";
+
+function formatDisposedDate(dateStr: string | null): string {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 import { AssetAccountRow } from "./AssetAccountRow.js";
 import { AccountForm } from "./AccountForm.js";
 import { SavingsContributionNudge } from "./SavingsContributionNudge.js";
@@ -33,6 +42,7 @@ interface Props {
 
 export function AccountItemArea({ type, initialIsAdding }: Props) {
   const { data: items, isLoading, isError, refetch } = useAccountsByType(type);
+  const { data: allItems } = useAccountsByType(type, { includeDisposed: true });
   const { data: settings } = useSettings();
   const showPence = settings?.showPence ?? false;
 
@@ -41,6 +51,7 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [disposedOpen, setDisposedOpen] = useState(false);
 
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
@@ -48,9 +59,14 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
   const recordBalance = useRecordAccountBalance();
   const confirmAccount = useConfirmAccount();
 
+  const now = new Date();
+  const disposedItems = (allItems ?? []).filter(
+    (i) => i.disposedAt != null && new Date(i.disposedAt) <= now
+  );
   const typeTotal = (items ?? []).reduce((sum, i) => sum + i.currentBalance, 0);
   const label = TYPE_LABELS[type];
-  const deletingItem = items?.find((i) => i.id === deletingId);
+  const deletingItem =
+    items?.find((i) => i.id === deletingId) ?? disposedItems.find((i) => i.id === deletingId);
 
   if (isLoading) {
     return (
@@ -130,6 +146,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                   memberId,
                   growthRatePct,
                   monthlyContributionLimit,
+                  disposedAt,
+                  disposalAccountId,
                   initialValue,
                 }) => {
                   try {
@@ -140,6 +158,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                       growthRatePct: growthRatePct ?? undefined,
                       monthlyContributionLimit: monthlyContributionLimit ?? undefined,
                       initialValue,
+                      disposedAt: disposedAt ?? undefined,
+                      disposalAccountId: disposalAccountId ?? undefined,
                     });
                     setIsAddingItem(false);
                   } catch {
@@ -196,7 +216,14 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                   // error handled by mutation onError (toast)
                 }
               }}
-              onSaveEdit={async ({ name, memberId, growthRatePct, monthlyContributionLimit }) => {
+              onSaveEdit={async ({
+                name,
+                memberId,
+                growthRatePct,
+                monthlyContributionLimit,
+                disposedAt,
+                disposalAccountId,
+              }) => {
                 try {
                   await updateAccount.mutateAsync({
                     accountId: item.id,
@@ -207,6 +234,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                       ...(monthlyContributionLimit !== undefined
                         ? { monthlyContributionLimit }
                         : {}),
+                      disposedAt: disposedAt ?? undefined,
+                      disposalAccountId: disposalAccountId ?? undefined,
                     },
                   });
                   setEditingId(null);
@@ -233,6 +262,60 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
             )}
           </div>
         ))}
+
+        {/* Disposed section */}
+        {disposedItems.length > 0 && (
+          <div className="mt-2 border-t border-foreground/5 pt-2">
+            <button
+              type="button"
+              onClick={() => setDisposedOpen((o) => !o)}
+              className="flex items-center gap-1.5 px-0 py-1 text-[11px] text-text-muted hover:text-text-tertiary transition-colors"
+              aria-expanded={disposedOpen}
+            >
+              <span>{disposedOpen ? "▾" : "▸"}</span>
+              <span>Disposed ({disposedItems.length})</span>
+            </button>
+            <AnimatePresence initial={false}>
+              {disposedOpen && (
+                <motion.div
+                  key="disposed-list"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{
+                    height: "auto",
+                    opacity: 1,
+                    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+                  }}
+                  exit={{
+                    height: 0,
+                    opacity: 0,
+                    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+                  }}
+                  style={{ overflow: "hidden" }}
+                >
+                  {disposedItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between py-2 border-b border-foreground/5 opacity-60"
+                    >
+                      <span className="flex flex-col gap-px">
+                        <span className="text-xs text-text-secondary">{item.name}</span>
+                        <span className="text-[11px] text-text-muted">
+                          Disposed {formatDisposedDate(item.disposedAt)}
+                        </span>
+                      </span>
+                      <button
+                        onClick={() => setDeletingId(item.id)}
+                        className="text-[11px] text-text-muted hover:text-red-400 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       <ConfirmDialog

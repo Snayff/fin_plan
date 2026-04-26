@@ -33,61 +33,169 @@ function assetEffectiveRate(asset: { growthRatePct: number | null }): number {
   return asset.growthRatePct != null ? asset.growthRatePct / 100 : 0;
 }
 
+/**
+ * Convert a disposal date into "year offset from now". Returns:
+ *   - null if no disposal set
+ *   - 0 if already disposed (in the past)
+ *   - integer year offset rounded down to the nearest year boundary otherwise
+ *
+ * Year-offset granularity matches the existing yearly-resolution forecast charts.
+ */
+function disposalYearOffset(disposedAt: Date | null, now: Date): number | null {
+  if (disposedAt == null) return null;
+  const ms = disposedAt.getTime() - now.getTime();
+  if (ms <= 0) return 0;
+  const years = ms / (365.25 * 24 * 60 * 60 * 1000);
+  return Math.max(1, Math.round(years));
+}
+
+interface ProjectionResult {
+  series: number[];
+  proceeds: { yearOffset: number; amount: number } | null;
+}
+
+/**
+ * Project a balance series with optional disposal cut-off.
+ * - Before disposal year: standard compounding growth + monthly contributions.
+ * - At disposal year: capture proceeds (the value just before disposal), then 0 from there.
+ * - If `disposalYear === 0`: item already disposed → series is all zeros, no proceeds (already realised).
+ */
 function projectBalanceSeries(
   initialBalance: number,
   monthlyContribution: number,
   annualRate: number,
-  years: number
-): number[] {
+  years: number,
+  disposalYear: number | null
+): ProjectionResult {
+  if (disposalYear === 0) {
+    // Already disposed before the projection window opened.
+    return { series: Array.from({ length: years + 1 }, () => 0), proceeds: null };
+  }
   const series = [initialBalance];
+  let proceeds: { yearOffset: number; amount: number } | null = null;
   for (let y = 1; y <= years; y++) {
     const prev = series[y - 1]!;
-    series.push(prev * (1 + annualRate) + monthlyContribution * 12);
+    const grown = prev * (1 + annualRate) + monthlyContribution * 12;
+    if (disposalYear != null && y >= disposalYear) {
+      if (proceeds == null) {
+        // Capture the value at the disposal year, then drop to zero.
+        proceeds = { yearOffset: y, amount: grown };
+      }
+      series.push(0);
+    } else {
+      series.push(grown);
+    }
   }
-  return series;
+  return { series, proceeds };
 }
 
 type ProjectableAccount = {
+  id: string;
   balance: number;
   monthlyContribution: number;
   growthRatePct: number | null;
   type: string;
+  disposalYear: number | null;
+  disposalAccountId: string | null;
 };
 
 type ProjectableAsset = {
+  id: string;
   balance: number;
   growthRatePct: number | null;
+  disposalYear: number | null;
+  disposalAccountId: string | null;
 };
 
-function sumAccountSeries(
-  accounts: ProjectableAccount[],
+interface SeriesContext {
   settings: {
     currentRatePct: number;
     savingsRatePct: number;
     investmentRatePct: number;
     pensionRatePct: number;
-  },
+  };
+  /** Aggregated proceeds inflows keyed by destination account id. */
+  inflowsByAccountId: Map<string, Array<{ yearOffset: number; amount: number }>>;
+}
+
+function emptySeries(years: number): number[] {
+  return Array.from({ length: years + 1 }, () => 0);
+}
+
+function addSeries(into: number[], from: number[]): void {
+  for (let i = 0; i < into.length; i++) {
+    into[i] = (into[i] ?? 0) + (from[i] ?? 0);
+  }
+}
+
+function addInflows(
+  series: number[],
+  inflows: Array<{ yearOffset: number; amount: number }> | undefined,
+  annualRate: number,
+  years: number
+): void {
+  // Each inflow lands at its yearOffset and then continues growing at the host
+  // account's rate for subsequent years. Apply the lump sum AFTER the host's own
+  // growth has been computed for that year (i.e. after series[y] is set).
+  if (!inflows || inflows.length === 0) return;
+  for (const { yearOffset, amount } of inflows) {
+    if (yearOffset > years) continue;
+    series[yearOffset] = (series[yearOffset] ?? 0) + amount;
+    let carry = amount;
+    for (let y = yearOffset + 1; y <= years; y++) {
+      carry = carry * (1 + annualRate);
+      series[y] = (series[y] ?? 0) + carry;
+    }
+  }
+}
+
+function projectAccountWithInflows(
+  acc: ProjectableAccount,
+  ctx: SeriesContext,
+  years: number
+): ProjectionResult {
+  const rate = accountEffectiveRate(acc, ctx.settings);
+  const result = projectBalanceSeries(
+    acc.balance,
+    acc.monthlyContribution,
+    rate,
+    years,
+    acc.disposalYear
+  );
+  // Disposed accounts don't accept inflows after disposal — fold inflows in only
+  // before the disposal cut-off.
+  const inflows = ctx.inflowsByAccountId.get(acc.id);
+  if (inflows && inflows.length > 0) {
+    const filtered =
+      acc.disposalYear == null ? inflows : inflows.filter((i) => i.yearOffset < acc.disposalYear!);
+    addInflows(result.series, filtered, rate, years);
+  }
+  return result;
+}
+
+function projectAssetSeries(asset: ProjectableAsset, years: number): ProjectionResult {
+  const rate = assetEffectiveRate(asset);
+  return projectBalanceSeries(asset.balance, 0, rate, years, asset.disposalYear);
+}
+
+function sumAccountSeries(
+  accounts: ProjectableAccount[],
+  ctx: SeriesContext,
   years: number
 ): number[] {
-  const sums = Array.from({ length: years + 1 }, () => 0);
+  const sums = emptySeries(years);
   for (const acc of accounts) {
-    const rate = accountEffectiveRate(acc, settings);
-    const series = projectBalanceSeries(acc.balance, acc.monthlyContribution, rate, years);
-    for (let y = 0; y <= years; y++) {
-      sums[y] = (sums[y] ?? 0) + (series[y] ?? 0);
-    }
+    const { series } = projectAccountWithInflows(acc, ctx, years);
+    addSeries(sums, series);
   }
   return sums;
 }
 
 function sumAssetSeries(assets: ProjectableAsset[], years: number): number[] {
-  const sums = Array.from({ length: years + 1 }, () => 0);
+  const sums = emptySeries(years);
   for (const asset of assets) {
-    const rate = assetEffectiveRate(asset);
-    const series = projectBalanceSeries(asset.balance, 0, rate, years);
-    for (let y = 0; y <= years; y++) {
-      sums[y] = (sums[y] ?? 0) + (series[y] ?? 0);
-    }
+    const { series } = projectAssetSeries(asset, years);
+    addSeries(sums, series);
   }
   return sums;
 }
@@ -162,23 +270,73 @@ export const forecastService = {
 
     // Normalise to projectable shapes
     const toProjectableAccount = (acc: (typeof accounts)[number]): ProjectableAccount => ({
+      id: acc.id,
       balance: acc.balances[0]?.value ?? 0,
       monthlyContribution: monthlyContributionByAccountId.get(acc.id) ?? 0,
       growthRatePct: acc.growthRatePct,
       type: acc.type,
+      disposalYear: disposalYearOffset(acc.disposedAt, now),
+      disposalAccountId: acc.disposalAccountId,
     });
 
     const toProjectableAsset = (a: (typeof assets)[number]): ProjectableAsset => ({
+      id: a.id,
       balance: a.balances[0]?.value ?? 0,
       growthRatePct: a.growthRatePct,
+      disposalYear: disposalYearOffset(a.disposedAt, now),
+      disposalAccountId: a.disposalAccountId,
     });
 
-    // ── Net worth (non-pension accounts + all assets) ─────────────────────────
-    const netWorthAccounts = accounts.filter((a) => a.type !== "Pension").map(toProjectableAccount);
-    const allAssets = assets.map(toProjectableAsset);
+    const projectableAccounts = accounts.map(toProjectableAccount);
+    const projectableAssets = assets.map(toProjectableAsset);
 
-    const accountSums = sumAccountSeries(netWorthAccounts, settings, horizonYears);
-    const assetSums = sumAssetSeries(allAssets, horizonYears);
+    // ── Pre-compute disposal proceeds map ────────────────────────────────────
+    // We project each disposing source independently so we can compute the
+    // proceeds value at the disposal year, then route it to the target account.
+    // (The target account's series is then re-projected with the inflow folded
+    // in — see projectAccountWithInflows.)
+    const inflowsByAccountId = new Map<string, Array<{ yearOffset: number; amount: number }>>();
+
+    function recordProceeds(targetId: string | null, p: ProjectionResult["proceeds"]) {
+      if (!targetId || !p) return;
+      const bucket = inflowsByAccountId.get(targetId) ?? [];
+      bucket.push(p);
+      inflowsByAccountId.set(targetId, bucket);
+    }
+
+    // Source: assets with disposal
+    for (const asset of projectableAssets) {
+      if (asset.disposalYear == null || asset.disposalYear === 0) continue;
+      const { proceeds } = projectAssetSeries(asset, horizonYears);
+      recordProceeds(asset.disposalAccountId, proceeds);
+    }
+
+    // Source: accounts with disposal — these need inflow-aware projection because
+    // a disposing account might itself be receiving proceeds before its own
+    // disposal date. For simplicity (and since chains of disposals are rare),
+    // we project disposing accounts WITHOUT incoming inflows when computing the
+    // proceeds value. This is acceptable in practice; cyclic flows are guarded
+    // by the "cannot dispose into itself" validation.
+    for (const acc of projectableAccounts) {
+      if (acc.disposalYear == null || acc.disposalYear === 0) continue;
+      const rate = accountEffectiveRate(acc, settings);
+      const { proceeds } = projectBalanceSeries(
+        acc.balance,
+        acc.monthlyContribution,
+        rate,
+        horizonYears,
+        acc.disposalYear
+      );
+      recordProceeds(acc.disposalAccountId, proceeds);
+    }
+
+    const ctx: SeriesContext = { settings, inflowsByAccountId };
+
+    // ── Net worth (non-pension accounts + all assets) ─────────────────────────
+    const netWorthAccounts = projectableAccounts.filter((a) => a.type !== "Pension");
+
+    const accountSums = sumAccountSeries(netWorthAccounts, ctx, horizonYears);
+    const assetSums = sumAssetSeries(projectableAssets, horizonYears);
 
     const netWorth = Array.from({ length: horizonYears + 1 }, (_, y) => {
       const nominal = Math.round((accountSums[y] ?? 0) + (assetSums[y] ?? 0));
@@ -196,13 +354,11 @@ export const forecastService = {
     // ── Savings & Stocks-and-Shares household series ──────────────────────────
     // Household-shared pools — surfaced both as their own top-level series and
     // nested inside each member's retirement projection (joint pool, intentional).
-    const savingsAccounts = accounts.filter((a) => a.type === "Savings").map(toProjectableAccount);
-    const ssAccounts = accounts
-      .filter((a) => a.type === "StocksAndShares")
-      .map(toProjectableAccount);
+    const savingsAccounts = projectableAccounts.filter((a) => a.type === "Savings");
+    const ssAccounts = projectableAccounts.filter((a) => a.type === "StocksAndShares");
 
-    const savingsSums = sumAccountSeries(savingsAccounts, settings, horizonYears);
-    const ssSums = sumAccountSeries(ssAccounts, settings, horizonYears);
+    const savingsSums = sumAccountSeries(savingsAccounts, ctx, horizonYears);
+    const ssSums = sumAccountSeries(ssAccounts, ctx, horizonYears);
 
     const savings = Array.from({ length: horizonYears + 1 }, (_, y) => ({
       year: currentYear + y,
@@ -215,10 +371,11 @@ export const forecastService = {
 
     // ── Retirement (per member: own pensions + shared savings + shared S&S) ──
     const retirement = members.map((member) => {
-      const pensionAccounts = accounts
-        .filter((a) => a.type === "Pension" && a.memberId === member.id)
-        .map(toProjectableAccount);
-      const pensionSums = sumAccountSeries(pensionAccounts, settings, horizonYears);
+      const pensionAccounts = projectableAccounts.filter(
+        (a) =>
+          a.type === "Pension" && accounts.find((acc) => acc.id === a.id)?.memberId === member.id
+      );
+      const pensionSums = sumAccountSeries(pensionAccounts, ctx, horizonYears);
 
       const series = Array.from({ length: horizonYears + 1 }, (_, y) => ({
         year: currentYear + y,
@@ -260,3 +417,21 @@ export const forecastService = {
     };
   },
 };
+
+// ─── Exports for cashflow service / tests ────────────────────────────────────
+
+/**
+ * Compound a starting balance forward by an arbitrary fractional number of years.
+ * Used by cashflow service to compute the disposal proceeds at month/day precision
+ * (forecast service uses year-offset granularity).
+ */
+export function compoundForwardYears(
+  initialBalance: number,
+  annualRate: number,
+  years: number
+): number {
+  if (years <= 0) return initialBalance;
+  return initialBalance * Math.pow(1 + annualRate, years);
+}
+
+export const __test__ = { projectBalanceSeries, disposalYearOffset, accountEffectiveRate };

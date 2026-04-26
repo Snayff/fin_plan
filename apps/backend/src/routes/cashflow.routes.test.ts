@@ -69,6 +69,8 @@ describe("GET /api/cashflow/projection", () => {
     prismaMock.committedItem.findMany.mockResolvedValue([] as any);
     prismaMock.discretionaryItem.findMany.mockResolvedValue([] as any);
     prismaMock.itemAmountPeriod.findMany.mockResolvedValue([] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
 
     const app = await buildApp();
     const res = await app.inject({ method: "GET", url: "/api/cashflow/projection" });
@@ -93,6 +95,8 @@ describe("GET /api/cashflow/month", () => {
     prismaMock.committedItem.findMany.mockResolvedValue([] as any);
     prismaMock.discretionaryItem.findMany.mockResolvedValue([] as any);
     prismaMock.itemAmountPeriod.findMany.mockResolvedValue([] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
 
     const app = await buildApp();
     const now = new Date();
