@@ -8,6 +8,7 @@ interface ShortfallBadgeProps {
   items: ShortfallItem[];
   balanceToday: number;
   lowest: { value: number; date: string };
+  showPence?: boolean;
 }
 
 export function ShortfallBadge({
@@ -16,6 +17,7 @@ export function ShortfallBadge({
   items,
   balanceToday,
   lowest,
+  showPence = false,
 }: ShortfallBadgeProps) {
   const label = `Cashflow shortfall: ${count} item${count === 1 ? "" : "s"} in the next 30 days`;
   return (
@@ -35,7 +37,12 @@ export function ShortfallBadge({
           </span>
         </TooltipTrigger>
         <TooltipContent side="bottom" className="max-w-80 p-0">
-          <ShortfallTooltip items={items} balanceToday={balanceToday} lowest={lowest} />
+          <ShortfallTooltip
+            items={items}
+            balanceToday={balanceToday}
+            lowest={lowest}
+            showPence={showPence}
+          />
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>

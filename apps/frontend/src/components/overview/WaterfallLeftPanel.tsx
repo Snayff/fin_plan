@@ -207,6 +207,7 @@ export function WaterfallLeftPanel({
                 items={committedShortfall.items}
                 balanceToday={committedShortfall.balanceToday}
                 lowest={committedShortfall.lowest}
+                showPence={showPence}
               />
             ) : null
           }
@@ -276,6 +277,7 @@ export function WaterfallLeftPanel({
                 items={discretionaryShortfall.items}
                 balanceToday={discretionaryShortfall.balanceToday}
                 lowest={discretionaryShortfall.lowest}
+                showPence={showPence}
               />
             ) : null
           }

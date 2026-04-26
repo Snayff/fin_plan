@@ -7,7 +7,7 @@ import { PageHeader } from "@/components/common/PageHeader";
 import { AttentionStrip } from "@/components/common/AttentionStrip";
 import { ShortfallTooltip } from "@/components/common/ShortfallTooltip";
 import { useSubcategories, useTierItems, type TierItemRow } from "@/hooks/useWaterfall";
-import { useHouseholdMembers } from "@/hooks/useSettings";
+import { useHouseholdMembers, useSettings } from "@/hooks/useSettings";
 import { useGiftPlannerSettings } from "@/hooks/useGifts";
 import { useTierShortfall } from "@/hooks/useShortfall";
 import { TIER_CONFIGS, type TierKey } from "./tierConfig";
@@ -31,6 +31,8 @@ export default function TierPage({ tier }: TierPageProps) {
   const { data: subcategories, isLoading: subsLoading } = useSubcategories(tier);
   const { data: allItems, isLoading: itemsLoading } = useTierItems(tier);
   const { data: members } = useHouseholdMembers();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
 
   const hasAddParam = searchParams.get("add") === "1";
   useAddParam((_kind) => {
@@ -126,6 +128,7 @@ export default function TierPage({ tier }: TierPageProps) {
                     items={shortfall.items}
                     balanceToday={shortfall.balanceToday}
                     lowest={shortfall.lowest}
+                    showPence={showPence}
                   />
                 }
               />

@@ -7,11 +7,17 @@ interface ShortfallTooltipProps {
   items: ShortfallItem[];
   balanceToday: number;
   lowest: { value: number; date: string };
+  showPence?: boolean;
 }
 
 const VISIBLE_LIMIT = 3;
 
-export function ShortfallTooltip({ items, balanceToday, lowest }: ShortfallTooltipProps) {
+export function ShortfallTooltip({
+  items,
+  balanceToday,
+  lowest,
+  showPence = false,
+}: ShortfallTooltipProps) {
   const visible = items.slice(0, VISIBLE_LIMIT);
   const overflow = Math.max(0, items.length - VISIBLE_LIMIT);
   return (
@@ -29,7 +35,7 @@ export function ShortfallTooltip({ items, balanceToday, lowest }: ShortfallToolt
               {format(parseISO(item.dueDate), "d MMM")}
             </span>
             <span className="text-attention font-numeric font-semibold">
-              {formatCurrency(item.amount, false)}
+              {formatCurrency(item.amount, showPence)}
             </span>
           </div>
         ))}
@@ -49,12 +55,12 @@ export function ShortfallTooltip({ items, balanceToday, lowest }: ShortfallToolt
       <div className="mt-3 pt-2 border-t border-foreground/5 space-y-1">
         <div className="flex justify-between">
           <span className="text-foreground/55">Balance today</span>
-          <span className="font-numeric">{formatCurrency(balanceToday, false)}</span>
+          <span className="font-numeric">{formatCurrency(balanceToday, showPence)}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-foreground/55">Lowest in 30 days</span>
           <span className="font-numeric text-attention">
-            {formatCurrency(lowest.value, false)} · {format(parseISO(lowest.date), "d MMM")}
+            {formatCurrency(lowest.value, showPence)} · {format(parseISO(lowest.date), "d MMM")}
           </span>
         </div>
       </div>
