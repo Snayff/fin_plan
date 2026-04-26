@@ -32,6 +32,8 @@ interface BaseProps {
     name: string;
     memberId: string | null;
     growthRatePct?: number | null;
+    disposedAt?: string | null;
+    disposalAccountId?: string | null;
   }) => void;
   onSaveRecord: (data: { value: number; date: string; note: string | null }) => void;
 }
@@ -122,7 +124,15 @@ export function AssetAccountRow({
 
         {/* Left: name + metadata */}
         <span className="flex-1 flex flex-col gap-px">
-          <span className="text-sm text-text-secondary">{item.name}</span>
+          <span className="text-sm text-text-secondary">
+            {item.name}
+            {item.disposedAt && (
+              <span className="ml-2 text-[10px] uppercase tracking-[0.07em] text-text-muted">
+                {new Date(item.disposedAt) <= new Date() ? "Disposed" : "Sells"}{" "}
+                {formatReviewDate(item.disposedAt)}
+              </span>
+            )}
+          </span>
           <span className="text-[11px] text-text-tertiary">
             {typeLabel} · {memberName}
             {itemKind === "account" && (item as AccountItem).monthlyContribution > 0 && (
@@ -161,6 +171,8 @@ export function AssetAccountRow({
                 initialName={item.name}
                 initialMemberId={item.memberId ?? null}
                 initialGrowthRatePct={(item as AssetItem).growthRatePct ?? null}
+                initialDisposedAt={item.disposedAt ?? null}
+                initialDisposalAccountId={item.disposalAccountId ?? null}
                 isSaving={isSavingEdit}
                 isSavingConfirm={isSavingConfirm}
                 isStale={stale}
@@ -173,9 +185,12 @@ export function AssetAccountRow({
               <AccountForm
                 mode="edit"
                 type={(item as AccountItem).type as AccountType}
+                accountId={item.id}
                 initialName={item.name}
                 initialMemberId={item.memberId ?? null}
                 initialGrowthRatePct={(item as AccountItem).growthRatePct ?? null}
+                initialDisposedAt={item.disposedAt ?? null}
+                initialDisposalAccountId={item.disposalAccountId ?? null}
                 isSaving={isSavingEdit}
                 isSavingConfirm={isSavingConfirm}
                 isStale={stale}

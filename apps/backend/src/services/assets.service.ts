@@ -57,20 +57,83 @@ async function assertMemberInHousehold(householdId: string, memberId: string) {
   }
 }
 
+// ── Disposal helpers ─────────────────────────────────────────────────────────
+
+interface DisposalPatch {
+  disposedAt?: string | null;
+  disposalAccountId?: string | null;
+}
+
+interface ResolvedDisposal {
+  /** undefined = field not in patch (no change); Date | null otherwise */
+  disposedAt?: Date | null;
+  /** undefined = field not in patch (no change); string | null otherwise */
+  disposalAccountId?: string | null;
+}
+
+/**
+ * Validate a disposal patch and resolve the ISO date string into a Date.
+ *
+ * Rules:
+ *   - If neither disposedAt nor disposalAccountId is in the patch → no-op.
+ *   - If one is provided, the other must be too (both set, or both null).
+ *   - When set: target Account must exist in this household and ≠ source.
+ */
+async function resolveDisposalPatch(
+  householdId: string,
+  data: DisposalPatch,
+  sourceAccountId: string | null
+): Promise<ResolvedDisposal> {
+  const { disposedAt, disposalAccountId } = data;
+  const dateProvided = disposedAt !== undefined;
+  const acctProvided = disposalAccountId !== undefined;
+  if (!dateProvided && !acctProvided) return {};
+  if (dateProvided !== acctProvided) {
+    throw new ValidationError("disposedAt and disposalAccountId must be set or cleared together");
+  }
+  const dateSet = disposedAt != null;
+  const acctSet = disposalAccountId != null;
+  if (dateSet !== acctSet) {
+    throw new ValidationError("disposedAt and disposalAccountId must be set or cleared together");
+  }
+  if (acctSet) {
+    if (sourceAccountId && disposalAccountId === sourceAccountId) {
+      throw new ValidationError("An account cannot dispose into itself");
+    }
+    await assertAccountOwned(householdId, disposalAccountId!);
+    return { disposedAt: new Date(disposedAt!), disposalAccountId };
+  }
+  return { disposedAt: null, disposalAccountId: null };
+}
+
 const ASSET_TYPES: AssetType[] = ["Property", "Vehicle", "Other"];
 const ACCOUNT_TYPES: AccountType[] = ["Current", "Savings", "Pension", "StocksAndShares", "Other"];
 
-// ── Summary ───────────────────────────────────────────────────────────────────
+// "Active" = no disposal date set, OR disposal date is in the future.
+// Items with disposedAt <= today are historical and excluded from default lists.
+function activeWhere() {
+  const today = startOfDayUtc(new Date());
+  return {
+    OR: [{ disposedAt: null }, { disposedAt: { gt: today } }],
+  };
+}
+
+function startOfDayUtc(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+// ── Service ──────────────────────────────────────────────────────────────────
 
 export const assetsService = {
   async getSummary(householdId: string) {
+    // Summaries reflect ACTIVE holdings only — disposed items are historical.
     const [assets, accounts] = await Promise.all([
       prisma.asset.findMany({
-        where: { householdId },
+        where: { householdId, ...activeWhere() },
         include: { balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }] } },
       }),
       prisma.account.findMany({
-        where: { householdId },
+        where: { householdId, ...activeWhere() },
         include: { balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }] } },
       }),
     ]);
@@ -102,9 +165,13 @@ export const assetsService = {
 
   // ── Assets ──────────────────────────────────────────────────────────────────
 
-  async listAssetsByType(householdId: string, type: AssetType) {
+  async listAssetsByType(
+    householdId: string,
+    type: AssetType,
+    opts: { includeDisposed?: boolean } = {}
+  ) {
     const assets = await prisma.asset.findMany({
-      where: { householdId, type },
+      where: { householdId, type, ...(opts.includeDisposed ? {} : activeWhere()) },
       include: {
         balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }] },
       },
@@ -125,7 +192,19 @@ export const assetsService = {
     if (data.memberId) {
       await assertMemberInHousehold(householdId, data.memberId);
     }
-    const { initialValue, ...assetData } = data;
+    const resolved = await resolveDisposalPatch(
+      householdId,
+      { disposedAt: data.disposedAt, disposalAccountId: data.disposalAccountId },
+      null
+    );
+    const {
+      initialValue,
+      disposedAt: _ignoredDate,
+      disposalAccountId: _ignoredAcct,
+      ...rest
+    } = data;
+    void _ignoredDate;
+    void _ignoredAcct;
     return audited({
       db: prisma,
       ctx,
@@ -135,7 +214,7 @@ export const assetsService = {
       beforeFetch: async () => null,
       mutation: async (tx) => {
         const asset = await tx.asset.create({
-          data: { householdId, ...assetData },
+          data: { householdId, ...rest, ...resolved },
         });
         if (initialValue !== undefined) {
           await tx.assetBalance.create({
@@ -156,6 +235,14 @@ export const assetsService = {
     if (data.memberId) {
       await assertMemberInHousehold(householdId, data.memberId);
     }
+    const resolved = await resolveDisposalPatch(
+      householdId,
+      { disposedAt: data.disposedAt, disposalAccountId: data.disposalAccountId },
+      null
+    );
+    const { disposedAt: _ignoredDate, disposalAccountId: _ignoredAcct, ...rest } = data;
+    void _ignoredDate;
+    void _ignoredAcct;
     return audited({
       db: prisma,
       ctx,
@@ -164,7 +251,8 @@ export const assetsService = {
       resourceId: assetId,
       beforeFetch: async (tx) =>
         tx.asset.findUnique({ where: { id: assetId } }) as Promise<Record<string, unknown> | null>,
-      mutation: async (tx) => tx.asset.update({ where: { id: assetId }, data }),
+      mutation: async (tx) =>
+        tx.asset.update({ where: { id: assetId }, data: { ...rest, ...resolved } }),
     });
   },
 
@@ -233,9 +321,13 @@ export const assetsService = {
 
   // ── Accounts ─────────────────────────────────────────────────────────────────
 
-  async listAccountsByType(householdId: string, type: AccountType) {
+  async listAccountsByType(
+    householdId: string,
+    type: AccountType,
+    opts: { includeDisposed?: boolean } = {}
+  ) {
     const accounts = await prisma.account.findMany({
-      where: { householdId, type },
+      where: { householdId, type, ...(opts.includeDisposed ? {} : activeWhere()) },
       include: {
         balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }] },
         linkedItems: { select: { id: true, name: true, spendType: true } },
@@ -288,7 +380,19 @@ export const assetsService = {
     if (data.memberId) {
       await assertMemberInHousehold(householdId, data.memberId);
     }
-    const { initialValue, ...accountData } = data;
+    const resolved = await resolveDisposalPatch(
+      householdId,
+      { disposedAt: data.disposedAt, disposalAccountId: data.disposalAccountId },
+      null
+    );
+    const {
+      initialValue,
+      disposedAt: _ignoredDate,
+      disposalAccountId: _ignoredAcct,
+      ...accountData
+    } = data;
+    void _ignoredDate;
+    void _ignoredAcct;
     return audited({
       db: prisma,
       ctx,
@@ -298,7 +402,7 @@ export const assetsService = {
       beforeFetch: async (_tx) => null,
       mutation: async (tx) => {
         const account = await tx.account.create({
-          data: { householdId, ...accountData },
+          data: { householdId, ...accountData, ...resolved },
         });
         if (initialValue !== undefined) {
           await tx.accountBalance.create({
@@ -324,6 +428,14 @@ export const assetsService = {
     if (data.memberId) {
       await assertMemberInHousehold(householdId, data.memberId);
     }
+    const resolved = await resolveDisposalPatch(
+      householdId,
+      { disposedAt: data.disposedAt, disposalAccountId: data.disposalAccountId },
+      accountId
+    );
+    const { disposedAt: _ignoredDate, disposalAccountId: _ignoredAcct, ...rest } = data;
+    void _ignoredDate;
+    void _ignoredAcct;
     return audited({
       db: prisma,
       ctx,
@@ -335,7 +447,8 @@ export const assetsService = {
           string,
           unknown
         > | null>,
-      mutation: async (tx) => tx.account.update({ where: { id: accountId }, data }),
+      mutation: async (tx) =>
+        tx.account.update({ where: { id: accountId }, data: { ...rest, ...resolved } }),
     });
   },
 

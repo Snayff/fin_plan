@@ -18,6 +18,8 @@ export interface AssetItem {
   memberId: string | null;
   growthRatePct: number | null;
   lastReviewedAt: string | null;
+  disposedAt: string | null;
+  disposalAccountId: string | null;
   createdAt: string;
   updatedAt: string;
   currentBalance: number;
@@ -46,6 +48,8 @@ export interface AccountItem {
   memberId: string | null;
   growthRatePct: number | null;
   lastReviewedAt: string | null;
+  disposedAt: string | null;
+  disposalAccountId: string | null;
   createdAt: string;
   updatedAt: string;
   currentBalance: number;
@@ -70,7 +74,10 @@ export interface AssetsSummary {
 export const assetsApiService = {
   getSummary: () => apiClient.get<AssetsSummary>("/api/assets/summary"),
 
-  listAssetsByType: (type: AssetType) => apiClient.get<AssetItem[]>(`/api/assets/assets/${type}`),
+  listAssetsByType: (type: AssetType, opts: { includeDisposed?: boolean } = {}) =>
+    apiClient.get<AssetItem[]>(
+      `/api/assets/assets/${type}${opts.includeDisposed ? "?disposed=true" : ""}`
+    ),
 
   createAsset: (data: CreateAssetInput) => apiClient.post<AssetItem>("/api/assets/assets", data),
 
@@ -84,8 +91,10 @@ export const assetsApiService = {
 
   confirmAsset: (assetId: string) => apiClient.post(`/api/assets/assets/${assetId}/confirm`, {}),
 
-  listAccountsByType: (type: AccountType) =>
-    apiClient.get<AccountItem[]>(`/api/assets/accounts/${type}`),
+  listAccountsByType: (type: AccountType, opts: { includeDisposed?: boolean } = {}) =>
+    apiClient.get<AccountItem[]>(
+      `/api/assets/accounts/${type}${opts.includeDisposed ? "?disposed=true" : ""}`
+    ),
 
   createAccount: (data: CreateAccountInput) =>
     apiClient.post<AccountItem>("/api/assets/accounts", data),

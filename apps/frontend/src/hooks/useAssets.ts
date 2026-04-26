@@ -1,11 +1,21 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { assetsApiService } from "../services/assets.service.js";
+import { useQueries, useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { assetsApiService, type AccountItem } from "../services/assets.service.js";
 import type { AssetType, AccountType } from "@finplan/shared";
+
+const ALL_ACCOUNT_TYPES: AccountType[] = [
+  "Current",
+  "Savings",
+  "Pension",
+  "StocksAndShares",
+  "Other",
+];
 
 export const ASSETS_QUERY_KEYS = {
   summary: ["assets", "summary"] as const,
-  assetsByType: (type: AssetType) => ["assets", "assets", type] as const,
-  accountsByType: (type: AccountType) => ["assets", "accounts", type] as const,
+  assetsByType: (type: AssetType, includeDisposed = false) =>
+    ["assets", "assets", type, includeDisposed ? "all" : "active"] as const,
+  accountsByType: (type: AccountType, includeDisposed = false) =>
+    ["assets", "accounts", type, includeDisposed ? "all" : "active"] as const,
 };
 
 export function useAssetsSummary() {
@@ -15,17 +25,17 @@ export function useAssetsSummary() {
   });
 }
 
-export function useAssetsByType(type: AssetType) {
+export function useAssetsByType(type: AssetType, opts: { includeDisposed?: boolean } = {}) {
   return useQuery({
-    queryKey: ASSETS_QUERY_KEYS.assetsByType(type),
-    queryFn: () => assetsApiService.listAssetsByType(type),
+    queryKey: ASSETS_QUERY_KEYS.assetsByType(type, opts.includeDisposed),
+    queryFn: () => assetsApiService.listAssetsByType(type, opts),
   });
 }
 
-export function useAccountsByType(type: AccountType) {
+export function useAccountsByType(type: AccountType, opts: { includeDisposed?: boolean } = {}) {
   return useQuery({
-    queryKey: ASSETS_QUERY_KEYS.accountsByType(type),
-    queryFn: () => assetsApiService.listAccountsByType(type),
+    queryKey: ASSETS_QUERY_KEYS.accountsByType(type, opts.includeDisposed),
+    queryFn: () => assetsApiService.listAccountsByType(type, opts),
   });
 }
 
@@ -150,6 +160,22 @@ export function useConfirmAsset() {
       qc.invalidateQueries({ queryKey: ["forecast"] });
     },
   });
+}
+
+/**
+ * Fetch every active account across all types, flattened. Used by disposal-target
+ * pickers (asset/account form "Proceeds go to" select).
+ */
+export function useAllAccounts(): { data: AccountItem[]; isLoading: boolean } {
+  const queries = useQueries({
+    queries: ALL_ACCOUNT_TYPES.map((type) => ({
+      queryKey: ASSETS_QUERY_KEYS.accountsByType(type),
+      queryFn: () => assetsApiService.listAccountsByType(type),
+    })),
+  });
+  const isLoading = queries.some((q) => q.isLoading);
+  const data = queries.flatMap((q) => q.data ?? []);
+  return { data, isLoading };
 }
 
 export function useConfirmAccount() {

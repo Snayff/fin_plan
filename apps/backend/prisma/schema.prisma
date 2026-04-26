@@ -336,21 +336,25 @@ model ItemAmountPeriod {
 // ─── Assets & Accounts ────────────────────────────────────────────────────────
 
 model Asset {
-  id             String         @id @default(cuid())
-  householdId    String
-  memberId       String?
-  name           String
-  type           AssetType
-  growthRatePct  Float?
-  lastReviewedAt DateTime?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  household      Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  member         Member?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  balances       AssetBalance[]
+  id                String         @id @default(cuid())
+  householdId       String
+  memberId          String?
+  name              String
+  type              AssetType
+  growthRatePct     Float?
+  lastReviewedAt    DateTime?
+  disposedAt        DateTime?      @db.Date
+  disposalAccountId String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  household         Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member            Member?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  disposalAccount   Account?       @relation("AssetDisposalTarget", fields: [disposalAccountId], references: [id], onDelete: SetNull)
+  balances          AssetBalance[]
 
   @@index([householdId])
   @@index([memberId])
+  @@index([disposalAccountId])
 }
 
 model AssetBalance {
@@ -366,23 +370,29 @@ model AssetBalance {
 }
 
 model Account {
-  id                  String           @id @default(cuid())
-  householdId         String
-  memberId            String?
-  name                String
-  type                AccountType
-  growthRatePct       Float?
-  isCashflowLinked    Boolean          @default(false)
-  lastReviewedAt      DateTime?
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
-  household           Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  member              Member?          @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  balances            AccountBalance[]
-  linkedItems         DiscretionaryItem[] @relation("DiscretionaryAccountLink")
+  id                       String              @id @default(cuid())
+  householdId              String
+  memberId                 String?
+  name                     String
+  type                     AccountType
+  growthRatePct            Float?
+  isCashflowLinked         Boolean             @default(false)
+  lastReviewedAt           DateTime?
+  disposedAt               DateTime?           @db.Date
+  disposalAccountId        String?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  household                Household           @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member                   Member?             @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  disposalAccount          Account?            @relation("AccountDisposalTarget", fields: [disposalAccountId], references: [id], onDelete: SetNull)
+  balances                 AccountBalance[]
+  linkedItems              DiscretionaryItem[] @relation("DiscretionaryAccountLink")
+  assetDisposalTargets     Asset[]             @relation("AssetDisposalTarget")
+  accountDisposalTargets   Account[]           @relation("AccountDisposalTarget")
 
   @@index([householdId])
   @@index([memberId])
+  @@index([disposalAccountId])
 }
 
 model AccountBalance {

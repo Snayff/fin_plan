@@ -71,11 +71,18 @@ export interface CashflowProjection {
   linkedAccountCount: number;
 }
 
+export type CashflowEventItemType =
+  | "income_source"
+  | "committed_item"
+  | "discretionary_item"
+  | "asset_liquidation"
+  | "account_liquidation";
+
 export interface CashflowEvent {
   date: string; // ISO YYYY-MM-DD
   label: string;
-  amount: number; // signed (income +, spend −)
-  itemType: "income_source" | "committed_item" | "discretionary_item";
+  amount: number; // signed (income +, spend −, liquidation +)
+  itemType: CashflowEventItemType;
   runningBalanceAfter: number;
 }
 

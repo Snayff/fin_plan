@@ -385,3 +385,204 @@ describe("assetsService.deleteAccount", () => {
     });
   });
 });
+
+// ── Disposal fields ───────────────────────────────────────────────────────────
+
+describe("assetsService.listAssetsByType — disposal filtering", () => {
+  const activeAsset = {
+    id: "active-1",
+    name: "Active House",
+    type: "Property",
+    householdId: HOUSEHOLD_ID,
+    memberId: null,
+    growthRatePct: null,
+    disposedAt: null,
+    disposalAccountId: null,
+    lastReviewedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    balances: [
+      {
+        id: "b1",
+        value: 200000,
+        date: new Date("2026-01-01"),
+        createdAt: new Date(),
+        assetId: "active-1",
+        note: null,
+      },
+    ],
+  };
+  const disposedAsset = {
+    id: "disposed-1",
+    name: "Old Boat",
+    type: "Vehicle",
+    householdId: HOUSEHOLD_ID,
+    memberId: null,
+    growthRatePct: null,
+    // Disposed yesterday (in the past)
+    disposedAt: new Date(Date.now() - 86400_000),
+    disposalAccountId: ACCOUNT_ID,
+    lastReviewedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    balances: [
+      {
+        id: "b2",
+        value: 5000,
+        date: new Date("2025-06-01"),
+        createdAt: new Date(),
+        assetId: "disposed-1",
+        note: null,
+      },
+    ],
+  };
+
+  it("default (no opts) applies active filter — Prisma called with OR disposedAt condition", async () => {
+    prismaMock.asset.findMany.mockResolvedValue([activeAsset] as any);
+
+    await assetsService.listAssetsByType(HOUSEHOLD_ID, "Property");
+
+    const call = prismaMock.asset.findMany.mock.calls[0]?.[0] as { where: object };
+    expect(call.where).toMatchObject({ OR: expect.any(Array) });
+  });
+
+  it("includeDisposed: true omits the active filter from where clause", async () => {
+    prismaMock.asset.findMany.mockResolvedValue([activeAsset, disposedAsset] as any);
+
+    const result = await assetsService.listAssetsByType(HOUSEHOLD_ID, "Property", {
+      includeDisposed: true,
+    });
+
+    const call = prismaMock.asset.findMany.mock.calls[0]?.[0] as { where: object };
+    // The OR clause should NOT be present when includeDisposed is true
+    expect(call.where).not.toHaveProperty("OR");
+    expect(result).toHaveLength(2);
+  });
+});
+
+describe("assetsService.createAsset — disposal validation", () => {
+  it("throws ValidationError when disposedAt is set without disposalAccountId", async () => {
+    await expect(
+      assetsService.createAsset(
+        HOUSEHOLD_ID,
+        { name: "Test House", type: "Property", disposedAt: "2028-01-01" },
+        mockCtx
+      )
+    ).rejects.toThrow("disposedAt and disposalAccountId must be set or cleared together");
+  });
+
+  it("throws ValidationError when disposalAccountId is set without disposedAt", async () => {
+    await expect(
+      assetsService.createAsset(
+        HOUSEHOLD_ID,
+        { name: "Test House", type: "Property", disposalAccountId: ACCOUNT_ID },
+        mockCtx
+      )
+    ).rejects.toThrow("disposedAt and disposalAccountId must be set or cleared together");
+  });
+
+  it("throws NotFoundError when disposal target account does not exist", async () => {
+    prismaMock.account.findUnique.mockResolvedValue(null);
+
+    await expect(
+      assetsService.createAsset(
+        HOUSEHOLD_ID,
+        {
+          name: "Test House",
+          type: "Property",
+          disposedAt: "2028-01-01",
+          disposalAccountId: "nonexistent",
+        },
+        mockCtx
+      )
+    ).rejects.toThrow("Account not found");
+  });
+
+  it("creates asset with valid disposal pair", async () => {
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: ACCOUNT_ID,
+      householdId: HOUSEHOLD_ID,
+    } as any);
+    prismaMock.asset.create.mockResolvedValue({
+      id: ASSET_ID,
+      name: "Future Sale House",
+      type: "Property",
+      householdId: HOUSEHOLD_ID,
+      memberId: null,
+      disposedAt: new Date("2028-01-01"),
+      disposalAccountId: ACCOUNT_ID,
+      lastReviewedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+
+    const result = await assetsService.createAsset(
+      HOUSEHOLD_ID,
+      {
+        name: "Future Sale House",
+        type: "Property",
+        disposedAt: "2028-01-01",
+        disposalAccountId: ACCOUNT_ID,
+      },
+      mockCtx
+    );
+
+    expect(result.name).toBe("Future Sale House");
+    expect(prismaMock.asset.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        disposedAt: new Date("2028-01-01"),
+        disposalAccountId: ACCOUNT_ID,
+      }),
+    });
+  });
+});
+
+describe("assetsService.createAccount — disposal validation", () => {
+  const TARGET_ID = "target-acc";
+
+  it("throws ValidationError when disposedAt and disposalAccountId are not both set", async () => {
+    await expect(
+      assetsService.createAccount(
+        HOUSEHOLD_ID,
+        { name: "ISA", type: "Savings", disposedAt: "2030-06-01" },
+        mockCtx
+      )
+    ).rejects.toThrow("disposedAt and disposalAccountId must be set or cleared together");
+  });
+
+  it("throws ValidationError when an account tries to dispose into itself", async () => {
+    // createAccount doesn't have the account id yet (it's being created), so self-referential
+    // disposal can only happen on update. Skip this for create and verify it's tested on update.
+    // Instead test that a foreign-household target account fails:
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: TARGET_ID,
+      householdId: "other-hh",
+    } as any);
+
+    await expect(
+      assetsService.createAccount(
+        HOUSEHOLD_ID,
+        { name: "SIPP", type: "Pension", disposedAt: "2030-06-01", disposalAccountId: TARGET_ID },
+        mockCtx
+      )
+    ).rejects.toThrow("Account not found");
+  });
+});
+
+describe("assetsService.updateAccount — disposal self-reference guard", () => {
+  it("throws ValidationError when an account is set to dispose into itself", async () => {
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: ACCOUNT_ID,
+      householdId: HOUSEHOLD_ID,
+    } as any);
+
+    await expect(
+      assetsService.updateAccount(
+        HOUSEHOLD_ID,
+        ACCOUNT_ID,
+        { disposedAt: "2030-06-01", disposalAccountId: ACCOUNT_ID },
+        mockCtx
+      )
+    ).rejects.toThrow("An account cannot dispose into itself");
+  });
+});

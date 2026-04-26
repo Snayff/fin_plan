@@ -26,8 +26,11 @@ export async function assetsRoutes(fastify: FastifyInstance) {
 
   fastify.get("/assets/:type", pre, async (req, reply) => {
     const { type } = req.params as { type: string };
+    const { disposed } = (req.query ?? {}) as { disposed?: string };
     const parsed = assetTypeSchema.parse(type);
-    const items = await assetsService.listAssetsByType(req.householdId!, parsed);
+    const items = await assetsService.listAssetsByType(req.householdId!, parsed, {
+      includeDisposed: disposed === "true",
+    });
     return reply.send(items);
   });
 
@@ -72,8 +75,11 @@ export async function assetsRoutes(fastify: FastifyInstance) {
 
   fastify.get("/accounts/:type", pre, async (req, reply) => {
     const { type } = req.params as { type: string };
+    const { disposed } = (req.query ?? {}) as { disposed?: string };
     const parsed = accountTypeSchema.parse(type);
-    const items = await assetsService.listAccountsByType(req.householdId!, parsed);
+    const items = await assetsService.listAccountsByType(req.householdId!, parsed, {
+      includeDisposed: disposed === "true",
+    });
     return reply.send(items);
   });
 
