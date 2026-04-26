@@ -44,3 +44,25 @@ describe("bulkUpdateLinkedAccountsSchema", () => {
     expect(result.updates).toHaveLength(2);
   });
 });
+
+import { cashflowShortfallQuerySchema } from "./cashflow.schemas";
+
+describe("cashflowShortfallQuerySchema", () => {
+  it("defaults windowDays to 30 when omitted", () => {
+    const parsed = cashflowShortfallQuerySchema.parse({});
+    expect(parsed.windowDays).toBe(30);
+  });
+
+  it("coerces string input to integer", () => {
+    const parsed = cashflowShortfallQuerySchema.parse({ windowDays: "14" });
+    expect(parsed.windowDays).toBe(14);
+  });
+
+  it("rejects values below 1", () => {
+    expect(() => cashflowShortfallQuerySchema.parse({ windowDays: 0 })).toThrow();
+  });
+
+  it("rejects values above 90", () => {
+    expect(() => cashflowShortfallQuerySchema.parse({ windowDays: 91 })).toThrow();
+  });
+});
