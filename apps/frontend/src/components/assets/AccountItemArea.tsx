@@ -11,6 +11,7 @@ import {
 } from "../../hooks/useAssets.js";
 import { AssetAccountRow } from "./AssetAccountRow.js";
 import { AccountForm } from "./AccountForm.js";
+import { SavingsContributionNudge } from "./SavingsContributionNudge.js";
 import GhostAddButton from "@/components/tier/GhostAddButton";
 import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -225,6 +226,11 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                 }
               }}
             />
+            {type === "Savings" && expandedId === item.id && editingId !== item.id && (
+              <div className="px-4 pt-2">
+                <SavingsContributionNudge account={item} showPence={showPence} />
+              </div>
+            )}
           </div>
         ))}
       </div>
