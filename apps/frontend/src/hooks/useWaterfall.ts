@@ -81,6 +81,9 @@ export function useConfirmItem() {
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
       void queryClient.invalidateQueries({ queryKey: ["forecast"] });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to confirm item");
+    },
   });
 }
 
@@ -117,6 +120,9 @@ export function useUpdateItem() {
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void queryClient.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
       void queryClient.invalidateQueries({ queryKey: ["forecast"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to update item");
     },
   });
 }
@@ -188,6 +194,9 @@ export function useConfirmWaterfallItem(
       void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to confirm item");
+    },
   });
 }
 
@@ -206,6 +215,9 @@ export function useDeleteItem(tier: "income" | "committed" | "discretionary", id
       void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to delete item");
+    },
   });
 }
 
@@ -222,6 +234,9 @@ export function useTierUpdateItem(tier: "income" | "committed" | "discretionary"
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.financialSummary });
       void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: TIER_ITEM_KEYS.items(tier) });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to update item");
     },
   });
 }
@@ -393,6 +408,9 @@ export function useCreatePeriod(itemType: string, itemId: string) {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void qc.invalidateQueries({ queryKey: ["forecast"] });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to create period");
+    },
   });
 }
 
@@ -406,6 +424,9 @@ export function useUpdatePeriod(itemType: string, itemId: string) {
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void qc.invalidateQueries({ queryKey: ["forecast"] });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to update period");
+    },
   });
 }
 
@@ -417,6 +438,9 @@ export function useDeletePeriod(itemType: string, itemId: string) {
       void qc.invalidateQueries({ queryKey: PERIOD_KEYS.list(itemType, itemId) });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
       void qc.invalidateQueries({ queryKey: ["forecast"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to delete period");
     },
   });
 }
