@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { cashflowService } from "@/services/cashflow.service";
 import type { CashflowProjectionQuery, BulkUpdateLinkedAccountsInput } from "@finplan/shared";
+import { showError } from "@/lib/toast";
 
 export const CASHFLOW_KEYS = {
   projection: (q: CashflowProjectionQuery) => ["cashflow", "projection", q] as const,
@@ -45,6 +46,9 @@ export function useUpdateLinkedAccount() {
       void qc.invalidateQueries({ queryKey: ["cashflow", "projection"] });
       void qc.invalidateQueries({ queryKey: ["cashflow", "month"] });
     },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to update linked account");
+    },
   });
 }
 
@@ -57,6 +61,9 @@ export function useBulkUpdateLinkedAccounts() {
       void qc.invalidateQueries({ queryKey: CASHFLOW_KEYS.linkable });
       void qc.invalidateQueries({ queryKey: ["cashflow", "projection"] });
       void qc.invalidateQueries({ queryKey: ["cashflow", "month"] });
+    },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to update linked accounts");
     },
   });
 }
