@@ -61,6 +61,30 @@ describe("IsaTaxYearBanner", () => {
     expect(container.firstChild).toBeNull();
   });
 
+  it("does not render for a non-Savings account type", () => {
+    const { container } = render(
+      <IsaTaxYearBanner
+        account={{ ...account, type: "Pension" as const }}
+        today={new Date("2026-04-10")}
+        onZero={mock(() => {})}
+        showPence={false}
+      />
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
+  it("does not render when isISA is false", () => {
+    const { container } = render(
+      <IsaTaxYearBanner
+        account={{ ...account, isISA: false }}
+        today={new Date("2026-04-10")}
+        onZero={mock(() => {})}
+        showPence={false}
+      />
+    );
+    expect(container.firstChild).toBeNull();
+  });
+
   it("calls onZero when the action button is clicked", () => {
     const onZero = mock(() => {});
     render(
