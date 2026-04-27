@@ -16,6 +16,13 @@ mock.module("@/services/waterfall.service", () => ({
   },
 }));
 
+const mockShowError = mock((_msg: string) => {});
+
+mock.module("@/lib/toast", () => ({
+  showError: mockShowError,
+  showSuccess: mock(() => {}),
+}));
+
 const { useSubcategoryCounts, useSaveSubcategories, useResetSubcategories } =
   await import("./useSubcategorySettings");
 
@@ -61,5 +68,27 @@ describe("useResetSubcategories", () => {
 
     await waitFor(() => expect(result.current.isSuccess).toBe(true));
     expect(mockResetSubcategories).toHaveBeenCalled();
+  });
+});
+
+describe("useSaveSubcategories onError", () => {
+  it("calls showError on failure", async () => {
+    mockSaveSubcategories.mockRejectedValueOnce(new Error("Reassignment required"));
+    mockShowError.mockClear();
+
+    const { result } = renderHook(() => useSaveSubcategories(), { wrapper });
+    await act(async () => {
+      try {
+        await result.current.mutateAsync({
+          tier: "income",
+          data: { subcategories: [], reassignments: [] },
+        });
+      } catch {
+        /* expected */
+      }
+    });
+
+    await waitFor(() => expect(result.current.isError).toBe(true));
+    expect(mockShowError).toHaveBeenCalledWith("Reassignment required");
   });
 });

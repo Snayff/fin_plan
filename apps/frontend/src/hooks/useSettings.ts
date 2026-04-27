@@ -7,6 +7,7 @@ import { authService } from "@/services/auth.service";
 import type { UpdateSettingsInput, AuditLogQuery } from "@finplan/shared";
 import { fetchAuditLog, updateMemberRole } from "@/services/auditLog.service";
 import { fetchSecurityActivity } from "@/services/securityActivity.service";
+import { showError } from "@/lib/toast";
 
 export const SETTINGS_KEYS = {
   settings: ["settings"] as const,
@@ -30,6 +31,9 @@ export function useUpdateSettings() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.settings });
       void queryClient.invalidateQueries({ queryKey: ["forecast"] });
+    },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to save settings");
     },
   });
 }
@@ -56,6 +60,9 @@ export function useCreateSnapshot() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.snapshots });
     },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to create snapshot");
+    },
   });
 }
 
@@ -67,6 +74,9 @@ export function useRenameSnapshot() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.snapshots });
     },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to rename snapshot");
+    },
   });
 }
 
@@ -76,6 +86,9 @@ export function useDeleteSnapshot() {
     mutationFn: (id: string) => snapshotService.deleteSnapshot(id),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.snapshots });
+    },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to delete snapshot");
     },
   });
 }
@@ -97,6 +110,9 @@ export function useRenameHousehold() {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(id) });
       void queryClient.invalidateQueries({ queryKey: ["households"] });
     },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to rename household");
+    },
   });
 }
 
@@ -107,6 +123,9 @@ export function useInviteMember() {
       householdService.inviteMember(householdId, email),
     onSuccess: (_data, { householdId }) => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to send invite");
     },
   });
 }
@@ -119,6 +138,9 @@ export function useCancelInvite() {
     onSuccess: (_data, { householdId }) => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
     },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to cancel invite");
+    },
   });
 }
 
@@ -129,6 +151,9 @@ export function useRemoveMember() {
       householdService.removeMember(householdId, memberId),
     onSuccess: (_data, { householdId }) => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to remove member");
     },
   });
 }
@@ -145,6 +170,9 @@ export function useLeaveHousehold() {
       setUser(user, accessToken!);
       void queryClient.invalidateQueries({ queryKey: ["households"] });
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to leave household");
     },
   });
 }
@@ -220,6 +248,9 @@ export function useCreateMember() {
     onSuccess: (_data, { householdId }) => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
     },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to add member");
+    },
   });
 }
 
@@ -237,6 +268,9 @@ export function useUpdateMember() {
     }) => householdService.updateMember(householdId, memberId, data),
     onSuccess: (_data, { householdId }) => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
+    },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to update member");
     },
   });
 }
@@ -256,6 +290,9 @@ export function useDeleteMember() {
     onSuccess: (_data, { householdId }) => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
     },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to delete member");
+    },
   });
 }
 
@@ -266,15 +303,49 @@ export function useDismissWaterfallTip() {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.settings });
     },
+    onError: (err: Error) => {
+      showError(err.message ?? "Failed to dismiss tip");
+    },
   });
 }
+
+type HouseholdDetails = {
+  household: {
+    memberProfiles: Array<{ id: string; userId: string; name: string; role: "member" | "admin" }>;
+    [key: string]: unknown;
+  };
+  [key: string]: unknown;
+};
 
 export function useUpdateMemberRole(householdId: string) {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ targetUserId, role }: { targetUserId: string; role: "member" | "admin" }) =>
       updateMemberRole(targetUserId, role, householdId),
-    onSuccess: () => {
+    onMutate: async ({ targetUserId, role }) => {
+      const key = SETTINGS_KEYS.household(householdId);
+      await queryClient.cancelQueries({ queryKey: key });
+      const snapshot = queryClient.getQueryData<HouseholdDetails>(key);
+      if (snapshot) {
+        queryClient.setQueryData<HouseholdDetails>(key, {
+          ...snapshot,
+          household: {
+            ...snapshot.household,
+            memberProfiles: snapshot.household.memberProfiles.map((m) =>
+              m.userId === targetUserId ? { ...m, role } : m
+            ),
+          },
+        });
+      }
+      return { snapshot };
+    },
+    onError: (error: unknown, _vars, ctx) => {
+      if (ctx?.snapshot) {
+        queryClient.setQueryData(SETTINGS_KEYS.household(householdId), ctx.snapshot);
+      }
+      showError(error instanceof Error ? error.message : "Failed to update role");
+    },
+    onSettled: () => {
       void queryClient.invalidateQueries({ queryKey: ["household-members"] });
       void queryClient.invalidateQueries({ queryKey: SETTINGS_KEYS.household(householdId) });
     },

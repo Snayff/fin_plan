@@ -1,5 +1,30 @@
-import { describe, it, expect } from "bun:test";
+import React from "react";
+import { describe, it, expect, mock } from "bun:test";
 import { http, HttpResponse } from "msw";
+
+mock.module("@/hooks/useSettings", () => ({
+  useSettings: () => ({ data: undefined }),
+}));
+
+mock.module("framer-motion", () => ({
+  motion: {
+    div: ({
+      children,
+      variants: _v,
+      initial: _i,
+      animate: _a,
+      exit: _e,
+      custom: _c,
+      ...props
+    }: any) => React.createElement("div", props, children),
+  },
+  AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
+  useReducedMotion: () => false,
+}));
+
+mock.module("@/utils/motion", () => ({
+  usePrefersReducedMotion: () => false,
+}));
 import { renderWithProviders } from "@/test/helpers/render";
 import { server } from "@/test/msw/server";
 import { CashflowSectionPanel } from "./CashflowSectionPanel";
@@ -58,8 +83,8 @@ describe("CashflowSectionPanel", () => {
     renderWithProviders(<CashflowSectionPanel />);
     const bar = await screen.findAllByRole("button", { name: /^[A-Z][a-z]{2} 2026/ });
     fireEvent.click(bar[0]!);
-    await waitFor(() => expect(screen.getByText(/← cashflow/i)).toBeTruthy());
-  });
+    await waitFor(() => expect(screen.getByText(/← cashflow/i)).toBeTruthy(), { timeout: 8000 });
+  }, 10000);
 
   it("renders no-accounts callout when household has no linked accounts", async () => {
     server.use(

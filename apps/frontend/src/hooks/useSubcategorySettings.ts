@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { showError } from "@/lib/toast";
 import { waterfallService } from "@/services/waterfall.service";
 import { WATERFALL_KEYS } from "./useWaterfall";
 import type {
@@ -28,6 +29,9 @@ export function useSaveSubcategories() {
       void qc.invalidateQueries({ queryKey: SUBCATEGORY_SETTINGS_KEYS.counts(tier) });
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to save subcategories");
+    },
   });
 }
 
@@ -41,6 +45,9 @@ export function useResetSubcategories() {
         void qc.invalidateQueries({ queryKey: SUBCATEGORY_SETTINGS_KEYS.counts(tier) });
       }
       void qc.invalidateQueries({ queryKey: WATERFALL_KEYS.summary });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to reset subcategories");
     },
   });
 }

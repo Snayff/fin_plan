@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { giftsApi } from "@/services/gifts.service";
+import { showError } from "@/lib/toast";
 
 export const GIFTS_KEYS = {
   all: ["gifts"] as const,
@@ -81,7 +82,12 @@ export function useCreateGiftPerson() {
   return useMutation({
     mutationFn: (data: Parameters<typeof giftsApi.createPerson>[0]) => giftsApi.createPerson(data),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "configPeople"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "state"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "quickAddMatrix"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to add person");
     },
   });
 }
@@ -92,8 +98,14 @@ export function useUpdateGiftPerson() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof giftsApi.updatePerson>[1] }) =>
       giftsApi.updatePerson(id, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+    onSuccess: (_data, { id }) => {
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "configPeople"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "person", id] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "state"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "quickAddMatrix"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to update person");
     },
   });
 }
@@ -104,7 +116,13 @@ export function useDeleteGiftPerson() {
   return useMutation({
     mutationFn: (id: string) => giftsApi.deletePerson(id),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "configPeople"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "state"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "quickAddMatrix"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "upcoming"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to delete person");
     },
   });
 }
@@ -117,7 +135,12 @@ export function useCreateGiftEvent() {
   return useMutation({
     mutationFn: (data: Parameters<typeof giftsApi.createEvent>[0]) => giftsApi.createEvent(data),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.configEvents() });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "state"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "quickAddMatrix"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to add event");
     },
   });
 }
@@ -129,7 +152,13 @@ export function useUpdateGiftEvent() {
     mutationFn: ({ id, data }: { id: string; data: Parameters<typeof giftsApi.updateEvent>[1] }) =>
       giftsApi.updateEvent(id, data),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.configEvents() });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "state"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "quickAddMatrix"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "upcoming"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to update event");
     },
   });
 }
@@ -140,12 +169,26 @@ export function useDeleteGiftEvent() {
   return useMutation({
     mutationFn: (id: string) => giftsApi.deleteEvent(id),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.configEvents() });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "state"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "quickAddMatrix"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "upcoming"] });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to delete event");
     },
   });
 }
 
 // ─── Allocation Mutations ─────────────────────────────────────────────────────
+
+type QuickAddAllocation = { personId: string; eventId: string; planned: number };
+type QuickAddMatrix = {
+  people: { id: string; name: string; memberId: string | null }[];
+  events: { id: string; name: string }[];
+  allocations: QuickAddAllocation[];
+  budget: { annual: number; currentPlanned: number };
+};
 
 export function useUpsertAllocation() {
   const queryClient = useQueryClient();
@@ -162,8 +205,39 @@ export function useUpsertAllocation() {
       year: number;
       data: Parameters<typeof giftsApi.upsertAllocation>[3];
     }) => giftsApi.upsertAllocation(personId, eventId, year, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+    onMutate: async ({ personId, eventId, year, data }) => {
+      const matrixKey = GIFTS_KEYS.quickAddMatrix(year);
+      await queryClient.cancelQueries({ queryKey: matrixKey });
+      const snapshot = queryClient.getQueryData<QuickAddMatrix>(matrixKey);
+      if (snapshot?.allocations) {
+        const planned = (data as { planned?: number }).planned ?? 0;
+        const others = snapshot.allocations.filter(
+          (a) => !(a.personId === personId && a.eventId === eventId)
+        );
+        const updatedAllocations: QuickAddAllocation[] = [
+          ...others,
+          { personId, eventId, planned },
+        ];
+        const newPlannedTotal = updatedAllocations.reduce((sum, a) => sum + a.planned, 0);
+        queryClient.setQueryData<QuickAddMatrix>(matrixKey, {
+          ...snapshot,
+          allocations: updatedAllocations,
+          budget: { ...snapshot.budget, currentPlanned: newPlannedTotal },
+        });
+      }
+      return { snapshot, year };
+    },
+    onError: (error: unknown, _vars, ctx) => {
+      if (ctx?.snapshot && ctx.year !== undefined) {
+        queryClient.setQueryData(GIFTS_KEYS.quickAddMatrix(ctx.year), ctx.snapshot);
+      }
+      showError(error instanceof Error ? error.message : "Failed to update allocation");
+    },
+    onSettled: (_data, _err, { personId, year }) => {
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.state(year) });
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.quickAddMatrix(year) });
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.person(personId, year) });
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.upcoming(year) });
     },
   });
 }
@@ -173,8 +247,14 @@ export function useBulkUpsertAllocations() {
 
   return useMutation({
     mutationFn: (data: Parameters<typeof giftsApi.bulkUpsert>[0]) => giftsApi.bulkUpsert(data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to update allocations");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "state"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "quickAddMatrix"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "person"] });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "upcoming"] });
     },
   });
 }
@@ -192,8 +272,12 @@ export function useSetGiftBudget() {
       year: number;
       data: Parameters<typeof giftsApi.setBudget>[1];
     }) => giftsApi.setBudget(year, data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+    onSuccess: (_data, { year }) => {
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.state(year) });
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.quickAddMatrix(year) });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to update budget");
     },
   });
 }
@@ -203,8 +287,28 @@ export function useSetGiftMode() {
 
   return useMutation({
     mutationFn: (data: Parameters<typeof giftsApi.setMode>[0]) => giftsApi.setMode(data),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+    onMutate: async (data) => {
+      const settingsKey = GIFTS_KEYS.settings();
+      await queryClient.cancelQueries({ queryKey: settingsKey });
+      const snapshot = queryClient.getQueryData<{ mode?: string }>(settingsKey);
+      if (snapshot) {
+        queryClient.setQueryData(settingsKey, {
+          ...snapshot,
+          mode: (data as { mode?: string }).mode,
+        });
+      }
+      return { snapshot };
+    },
+    onError: (error: unknown, _vars, ctx) => {
+      if (ctx?.snapshot) {
+        queryClient.setQueryData(GIFTS_KEYS.settings(), ctx.snapshot);
+      }
+      showError(error instanceof Error ? error.message : "Failed to change mode");
+    },
+    onSettled: () => {
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.settings() });
+      void queryClient.invalidateQueries({ queryKey: ["gifts", "state"] });
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.years() });
     },
   });
 }
@@ -216,8 +320,12 @@ export function useDismissRollover() {
 
   return useMutation({
     mutationFn: (year: number) => giftsApi.dismissRollover(year),
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.all });
+    onSuccess: (_data, year) => {
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.state(year) });
+      void queryClient.invalidateQueries({ queryKey: GIFTS_KEYS.settings() });
+    },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to dismiss rollover");
     },
   });
 }
