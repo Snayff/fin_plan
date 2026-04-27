@@ -1,8 +1,29 @@
+import React from "react";
 import { describe, it, expect, mock } from "bun:test";
 import { http, HttpResponse } from "msw";
 
 mock.module("@/hooks/useSettings", () => ({
   useSettings: () => ({ data: undefined }),
+}));
+
+mock.module("framer-motion", () => ({
+  motion: {
+    div: ({
+      children,
+      variants: _v,
+      initial: _i,
+      animate: _a,
+      exit: _e,
+      custom: _c,
+      ...props
+    }: any) => React.createElement("div", props, children),
+  },
+  AnimatePresence: ({ children }: any) => React.createElement(React.Fragment, null, children),
+  useReducedMotion: () => false,
+}));
+
+mock.module("@/utils/motion", () => ({
+  usePrefersReducedMotion: () => false,
 }));
 import { renderWithProviders } from "@/test/helpers/render";
 import { server } from "@/test/msw/server";
