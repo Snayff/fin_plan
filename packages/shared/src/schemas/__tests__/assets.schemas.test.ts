@@ -1,5 +1,9 @@
 import { describe, it, expect } from "bun:test";
-import { createAccountSchema, updateAccountSchema } from "../assets.schemas.js";
+import {
+  createAccountSchema,
+  updateAccountSchema,
+  isaAllowanceSummarySchema,
+} from "../assets.schemas.js";
 
 describe("Account ISA validation", () => {
   it("accepts isISA=true with Savings type and memberId", () => {
@@ -90,5 +94,39 @@ describe("updateAccountSchema — monthlyContributionLimit", () => {
   it("accepts setting and clearing the limit", () => {
     expect(updateAccountSchema.safeParse({ monthlyContributionLimit: 300 }).success).toBe(true);
     expect(updateAccountSchema.safeParse({ monthlyContributionLimit: null }).success).toBe(true);
+  });
+});
+
+describe("IsaAllowanceSummary schema", () => {
+  it("accepts a valid summary with members", () => {
+    const r = isaAllowanceSummarySchema.safeParse({
+      taxYearStart: "2026-04-06",
+      taxYearEnd: "2027-04-05",
+      daysRemaining: 200,
+      annualLimit: 20000,
+      byMember: [
+        {
+          memberId: "m1",
+          name: "Alice",
+          used: 12400,
+          forecast: 5600,
+          forecastedYearTotal: 18000,
+          monthlyPlanned: 500,
+          estimatedFlag: false,
+        },
+      ],
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("accepts an empty byMember array", () => {
+    const r = isaAllowanceSummarySchema.safeParse({
+      taxYearStart: "2026-04-06",
+      taxYearEnd: "2027-04-05",
+      daysRemaining: 200,
+      annualLimit: 20000,
+      byMember: [],
+    });
+    expect(r.success).toBe(true);
   });
 });

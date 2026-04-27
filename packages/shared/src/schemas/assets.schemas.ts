@@ -136,3 +136,25 @@ export type CreateAccountInput = z.infer<typeof createAccountSchema>;
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
 export type RecordAccountBalanceInput = z.infer<typeof recordAccountBalanceSchema>;
 export type UpdateMemberProfileInput = z.infer<typeof updateMemberProfileSchema>;
+
+// ISA allowance summary (response schema)
+export const isaMemberPositionSchema = z.object({
+  memberId: z.string(),
+  name: z.string(),
+  used: z.number().min(0),
+  forecast: z.number().min(0),
+  forecastedYearTotal: z.number().min(0),
+  monthlyPlanned: z.number().min(0),
+  estimatedFlag: z.boolean(),
+});
+
+export const isaAllowanceSummarySchema = z.object({
+  taxYearStart: isoDateString,
+  taxYearEnd: isoDateString,
+  daysRemaining: z.number().int().min(0),
+  annualLimit: z.number().min(0),
+  byMember: z.array(isaMemberPositionSchema),
+});
+
+export type IsaMemberPosition = z.infer<typeof isaMemberPositionSchema>;
+export type IsaAllowanceSummary = z.infer<typeof isaAllowanceSummarySchema>;
