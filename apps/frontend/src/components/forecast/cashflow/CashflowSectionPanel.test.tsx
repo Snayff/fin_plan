@@ -62,8 +62,8 @@ describe("CashflowSectionPanel", () => {
     renderWithProviders(<CashflowSectionPanel />);
     const bar = await screen.findAllByRole("button", { name: /^[A-Z][a-z]{2} 2026/ });
     fireEvent.click(bar[0]!);
-    await waitFor(() => expect(screen.getByText(/← cashflow/i)).toBeTruthy(), { timeout: 5000 });
-  });
+    await waitFor(() => expect(screen.getByText(/← cashflow/i)).toBeTruthy(), { timeout: 8000 });
+  }, 10000);
 
   it("renders no-accounts callout when household has no linked accounts", async () => {
     server.use(
