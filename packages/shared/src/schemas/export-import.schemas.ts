@@ -110,6 +110,8 @@ const exportAccountSchema = z.object({
   ownerName: z.string().nullable().optional(),
   growthRatePct: z.number().nullable().optional(),
   isCashflowLinked: z.boolean().default(false),
+  isISA: z.boolean().optional().default(false),
+  isaYearContribution: z.number().nullable().optional(),
   lastReviewedAt: z.string().datetime().nullable().optional(),
   balances: z.array(
     z.object({

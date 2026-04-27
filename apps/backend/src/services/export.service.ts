@@ -262,6 +262,8 @@ export const exportService = {
             ownerName: a.memberId ? (memberNameByMemberId.get(a.memberId) ?? null) : null,
             growthRatePct: a.growthRatePct,
             isCashflowLinked: a.isCashflowLinked,
+            isISA: a.isISA,
+            isaYearContribution: a.isaYearContribution,
             lastReviewedAt: a.lastReviewedAt ? a.lastReviewedAt.toISOString() : null,
             balances: a.balances.map((b) => ({
               value: b.value,
