@@ -1,5 +1,5 @@
 import { describe, it, expect } from "bun:test";
-import { screen } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { AccountItemArea } from "../AccountItemArea";
 import { renderWithProviders } from "@/test/helpers/render";
 import { server } from "@/test/msw/server";
@@ -57,9 +57,7 @@ describe("AccountItemArea — Savings ISA indicator", () => {
       )
     );
     renderWithProviders(<AccountItemArea type="Current" />);
-    // Wait a tick for async
-    await new Promise((r) => setTimeout(r, 100));
-    expect(screen.queryByTestId("isa-allowance-indicator")).toBeNull();
+    await waitFor(() => expect(screen.queryByTestId("isa-allowance-indicator")).toBeNull());
   });
 
   it("shows amber dot on an ISA row whose member is forecast over the cap", async () => {
@@ -117,5 +115,64 @@ describe("AccountItemArea — Savings ISA indicator", () => {
     );
     renderWithProviders(<AccountItemArea type="Savings" />);
     expect(await screen.findByTestId("account-row-dot-a1")).toBeInTheDocument();
+  });
+
+  it("does not show amber dot on an ISA row whose member is within the forecast cap", async () => {
+    const accounts = [
+      {
+        id: "a2",
+        name: "Alice ISA",
+        type: "Savings",
+        memberId: "m1",
+        isISA: true,
+        isaYearContribution: 5000,
+        monthlyContribution: 0,
+        monthlyContributionLimit: null,
+        isOverCap: false,
+        hasSpareCapacityNudge: false,
+        currentBalance: 5000,
+        currentBalanceDate: null,
+        lastReviewedAt: new Date().toISOString(),
+        growthRatePct: null,
+        isCashflowLinked: false,
+        disposedAt: null,
+        disposalAccountId: null,
+        householdId: "h1",
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        spareMonthly: null,
+        higherRateTarget: null,
+        effectiveGrowthRatePct: null,
+        linkedItems: [],
+        balances: [],
+        memberName: null,
+      },
+    ];
+    server.use(
+      http.get("/api/assets/accounts/Savings", () => HttpResponse.json(accounts)),
+      http.get("/api/accounts/isa-allowance", () =>
+        HttpResponse.json({
+          taxYearStart: "2026-04-06",
+          taxYearEnd: "2027-04-05",
+          daysRemaining: 200,
+          annualLimit: 20000,
+          byMember: [
+            {
+              memberId: "m1",
+              name: "Alice",
+              used: 5000,
+              forecast: 3000,
+              forecastedYearTotal: 8000,
+              monthlyPlanned: 250,
+              estimatedFlag: false,
+            },
+          ],
+        })
+      )
+    );
+    renderWithProviders(<AccountItemArea type="Savings" />);
+    // Row renders (account list loads) but no amber dot
+    await screen.findByText("Alice ISA");
+    await waitFor(() => expect(screen.queryByTestId("account-row-dot-a2")).toBeNull());
   });
 });

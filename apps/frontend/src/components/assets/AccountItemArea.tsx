@@ -9,15 +9,6 @@ import {
   useRecordAccountBalance,
   useConfirmAccount,
 } from "../../hooks/useAssets.js";
-
-function formatDisposedDate(dateStr: string | null): string {
-  if (!dateStr) return "";
-  return new Date(dateStr).toLocaleDateString("en-GB", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 import { AssetAccountRow } from "./AssetAccountRow.js";
 import { AccountForm } from "./AccountForm.js";
 import { SavingsContributionNudge } from "./SavingsContributionNudge.js";
@@ -28,6 +19,15 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { formatCurrency } from "@/utils/format";
 import { useSettings } from "@/hooks/useSettings";
 import { useIsaAllowance } from "@/hooks/useIsaAllowance";
+
+function formatDisposedDate(dateStr: string | null): string {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 const TYPE_LABELS: Record<AccountType, string> = {
   Current: "Current",
@@ -52,7 +52,7 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
     (isaSummary?.byMember ?? [])
       .filter(
         (m) =>
-          m.used <= (isaSummary?.annualLimit ?? 0) &&
+          m.used < (isaSummary?.annualLimit ?? 0) &&
           m.forecastedYearTotal > (isaSummary?.annualLimit ?? 0)
       )
       .map((m) => m.memberId)
