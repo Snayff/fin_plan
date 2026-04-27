@@ -21,6 +21,7 @@ function formatDisposedDate(dateStr: string | null): string {
 import { AssetAccountRow } from "./AssetAccountRow.js";
 import { AccountForm } from "./AccountForm.js";
 import { SavingsContributionNudge } from "./SavingsContributionNudge.js";
+import { IsaAllowanceIndicator } from "./IsaAllowanceIndicator.js";
 import GhostAddButton from "@/components/tier/GhostAddButton";
 import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
@@ -270,6 +271,9 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
             )}
           </div>
         ))}
+
+        {/* ISA allowance indicator — Savings only */}
+        {type === "Savings" && <IsaAllowanceIndicator />}
 
         {/* Disposed section */}
         {disposedItems.length > 0 && (
