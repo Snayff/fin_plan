@@ -9,6 +9,16 @@ import {
   useRecordAccountBalance,
   useConfirmAccount,
 } from "../../hooks/useAssets.js";
+import { AssetAccountRow } from "./AssetAccountRow.js";
+import { AccountForm } from "./AccountForm.js";
+import { SavingsContributionNudge } from "./SavingsContributionNudge.js";
+import { IsaAllowanceIndicator } from "./IsaAllowanceIndicator.js";
+import GhostAddButton from "@/components/tier/GhostAddButton";
+import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
+import { useIsaAllowance } from "@/hooks/useIsaAllowance";
 
 function formatDisposedDate(dateStr: string | null): string {
   if (!dateStr) return "";
@@ -18,14 +28,6 @@ function formatDisposedDate(dateStr: string | null): string {
     year: "numeric",
   });
 }
-import { AssetAccountRow } from "./AssetAccountRow.js";
-import { AccountForm } from "./AccountForm.js";
-import { SavingsContributionNudge } from "./SavingsContributionNudge.js";
-import GhostAddButton from "@/components/tier/GhostAddButton";
-import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
-import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { formatCurrency } from "@/utils/format";
-import { useSettings } from "@/hooks/useSettings";
 
 const TYPE_LABELS: Record<AccountType, string> = {
   Current: "Current",
@@ -45,6 +47,16 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
   const { data: allItems } = useAccountsByType(type, { includeDisposed: true });
   const { data: settings } = useSettings();
   const showPence = settings?.showPence ?? false;
+  const { data: isaSummary } = useIsaAllowance();
+  const isaOverForecastMemberIds = new Set(
+    (isaSummary?.byMember ?? [])
+      .filter(
+        (m) =>
+          m.used < (isaSummary?.annualLimit ?? 0) &&
+          m.forecastedYearTotal > (isaSummary?.annualLimit ?? 0)
+      )
+      .map((m) => m.memberId)
+  );
 
   const [isAddingItem, setIsAddingItem] = useState(initialIsAdding ?? false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -146,6 +158,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                   memberId,
                   growthRatePct,
                   monthlyContributionLimit,
+                  isISA,
+                  isaYearContribution,
                   disposedAt,
                   disposalAccountId,
                   initialValue,
@@ -157,6 +171,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                       memberId: memberId ?? undefined,
                       growthRatePct: growthRatePct ?? undefined,
                       monthlyContributionLimit: monthlyContributionLimit ?? undefined,
+                      isISA: isISA || undefined,
+                      isaYearContribution: isaYearContribution ?? undefined,
                       initialValue,
                       disposedAt: disposedAt ?? undefined,
                       disposalAccountId: disposalAccountId ?? undefined,
@@ -189,6 +205,9 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
               item={item}
               itemKind="account"
               stalenessThresholdMonths={3}
+              hasIsaOverForecast={
+                item.isISA === true && isaOverForecastMemberIds.has(item.memberId ?? "")
+              }
               isExpanded={expandedId === item.id}
               isEditing={editingId === item.id}
               isRecording={recordingId === item.id}
@@ -221,6 +240,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                 memberId,
                 growthRatePct,
                 monthlyContributionLimit,
+                isISA,
+                isaYearContribution,
                 disposedAt,
                 disposalAccountId,
               }) => {
@@ -234,6 +255,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                       ...(monthlyContributionLimit !== undefined
                         ? { monthlyContributionLimit }
                         : {}),
+                      isISA: isISA || undefined,
+                      isaYearContribution: isaYearContribution ?? undefined,
                       disposedAt: disposedAt ?? undefined,
                       disposalAccountId: disposalAccountId ?? undefined,
                     },
@@ -242,6 +265,12 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                 } catch {
                   // error handled by mutation onError (toast)
                 }
+              }}
+              onZeroIsaContribution={() => {
+                updateAccount.mutate({
+                  accountId: item.id,
+                  data: { isaYearContribution: 0 },
+                });
               }}
               onSaveRecord={async ({ value, date, note }) => {
                 try {
@@ -262,6 +291,9 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
             )}
           </div>
         ))}
+
+        {/* ISA allowance indicator — Savings only */}
+        {type === "Savings" && <IsaAllowanceIndicator />}
 
         {/* Disposed section */}
         {disposedItems.length > 0 && (

@@ -8,6 +8,7 @@ import type {
   CreateAccountInput,
   UpdateAccountInput,
   RecordAccountBalanceInput,
+  IsaAllowanceSummary,
 } from "@finplan/shared";
 
 export interface AssetItem {
@@ -57,6 +58,8 @@ export interface AccountItem {
   currentBalanceDate: string | null;
   monthlyContribution: number;
   monthlyContributionLimit: number | null;
+  isISA: boolean;
+  isaYearContribution: number | null;
   spareMonthly: number | null;
   isOverCap: boolean;
   hasSpareCapacityNudge: boolean;
@@ -117,3 +120,7 @@ export const assetsApiService = {
   confirmAccount: (accountId: string) =>
     apiClient.post(`/api/assets/accounts/${accountId}/confirm`, {}),
 };
+
+export async function getIsaAllowance(): Promise<IsaAllowanceSummary> {
+  return apiClient.get<IsaAllowanceSummary>("/api/accounts/isa-allowance");
+}

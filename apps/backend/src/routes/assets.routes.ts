@@ -73,6 +73,11 @@ export async function assetsRoutes(fastify: FastifyInstance) {
 
   // ── Accounts ──────────────────────────────────────────────────────────────
 
+  fastify.get("/accounts/isa-allowance", pre, async (req, reply) => {
+    const summary = await assetsService.getIsaAllowanceSummary(req.householdId!);
+    return reply.send(summary);
+  });
+
   fastify.get("/accounts/:type", pre, async (req, reply) => {
     const { type } = req.params as { type: string };
     const { disposed } = (req.query ?? {}) as { disposed?: string };

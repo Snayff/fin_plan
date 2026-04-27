@@ -8,6 +8,7 @@ import type { AccountType } from "@finplan/shared";
 import { AssetForm } from "./AssetForm.js";
 import { AccountForm } from "./AccountForm.js";
 import { RecordBalanceInlineForm } from "./RecordBalanceInlineForm.js";
+import { IsaTaxYearBanner } from "./IsaTaxYearBanner.js";
 
 type Item = AssetItem | AccountItem;
 
@@ -15,6 +16,7 @@ interface BaseProps {
   item: Item;
   itemKind: "asset" | "account";
   stalenessThresholdMonths: number;
+  hasIsaOverForecast?: boolean;
   isExpanded: boolean;
   isEditing: boolean;
   isRecording: boolean;
@@ -31,12 +33,16 @@ interface BaseProps {
   onSaveEdit: (data: {
     name: string;
     memberId: string | null;
-    growthRatePct?: number | null;
+    growthRatePct: number | null;
     monthlyContributionLimit?: number | null;
-    disposedAt?: string | null;
-    disposalAccountId?: string | null;
+    isISA?: boolean;
+    isaYearContribution?: number | null;
+    disposedAt: string | null;
+    disposalAccountId: string | null;
+    initialValue?: number;
   }) => void;
   onSaveRecord: (data: { value: number; date: string; note: string | null }) => void;
+  onZeroIsaContribution?: () => void;
 }
 
 const rowVariants = {
@@ -70,6 +76,7 @@ export function AssetAccountRow({
   item,
   itemKind,
   stalenessThresholdMonths,
+  hasIsaOverForecast = false,
   isExpanded,
   isEditing,
   isRecording,
@@ -85,6 +92,7 @@ export function AssetAccountRow({
   onConfirm,
   onSaveEdit,
   onSaveRecord,
+  onZeroIsaContribution,
 }: BaseProps) {
   const { data: members } = useHouseholdMembers();
   const { data: settings } = useSettings();
@@ -124,9 +132,13 @@ export function AssetAccountRow({
             const a = item as AccountItem;
             const hasLimitNudge =
               itemKind === "account" && (a.isOverCap || a.hasSpareCapacityNudge);
-            const showDot = stale || hasLimitNudge;
+            const showDot = stale || hasLimitNudge || hasIsaOverForecast;
             return showDot ? (
-              <span className="h-1.5 w-1.5 rounded-full bg-attention shrink-0" aria-hidden />
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-attention shrink-0"
+                aria-hidden
+                data-testid={`account-row-dot-${item.id}`}
+              />
             ) : null;
           })()}
         </span>
@@ -174,6 +186,15 @@ export function AssetAccountRow({
             exit="exit"
             style={{ overflow: "hidden" }}
           >
+            {itemKind === "account" && onZeroIsaContribution != null && (
+              <div className="px-3 pt-3">
+                <IsaTaxYearBanner
+                  account={item as AccountItem}
+                  onZero={onZeroIsaContribution}
+                  showPence={showPence}
+                />
+              </div>
+            )}
             {itemKind === "asset" ? (
               <AssetForm
                 mode="edit"
@@ -201,6 +222,8 @@ export function AssetAccountRow({
                 initialMonthlyContributionLimit={
                   (item as AccountItem).monthlyContributionLimit ?? null
                 }
+                initialIsISA={(item as AccountItem).isISA}
+                initialIsaYearContribution={(item as AccountItem).isaYearContribution ?? null}
                 initialDisposedAt={item.disposedAt ?? null}
                 initialDisposalAccountId={item.disposalAccountId ?? null}
                 isSaving={isSavingEdit}

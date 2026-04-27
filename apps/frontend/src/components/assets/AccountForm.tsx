@@ -37,6 +37,8 @@ interface Props {
   initialMonthlyContributionLimit?: number | null;
   initialDisposedAt?: string | null;
   initialDisposalAccountId?: string | null;
+  initialIsISA?: boolean;
+  initialIsaYearContribution?: number | null;
   isSaving?: boolean;
   isSavingConfirm?: boolean;
   isStale?: boolean;
@@ -45,6 +47,8 @@ interface Props {
     memberId: string | null;
     growthRatePct: number | null;
     monthlyContributionLimit: number | null;
+    isISA?: boolean;
+    isaYearContribution?: number | null;
     disposedAt: string | null;
     disposalAccountId: string | null;
     initialValue?: number;
@@ -68,6 +72,8 @@ export function AccountForm({
   initialMonthlyContributionLimit = null,
   initialDisposedAt = null,
   initialDisposalAccountId = null,
+  initialIsISA,
+  initialIsaYearContribution,
   isSaving,
   isSavingConfirm,
   isStale,
@@ -84,6 +90,11 @@ export function AccountForm({
   const [limitRaw, setLimitRaw] = useState(
     initialMonthlyContributionLimit != null ? initialMonthlyContributionLimit.toString() : ""
   );
+  const [isISA, setIsISA] = useState(initialIsISA ?? false);
+  const [isaContribRaw, setIsaContribRaw] = useState(
+    initialIsaYearContribution != null ? initialIsaYearContribution.toString() : ""
+  );
+  const [isaError, setIsaError] = useState<string | null>(null);
   const [initialValue, setInitialValue] = useState<string>("");
   const [valueFocused, setValueFocused] = useState(false);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -161,6 +172,25 @@ export function AccountForm({
       setDisposalError(null);
     }
 
+    if (isISA) {
+      if (!memberId) {
+        setIsaError("ISA accounts must be assigned to a member");
+        valid = false;
+      } else if (type !== "Savings") {
+        setIsaError("Only Savings accounts can be ISAs");
+        valid = false;
+      } else {
+        setIsaError(null);
+      }
+    } else {
+      setIsaError(null);
+    }
+    let parsedIsaContrib: number | null = null;
+    if (isISA && isaContribRaw.trim() !== "") {
+      const n = parseFloat(isaContribRaw);
+      if (!isNaN(n) && n >= 0) parsedIsaContrib = n;
+    }
+
     if (!valid) return;
     const parsedValue = initialValue.trim() === "" ? undefined : parseValue(initialValue);
     onSave({
@@ -168,6 +198,8 @@ export function AccountForm({
       memberId,
       growthRatePct: parsedRate,
       monthlyContributionLimit: parsedLimit,
+      isISA,
+      isaYearContribution: parsedIsaContrib,
       disposedAt: dateSet ? disposedAt : null,
       disposalAccountId: acctSet ? disposalAccountId : null,
       ...(mode === "add" && parsedValue !== undefined && !isNaN(parsedValue)
@@ -264,32 +296,73 @@ export function AccountForm({
         )}
 
         {type === "Savings" && (
-          <div className="col-span-2 flex flex-col gap-1">
-            <label className={labelClass}>Monthly contribution limit (optional)</label>
-            <input
-              type="number"
-              step="1"
-              min="0"
-              value={limitRaw}
-              onChange={(e) => {
-                setLimitRaw(e.target.value);
-                setLimitError(null);
-              }}
-              placeholder="£0"
-              aria-label="Monthly contribution limit"
-              className={[inputClass, "font-numeric", limitError ? "border-amber-400/60" : ""].join(
-                " "
+          <>
+            <div className="col-span-2 flex flex-col gap-1">
+              <label className={labelClass}>Monthly contribution limit (optional)</label>
+              <input
+                type="number"
+                step="1"
+                min="0"
+                value={limitRaw}
+                onChange={(e) => {
+                  setLimitRaw(e.target.value);
+                  setLimitError(null);
+                }}
+                placeholder="£0"
+                aria-label="Monthly contribution limit"
+                className={[
+                  inputClass,
+                  "font-numeric",
+                  limitError ? "border-amber-400/60" : "",
+                ].join(" ")}
+              />
+              {limitError ? (
+                <p className="-mt-0.5 text-xs text-amber-400">{limitError}</p>
+              ) : (
+                <p className="text-[11px] text-text-muted">
+                  The most this account lets you pay in each month. finplan uses this to flag spare
+                  capacity and surface higher-rate alternatives.
+                </p>
               )}
-            />
-            {limitError ? (
-              <p className="-mt-0.5 text-xs text-amber-400">{limitError}</p>
-            ) : (
-              <p className="text-[11px] text-text-muted">
-                The most this account lets you pay in each month. finplan uses this to flag spare
-                capacity and surface higher-rate alternatives.
-              </p>
+            </div>
+            <div className="col-span-2 flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="isISA"
+                checked={isISA}
+                onChange={(e) => {
+                  setIsISA(e.target.checked);
+                  setIsaError(null);
+                }}
+              />
+              <label htmlFor="isISA" className="text-xs text-text-secondary">
+                Is ISA?
+              </label>
+              {isaError && <span className="ml-2 text-xs text-amber-400">{isaError}</span>}
+            </div>
+            {isISA && (
+              <div className="col-span-2 flex flex-col gap-1">
+                <label htmlFor="isaYearContribution" className={labelClass}>
+                  ISA contribution this tax year
+                </label>
+                <input
+                  id="isaYearContribution"
+                  type="number"
+                  step="1"
+                  min="0"
+                  value={isaContribRaw}
+                  onChange={(e) => setIsaContribRaw(e.target.value)}
+                  placeholder="£0"
+                  aria-label="ISA contribution this tax year"
+                  className={[inputClass, "font-numeric"].join(" ")}
+                />
+                <p className="text-[11px] text-text-muted">
+                  How much you've already paid into this ISA in the current UK tax year (6 April → 5
+                  April).
+                </p>
+              </div>
             )}
-          </div>
+          </>
         )}
 
         {/* Planned disposal — collapsible */}

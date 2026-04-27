@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Account" ADD COLUMN "isISA" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN "isaYearContribution" DOUBLE PRECISION;

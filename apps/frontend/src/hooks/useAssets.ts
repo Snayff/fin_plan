@@ -2,6 +2,7 @@ import { useQueries, useQuery, useMutation, useQueryClient } from "@tanstack/rea
 import { assetsApiService, type AccountItem } from "../services/assets.service.js";
 import { showError } from "@/lib/toast";
 import type { AssetType, AccountType } from "@finplan/shared";
+import { ISA_ALLOWANCE_KEY } from "./useIsaAllowance.js";
 
 const ALL_ACCOUNT_TYPES: AccountType[] = [
   "Current",
@@ -120,6 +121,7 @@ export function useCreateAccount() {
       void qc.invalidateQueries({ queryKey: ["assets"] });
       void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
+      void qc.invalidateQueries({ queryKey: ISA_ALLOWANCE_KEY });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to create account");
@@ -141,6 +143,7 @@ export function useUpdateAccount() {
       void qc.invalidateQueries({ queryKey: ["assets"] });
       void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
+      void qc.invalidateQueries({ queryKey: ISA_ALLOWANCE_KEY });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to update account");
@@ -156,6 +159,7 @@ export function useDeleteAccount() {
       void qc.invalidateQueries({ queryKey: ["assets"] });
       void qc.invalidateQueries({ queryKey: ["forecast"] });
       void qc.invalidateQueries({ queryKey: ["cashflow", "shortfall"] });
+      void qc.invalidateQueries({ queryKey: ISA_ALLOWANCE_KEY });
     },
     onError: (error: unknown) => {
       showError(error instanceof Error ? error.message : "Failed to delete account");
