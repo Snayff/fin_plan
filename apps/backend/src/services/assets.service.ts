@@ -3,6 +3,8 @@ import { audited } from "./audit.service.js";
 import type { ActorCtx } from "./audit.service.js";
 import { NotFoundError, ValidationError } from "../utils/errors.js";
 import { toMonthlyAmount } from "@finplan/shared";
+import { getIsaTaxYearWindow } from "../utils/isa-tax-year.js";
+import { forecastContribution, type ForecastInput } from "../utils/isa-forecast.js";
 import type {
   AssetType,
   AccountType,
@@ -589,5 +591,104 @@ export const assetsService = {
           data: { lastReviewedAt: new Date() },
         }),
     });
+  },
+
+  async getIsaAllowanceSummary(householdId: string, today: Date = new Date()) {
+    const settings = await prisma.householdSettings.findUnique({ where: { householdId } });
+    const annualLimit = settings?.isaAnnualLimit ?? 20000;
+    const window = getIsaTaxYearWindow(today);
+
+    const isaAccounts = await prisma.account.findMany({
+      where: {
+        householdId,
+        isISA: true,
+        type: "Savings",
+        ...activeWhere(),
+      },
+      include: {
+        member: { select: { id: true, name: true } },
+        linkedItems: { select: { id: true, spendType: true, dueDate: true } },
+      },
+    });
+
+    if (isaAccounts.length === 0) {
+      return {
+        taxYearStart: window.start.toISOString().slice(0, 10),
+        taxYearEnd: window.end.toISOString().slice(0, 10),
+        daysRemaining: window.daysRemaining,
+        annualLimit,
+        byMember: [],
+      };
+    }
+
+    // Resolve current amounts for all linked items via ItemAmountPeriod (matches existing pattern).
+    const allLinkedItemIds = isaAccounts.flatMap((a) => a.linkedItems.map((i) => i.id));
+    const periods =
+      allLinkedItemIds.length > 0
+        ? await prisma.itemAmountPeriod.findMany({
+            where: {
+              itemType: "discretionary_item",
+              itemId: { in: allLinkedItemIds },
+              startDate: { lte: today },
+              OR: [{ endDate: null }, { endDate: { gt: today } }],
+            },
+          })
+        : [];
+    const amountByItemId = new Map<string, number>();
+    for (const p of periods) amountByItemId.set(p.itemId, p.amount);
+
+    // Group by member.
+    type Bucket = {
+      memberId: string;
+      name: string;
+      used: number;
+      forecastInputs: ForecastInput[];
+    };
+    const buckets = new Map<string, Bucket>();
+    for (const a of isaAccounts) {
+      if (!a.memberId || !a.member) continue;
+      const b = buckets.get(a.memberId) ?? {
+        memberId: a.memberId,
+        name: a.member.name,
+        used: 0,
+        forecastInputs: [],
+      };
+      b.used += a.isaYearContribution ?? 0;
+      for (const item of a.linkedItems) {
+        b.forecastInputs.push({
+          amount: amountByItemId.get(item.id) ?? 0,
+          spendType: item.spendType,
+          dueDate: item.dueDate,
+        });
+      }
+      buckets.set(a.memberId, b);
+    }
+
+    const byMember = Array.from(buckets.values())
+      .map((b) => {
+        const f = forecastContribution(b.forecastInputs, today, window.end);
+        const monthlyPlanned =
+          f.amount > 0 && window.daysRemaining > 0
+            ? (f.amount * 30.4375) / Math.max(1, window.daysRemaining)
+            : 0;
+        return {
+          memberId: b.memberId,
+          name: b.name,
+          used: b.used,
+          forecast: f.amount,
+          forecastedYearTotal: b.used + f.amount,
+          monthlyPlanned,
+          estimatedFlag: f.estimated,
+        };
+      })
+      .sort((x, y) => x.name.localeCompare(y.name));
+
+    return {
+      taxYearStart: window.start.toISOString().slice(0, 10),
+      taxYearEnd: window.end.toISOString().slice(0, 10),
+      daysRemaining: window.daysRemaining,
+      annualLimit,
+      byMember,
+    };
   },
 };
