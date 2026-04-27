@@ -64,6 +64,26 @@ export const recordAssetBalanceSchema = z.object({
   note: z.string().max(500).nullable().optional(),
 });
 
+// ISA helpers
+type IsaShape = {
+  isISA?: boolean;
+  memberId?: string | null;
+  type?: "Current" | "Savings" | "Pension" | "StocksAndShares" | "Other";
+};
+
+function isaRefine(data: IsaShape): boolean {
+  if (data.isISA !== true) return true;
+  if (data.memberId == null) return false;
+  // type may be absent on update payloads; if present it must be Savings
+  if (data.type !== undefined && data.type !== "Savings") return false;
+  return true;
+}
+
+const isaRefineMessage: { message: string; path: (string | number)[] } = {
+  message: "ISA accounts must be Savings type and have a memberId assigned",
+  path: ["isISA"],
+};
+
 // Account CRUD
 export const createAccountSchema = z
   .object({
@@ -74,9 +94,12 @@ export const createAccountSchema = z
     monthlyContributionLimit: z.number().min(0).nullable().optional(),
     isCashflowLinked: z.boolean().optional(),
     initialValue: z.number().positive().optional(),
+    isISA: z.boolean().optional(),
+    isaYearContribution: z.number().min(0).nullable().optional(),
     ...disposalPair,
   })
-  .refine(disposalRefine, disposalRefineMessage);
+  .refine(disposalRefine, disposalRefineMessage)
+  .refine(isaRefine, isaRefineMessage);
 
 export const updateAccountSchema = z
   .object({
@@ -85,9 +108,12 @@ export const updateAccountSchema = z
     growthRatePct: z.number().min(0).max(100).nullable().optional(),
     monthlyContributionLimit: z.number().min(0).nullable().optional(),
     isCashflowLinked: z.boolean().optional(),
+    isISA: z.boolean().optional(),
+    isaYearContribution: z.number().min(0).nullable().optional(),
     ...disposalPair,
   })
-  .refine(disposalRefine, disposalRefineMessage);
+  .refine(disposalRefine, disposalRefineMessage)
+  .refine(isaRefine, isaRefineMessage);
 
 export const recordAccountBalanceSchema = z.object({
   value: z.number().positive(),
