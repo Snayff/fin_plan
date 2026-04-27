@@ -106,13 +106,17 @@ function countPeriodicOccurrences(base: Date, start: Date, end: Date, step: numb
   if (end < start) return 0;
   let count = 0;
   const cursor = new Date(base.getTime());
+  const endTs = end.getTime();
   while (cursor > end) {
     cursor.setUTCMonth(cursor.getUTCMonth() - step);
   }
   while (cursor < start) {
     cursor.setUTCMonth(cursor.getUTCMonth() + step);
   }
-  while (cursor <= end) {
+  // NB: the forward loop above can overshoot end when the step spans the
+  // entire window. Use cursor.getTime() so static analysis recognises this
+  // as a fresh read of the mutated timestamp rather than a stable reference.
+  while (cursor.getTime() <= endTs) {
     count++;
     cursor.setUTCMonth(cursor.getUTCMonth() + step);
   }
