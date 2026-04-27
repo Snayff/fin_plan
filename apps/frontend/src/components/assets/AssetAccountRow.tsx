@@ -8,6 +8,7 @@ import type { AccountType } from "@finplan/shared";
 import { AssetForm } from "./AssetForm.js";
 import { AccountForm } from "./AccountForm.js";
 import { RecordBalanceInlineForm } from "./RecordBalanceInlineForm.js";
+import { IsaTaxYearBanner } from "./IsaTaxYearBanner.js";
 
 type Item = AssetItem | AccountItem;
 
@@ -41,6 +42,7 @@ interface BaseProps {
     initialValue?: number;
   }) => void;
   onSaveRecord: (data: { value: number; date: string; note: string | null }) => void;
+  onZeroIsaContribution?: () => void;
 }
 
 const rowVariants = {
@@ -90,6 +92,7 @@ export function AssetAccountRow({
   onConfirm,
   onSaveEdit,
   onSaveRecord,
+  onZeroIsaContribution,
 }: BaseProps) {
   const { data: members } = useHouseholdMembers();
   const { data: settings } = useSettings();
@@ -183,6 +186,15 @@ export function AssetAccountRow({
             exit="exit"
             style={{ overflow: "hidden" }}
           >
+            {itemKind === "account" && onZeroIsaContribution != null && (
+              <div className="px-3 pt-3">
+                <IsaTaxYearBanner
+                  account={item as AccountItem}
+                  onZero={onZeroIsaContribution}
+                  showPence={showPence}
+                />
+              </div>
+            )}
             {itemKind === "asset" ? (
               <AssetForm
                 mode="edit"

@@ -266,6 +266,12 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                   // error handled by mutation onError (toast)
                 }
               }}
+              onZeroIsaContribution={() => {
+                updateAccount.mutate({
+                  accountId: item.id,
+                  data: { isaYearContribution: 0 },
+                });
+              }}
               onSaveRecord={async ({ value, date, note }) => {
                 try {
                   await recordBalance.mutateAsync({
