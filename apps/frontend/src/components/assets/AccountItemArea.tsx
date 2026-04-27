@@ -27,6 +27,7 @@ import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { formatCurrency } from "@/utils/format";
 import { useSettings } from "@/hooks/useSettings";
+import { useIsaAllowance } from "@/hooks/useIsaAllowance";
 
 const TYPE_LABELS: Record<AccountType, string> = {
   Current: "Current",
@@ -46,6 +47,16 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
   const { data: allItems } = useAccountsByType(type, { includeDisposed: true });
   const { data: settings } = useSettings();
   const showPence = settings?.showPence ?? false;
+  const { data: isaSummary } = useIsaAllowance();
+  const isaOverForecastMemberIds = new Set(
+    (isaSummary?.byMember ?? [])
+      .filter(
+        (m) =>
+          m.used <= (isaSummary?.annualLimit ?? 0) &&
+          m.forecastedYearTotal > (isaSummary?.annualLimit ?? 0)
+      )
+      .map((m) => m.memberId)
+  );
 
   const [isAddingItem, setIsAddingItem] = useState(initialIsAdding ?? false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -194,6 +205,9 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
               item={item}
               itemKind="account"
               stalenessThresholdMonths={3}
+              hasIsaOverForecast={
+                item.isISA === true && isaOverForecastMemberIds.has(item.memberId ?? "")
+              }
               isExpanded={expandedId === item.id}
               isEditing={editingId === item.id}
               isRecording={recordingId === item.id}

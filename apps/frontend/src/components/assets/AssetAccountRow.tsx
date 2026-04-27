@@ -15,6 +15,7 @@ interface BaseProps {
   item: Item;
   itemKind: "asset" | "account";
   stalenessThresholdMonths: number;
+  hasIsaOverForecast?: boolean;
   isExpanded: boolean;
   isEditing: boolean;
   isRecording: boolean;
@@ -73,6 +74,7 @@ export function AssetAccountRow({
   item,
   itemKind,
   stalenessThresholdMonths,
+  hasIsaOverForecast = false,
   isExpanded,
   isEditing,
   isRecording,
@@ -127,9 +129,13 @@ export function AssetAccountRow({
             const a = item as AccountItem;
             const hasLimitNudge =
               itemKind === "account" && (a.isOverCap || a.hasSpareCapacityNudge);
-            const showDot = stale || hasLimitNudge;
+            const showDot = stale || hasLimitNudge || hasIsaOverForecast;
             return showDot ? (
-              <span className="h-1.5 w-1.5 rounded-full bg-attention shrink-0" aria-hidden />
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-attention shrink-0"
+                aria-hidden
+                data-testid={`account-row-dot-${item.id}`}
+              />
             ) : null;
           })()}
         </span>
