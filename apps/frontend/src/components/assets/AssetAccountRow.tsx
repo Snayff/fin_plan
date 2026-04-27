@@ -31,10 +31,13 @@ interface BaseProps {
   onSaveEdit: (data: {
     name: string;
     memberId: string | null;
-    growthRatePct?: number | null;
+    growthRatePct: number | null;
     monthlyContributionLimit?: number | null;
-    disposedAt?: string | null;
-    disposalAccountId?: string | null;
+    isISA?: boolean;
+    isaYearContribution?: number | null;
+    disposedAt: string | null;
+    disposalAccountId: string | null;
+    initialValue?: number;
   }) => void;
   onSaveRecord: (data: { value: number; date: string; note: string | null }) => void;
 }
@@ -201,6 +204,8 @@ export function AssetAccountRow({
                 initialMonthlyContributionLimit={
                   (item as AccountItem).monthlyContributionLimit ?? null
                 }
+                initialIsISA={(item as AccountItem).isISA}
+                initialIsaYearContribution={(item as AccountItem).isaYearContribution ?? null}
                 initialDisposedAt={item.disposedAt ?? null}
                 initialDisposalAccountId={item.disposalAccountId ?? null}
                 isSaving={isSavingEdit}

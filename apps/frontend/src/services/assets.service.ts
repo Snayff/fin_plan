@@ -57,6 +57,8 @@ export interface AccountItem {
   currentBalanceDate: string | null;
   monthlyContribution: number;
   monthlyContributionLimit: number | null;
+  isISA: boolean;
+  isaYearContribution: number | null;
   spareMonthly: number | null;
   isOverCap: boolean;
   hasSpareCapacityNudge: boolean;

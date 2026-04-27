@@ -146,6 +146,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                   memberId,
                   growthRatePct,
                   monthlyContributionLimit,
+                  isISA,
+                  isaYearContribution,
                   disposedAt,
                   disposalAccountId,
                   initialValue,
@@ -157,6 +159,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                       memberId: memberId ?? undefined,
                       growthRatePct: growthRatePct ?? undefined,
                       monthlyContributionLimit: monthlyContributionLimit ?? undefined,
+                      isISA: isISA || undefined,
+                      isaYearContribution: isaYearContribution ?? undefined,
                       initialValue,
                       disposedAt: disposedAt ?? undefined,
                       disposalAccountId: disposalAccountId ?? undefined,
@@ -221,6 +225,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                 memberId,
                 growthRatePct,
                 monthlyContributionLimit,
+                isISA,
+                isaYearContribution,
                 disposedAt,
                 disposalAccountId,
               }) => {
@@ -234,6 +240,8 @@ export function AccountItemArea({ type, initialIsAdding }: Props) {
                       ...(monthlyContributionLimit !== undefined
                         ? { monthlyContributionLimit }
                         : {}),
+                      isISA: isISA || undefined,
+                      isaYearContribution: isaYearContribution ?? undefined,
                       disposedAt: disposedAt ?? undefined,
                       disposalAccountId: disposalAccountId ?? undefined,
                     },
