@@ -1,7 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { getIsaAllowance } from "@/services/assets.service";
+import { ISA_ALLOWANCE_KEY } from "./queryKeys.js";
 
-export const ISA_ALLOWANCE_KEY = ["isa-allowance"] as const;
+export { ISA_ALLOWANCE_KEY };
 
 export function useIsaAllowance() {
   return useQuery({
