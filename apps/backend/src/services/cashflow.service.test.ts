@@ -719,15 +719,26 @@ describe("cashflowService.getProjection — disposal liquidation events", () => 
 });
 
 describe("cashflowService.getMonthDetail", () => {
+  // Use the current calendar month so the projection-window check never fails
+  // as time advances (the window starts at today's month).
+  const _now = new Date();
+  const thisYear = _now.getUTCFullYear();
+  const thisMonth = _now.getUTCMonth() + 1; // 1-indexed
+  /** Days in the current month */
+  const daysInMonth = new Date(Date.UTC(thisYear, thisMonth, 0)).getUTCDate();
+  /** UTC Date for day N of the current month */
+  const d = (day: number) => new Date(Date.UTC(thisYear, thisMonth - 1, day));
+  /** ISO date string for day N of the current month (YYYY-MM-DD) */
+  const ds = (day: number) =>
+    `${thisYear}-${String(thisMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
   beforeEach(() => {
     prismaMock.account.findMany.mockResolvedValue([
       {
         id: "a1",
         type: "Current",
         isCashflowLinked: true,
-        balances: [
-          { value: 1000, date: new Date("2026-04-01"), createdAt: new Date("2026-04-01") },
-        ],
+        balances: [{ value: 1000, date: d(1), createdAt: d(1) }],
       },
     ] as any);
     prismaMock.incomeSource.findMany.mockResolvedValue([
@@ -735,7 +746,7 @@ describe("cashflowService.getMonthDetail", () => {
         id: "i1",
         name: "Salary",
         frequency: "monthly",
-        dueDate: new Date("2026-04-25"),
+        dueDate: d(25),
         householdId: "hh-1",
       },
     ] as any);
@@ -756,7 +767,7 @@ describe("cashflowService.getMonthDetail", () => {
   });
 
   it("returns events for the target month with running balance after each", async () => {
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
     expect(detail.events).toHaveLength(1);
     expect(detail.events[0]?.label).toBe("Salary");
     expect(detail.events[0]?.amount).toBe(3000);
@@ -764,8 +775,8 @@ describe("cashflowService.getMonthDetail", () => {
   });
 
   it("returns dailyTrace with one entry per day", async () => {
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
-    expect(detail.dailyTrace).toHaveLength(30); // April
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
+    expect(detail.dailyTrace).toHaveLength(daysInMonth);
   });
 
   it("includes amortisedDailyDiscretionary in the response", async () => {
@@ -781,19 +792,19 @@ describe("cashflowService.getMonthDetail", () => {
         amount: 600,
       },
     ] as any);
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
     expect(detail.monthlyDiscretionaryTotal).toBe(600);
-    expect(detail.amortisedDailyDiscretionary).toBeCloseTo(20, 1); // 600/30
+    expect(detail.amortisedDailyDiscretionary).toBeCloseTo(600 / daysInMonth, 0);
   });
 
   it("includes events dated before today in the current month's event list", async () => {
-    // Today is 2026-04-11. A 5 Apr salary should still appear in the April detail.
+    // A salary due on day 5 of the current month should appear in the detail.
     prismaMock.incomeSource.findMany.mockResolvedValue([
       {
         id: "i1",
         name: "Salary",
         frequency: "monthly",
-        dueDate: new Date("2026-04-05"),
+        dueDate: d(5),
         householdId: "hh-1",
       },
     ] as any);
@@ -807,22 +818,22 @@ describe("cashflowService.getMonthDetail", () => {
       },
     ] as any);
 
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
     const labels = detail.events.map((e) => e.label);
     const dates = detail.events.map((e) => e.date);
     expect(labels).toContain("Salary");
-    expect(dates).toContain("2026-04-05");
+    expect(dates).toContain(ds(5));
   });
 
   it("computes tightestPoint across the full current month, including past-of-today days", async () => {
-    // Today is 2026-04-11. Big rent on 3 Apr drives a dip well before today.
-    // The tightest point must still report 3 Apr's value, not a later day.
+    // Big rent on day 3 drives a dip before salary on day 25.
+    // The tightest point must report day 3, not a later day.
     prismaMock.account.findMany.mockResolvedValue([
       {
         id: "a1",
         type: "Current",
         isCashflowLinked: true,
-        balances: [{ value: 500, date: new Date("2026-04-11"), createdAt: new Date("2026-04-11") }],
+        balances: [{ value: 500, date: d(11), createdAt: d(11) }],
       },
     ] as any);
     prismaMock.committedItem.findMany.mockResolvedValue([
@@ -830,7 +841,7 @@ describe("cashflowService.getMonthDetail", () => {
         id: "c1",
         name: "Rent",
         spendType: "monthly",
-        dueDate: new Date("2026-04-03"),
+        dueDate: d(3),
         householdId: "hh-1",
       },
     ] as any);
@@ -839,7 +850,7 @@ describe("cashflowService.getMonthDetail", () => {
         id: "i1",
         name: "Salary",
         frequency: "monthly",
-        dueDate: new Date("2026-04-25"),
+        dueDate: d(25),
         householdId: "hh-1",
       },
     ] as any);
@@ -860,11 +871,10 @@ describe("cashflowService.getMonthDetail", () => {
       },
     ] as any);
 
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
-    // Today is day 11; tightest point lands on day 3 (rent day), proving the
-    // scan covers past-of-today days. The actual value is bounded above by the
-    // user's anchor balance because of how the backwards-replay reconstructs
-    // start-of-month — what matters is that the past day is reported.
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
+    // Tightest point lands on day 3 (rent day), proving the scan covers all
+    // days in the month. The actual value is bounded above by the anchor
+    // balance because of how the backwards-replay reconstructs start-of-month.
     expect(detail.tightestPoint.day).toBe(3);
   });
 
@@ -875,7 +885,7 @@ describe("cashflowService.getMonthDetail", () => {
         id: "d2",
         name: "Concert",
         spendType: "one_off",
-        dueDate: new Date("2026-04-12"),
+        dueDate: d(12),
         householdId: "hh-1",
       },
     ] as any);
@@ -895,7 +905,7 @@ describe("cashflowService.getMonthDetail", () => {
         amount: 80,
       },
     ] as any);
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
     const labels = detail.events.map((e) => e.label);
     expect(labels).toContain("Concert");
     expect(labels).not.toContain("Food");
