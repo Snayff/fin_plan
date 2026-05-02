@@ -64,6 +64,26 @@ export const recordAssetBalanceSchema = z.object({
   note: z.string().max(500).nullable().optional(),
 });
 
+// ISA helpers
+type IsaShape = {
+  isISA?: boolean;
+  memberId?: string | null;
+  type?: "Current" | "Savings" | "Pension" | "StocksAndShares" | "Other";
+};
+
+function isaRefine(data: IsaShape): boolean {
+  if (data.isISA !== true) return true;
+  if (data.memberId == null) return false;
+  // type may be absent on update payloads; if present it must be Savings
+  if (data.type !== undefined && data.type !== "Savings") return false;
+  return true;
+}
+
+const isaRefineMessage: { message: string; path: (string | number)[] } = {
+  message: "ISA accounts must be Savings type and have a memberId assigned",
+  path: ["isISA"],
+};
+
 // Account CRUD
 export const createAccountSchema = z
   .object({
@@ -74,9 +94,12 @@ export const createAccountSchema = z
     monthlyContributionLimit: z.number().min(0).nullable().optional(),
     isCashflowLinked: z.boolean().optional(),
     initialValue: z.number().positive().optional(),
+    isISA: z.boolean().optional(),
+    isaYearContribution: z.number().min(0).nullable().optional(),
     ...disposalPair,
   })
-  .refine(disposalRefine, disposalRefineMessage);
+  .refine(disposalRefine, disposalRefineMessage)
+  .refine(isaRefine, isaRefineMessage);
 
 export const updateAccountSchema = z
   .object({
@@ -85,9 +108,12 @@ export const updateAccountSchema = z
     growthRatePct: z.number().min(0).max(100).nullable().optional(),
     monthlyContributionLimit: z.number().min(0).nullable().optional(),
     isCashflowLinked: z.boolean().optional(),
+    isISA: z.boolean().optional(),
+    isaYearContribution: z.number().min(0).nullable().optional(),
     ...disposalPair,
   })
-  .refine(disposalRefine, disposalRefineMessage);
+  .refine(disposalRefine, disposalRefineMessage)
+  .refine(isaRefine, isaRefineMessage);
 
 export const recordAccountBalanceSchema = z.object({
   value: z.number().positive(),
@@ -110,3 +136,25 @@ export type CreateAccountInput = z.infer<typeof createAccountSchema>;
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
 export type RecordAccountBalanceInput = z.infer<typeof recordAccountBalanceSchema>;
 export type UpdateMemberProfileInput = z.infer<typeof updateMemberProfileSchema>;
+
+// ISA allowance summary (response schema)
+export const isaMemberPositionSchema = z.object({
+  memberId: z.string(),
+  name: z.string(),
+  used: z.number().min(0),
+  forecast: z.number().min(0),
+  forecastedYearTotal: z.number().min(0),
+  monthlyPlanned: z.number().min(0),
+  estimatedFlag: z.boolean(),
+});
+
+export const isaAllowanceSummarySchema = z.object({
+  taxYearStart: isoDateString,
+  taxYearEnd: isoDateString,
+  daysRemaining: z.number().int().min(0),
+  annualLimit: z.number().min(0),
+  byMember: z.array(isaMemberPositionSchema),
+});
+
+export type IsaMemberPosition = z.infer<typeof isaMemberPositionSchema>;
+export type IsaAllowanceSummary = z.infer<typeof isaAllowanceSummarySchema>;

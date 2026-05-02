@@ -377,6 +377,8 @@ model Account {
   type                     AccountType
   growthRatePct            Float?
   monthlyContributionLimit Float?
+  isISA                    Boolean             @default(false)
+  isaYearContribution      Float?
   isCashflowLinked         Boolean             @default(false)
   lastReviewedAt           DateTime?
   disposedAt               DateTime?           @db.Date

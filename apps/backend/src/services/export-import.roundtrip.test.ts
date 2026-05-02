@@ -171,6 +171,12 @@ function setupExportMocks() {
       memberId: "member-bob",
       growthRatePct: 4.0,
       lastReviewedAt: new Date("2026-03-01T00:00:00Z"),
+      isISA: false,
+      isaYearContribution: null,
+      isCashflowLinked: false,
+      monthlyContributionLimit: null,
+      disposedAt: null,
+      disposalAccountId: null,
       balances: [
         {
           id: "acb-1",
@@ -734,5 +740,49 @@ describe("export → import round-trip", () => {
     const exported = await exportService.exportHousehold(HOUSEHOLD_ID, CALLER_USER_ID);
     const incomes = exported.incomeSources;
     expect(incomes[0]).toHaveProperty("dueDate");
+  });
+
+  it("round-trips isISA and isaYearContribution on accounts", async () => {
+    // Set up all other mocks first, then override account.findMany with ISA data
+    setupExportMocks();
+
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "acct-isa",
+        householdId: HOUSEHOLD_ID,
+        name: "Cash ISA",
+        type: "Savings",
+        memberId: "member-alice",
+        growthRatePct: null,
+        lastReviewedAt: null,
+        isISA: true,
+        isaYearContribution: 8500,
+        isCashflowLinked: false,
+        monthlyContributionLimit: null,
+        disposedAt: null,
+        disposalAccountId: null,
+        balances: [],
+      },
+    ]);
+
+    const envelope = await exportService.exportHousehold(HOUSEHOLD_ID, CALLER_USER_ID);
+
+    // ISA fields survive into the export envelope
+    expect(envelope.accounts[0]!.isISA).toBe(true);
+    expect(envelope.accounts[0]!.isaYearContribution).toBe(8500);
+
+    // Import wires the fields through to account.create
+    resetPrismaMocks();
+    setupImportMocks();
+
+    // Override account.create mock to capture the call (setupImportMocks already sets it up)
+    await importService.importHousehold("ignored", CALLER_USER_ID, envelope, "create_new");
+
+    expect(prismaMock.account.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        isISA: true,
+        isaYearContribution: 8500,
+      }),
+    });
   });
 });

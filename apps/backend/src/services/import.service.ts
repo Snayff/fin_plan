@@ -470,6 +470,8 @@ export const importService = {
                 memberId: a.ownerName ? (memberIdByName.get(a.ownerName) ?? null) : null,
                 growthRatePct: a.growthRatePct ?? null,
                 isCashflowLinked: a.isCashflowLinked ?? false,
+                isISA: a.isISA ?? false,
+                isaYearContribution: a.isaYearContribution ?? null,
                 lastReviewedAt: a.lastReviewedAt ? new Date(a.lastReviewedAt) : null,
               },
             });
