@@ -17,6 +17,7 @@
     "db:studio": "prisma studio",
     "db:push": "prisma db push",
     "postinstall": "prisma generate",
+    "db:generate": "prisma generate",
     "prisma:generate": "prisma generate"
   },
   "dependencies": {
