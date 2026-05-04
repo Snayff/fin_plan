@@ -15,7 +15,7 @@ mock.module("@/hooks/useWaterfall", () => ({
     data: {
       income: { total: 4000 },
       committed: { monthlyTotal: 1000, monthlyAvg12: 500 },
-      discretionary: { total: 500, savings: { total: 300 } },
+      discretionary: { total: 800, savings: { total: 300 } },
       surplus: { amount: 1700, percentOfIncome: 42.5 },
     },
   }),
@@ -30,6 +30,14 @@ describe("SurplusPage", () => {
   it("shows the surplus amount", () => {
     renderWithProviders(<SurplusPage />, { initialEntries: ["/surplus"] });
     expect(screen.getAllByText(/1,700/).length).toBeGreaterThan(0);
+  });
+
+  it("shows discretionary as the savings-inclusive total, not double-counted", () => {
+    renderWithProviders(<SurplusPage />, { initialEntries: ["/surplus"] });
+    // discretionary.total (800) already includes savings.total (300).
+    // Adding them would render 1,100 — guard against regression of that bug.
+    expect(screen.queryByText(/1,100/)).toBeNull();
+    expect(screen.getAllByText(/£800/).length).toBeGreaterThan(0);
   });
 
   it("shows the waterfall breakdown line items", () => {

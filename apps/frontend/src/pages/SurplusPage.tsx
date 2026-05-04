@@ -14,7 +14,7 @@ export default function SurplusPage() {
 
   const income = data?.income.total ?? 0;
   const committed = (data?.committed.monthlyTotal ?? 0) + (data?.committed.monthlyAvg12 ?? 0);
-  const discretionary = (data?.discretionary.total ?? 0) + (data?.discretionary.savings.total ?? 0);
+  const discretionary = data?.discretionary.total ?? 0;
   const surplus = data?.surplus.amount ?? income - committed - discretionary;
   const surplusPct = data?.surplus.percentOfIncome ?? (income > 0 ? (surplus / income) * 100 : 0);
   const showBenchmarkWarning = !isLoading && income > 0 && surplusPct < benchmarkPct;
