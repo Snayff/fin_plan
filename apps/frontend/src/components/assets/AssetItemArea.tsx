@@ -136,8 +136,16 @@ export function AssetItemArea({ type, initialIsAdding }: Props) {
             >
               <AssetForm
                 mode="add"
+                assetType={type}
                 isSaving={createAsset.isPending}
-                onSave={async ({ name, memberId, growthRatePct, disposedAt, disposalAccountId, initialValue }) => {
+                onSave={async ({
+                  name,
+                  memberId,
+                  growthRatePct,
+                  disposedAt,
+                  disposalAccountId,
+                  initialValue,
+                }) => {
                   try {
                     await createAsset.mutateAsync({
                       name,
@@ -203,7 +211,13 @@ export function AssetItemArea({ type, initialIsAdding }: Props) {
                   // error handled by mutation onError (toast)
                 }
               }}
-              onSaveEdit={async ({ name, memberId, growthRatePct, disposedAt, disposalAccountId }) => {
+              onSaveEdit={async ({
+                name,
+                memberId,
+                growthRatePct,
+                disposedAt,
+                disposalAccountId,
+              }) => {
                 try {
                   await updateAsset.mutateAsync({
                     assetId: item.id,
@@ -245,17 +259,23 @@ export function AssetItemArea({ type, initialIsAdding }: Props) {
               aria-expanded={disposedOpen}
             >
               <span>{disposedOpen ? "▾" : "▸"}</span>
-              <span>
-                Disposed ({disposedItems.length})
-              </span>
+              <span>Disposed ({disposedItems.length})</span>
             </button>
             <AnimatePresence initial={false}>
               {disposedOpen && (
                 <motion.div
                   key="disposed-list"
                   initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: "auto", opacity: 1, transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] } }}
-                  exit={{ height: 0, opacity: 0, transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] } }}
+                  animate={{
+                    height: "auto",
+                    opacity: 1,
+                    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+                  }}
+                  exit={{
+                    height: 0,
+                    opacity: 0,
+                    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+                  }}
                   style={{ overflow: "hidden" }}
                 >
                   {disposedItems.map((item) => (

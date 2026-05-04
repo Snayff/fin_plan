@@ -49,7 +49,7 @@ describe("CashflowMonthView", () => {
     expect(screen.getByText(/april 2026/i)).toBeTruthy();
   });
 
-  it("renders the discretionary amortisation info chip", () => {
+  it("renders the discretionary amortisation info row", () => {
     render(
       <CashflowMonthView
         detail={detail}
@@ -60,7 +60,8 @@ describe("CashflowMonthView", () => {
         onSelectMonth={() => {}}
       />
     );
-    expect(screen.getByText(/£600\/mo amortised/i)).toBeTruthy();
+    expect(screen.getByText(/amortised evenly across month/i)).toBeTruthy();
+    expect(screen.getByText(/£600\/mo/i)).toBeTruthy();
   });
 
   it("calls onBack when breadcrumb clicked", () => {

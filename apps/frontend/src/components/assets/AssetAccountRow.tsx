@@ -198,6 +198,7 @@ export function AssetAccountRow({
             {itemKind === "asset" ? (
               <AssetForm
                 mode="edit"
+                assetType={(item as AssetItem).type}
                 initialName={item.name}
                 initialMemberId={item.memberId ?? null}
                 initialGrowthRatePct={(item as AssetItem).growthRatePct ?? null}

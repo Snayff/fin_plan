@@ -2,9 +2,11 @@ import { useState } from "react";
 import { useHouseholdMembers, useSettings } from "../../hooks/useSettings.js";
 import { useAllAccounts } from "../../hooks/useAssets.js";
 import { formatCurrency } from "@/utils/format";
+import type { AssetType } from "@finplan/shared";
 
 interface Props {
   mode: "add" | "edit";
+  assetType?: AssetType;
   initialName?: string;
   initialMemberId?: string | null;
   initialGrowthRatePct?: number | null;
@@ -38,6 +40,7 @@ function isoDateOnly(value: string | null | undefined): string {
 
 export function AssetForm({
   mode,
+  assetType,
   initialName = "",
   initialMemberId = null,
   initialGrowthRatePct = null,
@@ -72,6 +75,16 @@ export function AssetForm({
   const { data: settings } = useSettings();
   const { data: accounts } = useAllAccounts();
   const showPence = settings?.showPence ?? false;
+
+  const growthRatePlaceholder: string = (() => {
+    if (!settings || !assetType) return "e.g. 3.5 or -15";
+    const rateMap: Record<AssetType, number> = {
+      Property: settings.propertyRatePct ?? 3.5,
+      Vehicle: settings.vehicleRatePct ?? -15,
+      Other: settings.otherAssetRatePct ?? 0,
+    };
+    return `Default: ${rateMap[assetType]}`;
+  })();
 
   const displayValue =
     !valueFocused && initialValue
@@ -163,7 +176,7 @@ export function AssetForm({
           <input
             type="text"
             inputMode="decimal"
-            placeholder="e.g. 3.5 or -15"
+            placeholder={growthRatePlaceholder}
             value={growthRatePct}
             onChange={(e) => setGrowthRatePct(e.target.value)}
             aria-label="Growth rate"

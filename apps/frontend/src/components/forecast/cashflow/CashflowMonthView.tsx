@@ -107,12 +107,14 @@ export function CashflowMonthView({
         <StatCard label="Net change" value={formatCurrency(detail.netChange, showPence)} />
       </div>
 
-      <div className="rounded bg-card border border-border px-3 py-2 text-xs text-text-tertiary">
-        Discretionary {formatCurrency(detail.monthlyDiscretionaryTotal, showPence)}/mo amortised
-        evenly across the month
-      </div>
-
       <CashflowMonthChart detail={detail} todayDay={todayDay} />
+
+      <div className="flex items-center justify-between px-2 py-2 text-xs border-b border-border">
+        <span className="text-text-tertiary">Discretionary · amortised evenly across month</span>
+        <span className="font-numeric text-text-secondary">
+          {formatCurrency(detail.monthlyDiscretionaryTotal, showPence)}/mo
+        </span>
+      </div>
 
       <CashflowEventList events={detail.events} />
     </div>
