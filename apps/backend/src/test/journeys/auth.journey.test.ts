@@ -357,15 +357,19 @@ describe("Auth Journey", () => {
     const registerBody = JSON.parse(registerRes.body);
     const userId = registerBody.user.id as string;
 
-    // Query audit logs directly via Prisma
-    const logs = await prisma.auditLog.findMany({
-      where: { userId },
-      orderBy: { createdAt: "asc" },
-    });
+    // auditService.log is intentionally fire-and-forget (see audit.service.ts),
+    // so the REGISTER row may land a few ms after the response. Poll briefly.
+    let registerLog: Awaited<ReturnType<typeof prisma.auditLog.findFirst>> = null;
+    const deadline = Date.now() + 2000;
+    while (Date.now() < deadline) {
+      registerLog = await prisma.auditLog.findFirst({
+        where: { userId, action: "REGISTER" },
+      });
+      if (registerLog) break;
+      await new Promise((r) => setTimeout(r, 25));
+    }
 
-    // Should have at least one REGISTER entry
-    const registerLog = logs.find((l) => l.action === "REGISTER");
-    expect(registerLog).toBeDefined();
+    expect(registerLog).not.toBeNull();
     expect(registerLog!.resource).toBe("user");
     expect(registerLog!.resourceId).toBe(userId);
   });
