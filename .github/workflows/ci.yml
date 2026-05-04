@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [stage]
   push:
-    branches: [production]
+    branches: [stage, production]
 
 permissions:
   contents: read
@@ -171,7 +171,7 @@ jobs:
   deploy:
     name: Deploy to Coolify
     runs-on: ubuntu-latest
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && github.ref == 'refs/heads/production'
     environment: PROD
 
     steps:
