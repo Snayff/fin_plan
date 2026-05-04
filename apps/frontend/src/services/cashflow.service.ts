@@ -5,6 +5,8 @@ import type {
   CashflowProjectionQuery,
   LinkableAccountRow,
   BulkUpdateLinkedAccountsInput,
+  CashflowShortfall,
+  CashflowShortfallQuery,
 } from "@finplan/shared";
 
 /**
@@ -47,4 +49,9 @@ export const cashflowService = {
 
   bulkUpdateLinkedAccounts: (input: BulkUpdateLinkedAccountsInput) =>
     apiClient.post<LinkableAccountRow[]>("/api/cashflow/linkable-accounts/bulk", input),
+
+  getShortfall: (query: CashflowShortfallQuery = { windowDays: 30 }) =>
+    apiClient.get<CashflowShortfall>(
+      `/api/cashflow/shortfall${toQueryString({ windowDays: query.windowDays })}`
+    ),
 };

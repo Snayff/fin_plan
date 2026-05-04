@@ -1,7 +1,10 @@
+import type { ReactNode } from "react";
 import { format } from "date-fns";
 import type { CashflowProjection, CashflowProjectionMonth } from "@finplan/shared";
 import { CashflowYearBar } from "./CashflowYearBar";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { cn } from "@/lib/utils";
 
 interface CashflowYearViewProps {
@@ -17,7 +20,7 @@ function HeadlineCard({
   amber,
   sub,
 }: {
-  label: string;
+  label: ReactNode;
   value: string;
   amber?: boolean;
   sub?: string;
@@ -41,6 +44,8 @@ export function CashflowYearView({
   onShiftWindow,
   canShiftBack,
 }: CashflowYearViewProps) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const { months, latestKnownBalance, projectedEndBalance, tightestDip, avgMonthlySurplus } =
     projection;
   const maxAbsNet = Math.max(1, ...months.map((m) => Math.abs(m.netChange)));
@@ -58,17 +63,23 @@ export function CashflowYearView({
       <div className="grid grid-cols-4 gap-3">
         <HeadlineCard
           label="Starting balance"
-          value={formatCurrency(latestKnownBalance)}
+          value={formatCurrency(latestKnownBalance, showPence)}
           sub={`as of ${todayLabel}`}
         />
-        <HeadlineCard label="Projected end" value={formatCurrency(projectedEndBalance)} />
         <HeadlineCard
-          label="Tightest dip"
-          value={formatCurrency(tightestDip.value)}
+          label="Projected end"
+          value={formatCurrency(projectedEndBalance, showPence)}
+        />
+        <HeadlineCard
+          label={<GlossaryTermMarker entryId="tightest-dip">Tightest dip</GlossaryTermMarker>}
+          value={formatCurrency(tightestDip.value, showPence)}
           amber={tightestDip.value < 0}
           sub={format(new Date(tightestDip.date), "d MMM yyyy")}
         />
-        <HeadlineCard label="Average monthly surplus" value={formatCurrency(avgMonthlySurplus)} />
+        <HeadlineCard
+          label="Average monthly surplus"
+          value={formatCurrency(avgMonthlySurplus, showPence)}
+        />
       </div>
 
       <div className="flex items-center gap-2">

@@ -12,31 +12,24 @@ export const settingsService = {
     return prisma.householdSettings.create({ data: { householdId } });
   },
 
-  async updateSettings(householdId: string, data: UpdateSettingsInput, ctx?: ActorCtx) {
-    if (ctx) {
-      return audited({
-        db: prisma,
-        ctx,
-        action: "UPDATE_HOUSEHOLD_SETTINGS",
-        resource: "household-settings",
-        resourceId: householdId,
-        beforeFetch: async (tx) =>
-          tx.householdSettings.findUnique({ where: { householdId } }) as Promise<Record<
-            string,
-            unknown
-          > | null>,
-        mutation: async (tx) =>
-          tx.householdSettings.upsert({
-            where: { householdId },
-            create: { householdId, ...data },
-            update: data,
-          }),
-      });
-    }
-    return prisma.householdSettings.upsert({
-      where: { householdId },
-      create: { householdId, ...data },
-      update: data,
+  async updateSettings(householdId: string, data: UpdateSettingsInput, ctx: ActorCtx) {
+    return audited({
+      db: prisma,
+      ctx,
+      action: "UPDATE_HOUSEHOLD_SETTINGS",
+      resource: "household-settings",
+      resourceId: householdId,
+      beforeFetch: async (tx) =>
+        tx.householdSettings.findUnique({ where: { householdId } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) =>
+        tx.householdSettings.upsert({
+          where: { householdId },
+          create: { householdId, ...data },
+          update: data,
+        }),
     });
   },
 };

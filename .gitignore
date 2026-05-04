@@ -58,13 +58,28 @@ docker-compose.override.yml
 docs/scratch/
 
 # claude
-.claude/screenshots/
+.claude/skills/*
+!.claude/skills/agent-browser/
+!.claude/skills/dogfood/
+!.claude/skills/shadcn
+!.claude/skills/execute-plan/
+!.claude/skills/verify-implementation/
+!.claude/skills/write-design/
+!.claude/skills/write-plan/
+!.claude/skills/write-spec/
+.claude/worktrees
+.claude/settings.local.json
+settings
+!apps/frontend/src/components/settings/
+!apps/backend/src/**/settings/
+
 
 # WIP
 docs/mockups/
 
 # skills
 .impeccable.md
+dogfood-output
 
 # Misc
 .cache/

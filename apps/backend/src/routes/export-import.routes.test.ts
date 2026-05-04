@@ -94,7 +94,11 @@ describe("GET /api/households/export", () => {
     const body = response.json();
     expect(body.schemaVersion).toBe(1);
     expect(body.household.name).toBe("Test Household");
-    expect(exportService.exportHousehold).toHaveBeenCalledWith("household-1", "user-1");
+    expect(exportService.exportHousehold).toHaveBeenCalledWith(
+      "household-1",
+      "user-1",
+      expect.any(Object)
+    );
   });
 
   it("returns 401 without auth", async () => {
@@ -124,7 +128,8 @@ describe("POST /api/households/import", () => {
       "household-1",
       "user-1",
       expect.objectContaining({ schemaVersion: 1 }),
-      "create_new"
+      "create_new",
+      expect.any(Object)
     );
   });
 
@@ -141,7 +146,8 @@ describe("POST /api/households/import", () => {
       "household-1",
       "user-1",
       expect.anything(),
-      "overwrite"
+      "overwrite",
+      expect.any(Object)
     );
   });
 

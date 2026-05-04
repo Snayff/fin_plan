@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { Button } from "@/components/ui/button";
 import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import { useCreatePurchase } from "@/hooks/usePlanner";
@@ -44,6 +45,8 @@ function PriorityBadge({ priority }: { priority: string }) {
 }
 
 function PurchaseRow({ purchase, onSelect }: { purchase: any; onSelect: (purchase: any) => void }) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   return (
     <button
       className="w-full text-left px-3 py-2.5 hover:bg-accent transition-colors border-b last:border-b-0"
@@ -53,7 +56,7 @@ function PurchaseRow({ purchase, onSelect }: { purchase: any; onSelect: (purchas
         <span className="flex-1 font-medium text-sm truncate">{purchase.name}</span>
         <PriorityBadge priority={purchase.priority} />
         <span className="text-sm font-medium shrink-0">
-          {formatCurrency(purchase.estimatedCost ?? 0)}
+          {formatCurrency(purchase.estimatedCost ?? 0, showPence)}
         </span>
       </div>
       <p className="text-xs text-muted-foreground mt-0.5">

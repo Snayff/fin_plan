@@ -71,11 +71,18 @@ export interface CashflowProjection {
   linkedAccountCount: number;
 }
 
+export type CashflowEventItemType =
+  | "income_source"
+  | "committed_item"
+  | "discretionary_item"
+  | "asset_liquidation"
+  | "account_liquidation";
+
 export interface CashflowEvent {
   date: string; // ISO YYYY-MM-DD
   label: string;
-  amount: number; // signed (income +, spend −)
-  itemType: "income_source" | "committed_item" | "discretionary_item";
+  amount: number; // signed (income +, spend −, liquidation +)
+  itemType: CashflowEventItemType;
   runningBalanceAfter: number;
 }
 
@@ -90,4 +97,30 @@ export interface CashflowMonthDetail {
   monthlyDiscretionaryTotal: number; // for the info chip "£X/mo amortised"
   dailyTrace: Array<{ day: number; balance: number }>; // step-line points
   events: CashflowEvent[];
+}
+
+// ─── Shortfall ──────────────────────────────────────────────────────────────
+
+export const cashflowShortfallQuerySchema = z.object({
+  windowDays: z.coerce.number().int().min(1).max(90).default(30),
+});
+
+export type CashflowShortfallQuery = z.infer<typeof cashflowShortfallQuerySchema>;
+
+export type ShortfallTierKey = "committed" | "discretionary";
+
+export interface ShortfallItem {
+  itemType: "committed_item" | "discretionary_item";
+  itemId: string;
+  itemName: string;
+  tierKey: ShortfallTierKey;
+  dueDate: string; // ISO YYYY-MM-DD
+  amount: number; // positive (the outflow that wasn't covered)
+}
+
+export interface CashflowShortfall {
+  items: ShortfallItem[]; // sorted by dueDate asc, ties by itemName
+  balanceToday: number;
+  lowest: { value: number; date: string }; // ISO YYYY-MM-DD
+  linkedAccountCount: number;
 }

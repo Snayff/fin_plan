@@ -1,0 +1,214 @@
+<style>
+  .app-frame { background: #080a14; border-radius: 8px; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; color: #e6e8ee; border: 1px solid #1b1f2e; height: 420px; display: flex; flex-direction: column; position: relative; }
+  .app-header { display: flex; align-items: center; gap: 14px; padding: 10px 16px; background: #0b1020; border-bottom: 1px solid #1b1f2e; flex-shrink: 0; }
+  .brand { font-weight: 600; color: #c4b8ff; font-size: 13px; }
+  .nav-link { color: #a9b0c4; font-size: 12px; padding: 4px 8px; border-radius: 4px; }
+  .nav-link.wf-income { color: #7c8cff; }
+  .nav-link.wf-committed { color: #a78cff; }
+  .nav-link.wf-discretionary { color: #c78cff; }
+  .nav-link.wf-surplus { color: #6ee7b7; }
+  .nav-link.active { background: rgba(124,140,255,0.14); border-left: 2px solid #7c8cff; padding-left: 6px; border-radius: 0 4px 4px 0; color: #e6e8ee; }
+  .nav-spacer { width: 14px; }
+  .avatar { width: 24px; height: 24px; border-radius: 50%; background: #252b3d; flex-shrink: 0; display:flex; align-items:center; justify-content:center; color: #8b90a3; font-size: 10px; }
+  .household { display: flex; align-items: center; gap: 4px; font-size: 11px; color: #a9b0c4; padding: 4px 8px; background: #121625; border-radius: 4px; }
+  .search-trigger { width: 28px; height: 28px; border-radius: 6px; background: #121625; border: 1px solid #252b3d; display: flex; align-items: center; justify-content: center; color: #a9b0c4; font-size: 14px; flex-shrink: 0; cursor: pointer; position: relative; }
+  .search-trigger:hover { border-color: #7c8cff; color: #e6e8ee; }
+  .kbd-hint { position: absolute; top: 34px; right: 0; background: #1b1f2e; color: #a9b0c4; font-size: 10px; padding: 3px 6px; border-radius: 4px; white-space: nowrap; }
+  .kbd-hint .kbd { background: #0b1020; border: 1px solid #252b3d; padding: 1px 4px; border-radius: 2px; margin-left: 4px; font-size: 9px; }
+  .app-body { display: flex; flex: 1; position: relative; overflow: hidden; }
+  .left-panel { width: 150px; background: #0b1020; border-right: 1px solid #1b1f2e; padding: 12px; font-size: 11px; flex-shrink: 0; color: #8b90a3; }
+  .content-area { flex: 1; padding: 14px; font-size: 11px; color: #8b90a3; overflow: hidden; }
+  .page-title { color: #e6e8ee; font-size: 16px; font-weight: 600; margin-bottom: 8px; }
+  .scrim { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(8,10,20,0.6); z-index: 5; backdrop-filter: blur(1px); }
+  .overlay { position: absolute; top: 52px; left: 16px; right: 16px; background: #0b1020; border: 1px solid #252b3d; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); z-index: 10; overflow: hidden; }
+  .overlay-input { display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-bottom: 1px solid #1b1f2e; }
+  .overlay-input-icon { color: #7c8cff; font-size: 14px; }
+  .overlay-input-text { flex: 1; color: #e6e8ee; font-size: 13px; }
+  .overlay-input-text .query { font-weight: 500; }
+  .overlay-input-text .cursor { display: inline-block; width: 1px; height: 14px; background: #e6e8ee; vertical-align: middle; margin-left: 1px; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .overlay-input-kbd { background: #1b1f2e; color: #8b90a3; border-radius: 3px; padding: 2px 6px; font-size: 10px; }
+  .overlay-meta { display: flex; align-items: center; gap: 16px; padding: 6px 14px; border-bottom: 1px solid #1b1f2e; font-size: 10px; color: #6b7180; }
+  .overlay-meta .kbd { background: #121625; border: 1px solid #252b3d; padding: 1px 5px; border-radius: 3px; color: #a9b0c4; margin-right: 4px; font-size: 9px; }
+  .result-group { padding: 6px; }
+  .result-group-label { text-transform: uppercase; font-size: 9px; letter-spacing: 1px; color: #6b7180; padding: 4px 10px; }
+  .result-row { padding: 8px 10px; display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #e6e8ee; border-radius: 6px; gap: 10px; }
+  .result-row.highlighted { background: rgba(124,140,255,0.14); }
+  .result-row .row-left { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .result-icon { width: 18px; height: 18px; border-radius: 4px; background: #1b1f2e; display: flex; align-items: center; justify-content: center; color: #8b90a3; font-size: 10px; flex-shrink: 0; }
+  .result-title { color: #e6e8ee; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .result-sub { color: #8b90a3; font-size: 11px; flex-shrink: 0; }
+  .mockup-label { font-weight: 600; margin-bottom: 6px; color: #e6e8ee; font-size: 13px; }
+  .mockup-note { font-size: 11px; color: #8b90a3; margin-top: 6px; line-height: 1.4; }
+  .three-state { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; margin-top: 20px; }
+  /* mobile frame */
+  .mobile-frame { background: #080a14; border-radius: 18px; overflow: hidden; border: 2px solid #252b3d; width: 200px; height: 360px; display: flex; flex-direction: column; position: relative; margin: 0 auto; }
+  .mobile-header { display: flex; align-items: center; gap: 8px; padding: 10px 12px; background: #0b1020; border-bottom: 1px solid #1b1f2e; }
+  .mobile-hamburger { width: 22px; height: 22px; border-radius: 4px; background: #121625; display: flex; align-items: center; justify-content: center; color: #a9b0c4; font-size: 12px; }
+  .mobile-brand { color: #c4b8ff; font-size: 12px; font-weight: 600; }
+</style>
+
+<h2>Small trigger icon + anchored overlay</h2>
+<p class="subtitle">Tiny search icon in the header (like GitHub/Stripe/Linear). Clicking it — or pressing Ctrl+K — opens a Spotify-style dropdown anchored to the top, with page dimmed behind.</p>
+
+<div class="options">
+  <div class="option" data-choice="trigger-and-overlay" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Trigger icon + anchored search overlay</h3>
+      <p>Resolves all three concerns from your message: discoverability (visible icon + kbd tooltip), integration (doesn't touch the nav), and mobile (tap the icon). Input+results live in the overlay, never in the chrome.</p>
+    </div>
+  </div>
+</div>
+
+<div class="three-state">
+  <!-- STATE 1: RESTING -->
+  <div>
+    <div class="mockup-label">1. Resting state — no change to nav</div>
+    <div class="app-frame">
+      <div class="app-header">
+        <div class="brand">finplan</div>
+        <span class="nav-link">Overview</span>
+        <span class="nav-link wf-income active">Income</span>
+        <span class="nav-link wf-committed">Committed</span>
+        <span class="nav-link wf-discretionary">Discretionary</span>
+        <span class="nav-link wf-surplus">Surplus</span>
+        <div class="nav-spacer"></div>
+        <span class="nav-link">Forecast</span>
+        <span class="nav-link">Assets</span>
+        <span class="nav-link">Goals</span>
+        <span class="nav-link">Gifts</span>
+        <span class="nav-link">Help</span>
+        <div style="flex:1"></div>
+        <div class="search-trigger">🔍</div>
+        <div class="household">Snaith HH ▾</div>
+        <div class="avatar">GS</div>
+      </div>
+      <div class="app-body">
+        <div class="left-panel">Income subcats…</div>
+        <div class="content-area">
+          <div class="page-title">Income</div>
+          <div>Sources, frequencies, and annual totals…</div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup-note">Search icon sits just before the household switcher. ~28px wide. On hover, a tooltip shows the keyboard shortcut.</div>
+  </div>
+
+  <!-- STATE 2: HOVER TOOLTIP -->
+  <div>
+    <div class="mockup-label">2. Hover — teaches the hotkey</div>
+    <div class="app-frame">
+      <div class="app-header">
+        <div class="brand">finplan</div>
+        <span class="nav-link">Overview</span>
+        <span class="nav-link wf-income active">Income</span>
+        <span class="nav-link wf-committed">Committed</span>
+        <span class="nav-link wf-discretionary">Discretionary</span>
+        <span class="nav-link wf-surplus">Surplus</span>
+        <div class="nav-spacer"></div>
+        <span class="nav-link">Forecast</span>
+        <span class="nav-link">Assets</span>
+        <span class="nav-link">Goals</span>
+        <span class="nav-link">Gifts</span>
+        <span class="nav-link">Help</span>
+        <div style="flex:1"></div>
+        <div class="search-trigger" style="border-color: #7c8cff; color: #e6e8ee;">🔍<div class="kbd-hint">Search <span class="kbd">Ctrl</span><span class="kbd">K</span></div></div>
+        <div class="household">Snaith HH ▾</div>
+        <div class="avatar">GS</div>
+      </div>
+      <div class="app-body">
+        <div class="left-panel">Income subcats…</div>
+        <div class="content-area">
+          <div class="page-title">Income</div>
+          <div>Sources, frequencies, and annual totals…</div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup-note">Tooltip surfaces the shortcut so desktop users discover it passively. No onboarding tour required.</div>
+  </div>
+
+  <!-- STATE 3: OPEN -->
+  <div>
+    <div class="mockup-label">3. Open — Spotify-style anchored overlay</div>
+    <div class="app-frame">
+      <div class="app-header">
+        <div class="brand">finplan</div>
+        <span class="nav-link">Overview</span>
+        <span class="nav-link wf-income active">Income</span>
+        <span class="nav-link wf-committed">Committed</span>
+        <span class="nav-link wf-discretionary">Discretionary</span>
+        <span class="nav-link wf-surplus">Surplus</span>
+        <div class="nav-spacer"></div>
+        <span class="nav-link">Forecast</span>
+        <span class="nav-link">Assets</span>
+        <span class="nav-link">Goals</span>
+        <span class="nav-link">Gifts</span>
+        <span class="nav-link">Help</span>
+        <div style="flex:1"></div>
+        <div class="search-trigger" style="border-color: #7c8cff; color: #e6e8ee;">🔍</div>
+        <div class="household">Snaith HH ▾</div>
+        <div class="avatar">GS</div>
+      </div>
+      <div class="app-body">
+        <div class="left-panel">Income subcats…</div>
+        <div class="content-area">Income page…</div>
+        <div class="scrim"></div>
+        <div class="overlay">
+          <div class="overlay-input">
+            <span class="overlay-input-icon">🔍</span>
+            <span class="overlay-input-text"><span class="query">mort</span><span class="cursor"></span></span>
+            <span class="overlay-input-kbd">Esc</span>
+          </div>
+          <div class="overlay-meta">
+            <span><span class="kbd">↑</span><span class="kbd">↓</span>Navigate</span>
+            <span><span class="kbd">↵</span>Open</span>
+            <span style="margin-left:auto"><span class="kbd">Esc</span>Close</span>
+          </div>
+          <div class="result-group">
+            <div class="result-group-label">Data</div>
+            <div class="result-row highlighted">
+              <div class="row-left"><div class="result-icon" style="background:rgba(167,140,255,0.2); color:#a78cff">C</div><span class="result-title"><b>Mort</b>gage</span></div>
+              <span class="result-sub">Committed · Monthly</span>
+            </div>
+            <div class="result-row">
+              <div class="row-left"><div class="result-icon" style="background:rgba(167,140,255,0.2); color:#a78cff">C</div><span class="result-title"><b>Mort</b>gage protection</span></div>
+              <span class="result-sub">Committed · Monthly</span>
+            </div>
+          </div>
+          <div class="result-group">
+            <div class="result-group-label">Help</div>
+            <div class="result-row">
+              <div class="row-left"><div class="result-icon" style="background:rgba(110,231,183,0.2); color:#6ee7b7">?</div><span class="result-title"><b>Amort</b>ised</span></div>
+              <span class="result-sub">A loan repaid in fixed instalments over time…</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup-note">Overlay anchored at top, not floating in centre. Page beneath dimmed. Escape or click-outside closes. Input and results are part of the same card.</div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:26px">
+  <div class="label" style="color:#7c8cff; margin-bottom: 8px;">Mobile — same icon, tap to open</div>
+  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; align-items: center;">
+    <div>
+      <div class="mobile-frame">
+        <div class="mobile-header">
+          <div class="mobile-hamburger">☰</div>
+          <div class="mobile-brand">finplan</div>
+          <div style="flex:1"></div>
+          <div class="mobile-hamburger">🔍</div>
+          <div class="mobile-hamburger">👤</div>
+        </div>
+        <div style="flex:1; padding:10px; color: #6b7180; font-size:10px">Page content…</div>
+      </div>
+    </div>
+    <div style="font-size: 12px; color: #a9b0c4; line-height:1.5">
+      <p><strong>Mobile entry point:</strong> the same search icon appears in the mobile header, beside the hamburger and avatar. No hotkey needed.</p>
+      <p style="margin-top:10px"><strong>Mobile overlay:</strong> tapping opens a full-screen search sheet (input pinned to top, results filling the viewport). Dismiss via back/close button or swipe.</p>
+      <p style="margin-top:10px"><strong>Why icon not hamburger-menu item:</strong> search needs to be one-tap reachable. Burying it inside the nav sheet adds friction and contradicts "universal".</p>
+    </div>
+  </div>
+</div>

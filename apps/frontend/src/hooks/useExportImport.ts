@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { householdService } from "@/services/household.service";
 import { useAuthStore } from "@/stores/authStore";
 import { authService } from "@/services/auth.service";
+import { showError } from "@/lib/toast";
 
 const safeName = (name: string) =>
   name
@@ -26,6 +27,9 @@ export function useExportHousehold() {
       a.click();
       URL.revokeObjectURL(url);
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to export household");
+    },
   });
 }
 
@@ -44,11 +48,17 @@ export function useImportHousehold() {
       }
       void queryClient.invalidateQueries();
     },
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Failed to import household");
+    },
   });
 }
 
 export function useValidateImport() {
   return useMutation({
     mutationFn: (data: unknown) => householdService.validateImport(data),
+    onError: (error: unknown) => {
+      showError(error instanceof Error ? error.message : "Import data is invalid");
+    },
   });
 }

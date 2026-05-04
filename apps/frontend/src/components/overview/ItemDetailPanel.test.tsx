@@ -79,6 +79,7 @@ describe("ItemDetailPanel spacing", () => {
     const { container } = renderWithProviders(<ItemDetailPanel item={item} onBack={() => {}} />, {
       initialEntries: ["/overview"],
     });
-    expect(container.firstChild?.className ?? "").toContain("space-y-6");
+    const scrollContainer = container.querySelector(".overflow-y-auto");
+    expect(scrollContainer?.className ?? "").toContain("space-y-6");
   });
 });

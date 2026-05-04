@@ -74,7 +74,7 @@
 
 **Appears in**: Yearly Bills row in the waterfall (÷12 label), Annual Income entries, cashflow calendar header
 
-**Tooltip**: An annual amount spread evenly across 12 months. finplan uses this so your monthly waterfall reflects a fair share of bills or income that don't land every month.
+**Tooltip**: An annual amount spread evenly across 12 months. finplan uses this so your monthly waterfall reflects a fair share of bills or income that don't land every month. Quarterly amounts are divided by 3; weekly amounts are multiplied by 52 ÷ 12 (≈ 4.33).
 
 ---
 
@@ -162,7 +162,31 @@
 
 **Appears in**: Settings page, Tier item groupings, Item forms
 
-**Tooltip**: A user-defined grouping within a waterfall tier — for example, Housing or Utilities within Committed Spend. Subcategories help you organise items without affecting the waterfall arithmetic. Manage them in Settings → Subcategories.
+**Tooltip**: A user-defined grouping within a tier — for example, Housing or Utilities within Committed Spend. Subcategories help you organise items without affecting the waterfall arithmetic. Manage them in Settings → Subcategories.
+
+---
+
+## Waterfall Tier
+
+**Appears in**: Overview page, Tier pages (Income, Committed, Discretionary, Surplus), Settings — Subcategories
+
+**Tooltip**: One of the four layers of the finplan waterfall: Income, Committed Spend, Discretionary Spend, and Surplus. Subcategories live inside a tier, and items are organised by subcategory within each tier.
+
+---
+
+## Yearly Bill
+
+**Appears in**: Committed page (Yearly Bills grouping), Overview waterfall, Cashflow shortfall indicator
+
+**Tooltip**: A committed outgoing paid once per year — for example, annual insurance or a yearly subscription. Shown in the monthly waterfall as an amortised £/12 share, and flagged in cashflow if the full payment could push a month below zero.
+
+---
+
+## Review
+
+**Appears in**: Review Wizard, item rows (right panel), item detail view
+
+**Tooltip**: A periodic prompt that walks you through confirming whether each item's recorded value is still correct. Completing a Review refreshes an item's staleness and optionally saves a snapshot of your waterfall at that point in time.
 
 ---
 
@@ -195,6 +219,22 @@
 **Appears in**: Growth chart (Net Worth stat row)
 
 **Tooltip**: A value adjusted for inflation — showing what a future amount would be worth in today's purchasing power. If your net worth is projected at £150,000 but £120,000 in real terms, the difference reflects the expected erosion of purchasing power over time.
+
+---
+
+## Disposal Date
+
+**Appears in**: Asset and Account edit forms (Planned disposal section), asset/account row badge, Cashflow event list
+
+**Tooltip**: The date on which you plan to sell or close this asset or account. From this date onward the item is excluded from your forecast and its projected value is added as a one-off inflow to the chosen target account.
+
+---
+
+## Liquidation
+
+**Appears in**: Cashflow event list (event type badge), Forecast page
+
+**Tooltip**: The conversion of an asset or account to cash on its disposal date. finplan projects the item's value up to that date using its growth rate, then transfers the proceeds to the account you selected.
 
 ---
 
@@ -343,3 +383,11 @@ _Note: the tooltip is dynamic — it shows the actual snapshot name and date on 
 **Appears in**: Config → Events panel, Add Event form
 
 **Tooltip**: The same date for everyone — for example, Christmas is always 25 December regardless of the recipient.
+
+---
+
+## Monthly contribution limit
+
+**Appears in**: Account form (Savings), Account detail panel
+
+**Tooltip**: The most this account lets you pay in each month. finplan uses this to flag spare capacity and surface higher-rate alternatives among your other savings accounts.

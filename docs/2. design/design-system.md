@@ -229,7 +229,7 @@ text-xs font-medium uppercase tracking-wider text-muted-foreground
 
 **Rule: left panel never scrolls horizontally.** Long labels truncate with an ellipsis.
 
-**Rule: both panels are vertically scrollable.** The left panel uses `flex-1 overflow-y-auto` below the pinned `PageHeader` so content scrolls gracefully if it exceeds the viewport. The right panel routinely scrolls for long detail views.
+**Rule: both panels are vertically scrollable.** The left panel uses `flex-1 min-h-0 overflow-y-auto` below the pinned `PageHeader` so content scrolls gracefully if it exceeds the viewport. The right panel routinely scrolls for long detail views. `min-h-0` is mandatory on every `flex-1 overflow-y-auto` child inside a `flex flex-col` parent — without it, the flex item's implicit `min-height: auto` prevents it from shrinking and the scrollbar never activates.
 
 **Spacing — grouping rule:** proximity signals relatedness; distance signals separation.
 
@@ -817,7 +817,7 @@ Applies to: Overview, Wealth, Planner. Exempt: Review Wizard, Waterfall Creation
 - Always visible; never replaced or navigated away from
 - Contains only tier headings and summary totals — no individual items
 - Clicking a tier selects it (selected state: left border accent + ~14% tier colour background)
-- Content below `PageHeader` is wrapped in `flex-1 overflow-y-auto` — scrolls automatically when content exceeds viewport height
+- Content below `PageHeader` is wrapped in `flex-1 min-h-0 overflow-y-auto` — scrolls automatically when content exceeds viewport height
 
 **Right panel rules:**
 
@@ -838,6 +838,20 @@ Total:      font-numeric text-lg font-semibold + totalColorClass (optional)
 
 - `colorClass` defaults to `text-page-accent`; tier pages pass their tier colour
 - Content below the header (nav lists, summaries, year selectors) uses `px-4` horizontal padding to align with the header
+
+#### Context Breadcrumb Header
+
+When a left panel represents a named instance (e.g. settings for a specific household), the active instance name may be shown inline in the `PageHeader` using the `contextName` prop:
+
+```
+HOUSEHOLD / Snaith
+```
+
+- Pass `contextName={instanceName}` to `PageHeader` — never add a separate `<p>` element for this purpose
+- The separator `/` renders at `text-foreground/25`
+- The instance name renders at `font-body text-xs font-normal normal-case tracking-normal text-foreground/45`
+- No hover state, no cursor change — this is static context, not a nav target
+- Do not use this pattern for navigational breadcrumbs; those use the `← Category / Item` pattern in right-panel headers
 
 #### Left Panel Navigation Anatomy
 
@@ -1007,15 +1021,34 @@ padding: 14px 16px
 
 ---
 
-### 3.6 Full-Screen Modes (Wizards)
+### 3.6 Full-Screen Focused Surfaces
 
-The Review Wizard and Waterfall Creation Wizard are exempt from the two-panel layout rule. They are focused, full-screen flows with dedicated step navigation.
+Full-screen focused surfaces are exempt from the two-panel layout rule (Anchor 17). Two sub-classes exist:
 
-**Rules that still apply inside wizards:**
+#### Wizards
+
+Step-based onboarding / review flows with dedicated forward/back navigation. Example: Review Wizard.
+
+- Dedicated step navigation chrome (Next / Back / Exit)
+- Progress indication visible throughout
+- Linear flow — back-only navigation between completed steps
+
+#### Workbench surfaces
+
+Dense, bulk-entry, single-page surfaces that reinforce a core mental model. Example: Full Waterfall (`/waterfall`) — three tier tables stacked in cascade order with per-row auto-save.
+
+- Minimal top-bar chrome — page title + close/back button only
+- No left panel; content lives in a full-width centered column
+- No multi-step chrome (no Next/Back/progress); the whole surface is one unit
+- Content must reinforce the cascade or another core anchor — e.g. waterfall connectors between tier tables, a read-only Surplus strip at the cascade terminus
+- Per-row auto-save is preferred so the surface has no dirty-state guard on exit
+
+**Rules that still apply inside all full-screen surfaces:**
 
 - `ButtonPair` rightmost-is-affirmative rule
 - Language rules (budgeted/planned, not spent/paid)
 - Staleness principles (informational, not blocking)
+- Calm-by-default — silence = approval when values are healthy
 
 ---
 
@@ -1531,13 +1564,13 @@ The top navigation bar spans the full width above both panels, present on all pa
 **Anatomy:**
 
 ```
-  finplan    Overview  Wealth  Planner  Settings    [Household ▾]  [User ▾]
+  finplan    Overview  Wealth  Planner    [Household ▾]  [◉]
 ```
 
 - **Wordmark**: left-aligned, `font-heading`, `font-bold`, `text-lg`, `tracking-tight`. The canonical product name is **finplan** — lowercase, one word. Never "FinPlan", "Fin Plan", "FINPLAN", or any other variation. This applies to the header, documentation, and all user-facing text.
-- **Navigation links**: `Overview`, `Wealth`, `Planner`, `Settings` — `font-heading`, weight 500
-- **Household switcher**: right-aligned, dropdown listing all households the user belongs to; active household name is always visible
-- **User menu**: rightmost, user's name or avatar; contains account settings and sign out
+- **Navigation links**: `Overview`, `Wealth`, `Planner`, and any other page-level entries — `font-heading`, weight 500. Settings is **not** a nav link; it is accessed via the profile avatar (personal) and the household switcher (household).
+- **Household switcher**: right-aligned, dropdown exposing both household switching and household-scoped entry points. Active household name is always visible on the trigger.
+- **Profile avatar**: rightmost, circular (32px, `rounded-full`), initials fallback or user-selected image. Replaces the legacy "User menu" text trigger. Contains the personal entry point (`Profile settings`) and sign-out.
 
 **Active state:**
 
@@ -1557,34 +1590,143 @@ The top navigation bar spans the full width above both panels, present on all pa
 - Switching households reloads the active page's data immediately
 - On tier-specific pages (Overview), the active nav item uses the `action` colour, not a tier colour — the nav is a global element
 
+### 7.1 Household Switcher Dropdown
+
+The household switcher is the unified entry point for all household-scoped interactions.
+
+**Anatomy (open):**
+
+```
+  [ Snaith ▴ ]
+  ┌────────────────────────────┐
+  │  SWITCH HOUSEHOLD          │
+  │   Snaith           ✓       │
+  │   Parents                  │
+  │  ────────────────────────  │
+  │   ⚙  Household settings    │
+  │   +  Create new household  │
+  └────────────────────────────┘
+```
+
+- Two groups separated by a 1px divider (`rgba(238,242,255,0.08)`):
+  1. **Switch household** — header label plus one row per household. Current household marked with a `Check` icon (`action` colour) on the right.
+  2. **Actions** — `Household settings` (navigates to `/settings/household`) and `+ Create new household`.
+- Panel: `surface-overlay` background, `surface-overlay` border, border-radius 8px, padding 6px
+- Group header: `font-heading`, 10px, uppercase, 0.1em letter-spacing, `text-tertiary`
+- Item: `font-body`, 13px, `text-secondary`; hover `rgba(124,58,237,0.12)` background
+
+**Rules:**
+
+- Anchored `right-0` to the trigger — **never** `left-0` — so the dropdown cannot overflow the right edge of the viewport.
+- `max-height: min(420px, 100vh - 70px)` with `overflow-y-auto` — long household lists scroll internally.
+- "Household settings" is visible to all household members; role-based gating happens inside the page, not in the dropdown.
+
+### 7.2 Profile Avatar Dropdown
+
+The profile avatar is the unified entry point for personal settings and session actions.
+
+**Anatomy (open):**
+
+```
+  ( JS )
+  ┌────────────────────────────┐
+  │   Josh Snaith              │
+  │   snaith2@gmail.com        │
+  │  ────────────────────────  │
+  │   👤  Profile settings     │
+  │   ↪   Sign out             │
+  └────────────────────────────┘
+```
+
+- Avatar trigger: 32px, `rounded-full`, initials fallback uses a deterministic colour derived from the user's name (same mechanism as `EntityAvatar` § 6.3); on hover, a 2px `rgba(124,58,237,0.4)` ring; on `:active`, `scale(0.97)`.
+- Header block: user name (13px, `font-body`, weight 600, `text-primary`) + email (11px, `text-tertiary`).
+- Separator: 1px horizontal divider at `rgba(238,242,255,0.08)`.
+- Items: `Profile settings` (navigates to `/settings/profile`), `Sign out` (clears session).
+
+**Rules:**
+
+- Anchored `right-0` — avatar sits flush to the right edge of the nav.
+- Same `max-height` rule as the household switcher.
+- The avatar is the **only** user-menu trigger — there is no legacy text "User ▾" link.
+
 ---
 
 ## 8. Settings Page
 
-Settings follows the same two-panel layout as Overview, Wealth, and Planner.
+Settings is split into **two separate pages** by scope. Both use the canonical two-panel shell (§ 3.1) with Settings-specific exceptions noted below.
 
-**Left panel:** lists the settings categories. Each is a plain text row using `page-accent` (`#8b5cf6`) for the selected state — Settings is not a waterfall page, so no tier colour applies.
+### 8.1 Two Pages, Two Entry Points
 
-```
-  Income sources
-  ▶ Staleness thresholds
-  Surplus benchmark
-  ISA tax year
-  Household
-  Snapshot management
-  Trust accounts
-  Waterfall
-```
+| Page                   | Route                 | Entry point                                                | Scope                                |
+| ---------------------- | --------------------- | ---------------------------------------------------------- | ------------------------------------ |
+| **Profile Settings**   | `/settings/profile`   | Profile avatar dropdown (§ 7.2) → `Profile settings`       | Personal — applies across households |
+| **Household Settings** | `/settings/household` | Household switcher dropdown (§ 7.1) → `Household settings` | Per-active-household                 |
 
-**Right panel:** displays the selected category's form/controls. Follows the same empty/content states as other right panels, but without item list depth — Settings categories open directly to their form/controls (no State 2 intermediate list).
+`/settings` redirects to `/settings/profile`.
 
-**Section headers** within Settings use `page-accent` (`#8b5cf6`), `font-heading`, weight 700, uppercase, 0.06em letter-spacing.
+There is no top-nav text link labelled "Settings" — each scope is reached from its natural trigger.
 
-**Destructive actions in Settings** (e.g. "Rebuild waterfall from scratch", "Remove member") must always be:
+### 8.2 Left Panel
 
-- Visually separated from non-destructive actions (below a divider)
-- Labelled clearly with the consequence ("This will clear all waterfall data")
-- Confirmed via modal before proceeding
+Both pages use a canonical `PageHeader` (§ 3.1) with `text-page-accent`.
+
+- **Profile Settings** — title "Profile"; sub-label "Your personal preferences" in `text-tertiary`, 11px, `font-body` 500. **Flat nav** (no groups): `Account`, `Display`.
+- **Household Settings** — title "Household"; active household name displayed inline via the `contextName` prop on `PageHeader` (see Context Breadcrumb Header in § 3.1) — reads as static context, not a nav target. **Grouped nav**:
+  - **General** — `Details`, `Members & invites`
+  - **Financial** — `Surplus benchmark`, `ISA settings`, `Staleness thresholds`, `Growth rates`
+  - **Structure** — `Subcategories`
+  - **Advanced** — `Data`, `Audit log`
+
+Group headers use the canonical section-label treatment (§ 1.3): `text-xs font-medium uppercase tracking-wider text-muted-foreground`. Nav items use the standard indicator-pattern treatment (§ 3.1 — `bg-page-accent/14 border-l-2 border-page-accent rounded-r-sm`) — never a full-fill `bg-accent`.
+
+Role-based visibility (Household Settings):
+
+- **Owner** — all sections
+- **Admin** — all except `Data`
+- **Member** — all non-gated sections (Details, Members & invites visible; editability governed by existing role rules)
+
+### 8.3 Right Panel — Scroll-Spy Exception
+
+**Exception to § 3.2 state machine.** Unlike other two-panel pages, the Settings right panel renders **all sections simultaneously in a single scrolling page**. This is the correct shape for Settings because users routinely cross-reference multiple sections in one session.
+
+- Left-nav click: sets the active highlight immediately, then smooth-scrolls the right panel to the section.
+- Page scroll: updates the active highlight via `IntersectionObserver` (threshold `0.3`, root = the scroll container).
+- Right-panel header is **sticky** (`position: sticky; top: 0; z-index: 2; background: var(--background)`) so it remains visible through scroll.
+- Vertical rhythm: `space-y-12` between sections (§ 1.4 exception).
+- Horizontal divider between each section (`border-t border-foreground/6`) to visually separate them without relying on spacing alone.
+- Section titles: `font-heading`, weight 700, uppercase, 0.06em letter-spacing, `text-page-accent`.
+- Section description (optional): `font-body`, 13px, `text-tertiary`, `line-height: 1.55`, `margin-bottom: 16px`.
+
+### 8.4 Auto-Save — Default Save Model
+
+Settings is auto-save by default. Users never click a Save button for routine edits.
+
+| Input type                          | Save timing                         |
+| ----------------------------------- | ----------------------------------- |
+| Text input                          | Debounce 600ms after last keystroke |
+| Checkbox / toggle / select / slider | Immediate on change                 |
+
+**Success micro-reaction** (aligns with § 4.7 "prefer micro-reactions over toasts"):
+
+- Input border pulses `success` green over ~1.5s (keyframe animation — ring fades to transparent, border returns to `surface-border`).
+- Inline "✓ saved" flash in `success` green, `font-body` 500, 10.5px, appears next to the field label for ~1.5s then fades.
+- **No toast** on success.
+
+**Failure:**
+
+- Revert the field to the last-known server value.
+- Inline red helper text below the input: `Couldn't save — try again` (`error` token, `font-body`, 11px).
+- **No toast** on failure.
+
+All motion must be trivially disableable via `prefers-reduced-motion` (replace the pulse with a 100ms colour switch, replace the inline flash with a static "Saved" label that renders for 1.5s then unmounts).
+
+### 8.5 Destructive Actions — Exempt from Auto-Save
+
+Destructive actions in Settings (e.g. "Leave household", "Remove member", "Reset data", "Cancel invite") are **exempt from the auto-save model**. They must always:
+
+- Use `ConfirmationModal` (§ Component Catalogue) for confirmation — the destructive button uses the `error` token.
+- Be visually separated from non-destructive controls in the right panel (below a horizontal divider).
+- State the consequence plainly in the modal body (e.g. "You will lose access to this household's data. This cannot be undone.").
 
 ---
 

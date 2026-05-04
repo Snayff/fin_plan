@@ -75,7 +75,7 @@ async function main() {
 
   const hId = household.id;
 
-  // Get the owner's Member record (needed for ownerId references)
+  // Get the owner's Member record (needed for memberId references)
   const ownerMember = await prisma.member.findFirst({
     where: { householdId: hId, userId: user.id },
   });
@@ -124,8 +124,9 @@ async function main() {
       frequency: "monthly" as const,
       incomeType: "salary" as const,
       subcategoryId: incomeSalaryId,
-      ownerId: ownerMember?.id ?? null,
+      memberId: ownerMember?.id ?? null,
       sortOrder: 0,
+      dueDate: new Date("2026-01-25"),
     },
     3500
   );
@@ -140,6 +141,7 @@ async function main() {
       incomeType: "salary" as const,
       subcategoryId: incomeSalaryId,
       sortOrder: 1,
+      dueDate: new Date("2026-01-28"),
     },
     2800
   );
@@ -147,9 +149,27 @@ async function main() {
   // ─── Committed Items (monthly) ─────────────────────────────────────────────
 
   const committedMonthly = [
-    { name: "Rent", spendType: "monthly" as const, sortOrder: 0, amount: 1200 },
-    { name: "Internet", spendType: "monthly" as const, sortOrder: 1, amount: 45 },
-    { name: "Phone", spendType: "monthly" as const, sortOrder: 2, amount: 25 },
+    {
+      name: "Rent",
+      spendType: "monthly" as const,
+      sortOrder: 0,
+      amount: 1200,
+      dueDate: new Date("2026-01-01"),
+    },
+    {
+      name: "Internet",
+      spendType: "monthly" as const,
+      sortOrder: 1,
+      amount: 45,
+      dueDate: new Date("2026-01-01"),
+    },
+    {
+      name: "Phone",
+      spendType: "monthly" as const,
+      sortOrder: 2,
+      amount: 25,
+      dueDate: new Date("2026-01-01"),
+    },
   ];
 
   for (const { amount, ...item } of committedMonthly) {

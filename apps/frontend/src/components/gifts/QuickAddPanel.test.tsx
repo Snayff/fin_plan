@@ -3,7 +3,10 @@ import { screen, fireEvent } from "@testing-library/react";
 import { renderWithProviders } from "@/test/helpers/render";
 import { QuickAddPanel } from "./QuickAddPanel";
 
-const bulkMock = mock(() => Promise.resolve({ count: 0 }));
+const bulkMock = mock((_vars: unknown, options?: { onSuccess?: () => void }) => {
+  options?.onSuccess?.();
+  return Promise.resolve({ count: 0 });
+});
 
 mock.module("@/hooks/useGifts", () => ({
   useQuickAddMatrix: () => ({
@@ -68,7 +71,22 @@ describe("QuickAddPanel", () => {
           expect.objectContaining({ personId: "p1", eventId: "e1", year: 2026, planned: 100 }),
           expect.objectContaining({ personId: "p2", eventId: "e1", year: 2026, planned: 50 }),
         ]),
-      })
+      }),
+      expect.objectContaining({ onSuccess: expect.any(Function) })
     );
+  });
+
+  it("clears dirty state after a successful save", () => {
+    const onDirtyChange = mock((_dirty: boolean) => {});
+    renderWithProviders(
+      <QuickAddPanel year={2026} readOnly={false} onDirtyChange={onDirtyChange} />
+    );
+    const cell = screen.getByTestId("cell-p2-e1") as HTMLInputElement;
+    fireEvent.change(cell, { target: { value: "50" } });
+    // becomes dirty
+    expect(onDirtyChange.mock.calls.at(-1)?.[0]).toBe(true);
+    fireEvent.click(screen.getByRole("button", { name: /save/i }));
+    // baseline resets, parent notified
+    expect(onDirtyChange.mock.calls.at(-1)?.[0]).toBe(false);
   });
 });

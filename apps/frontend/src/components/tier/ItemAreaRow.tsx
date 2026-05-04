@@ -17,12 +17,18 @@ interface SubcategoryOption {
   name: string;
 }
 
+interface MemberOption {
+  id: string;
+  firstName: string;
+}
+
 interface Props {
   tier: TierKey;
   config: TierConfig;
   item: TierItemRow;
   subcategoryName: string;
   subcategories: SubcategoryOption[];
+  members?: MemberOption[];
   expandedItemId: string | null;
   editingItemId: string | null;
   onToggleExpand: (id: string) => void;
@@ -39,6 +45,7 @@ export default function ItemAreaRow({
   item,
   subcategoryName,
   subcategories,
+  members = [],
   expandedItemId,
   editingItemId,
   onToggleExpand,
@@ -65,6 +72,7 @@ export default function ItemAreaRow({
       }}
       now={now}
       stalenessMonths={stalenessMonths}
+      members={members}
     >
       <AnimatePresence initial={false}>
         {isExpanded && !isEditing && (
@@ -99,6 +107,7 @@ export default function ItemAreaRow({
               item={item}
               config={config}
               subcategories={subcategories}
+              members={members}
               initialSubcategoryId={item.subcategoryId}
               isSaving={updateItem.isPending}
               isStale={stale}

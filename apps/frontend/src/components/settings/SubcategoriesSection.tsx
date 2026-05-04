@@ -27,7 +27,8 @@ import {
 import { SubcategoryRow } from "./SubcategoryRow";
 import { ReassignmentPrompt } from "./ReassignmentPrompt";
 import { ResetConfirmationModal } from "./ResetConfirmationModal";
-import { Section } from "./Section";
+import { SettingsSection } from "./SettingsSection";
+import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { TIER_CONFIGS, type TierKey } from "@/components/tier/tierConfig";
 import type { SubcategoryRow as SubcategoryRowType, WaterfallTier } from "@finplan/shared";
 
@@ -320,11 +321,17 @@ export function SubcategoriesSection() {
   const isLoading = queries[activeTier].isLoading || countsQuery.isLoading;
 
   return (
-    <Section id="subcategories" title="Subcategories">
-      <p className="text-sm text-muted-foreground">
-        Customise the subcategories for each waterfall tier. Changes are saved together.
-      </p>
-
+    <SettingsSection
+      id="subcategories"
+      title="Subcategories"
+      description={
+        <>
+          Customise the <GlossaryTermMarker entryId="subcategory">subcategories</GlossaryTermMarker>{" "}
+          for each <GlossaryTermMarker entryId="tier">waterfall tier</GlossaryTermMarker>. Changes
+          are saved together.
+        </>
+      }
+    >
       <Tabs value={activeTier} onValueChange={(v) => setActiveTier(v as TierKey)}>
         <TabsList>
           {TIERS.map((tier) => (
@@ -441,6 +448,6 @@ export function SubcategoriesSection() {
         onCancel={() => setShowReset(false)}
         isLoading={resetMutation.isPending}
       />
-    </Section>
+    </SettingsSection>
   );
 }

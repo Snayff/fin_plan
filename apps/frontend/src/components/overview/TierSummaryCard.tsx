@@ -1,5 +1,6 @@
 import type { SparklinePoint } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { SummarySparkline } from "./SummarySparkline";
 
 const TIER_COLORS = {
@@ -23,6 +24,8 @@ interface TierSummaryCardProps {
 }
 
 export function TierSummaryCard({ tier, amount, sparklineData }: TierSummaryCardProps) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const color = TIER_COLORS[tier];
 
   return (
@@ -49,7 +52,7 @@ export function TierSummaryCard({ tier, amount, sparklineData }: TierSummaryCard
           fontWeight: 500,
         }}
       >
-        {formatCurrency(amount)}
+        {formatCurrency(amount, showPence)}
       </p>
       <SummarySparkline data={sparklineData} color={color} currentValue={amount} paddingX={14} />
     </div>

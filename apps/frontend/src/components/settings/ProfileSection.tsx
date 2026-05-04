@@ -1,46 +1,44 @@
-import { useState } from "react";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/stores/authStore";
 import { authService } from "@/services/auth.service";
-import { Section } from "./Section";
+import { SettingsSection } from "./SettingsSection";
+import { AutoSaveField } from "./AutoSaveField";
+import { useAutoSave } from "@/hooks/useAutoSave";
 
 export function ProfileSection() {
   const user = useAuthStore((s) => s.user);
   const accessToken = useAuthStore((s) => s.accessToken);
   const setUser = useAuthStore((s) => s.setUser);
-  const [name, setName] = useState(user?.name ?? "");
-  const [saving, setSaving] = useState(false);
 
-  async function handleSave() {
-    if (!accessToken) return;
-    setSaving(true);
-    try {
-      const { user: updated } = await authService.updateProfile(accessToken, { name });
+  const { value, setValue, status, errorMessage } = useAutoSave<string>({
+    initialValue: user?.name ?? "",
+    onSave: async (next) => {
+      if (!accessToken) throw new Error("Not authenticated");
+      const { user: updated } = await authService.updateProfile(accessToken, { name: next });
       setUser(updated, accessToken);
-      toast.success("Profile updated");
-    } catch {
-      toast.error("Couldn't save profile — try again");
-    } finally {
-      setSaving(false);
-    }
-  }
+    },
+  });
 
   return (
-    <Section id="profile" title="Profile">
-      <div className="space-y-3 max-w-sm">
-        <div className="space-y-1">
-          <label htmlFor="profile-name" className="text-sm font-medium">
-            Name
-          </label>
-          <Input id="profile-name" value={name} onChange={(e) => setName(e.target.value)} />
-        </div>
-        <p className="text-sm text-muted-foreground">{user?.email}</p>
-        <Button size="sm" onClick={handleSave} disabled={saving}>
-          {saving ? "Saving…" : "Save"}
-        </Button>
-      </div>
-    </Section>
+    <SettingsSection
+      id="account"
+      title="Account"
+      description="Your account details. Applied across every household you're a member of."
+    >
+      <AutoSaveField
+        label="Name"
+        htmlFor="profile-name"
+        status={status}
+        errorMessage={errorMessage}
+      >
+        <Input
+          id="profile-name"
+          value={value}
+          onChange={(e) => setValue(e.target.value)}
+          aria-invalid={status === "error"}
+        />
+      </AutoSaveField>
+      <div className="text-sm text-foreground/40">{user?.email}</div>
+    </SettingsSection>
   );
 }

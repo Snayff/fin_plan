@@ -1,6 +1,7 @@
 import { describe, it, expect, mock } from "bun:test";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { MemoryRouter } from "react-router-dom";
 import ItemArea from "./ItemArea";
 import { TIER_CONFIGS } from "./tierConfig";
 
@@ -40,17 +41,19 @@ const subcategories = [{ id: "sub-housing", name: "Housing" }];
 function renderArea(itemList = items) {
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={qc}>
-      <ItemArea
-        tier="committed"
-        config={TIER_CONFIGS.committed}
-        subcategory={subcategory}
-        subcategories={subcategories}
-        items={itemList}
-        isLoading={false}
-        now={new Date("2026-01-15")}
-      />
-    </QueryClientProvider>
+    <MemoryRouter>
+      <QueryClientProvider client={qc}>
+        <ItemArea
+          tier="committed"
+          config={TIER_CONFIGS.committed}
+          subcategory={subcategory}
+          subcategories={subcategories}
+          items={itemList}
+          isLoading={false}
+          now={new Date("2026-01-15")}
+        />
+      </QueryClientProvider>
+    </MemoryRouter>
   );
 }
 
@@ -79,7 +82,7 @@ describe("ItemArea", () => {
     renderArea();
     fireEvent.click(screen.getByRole("button", { name: /\+ add/i }));
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("e.g. Netflix, Council Tax")).toBeTruthy();
+      expect(screen.getByPlaceholderText("e.g. Mortgage, Council Tax")).toBeTruthy();
     });
   });
 
@@ -109,5 +112,86 @@ describe("ItemArea", () => {
     await waitFor(() => {
       expect(screen.queryByText("Notes")).toBeNull();
     });
+  });
+
+  it("renders a 'View all' link pointing to /waterfall#committed", () => {
+    renderArea();
+    const link = screen.getByRole("link", { name: /view all/i });
+    expect(link.getAttribute("href")).toBe("/waterfall#committed");
+  });
+});
+
+const giftsSubcategory = {
+  id: "sub-gifts",
+  name: "Gifts",
+  tier: "discretionary" as const,
+  sortOrder: 3,
+  isLocked: true,
+};
+
+function renderGifts(opts: { synced: boolean; itemList?: typeof items }) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(
+    <MemoryRouter>
+      <QueryClientProvider client={qc}>
+        <ItemArea
+          tier="discretionary"
+          config={TIER_CONFIGS.discretionary}
+          subcategory={giftsSubcategory}
+          subcategories={[{ id: "sub-gifts", name: "Gifts" }]}
+          items={opts.itemList ?? []}
+          isLoading={false}
+          now={new Date("2026-01-15")}
+          lockedManager={opts.synced ? { label: "Gift Planner", path: "/gifts" } : undefined}
+        />
+      </QueryClientProvider>
+    </MemoryRouter>
+  );
+}
+
+describe("ItemArea — Gifts subcategory (Gift Planner synced)", () => {
+  it("renders a lock icon next to the title", () => {
+    renderGifts({ synced: true });
+    expect(screen.getByLabelText(/synced subcategory/i)).toBeTruthy();
+  });
+
+  it("shows an 'Open Gift Planner' link in the header", () => {
+    renderGifts({ synced: true });
+    const link = screen.getByRole("link", { name: /open gift planner/i });
+    expect(link.getAttribute("href")).toBe("/gifts");
+  });
+
+  it("hides the '+ Add' button in the header", () => {
+    renderGifts({ synced: true });
+    expect(screen.queryByRole("button", { name: /\+ add/i })).toBeNull();
+  });
+
+  it("shows the synced empty-state card with an 'Open Gift Planner' button", () => {
+    renderGifts({ synced: true });
+    expect(screen.getByText(/managed in the gift planner/i)).toBeTruthy();
+    expect(screen.getByRole("button", { name: /open gift planner/i })).toBeTruthy();
+  });
+});
+
+describe("ItemArea — Gifts subcategory (Gift Planner independent)", () => {
+  it("does not render the lock icon", () => {
+    renderGifts({ synced: false });
+    expect(screen.queryByLabelText(/synced subcategory/i)).toBeNull();
+  });
+
+  it("does not render the 'Open Gift Planner' link", () => {
+    renderGifts({ synced: false });
+    expect(screen.queryByRole("link", { name: /open gift planner/i })).toBeNull();
+  });
+
+  it("renders the '+ Add' button in the header", () => {
+    renderGifts({ synced: false });
+    // Empty-state CTA also renders a '+ Add' button, so at least one exists — the header one.
+    expect(screen.getAllByRole("button", { name: /\+ add/i }).length).toBeGreaterThan(0);
+  });
+
+  it("renders the normal empty-state card (not the synced one)", () => {
+    renderGifts({ synced: false });
+    expect(screen.queryByText(/managed in the gift planner/i)).toBeNull();
   });
 });

@@ -1,5 +1,6 @@
 import { format } from "date-fns";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { cn } from "@/lib/utils";
 
 interface LinkedAccountsButtonProps {
@@ -17,6 +18,8 @@ export function LinkedAccountsButton({
   isOpen,
   onClick,
 }: LinkedAccountsButtonProps) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const empty = linkedCount === 0;
   const asOf = oldestBalanceDate ? format(new Date(oldestBalanceDate), "d MMM") : null;
 
@@ -39,7 +42,7 @@ export function LinkedAccountsButton({
           <>
             <span className="label-chart">Account balances</span>
             <span className="font-numeric text-sm text-foreground">
-              {formatCurrency(startingBalance)}
+              {formatCurrency(startingBalance, showPence)}
             </span>
             <span className="text-[11px] text-text-tertiary">
               {asOf && (

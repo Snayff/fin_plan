@@ -1,0 +1,112 @@
+<h2>Two attention signals on the same tier row</h2>
+<p class="subtitle">The Committed tier row may simultaneously have stale items <strong>and</strong> a cashflow shortfall. Existing pattern is "● N stale". How should the row behave when both apply?</p>
+
+<style>
+  .stage {
+    background: #0e1220;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 0;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    color: #e6e8ee;
+    width: 360px;
+  }
+  .row {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .left { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .tier-name {
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: #6366f1;
+  }
+  .num { font-variant-numeric: tabular-nums; font-size: 13px; color: rgba(230,232,238,0.7); }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #f59e0b;
+    font-size: 11px;
+  }
+  .badge::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #f59e0b;
+  }
+  .variants {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 18px;
+    margin-top: 24px;
+  }
+  .variant-label {
+    font-size: 11px;
+    color: rgba(230,232,238,0.5);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 12px;
+  }
+  .col-desc {
+    text-align: center;
+    color: rgba(230,232,238,0.55);
+    font-size: 11.5px;
+    margin-top: 8px;
+    line-height: 1.55;
+    padding: 0 8px;
+  }
+  .col { display: flex; flex-direction: column; align-items: center; }
+</style>
+
+<div class="variants">
+
+  <div class="col">
+    <div class="stage">
+      <div class="row">
+        <div class="left">
+          <span class="tier-name">COMMITTED</span>
+          <span class="badge">3 stale</span>
+          <span class="badge">shortfall in 12d</span>
+        </div>
+        <span class="num">£4,817</span>
+      </div>
+    </div>
+    <div class="variant-label">C1 — both badges</div>
+    <div class="col-desc">Both signals visible side-by-side. Treats them as <em>badges</em>, not nudges (Anchor 13 governs nudges, not badges). Slightly cluttered when names + figures + two badges all compete for the row.</div>
+  </div>
+
+  <div class="col">
+    <div class="stage">
+      <div class="row">
+        <div class="left">
+          <span class="tier-name">COMMITTED</span>
+          <span class="badge">shortfall in 12d</span>
+        </div>
+        <span class="num">£4,817</span>
+      </div>
+    </div>
+    <div class="variant-label">C2 — shortfall wins</div>
+    <div class="col-desc">Shortfall replaces the stale badge while it's active. Stale count is still visible inside the tier (subcategory row dots) when the user opens the tier — only the row-level summary defers. One badge, no clutter.</div>
+  </div>
+
+  <div class="col">
+    <div class="stage">
+      <div class="row">
+        <div class="left">
+          <span class="tier-name">COMMITTED</span>
+          <span class="badge">3 stale · shortfall in 12d</span>
+        </div>
+        <span class="num">£4,817</span>
+      </div>
+    </div>
+    <div class="variant-label">C3 — merged badge</div>
+    <div class="col-desc">Single badge concatenates both signals with a separator. One amber dot, two facts. Compact, but the parsing burden falls on the user.</div>
+  </div>
+
+</div>

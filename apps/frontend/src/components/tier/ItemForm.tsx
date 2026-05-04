@@ -6,9 +6,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useQueryClient } from "@tanstack/react-query";
+import { useSettings } from "@/hooks/useSettings";
 import { formatCurrency } from "@/utils/format";
-import type { TierConfig } from "./tierConfig";
+import { useCreatePeriod, useDeletePeriod } from "@/hooks/useWaterfall";
+import type { TierConfig, TierKey } from "./tierConfig";
 import type { SpendType } from "./formatAmount";
+import { LinkedAccountPicker } from "./LinkedAccountPicker";
+import { getItemNamePlaceholder } from "./itemNamePlaceholder";
+
+const TIER_TO_PERIOD_ITEM_TYPE: Record<TierKey, string> = {
+  income: "income_source",
+  committed: "committed_item",
+  discretionary: "discretionary_item",
+};
 
 function toDateInputValue(d: Date): string {
   const y = d.getFullYear();
@@ -22,6 +33,11 @@ interface SubcategoryOption {
   name: string;
 }
 
+interface MemberOption {
+  id: string;
+  firstName: string;
+}
+
 interface ItemData {
   name: string;
   amount: number;
@@ -30,6 +46,10 @@ interface ItemData {
   notes: string | null;
   /** Required for income/committed; null for discretionary unless one_off. */
   dueDate: string | null;
+  /** References Member.id. null = "Household" (no specific member). */
+  memberId: string | null;
+  /** Only set when item is in the Savings discretionary subcategory. */
+  linkedAccountId?: string | null;
 }
 
 interface ItemPeriod {
@@ -44,6 +64,7 @@ interface EditItem extends Omit<ItemData, "dueDate"> {
   lastReviewedAt: Date;
   dueDate: Date | null;
   periods?: ItemPeriod[];
+  linkedAccountId?: string | null;
 }
 
 type AddModeProps = {
@@ -65,12 +86,11 @@ type EditModeProps = {
 type Props = (AddModeProps | EditModeProps) & {
   config: TierConfig;
   subcategories: SubcategoryOption[];
+  members?: MemberOption[];
   initialSubcategoryId: string;
   onSave: (data: ItemData) => void;
   onCancel: () => void;
   isSaving?: boolean;
-  onDeletePeriod?: (periodId: string) => void;
-  onAddPeriod?: () => void;
 };
 
 export default function ItemForm({
@@ -78,6 +98,7 @@ export default function ItemForm({
   item,
   config,
   subcategories,
+  members = [],
   initialSubcategoryId,
   onSave,
   onCancel,
@@ -85,10 +106,10 @@ export default function ItemForm({
   onDelete,
   isSaving,
   isStale,
-  onDeletePeriod,
-  onAddPeriod,
 }: Props) {
   const tier = config.tier;
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const [name, setName] = useState(item?.name ?? "");
   const [amount, setAmount] = useState(item?.amount?.toString() ?? "");
   const [spendType, setSpendType] = useState<SpendType>(item?.spendType ?? "monthly");
@@ -98,19 +119,55 @@ export default function ItemForm({
     if (item?.dueDate) return toDateInputValue(item.dueDate);
     return toDateInputValue(new Date());
   });
+  const [linkedAccountId, setLinkedAccountId] = useState<string | null>(
+    item?.linkedAccountId ?? null
+  );
+  const [memberId, setMemberId] = useState<string | null>(item?.memberId ?? null);
   const [amountError, setAmountError] = useState<string | null>(null);
   const [amountFocused, setAmountFocused] = useState(false);
+
+  const [isAddingPeriod, setIsAddingPeriod] = useState(false);
+  const [newPeriodStart, setNewPeriodStart] = useState(() => toDateInputValue(new Date()));
+  const [newPeriodAmount, setNewPeriodAmount] = useState("");
+
+  const periodItemType = TIER_TO_PERIOD_ITEM_TYPE[tier];
+  const itemId = item?.id ?? "";
+  const qc = useQueryClient();
+  const createPeriod = useCreatePeriod(periodItemType, itemId);
+  const deletePeriod = useDeletePeriod(periodItemType, itemId);
+
+  function invalidateTierItems() {
+    void qc.invalidateQueries({ queryKey: ["waterfall", "tier-items", tier] });
+  }
+
+  const currentSubcategoryName = subcategories.find((s) => s.id === subcategoryId)?.name ?? "";
+
+  // Show the account picker only for Savings subcategory in discretionary tier.
+  const isSavingsSubcategory = tier === "discretionary" && currentSubcategoryName === "Savings";
+
+  // Auto-clear linked account if user moves item out of Savings subcategory.
+  function handleSubcategoryChange(id: string) {
+    const newName = subcategories.find((s) => s.id === id)?.name;
+    if (newName !== "Savings") setLinkedAccountId(null);
+    setSubcategoryId(id);
+  }
 
   // Discretionary items only need a date for one-off purchases.
   const dueDateRequired = tier === "income" || tier === "committed";
   const showDueDate = dueDateRequired || spendType === "one_off";
-  const dueDateLabel = spendType === "monthly" || spendType === "yearly" ? "First payment" : "Date";
+  const dueDateLabel =
+    spendType === "monthly" ||
+    spendType === "weekly" ||
+    spendType === "quarterly" ||
+    spendType === "yearly"
+      ? "First payment"
+      : "Date";
 
   const displayAmount =
     !amountFocused && amount
       ? (() => {
           const n = parseFloat(amount);
-          return isNaN(n) ? amount : formatCurrency(n);
+          return isNaN(n) ? amount : formatCurrency(n, showPence);
         })()
       : amount;
 
@@ -132,6 +189,8 @@ export default function ItemForm({
       subcategoryId,
       notes: notes.trim() || null,
       dueDate: showDueDate ? dueDate : null,
+      memberId,
+      linkedAccountId: isSavingsSubcategory ? linkedAccountId : null,
     });
   }
 
@@ -155,7 +214,7 @@ export default function ItemForm({
           </label>
           <input
             type="text"
-            placeholder="e.g. Netflix, Council Tax"
+            placeholder={getItemNamePlaceholder(currentSubcategoryName, tier)}
             value={name}
             onChange={(e) => setName(e.target.value)}
             aria-label="Name"
@@ -201,7 +260,9 @@ export default function ItemForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="weekly">Weekly</SelectItem>
               <SelectItem value="monthly">Monthly</SelectItem>
+              <SelectItem value="quarterly">Quarterly</SelectItem>
               <SelectItem value="yearly">Yearly</SelectItem>
               <SelectItem value="one_off">One-off</SelectItem>
             </SelectContent>
@@ -228,7 +289,7 @@ export default function ItemForm({
         {/* Category */}
         <div className="col-span-2 flex flex-col gap-1">
           <label className={labelClass}>Category</label>
-          <Select value={subcategoryId} onValueChange={setSubcategoryId}>
+          <Select value={subcategoryId} onValueChange={handleSubcategoryChange}>
             <SelectTrigger
               aria-label="Subcategory"
               className="h-auto rounded-md border-foreground/10 bg-foreground/[0.04] py-1.5 text-sm focus:ring-page-accent/40"
@@ -239,6 +300,35 @@ export default function ItemForm({
               {subcategories.map((s) => (
                 <SelectItem key={s.id} value={s.id}>
                   {s.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Linked account — Savings subcategory only */}
+        {isSavingsSubcategory && (
+          <LinkedAccountPicker value={linkedAccountId} onChange={setLinkedAccountId} />
+        )}
+
+        {/* Member */}
+        <div className="col-span-2 flex flex-col gap-1">
+          <label className={labelClass}>Assigned to</label>
+          <Select
+            value={memberId ?? "__household__"}
+            onValueChange={(v) => setMemberId(v === "__household__" ? null : v)}
+          >
+            <SelectTrigger
+              aria-label="Assigned to"
+              className="h-auto rounded-md border-foreground/10 bg-foreground/[0.04] py-1.5 text-sm focus:ring-page-accent/40"
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__household__">Household</SelectItem>
+              {members.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  {m.firstName}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -300,9 +390,13 @@ export default function ItemForm({
                     )}
                     <button
                       type="button"
-                      onClick={() => onDeletePeriod?.(period.id)}
+                      disabled={deletePeriod.isPending}
+                      onClick={async () => {
+                        await deletePeriod.mutateAsync(period.id);
+                        invalidateTierItems();
+                      }}
                       aria-label={`Remove period from ${startDate.toLocaleDateString("en-GB", { month: "short", year: "numeric" })}`}
-                      className="ml-auto text-xs text-text-muted hover:text-red-400 transition-colors"
+                      className="ml-auto text-xs text-text-muted hover:text-red-400 transition-colors disabled:opacity-40"
                     >
                       Remove
                     </button>
@@ -310,13 +404,67 @@ export default function ItemForm({
                 );
               })}
             </div>
-            <button
-              type="button"
-              onClick={onAddPeriod}
-              className="mt-1 rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
-            >
-              + Add period
-            </button>
+            {isAddingPeriod ? (
+              <div className="mt-1 flex items-center gap-2 rounded-md border border-surface-border bg-surface px-3 py-2">
+                <input
+                  type="date"
+                  value={newPeriodStart}
+                  onChange={(e) => setNewPeriodStart(e.target.value)}
+                  aria-label="New period start date"
+                  className={`${inputClass} w-[140px] text-xs`}
+                />
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  placeholder="0.00"
+                  value={newPeriodAmount}
+                  onChange={(e) => setNewPeriodAmount(e.target.value)}
+                  aria-label="New period amount"
+                  className={`${inputClass} w-[100px] font-numeric text-xs`}
+                />
+                <button
+                  type="button"
+                  disabled={
+                    createPeriod.isPending ||
+                    !newPeriodStart ||
+                    isNaN(parseAmount(newPeriodAmount)) ||
+                    parseAmount(newPeriodAmount) <= 0
+                  }
+                  onClick={async () => {
+                    await createPeriod.mutateAsync({
+                      startDate: new Date(newPeriodStart),
+                      amount: parseAmount(newPeriodAmount),
+                    });
+                    invalidateTierItems();
+                    setIsAddingPeriod(false);
+                    setNewPeriodAmount("");
+                    setNewPeriodStart(toDateInputValue(new Date()));
+                  }}
+                  className="rounded-md bg-page-accent/20 px-2 py-1 text-xs font-medium text-page-accent hover:bg-page-accent/30 transition-colors disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  Add
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsAddingPeriod(false);
+                    setNewPeriodAmount("");
+                    setNewPeriodStart(toDateInputValue(new Date()));
+                  }}
+                  className="text-xs text-text-muted hover:text-text-secondary transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsAddingPeriod(true)}
+                className="mt-1 rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
+              >
+                + Add period
+              </button>
+            )}
           </div>
         )}
       </div>

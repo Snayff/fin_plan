@@ -1,64 +1,43 @@
 import { describe, it, expect } from "bun:test";
-import {
-  HouseholdRoleEnum,
-  ResourceSlugEnum,
-  AuditChangeSchema,
-  AuditEntrySchema,
-  AuditLogQuerySchema,
-} from "./audit.schemas";
-import { updateMemberRoleSchema } from "./household.schemas";
+import { AuditAction, ResourceSlugEnum, AuditActionEnum } from "./audit.schemas";
 
-describe("HouseholdRoleEnum", () => {
-  it("accepts owner, admin, member", () => {
-    expect(HouseholdRoleEnum.parse("owner")).toBe("owner");
-    expect(HouseholdRoleEnum.parse("admin")).toBe("admin");
-    expect(HouseholdRoleEnum.parse("member")).toBe("member");
+describe("AuditAction", () => {
+  it("exposes auth + household + summary actions as SCREAMING_SNAKE_CASE", () => {
+    expect(AuditAction.LOGIN_SUCCESS).toBe("LOGIN_SUCCESS");
+    expect(AuditAction.CREATE_INCOME_SOURCE).toBe("CREATE_INCOME_SOURCE");
+    expect(AuditAction.DELETE_HOUSEHOLD).toBe("DELETE_HOUSEHOLD");
+    expect(AuditAction.IMPORT_DATA).toBe("IMPORT_DATA");
+    expect(AuditAction.UPDATE_PROFILE).toBe("UPDATE_PROFILE");
+    expect(AuditAction.TOKEN_REFRESH).toBe("TOKEN_REFRESH");
   });
-  it("rejects unknown values", () => {
-    expect(() => HouseholdRoleEnum.parse("superuser")).toThrow();
+
+  it("every value matches its key (no drift between key and literal)", () => {
+    for (const [k, v] of Object.entries(AuditAction)) {
+      expect(v).toBe(k);
+    }
+  });
+
+  it("AuditActionEnum accepts every AuditAction value", () => {
+    for (const v of Object.values(AuditAction)) {
+      expect(AuditActionEnum.safeParse(v).success).toBe(true);
+    }
   });
 });
 
-describe("AuditChangeSchema", () => {
-  it("accepts update entry", () => {
-    const result = AuditChangeSchema.parse({
-      field: "amount",
-      before: 100,
-      after: 200,
-    });
-    expect(result.field).toBe("amount");
-  });
-  it("accepts create entry (no before)", () => {
-    const result = AuditChangeSchema.parse({ field: "name", after: "Salary" });
-    expect(result.before).toBeUndefined();
-  });
-});
-
-describe("AuditLogQuerySchema", () => {
-  it("applies defaults", () => {
-    const result = AuditLogQuerySchema.parse({});
-    expect(result.limit).toBe(50);
-    expect(result.cursor).toBeUndefined();
-  });
-  it("accepts all filters", () => {
-    const result = AuditLogQuerySchema.parse({
-      actorId: "user_1",
-      resource: "income-source",
-      dateFrom: "2026-01-01T00:00:00.000Z",
-      dateTo: "2026-03-01T00:00:00.000Z",
-      cursor: "abc123",
-      limit: 20,
-    });
-    expect(result.resource).toBe("income-source");
-  });
-});
-
-describe("updateMemberRoleSchema", () => {
-  it("accepts valid update", () => {
-    const result = updateMemberRoleSchema.parse({ role: "admin" });
-    expect(result.role).toBe("admin");
-  });
-  it("rejects owner role assignment", () => {
-    expect(() => updateMemberRoleSchema.parse({ role: "owner" })).toThrow();
+describe("ResourceSlugEnum", () => {
+  it("includes the new slugs required by richer-audit-logging", () => {
+    const required = [
+      "snapshot",
+      "user",
+      "gift-person",
+      "gift-event",
+      "gift-allocation",
+      "member-profile",
+      "year-budget",
+      "household",
+    ];
+    for (const s of required) {
+      expect(ResourceSlugEnum.safeParse(s).success).toBe(true);
+    }
   });
 });

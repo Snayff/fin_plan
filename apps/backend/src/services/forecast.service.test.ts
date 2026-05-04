@@ -8,7 +8,7 @@ const waterfallServiceMock = {
 mock.module("../config/database.js", () => ({ prisma: prismaMock }));
 mock.module("./waterfall.service.js", () => ({ waterfallService: waterfallServiceMock }));
 
-const { forecastService } = await import("./forecast.service.js");
+const { forecastService, __test__: forecastTest } = await import("./forecast.service.js");
 
 beforeEach(() => {
   resetPrismaMocks();
@@ -18,11 +18,12 @@ beforeEach(() => {
 });
 
 // Helper to build a mock account with a latest balance
+// monthlyContribution is now derived from linkedItems + ItemAmountPeriod at read time
 function mockAccount(overrides: {
   id?: string;
   type: "Current" | "Savings" | "Pension" | "StocksAndShares" | "Other";
   balance: number;
-  monthlyContribution?: number;
+  linkedItems?: Array<{ id: string; spendType: string }>;
   growthRatePct?: number | null;
   memberId?: string | null;
 }) {
@@ -31,8 +32,8 @@ function mockAccount(overrides: {
     householdId: "hh-1",
     type: overrides.type,
     growthRatePct: overrides.growthRatePct ?? null,
-    monthlyContribution: overrides.monthlyContribution ?? 0,
     memberId: overrides.memberId ?? null,
+    linkedItems: overrides.linkedItems ?? [],
     balances: [{ value: overrides.balance, date: new Date("2026-01-01") }],
   };
 }
@@ -92,11 +93,26 @@ describe("forecastService.getProjections — net worth", () => {
 
   it("applies account growth rate with monthly contributions after year 1", async () => {
     prismaMock.account.findMany.mockResolvedValue([
-      mockAccount({ type: "Savings", balance: 10000, monthlyContribution: 100 }),
+      mockAccount({
+        type: "Savings",
+        balance: 10000,
+        linkedItems: [{ id: "item-contrib", spendType: "monthly" }],
+      }),
     ] as any);
     prismaMock.asset.findMany.mockResolvedValue([] as any);
     prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
     prismaMock.member.findMany.mockResolvedValue([] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        id: "p-contrib",
+        itemType: "discretionary_item",
+        itemId: "item-contrib",
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 100,
+        createdAt: new Date(),
+      },
+    ] as any);
 
     const result = await forecastService.getProjections("hh-1", 1);
 
@@ -318,5 +334,349 @@ describe("forecastService.getProjections — retirement", () => {
     expect(result.netWorth.every((p) => p.nominal === 0)).toBe(true);
     expect(result.surplus.every((p) => p.cumulative === 0)).toBe(true);
     expect(result.retirement).toHaveLength(0);
+  });
+});
+
+describe("forecastService.getProjections — monthlyContributionsByScope", () => {
+  it("sums non-pension linked contributions into netWorth scope", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({
+        id: "savings-1",
+        type: "Savings",
+        balance: 5000,
+        linkedItems: [{ id: "item-savings", spendType: "monthly" }],
+      }),
+      mockAccount({
+        id: "pension-1",
+        type: "Pension",
+        balance: 20000,
+        linkedItems: [{ id: "item-pension", spendType: "monthly" }],
+        memberId: "m-1",
+      }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([
+      {
+        id: "m-1",
+        householdId: "hh-1",
+        userId: "user-1",
+        retirementYear: null,
+        user: { id: "user-1", name: "Alice" },
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        id: "p1",
+        itemType: "discretionary_item",
+        itemId: "item-savings",
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 300,
+        createdAt: new Date(),
+      },
+      {
+        id: "p2",
+        itemType: "discretionary_item",
+        itemId: "item-pension",
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 200,
+        createdAt: new Date(),
+      },
+    ] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    expect(result.monthlyContributionsByScope.netWorth).toBe(300);
+    expect(result.monthlyContributionsByScope.retirement).toBe(200);
+    expect(result.monthlyContributionsByScope.savings).toBe(300);
+    expect(result.monthlyContributionsByScope.stocksAndShares).toBe(0);
+  });
+
+  it("returns zeroes when no linked items exist", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ type: "Savings", balance: 10000 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    expect(result.monthlyContributionsByScope.netWorth).toBe(0);
+    expect(result.monthlyContributionsByScope.retirement).toBe(0);
+    expect(result.monthlyContributionsByScope.savings).toBe(0);
+    expect(result.monthlyContributionsByScope.stocksAndShares).toBe(0);
+  });
+});
+
+describe("forecastService.getProjections — savings series", () => {
+  it("year 0 balance equals current household savings, series length = horizon + 1", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ id: "s-1", type: "Savings", balance: 7000 }),
+      mockAccount({ id: "s-2", type: "Savings", balance: 3000 }),
+      mockAccount({ id: "ss-1", type: "StocksAndShares", balance: 5000 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 3);
+
+    expect(result.savings).toHaveLength(4);
+    expect(result.savings[0]!.balance).toBe(10000);
+  });
+
+  it("applies savingsRatePct growth and monthly contributions", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({
+        type: "Savings",
+        balance: 10000,
+        linkedItems: [{ id: "item-contrib", spendType: "monthly" }],
+      }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        id: "p-contrib",
+        itemType: "discretionary_item",
+        itemId: "item-contrib",
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 100,
+        createdAt: new Date(),
+      },
+    ] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    // Year 1: 10000 * 1.04 + (100 * 12) = 11600
+    expect(result.savings[1]!.balance).toBe(11600);
+  });
+
+  it("all-zero series when no Savings accounts exist", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ type: "Current", balance: 5000 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 3);
+
+    expect(result.savings.every((p) => p.balance === 0)).toBe(true);
+  });
+});
+
+// ── Disposal: unit tests for internal helpers ─────────────────────────────────
+
+describe("forecastService.__test__.disposalYearOffset", () => {
+  const { disposalYearOffset } = forecastTest;
+
+  it("returns null when disposedAt is null", () => {
+    expect(disposalYearOffset(null, new Date())).toBeNull();
+  });
+
+  it("returns 0 when disposal date is in the past", () => {
+    const past = new Date(Date.now() - 365 * 24 * 60 * 60 * 1000);
+    expect(disposalYearOffset(past, new Date())).toBe(0);
+  });
+
+  it("returns 0 when disposal date equals now", () => {
+    const now = new Date();
+    expect(disposalYearOffset(now, now)).toBe(0);
+  });
+
+  it("returns approximately 2 for a date ~2 years in the future", () => {
+    const now = new Date("2026-01-01");
+    const future = new Date("2028-01-01");
+    expect(disposalYearOffset(future, now)).toBe(2);
+  });
+
+  it("returns at least 1 for any future date", () => {
+    const now = new Date("2026-01-01");
+    const nearFuture = new Date("2026-06-01");
+    expect(disposalYearOffset(nearFuture, now)!).toBeGreaterThanOrEqual(1);
+  });
+});
+
+describe("forecastService.__test__.projectBalanceSeries — disposal cut-off", () => {
+  const { projectBalanceSeries } = forecastTest;
+
+  it("disposalYear=null → no proceeds, normal compounding series", () => {
+    const { series, proceeds } = projectBalanceSeries(10000, 0, 0.05, 2, null);
+    expect(proceeds).toBeNull();
+    expect(series[0]).toBe(10000);
+    expect(series[1]).toBeCloseTo(10500, 0);
+    expect(series[2]).toBeCloseTo(11025, 0);
+  });
+
+  it("disposalYear=0 → all-zero series, no proceeds (already disposed)", () => {
+    const { series, proceeds } = projectBalanceSeries(50000, 100, 0.05, 3, 0);
+    expect(proceeds).toBeNull();
+    expect(series.every((v) => v === 0)).toBe(true);
+    expect(series).toHaveLength(4); // years + 1
+  });
+
+  it("disposalYear=2 → series drops to 0 at year 2, proceeds captured", () => {
+    // 10000 at 10%/yr, no contributions, disposed at year 2
+    const { series, proceeds } = projectBalanceSeries(10000, 0, 0.1, 3, 2);
+    expect(series[0]).toBe(10000);
+    expect(series[1]).toBeCloseTo(11000, 0); // year 1: still active
+    expect(series[2]).toBe(0); // year 2: dropped to 0
+    expect(series[3]).toBe(0); // year 3: still 0
+    expect(proceeds).not.toBeNull();
+    expect(proceeds!.yearOffset).toBe(2);
+    expect(proceeds!.amount).toBeCloseTo(12100, 0); // 11000 * 1.1
+  });
+
+  it("disposalYear=1 → series is [balance, 0], proceeds captured at year 1", () => {
+    const { series, proceeds } = projectBalanceSeries(5000, 0, 0.0, 2, 1);
+    expect(series[0]).toBe(5000);
+    expect(series[1]).toBe(0);
+    expect(proceeds!.yearOffset).toBe(1);
+    expect(proceeds!.amount).toBe(5000); // 0% growth, so proceeds = initial
+  });
+});
+
+describe("forecastService.getProjections — disposal integration", () => {
+  it("asset with future disposal drops to 0 and adds proceeds to target account", async () => {
+    // Asset: £100k property, 0% growth, disposed at year 2
+    // Target: Savings account with £0 balance, 0% growth
+    // Expected: year 2 net worth = 0 (property gone) + £100k (target gained proceeds)
+    const now = new Date("2026-01-01");
+    const disposalDate = new Date("2028-01-01"); // ~2 years from now
+
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "target-acc",
+        householdId: "hh-1",
+        type: "Savings",
+        growthRatePct: 0,
+        memberId: null,
+        disposedAt: null,
+        disposalAccountId: null,
+        linkedItems: [],
+        balances: [{ value: 0, date: now }],
+      },
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([
+      {
+        id: "house-1",
+        householdId: "hh-1",
+        type: "Property",
+        growthRatePct: 0,
+        disposedAt: disposalDate,
+        disposalAccountId: "target-acc",
+        balances: [{ value: 100000, date: now }],
+      },
+    ] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue({
+      ...defaultSettings,
+      savingsRatePct: 0,
+    } as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 3);
+
+    // Year 0: property £100k, savings £0 → net worth £100k
+    expect(result.netWorth[0]!.nominal).toBe(100000);
+    // Year 1: property still active (disposal at year 2), savings £0 → £100k
+    expect(result.netWorth[1]!.nominal).toBe(100000);
+    // Year 2: property drops to 0, proceeds (£100k) added to target savings
+    expect(result.netWorth[2]!.nominal).toBe(100000);
+    // Year 3: savings still holds £100k (0% rate), property still 0
+    expect(result.netWorth[3]!.nominal).toBe(100000);
+  });
+
+  it("asset with past disposal (disposalYear=0) contributes 0 from year 0", async () => {
+    const yesterday = new Date(Date.now() - 86400_000);
+
+    prismaMock.account.findMany.mockResolvedValue([] as any);
+    prismaMock.asset.findMany.mockResolvedValue([
+      {
+        id: "old-boat",
+        householdId: "hh-1",
+        type: "Vehicle",
+        growthRatePct: 0,
+        disposedAt: yesterday,
+        disposalAccountId: "some-acc",
+        balances: [{ value: 20000, date: new Date("2025-01-01") }],
+      },
+    ] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 2);
+
+    // Already disposed → 0 at every data point
+    expect(result.netWorth[0]!.nominal).toBe(0);
+    expect(result.netWorth[1]!.nominal).toBe(0);
+    expect(result.netWorth[2]!.nominal).toBe(0);
+  });
+});
+
+describe("forecastService.getProjections — stocksAndShares series", () => {
+  it("year 0 balance equals current household S&S, uses investmentRatePct", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({ type: "StocksAndShares", balance: 10000 }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    expect(result.stocksAndShares[0]!.balance).toBe(10000);
+    // Year 1: 10000 * 1.07 = 10700 (investmentRatePct 7%)
+    expect(result.stocksAndShares[1]!.balance).toBe(10700);
+  });
+
+  it("sums linked contributions into stocksAndShares scope only", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      mockAccount({
+        id: "ss-1",
+        type: "StocksAndShares",
+        balance: 5000,
+        linkedItems: [{ id: "item-ss", spendType: "monthly" }],
+      }),
+      mockAccount({
+        id: "sav-1",
+        type: "Savings",
+        balance: 5000,
+        linkedItems: [{ id: "item-sav", spendType: "monthly" }],
+      }),
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(defaultSettings as any);
+    prismaMock.member.findMany.mockResolvedValue([] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        id: "p-ss",
+        itemType: "discretionary_item",
+        itemId: "item-ss",
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 150,
+        createdAt: new Date(),
+      },
+      {
+        id: "p-sav",
+        itemType: "discretionary_item",
+        itemId: "item-sav",
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 75,
+        createdAt: new Date(),
+      },
+    ] as any);
+
+    const result = await forecastService.getProjections("hh-1", 1);
+
+    expect(result.monthlyContributionsByScope.stocksAndShares).toBe(150);
+    expect(result.monthlyContributionsByScope.savings).toBe(75);
   });
 });

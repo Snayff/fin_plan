@@ -235,6 +235,9 @@ describe("cashflowService.getProjection", () => {
     prismaMock.committedItem.findMany.mockResolvedValue([]);
     prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
     prismaMock.itemAmountPeriod.findMany.mockResolvedValue([]);
+    // loadDisposalSources now queries asset.findMany — default to empty (no disposals)
+    prismaMock.asset.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
   });
 
   it("returns starting balance equal to sum of latest linked balances", async () => {
@@ -472,16 +475,270 @@ describe("cashflowService.getProjection", () => {
   });
 });
 
+describe("cashflowService.getProjection — weekly expansion", () => {
+  beforeEach(() => {
+    // £0 starting balance — no accounts linked
+    prismaMock.account.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.asset.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+  });
+
+  it("emits an event every Wednesday for a weekly income source starting 1 Jan 2025", async () => {
+    // Wednesday 1 Jan 2025 is UTC day-of-week 3
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      {
+        id: "wi1",
+        name: "Weekly Pay",
+        frequency: "weekly",
+        dueDate: new Date("2025-01-01"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "income_source",
+        itemId: "wi1",
+        startDate: new Date("2025-01-01"),
+        endDate: null,
+        amount: 520,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2025,
+      startMonth: 1,
+      monthCount: 3,
+    });
+
+    // Total netChange across 3 months should equal the number of Wednesday events × 520
+    const totalNet = result.months.reduce((s, m) => s + m.netChange, 0);
+    // Jan has Wednesdays: 1,8,15,22,29 (5); Feb: 5,12,19,26 (4); Mar: 5,12,19,26 (4) = 13 total
+    expect(totalNet).toBeCloseTo(13 * 520, 0);
+  });
+
+  it("does not emit weekly events before the dueDate (start guard)", async () => {
+    // Weekly source starts 1 Feb 2025. Projection window starts 1 Jan 2025.
+    // Jan should have no events; Feb onwards should have events.
+    prismaMock.incomeSource.findMany.mockResolvedValue([
+      {
+        id: "wi2",
+        name: "Weekly Pay",
+        frequency: "weekly",
+        dueDate: new Date("2025-02-01"), // Saturday
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "income_source",
+        itemId: "wi2",
+        startDate: new Date("2025-02-01"),
+        endDate: null,
+        amount: 200,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2025,
+      startMonth: 1,
+      monthCount: 3,
+    });
+
+    // January must have zero net change (no events before dueDate)
+    expect(result.months[0]!.netChange).toBe(0);
+    // February and/or March should have positive netChange
+    const febPlusMar = result.months[1]!.netChange + result.months[2]!.netChange;
+    expect(febPlusMar).toBeGreaterThan(0);
+  });
+});
+
+describe("cashflowService.getProjection — quarterly expansion", () => {
+  beforeEach(() => {
+    prismaMock.account.findMany.mockResolvedValue([]);
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.asset.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+  });
+
+  it("emits exactly 4 quarterly events over a 12-month window starting 15 Jan 2025", async () => {
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "qb1",
+        name: "Quarterly Service",
+        spendType: "quarterly",
+        dueDate: new Date("2025-01-15"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "committed_item",
+        itemId: "qb1",
+        startDate: new Date("2025-01-01"),
+        endDate: null,
+        amount: 300,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2025,
+      startMonth: 1,
+      monthCount: 12,
+    });
+
+    // 4 quarterly events (15 Jan, 15 Apr, 15 Jul, 15 Oct) × -300 = -1200 total
+    const totalNet = result.months.reduce((s, m) => s + m.netChange, 0);
+    expect(totalNet).toBeCloseTo(-4 * 300, 0);
+  });
+
+  it("quarterly events land on the correct months (Jan, Apr, Jul, Oct)", async () => {
+    prismaMock.committedItem.findMany.mockResolvedValue([
+      {
+        id: "qb2",
+        name: "Quarterly Fee",
+        spendType: "quarterly",
+        dueDate: new Date("2025-01-15"),
+        householdId: "hh-1",
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        itemType: "committed_item",
+        itemId: "qb2",
+        startDate: new Date("2025-01-01"),
+        endDate: null,
+        amount: 300,
+      },
+    ] as any);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2025,
+      startMonth: 1,
+      monthCount: 12,
+    });
+
+    // Months with events should be Jan(1), Apr(4), Jul(7), Oct(10) — net = -300 each
+    const eventMonths = result.months.filter((m) => m.netChange !== 0).map((m) => m.month);
+    expect(eventMonths).toEqual([1, 4, 7, 10]);
+  });
+});
+
+// ── Disposal liquidation events ───────────────────────────────────────────────
+
+describe("cashflowService.getProjection — disposal liquidation events", () => {
+  it("asset disposal within window targeting a linked account adds positive netChange", async () => {
+    // Linked Current account — balance recorded 2026-05-01 (anchor)
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "linked-1",
+        type: "Current",
+        isCashflowLinked: true,
+        disposedAt: null,
+        disposalAccountId: null,
+        balances: [
+          { value: 1000, date: new Date("2026-05-01"), createdAt: new Date("2026-05-01") },
+        ],
+      },
+    ] as any);
+    // Asset with 0% growth disposed 2026-05-15, proceeds go to linked-1
+    prismaMock.asset.findMany.mockResolvedValue([
+      {
+        id: "house-1",
+        name: "Family Home",
+        type: "Property",
+        householdId: "hh-1",
+        growthRatePct: 0,
+        disposedAt: new Date("2026-05-15"),
+        disposalAccountId: "linked-1",
+        balances: [{ value: 50000, date: new Date("2026-05-01"), createdAt: new Date() }],
+      },
+    ] as any);
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2026,
+      startMonth: 5,
+      monthCount: 2,
+    });
+
+    // May 2026: liquidation of 50k lands in this month → netChange strongly positive
+    const may = result.months.find((m) => m.year === 2026 && m.month === 5)!;
+    expect(may).toBeDefined();
+    expect(may.netChange).toBeGreaterThan(0);
+    expect(may.netChange).toBeCloseTo(50000, -1); // approx 50k (0% rate so no growth)
+  });
+
+  it("asset disposal targeting an unlinked account does NOT appear in cashflow events", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "linked-1",
+        type: "Current",
+        isCashflowLinked: true,
+        disposedAt: null,
+        disposalAccountId: null,
+        balances: [
+          { value: 1000, date: new Date("2026-05-01"), createdAt: new Date("2026-05-01") },
+        ],
+      },
+    ] as any);
+    prismaMock.asset.findMany.mockResolvedValue([
+      {
+        id: "house-1",
+        name: "Family Home",
+        type: "Property",
+        householdId: "hh-1",
+        growthRatePct: 0,
+        disposedAt: new Date("2026-05-15"),
+        disposalAccountId: "unlinked-pension", // NOT in linkedAccountIds
+        balances: [{ value: 50000, date: new Date("2026-05-01"), createdAt: new Date() }],
+      },
+    ] as any);
+    prismaMock.incomeSource.findMany.mockResolvedValue([]);
+    prismaMock.committedItem.findMany.mockResolvedValue([]);
+    prismaMock.discretionaryItem.findMany.mockResolvedValue([]);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
+
+    const result = await cashflowService.getProjection("hh-1", {
+      startYear: 2026,
+      startMonth: 5,
+      monthCount: 1,
+    });
+
+    const may = result.months.find((m) => m.year === 2026 && m.month === 5)!;
+    // No liquidation event → netChange ≈ 0 (no income/spend either)
+    expect(may.netChange).toBeCloseTo(0, 0);
+  });
+});
+
 describe("cashflowService.getMonthDetail", () => {
+  // Use the current calendar month so the projection-window check never fails
+  // as time advances (the window starts at today's month).
+  const _now = new Date();
+  const thisYear = _now.getUTCFullYear();
+  const thisMonth = _now.getUTCMonth() + 1; // 1-indexed
+  /** Days in the current month */
+  const daysInMonth = new Date(Date.UTC(thisYear, thisMonth, 0)).getUTCDate();
+  /** UTC Date for day N of the current month */
+  const d = (day: number) => new Date(Date.UTC(thisYear, thisMonth - 1, day));
+  /** ISO date string for day N of the current month (YYYY-MM-DD) */
+  const ds = (day: number) =>
+    `${thisYear}-${String(thisMonth).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
   beforeEach(() => {
     prismaMock.account.findMany.mockResolvedValue([
       {
         id: "a1",
         type: "Current",
         isCashflowLinked: true,
-        balances: [
-          { value: 1000, date: new Date("2026-04-01"), createdAt: new Date("2026-04-01") },
-        ],
+        balances: [{ value: 1000, date: d(1), createdAt: d(1) }],
       },
     ] as any);
     prismaMock.incomeSource.findMany.mockResolvedValue([
@@ -489,7 +746,7 @@ describe("cashflowService.getMonthDetail", () => {
         id: "i1",
         name: "Salary",
         frequency: "monthly",
-        dueDate: new Date("2026-04-25"),
+        dueDate: d(25),
         householdId: "hh-1",
       },
     ] as any);
@@ -504,10 +761,13 @@ describe("cashflowService.getMonthDetail", () => {
         amount: 3000,
       },
     ] as any);
+    // loadDisposalSources now queries asset.findMany — default to empty (no disposals)
+    prismaMock.asset.findMany.mockResolvedValue([]);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null);
   });
 
   it("returns events for the target month with running balance after each", async () => {
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
     expect(detail.events).toHaveLength(1);
     expect(detail.events[0]?.label).toBe("Salary");
     expect(detail.events[0]?.amount).toBe(3000);
@@ -515,8 +775,8 @@ describe("cashflowService.getMonthDetail", () => {
   });
 
   it("returns dailyTrace with one entry per day", async () => {
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
-    expect(detail.dailyTrace).toHaveLength(30); // April
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
+    expect(detail.dailyTrace).toHaveLength(daysInMonth);
   });
 
   it("includes amortisedDailyDiscretionary in the response", async () => {
@@ -532,19 +792,19 @@ describe("cashflowService.getMonthDetail", () => {
         amount: 600,
       },
     ] as any);
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
     expect(detail.monthlyDiscretionaryTotal).toBe(600);
-    expect(detail.amortisedDailyDiscretionary).toBeCloseTo(20, 1); // 600/30
+    expect(detail.amortisedDailyDiscretionary).toBeCloseTo(600 / daysInMonth, 0);
   });
 
   it("includes events dated before today in the current month's event list", async () => {
-    // Today is 2026-04-11. A 5 Apr salary should still appear in the April detail.
+    // A salary due on day 5 of the current month should appear in the detail.
     prismaMock.incomeSource.findMany.mockResolvedValue([
       {
         id: "i1",
         name: "Salary",
         frequency: "monthly",
-        dueDate: new Date("2026-04-05"),
+        dueDate: d(5),
         householdId: "hh-1",
       },
     ] as any);
@@ -558,22 +818,22 @@ describe("cashflowService.getMonthDetail", () => {
       },
     ] as any);
 
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
     const labels = detail.events.map((e) => e.label);
     const dates = detail.events.map((e) => e.date);
     expect(labels).toContain("Salary");
-    expect(dates).toContain("2026-04-05");
+    expect(dates).toContain(ds(5));
   });
 
   it("computes tightestPoint across the full current month, including past-of-today days", async () => {
-    // Today is 2026-04-11. Big rent on 3 Apr drives a dip well before today.
-    // The tightest point must still report 3 Apr's value, not a later day.
+    // Big rent on day 3 drives a dip before salary on day 25.
+    // The tightest point must report day 3, not a later day.
     prismaMock.account.findMany.mockResolvedValue([
       {
         id: "a1",
         type: "Current",
         isCashflowLinked: true,
-        balances: [{ value: 500, date: new Date("2026-04-11"), createdAt: new Date("2026-04-11") }],
+        balances: [{ value: 500, date: d(11), createdAt: d(11) }],
       },
     ] as any);
     prismaMock.committedItem.findMany.mockResolvedValue([
@@ -581,7 +841,7 @@ describe("cashflowService.getMonthDetail", () => {
         id: "c1",
         name: "Rent",
         spendType: "monthly",
-        dueDate: new Date("2026-04-03"),
+        dueDate: d(3),
         householdId: "hh-1",
       },
     ] as any);
@@ -590,7 +850,7 @@ describe("cashflowService.getMonthDetail", () => {
         id: "i1",
         name: "Salary",
         frequency: "monthly",
-        dueDate: new Date("2026-04-25"),
+        dueDate: d(25),
         householdId: "hh-1",
       },
     ] as any);
@@ -611,11 +871,10 @@ describe("cashflowService.getMonthDetail", () => {
       },
     ] as any);
 
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
-    // Today is day 11; tightest point lands on day 3 (rent day), proving the
-    // scan covers past-of-today days. The actual value is bounded above by the
-    // user's anchor balance because of how the backwards-replay reconstructs
-    // start-of-month — what matters is that the past day is reported.
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
+    // Tightest point lands on day 3 (rent day), proving the scan covers all
+    // days in the month. The actual value is bounded above by the anchor
+    // balance because of how the backwards-replay reconstructs start-of-month.
     expect(detail.tightestPoint.day).toBe(3);
   });
 
@@ -626,7 +885,7 @@ describe("cashflowService.getMonthDetail", () => {
         id: "d2",
         name: "Concert",
         spendType: "one_off",
-        dueDate: new Date("2026-04-12"),
+        dueDate: d(12),
         householdId: "hh-1",
       },
     ] as any);
@@ -646,7 +905,7 @@ describe("cashflowService.getMonthDetail", () => {
         amount: 80,
       },
     ] as any);
-    const detail = await cashflowService.getMonthDetail("hh-1", 2026, 4);
+    const detail = await cashflowService.getMonthDetail("hh-1", thisYear, thisMonth);
     const labels = detail.events.map((e) => e.label);
     expect(labels).toContain("Concert");
     expect(labels).not.toContain("Food");

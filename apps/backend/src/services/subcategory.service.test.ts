@@ -11,6 +11,17 @@ beforeEach(() => {
 });
 
 describe("subcategoryService.seedDefaults", () => {
+  it("seeds the Discretionary 'Savings' subcategory as locked", async () => {
+    prismaMock.subcategory.createMany.mockResolvedValue({ count: 16 });
+
+    await subcategoryService.seedDefaults("hh-savings");
+
+    const call = prismaMock.subcategory.createMany.mock.calls[0]![0] as any;
+    const data = call.data as any[];
+    const savings = data.find((r: any) => r.tier === "discretionary" && r.name === "Savings");
+    expect(savings?.isLocked).toBe(true);
+  });
+
   it("creates default subcategories for all three tiers", async () => {
     prismaMock.subcategory.createMany.mockResolvedValue({ count: 16 });
 

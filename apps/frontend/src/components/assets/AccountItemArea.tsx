@@ -11,10 +11,23 @@ import {
 } from "../../hooks/useAssets.js";
 import { AssetAccountRow } from "./AssetAccountRow.js";
 import { AccountForm } from "./AccountForm.js";
+import { SavingsContributionNudge } from "./SavingsContributionNudge.js";
+import { IsaAllowanceIndicator } from "./IsaAllowanceIndicator.js";
+import GhostAddButton from "@/components/tier/GhostAddButton";
 import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { formatCurrency } from "@/utils/format";
 import { useSettings } from "@/hooks/useSettings";
+import { useIsaAllowance } from "@/hooks/useIsaAllowance";
+
+function formatDisposedDate(dateStr: string | null): string {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 
 const TYPE_LABELS: Record<AccountType, string> = {
   Current: "Current",
@@ -26,18 +39,31 @@ const TYPE_LABELS: Record<AccountType, string> = {
 
 interface Props {
   type: AccountType;
+  initialIsAdding?: boolean;
 }
 
-export function AccountItemArea({ type }: Props) {
+export function AccountItemArea({ type, initialIsAdding }: Props) {
   const { data: items, isLoading, isError, refetch } = useAccountsByType(type);
+  const { data: allItems } = useAccountsByType(type, { includeDisposed: true });
   const { data: settings } = useSettings();
   const showPence = settings?.showPence ?? false;
+  const { data: isaSummary } = useIsaAllowance();
+  const isaOverForecastMemberIds = new Set(
+    (isaSummary?.byMember ?? [])
+      .filter(
+        (m) =>
+          m.used < (isaSummary?.annualLimit ?? 0) &&
+          m.forecastedYearTotal > (isaSummary?.annualLimit ?? 0)
+      )
+      .map((m) => m.memberId)
+  );
 
-  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [isAddingItem, setIsAddingItem] = useState(initialIsAdding ?? false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [disposedOpen, setDisposedOpen] = useState(false);
 
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
@@ -45,9 +71,14 @@ export function AccountItemArea({ type }: Props) {
   const recordBalance = useRecordAccountBalance();
   const confirmAccount = useConfirmAccount();
 
+  const now = new Date();
+  const disposedItems = (allItems ?? []).filter(
+    (i) => i.disposedAt != null && new Date(i.disposedAt) <= now
+  );
   const typeTotal = (items ?? []).reduce((sum, i) => sum + i.currentBalance, 0);
   const label = TYPE_LABELS[type];
-  const deletingItem = items?.find((i) => i.id === deletingId);
+  const deletingItem =
+    items?.find((i) => i.id === deletingId) ?? disposedItems.find((i) => i.id === deletingId);
 
   if (isLoading) {
     return (
@@ -88,22 +119,18 @@ export function AccountItemArea({ type }: Props) {
             {formatCurrency(typeTotal, showPence)}
           </span>
         </div>
-        <button
-          type="button"
+        <GhostAddButton
           onClick={() => {
             setIsAddingItem(true);
             setExpandedId(null);
             setEditingId(null);
           }}
           disabled={isAddingItem}
-          className="rounded-md border px-3 py-1 text-xs font-medium transition-all duration-150 border-foreground/20 text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          + Add
-        </button>
+        />
       </div>
 
       {/* Content */}
-      <div className="px-6 flex-1 overflow-y-auto">
+      <div className="px-6 flex-1 min-h-0 overflow-y-auto">
         {/* Add form at top */}
         <AnimatePresence initial={false}>
           {isAddingItem && (
@@ -126,14 +153,29 @@ export function AccountItemArea({ type }: Props) {
                 mode="add"
                 type={type}
                 isSaving={createAccount.isPending}
-                onSave={async ({ name, memberId, growthRatePct, initialValue }) => {
+                onSave={async ({
+                  name,
+                  memberId,
+                  growthRatePct,
+                  monthlyContributionLimit,
+                  isISA,
+                  isaYearContribution,
+                  disposedAt,
+                  disposalAccountId,
+                  initialValue,
+                }) => {
                   try {
                     await createAccount.mutateAsync({
                       name,
                       type,
                       memberId: memberId ?? undefined,
                       growthRatePct: growthRatePct ?? undefined,
+                      monthlyContributionLimit: monthlyContributionLimit ?? undefined,
+                      isISA: isISA || undefined,
+                      isaYearContribution: isaYearContribution ?? undefined,
                       initialValue,
+                      disposedAt: disposedAt ?? undefined,
+                      disposalAccountId: disposalAccountId ?? undefined,
                     });
                     setIsAddingItem(false);
                   } catch {
@@ -158,62 +200,154 @@ export function AccountItemArea({ type }: Props) {
 
         {/* Item list */}
         {items?.map((item) => (
-          <AssetAccountRow
-            key={item.id}
-            item={item}
-            itemKind="account"
-            stalenessThresholdMonths={3}
-            isExpanded={expandedId === item.id}
-            isEditing={editingId === item.id}
-            isRecording={recordingId === item.id}
-            isSavingEdit={updateAccount.isPending}
-            isSavingRecord={recordBalance.isPending}
-            isSavingConfirm={confirmAccount.isPending}
-            onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
-            onStartEdit={() => {
-              setEditingId(item.id);
-              setExpandedId(item.id);
-              setRecordingId(null);
-            }}
-            onStartRecord={() => {
-              setRecordingId(item.id);
-              setExpandedId(item.id);
-            }}
-            onCancelEdit={() => setEditingId(null)}
-            onCancelRecord={() => setRecordingId(null)}
-            onDeleteRequest={() => setDeletingId(item.id)}
-            onConfirm={async () => {
-              try {
-                await confirmAccount.mutateAsync(item.id);
-                setEditingId(null);
-              } catch {
-                // error handled by mutation onError (toast)
+          <div key={item.id} data-search-focus={item.id}>
+            <AssetAccountRow
+              item={item}
+              itemKind="account"
+              stalenessThresholdMonths={3}
+              hasIsaOverForecast={
+                item.isISA === true && isaOverForecastMemberIds.has(item.memberId ?? "")
               }
-            }}
-            onSaveEdit={async ({ name, memberId, growthRatePct }) => {
-              try {
-                await updateAccount.mutateAsync({
-                  accountId: item.id,
-                  data: { name, memberId, growthRatePct: growthRatePct ?? null },
-                });
-                setEditingId(null);
-              } catch {
-                // error handled by mutation onError (toast)
-              }
-            }}
-            onSaveRecord={async ({ value, date, note }) => {
-              try {
-                await recordBalance.mutateAsync({
-                  accountId: item.id,
-                  data: { value, date, note },
-                });
+              isExpanded={expandedId === item.id}
+              isEditing={editingId === item.id}
+              isRecording={recordingId === item.id}
+              isSavingEdit={updateAccount.isPending}
+              isSavingRecord={recordBalance.isPending}
+              isSavingConfirm={confirmAccount.isPending}
+              onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
+              onStartEdit={() => {
+                setEditingId(item.id);
+                setExpandedId(item.id);
                 setRecordingId(null);
-              } catch {
-                // error handled by mutation onError (toast)
-              }
-            }}
-          />
+              }}
+              onStartRecord={() => {
+                setRecordingId(item.id);
+                setExpandedId(item.id);
+              }}
+              onCancelEdit={() => setEditingId(null)}
+              onCancelRecord={() => setRecordingId(null)}
+              onDeleteRequest={() => setDeletingId(item.id)}
+              onConfirm={async () => {
+                try {
+                  await confirmAccount.mutateAsync(item.id);
+                  setEditingId(null);
+                } catch {
+                  // error handled by mutation onError (toast)
+                }
+              }}
+              onSaveEdit={async ({
+                name,
+                memberId,
+                growthRatePct,
+                monthlyContributionLimit,
+                isISA,
+                isaYearContribution,
+                disposedAt,
+                disposalAccountId,
+              }) => {
+                try {
+                  await updateAccount.mutateAsync({
+                    accountId: item.id,
+                    data: {
+                      name,
+                      memberId,
+                      growthRatePct: growthRatePct ?? null,
+                      ...(monthlyContributionLimit !== undefined
+                        ? { monthlyContributionLimit }
+                        : {}),
+                      isISA: isISA || undefined,
+                      isaYearContribution: isaYearContribution ?? undefined,
+                      disposedAt: disposedAt ?? undefined,
+                      disposalAccountId: disposalAccountId ?? undefined,
+                    },
+                  });
+                  setEditingId(null);
+                } catch {
+                  // error handled by mutation onError (toast)
+                }
+              }}
+              onZeroIsaContribution={() => {
+                updateAccount.mutate({
+                  accountId: item.id,
+                  data: { isaYearContribution: 0 },
+                });
+              }}
+              onSaveRecord={async ({ value, date, note }) => {
+                try {
+                  await recordBalance.mutateAsync({
+                    accountId: item.id,
+                    data: { value, date, note },
+                  });
+                  setRecordingId(null);
+                } catch {
+                  // error handled by mutation onError (toast)
+                }
+              }}
+            />
+            {type === "Savings" && expandedId === item.id && editingId !== item.id && (
+              <div className="px-4 pt-2">
+                <SavingsContributionNudge account={item} showPence={showPence} />
+              </div>
+            )}
+          </div>
         ))}
+
+        {/* ISA allowance indicator — Savings only */}
+        {type === "Savings" && <IsaAllowanceIndicator />}
+
+        {/* Disposed section */}
+        {disposedItems.length > 0 && (
+          <div className="mt-2 border-t border-foreground/5 pt-2">
+            <button
+              type="button"
+              onClick={() => setDisposedOpen((o) => !o)}
+              className="flex items-center gap-1.5 px-0 py-1 text-[11px] text-text-muted hover:text-text-tertiary transition-colors"
+              aria-expanded={disposedOpen}
+            >
+              <span>{disposedOpen ? "▾" : "▸"}</span>
+              <span>Disposed ({disposedItems.length})</span>
+            </button>
+            <AnimatePresence initial={false}>
+              {disposedOpen && (
+                <motion.div
+                  key="disposed-list"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{
+                    height: "auto",
+                    opacity: 1,
+                    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+                  }}
+                  exit={{
+                    height: 0,
+                    opacity: 0,
+                    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+                  }}
+                  style={{ overflow: "hidden" }}
+                >
+                  {disposedItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between py-2 border-b border-foreground/5 opacity-60"
+                    >
+                      <span className="flex flex-col gap-px">
+                        <span className="text-xs text-text-secondary">{item.name}</span>
+                        <span className="text-[11px] text-text-muted">
+                          Disposed {formatDisposedDate(item.disposedAt)}
+                        </span>
+                      </span>
+                      <button
+                        onClick={() => setDeletingId(item.id)}
+                        className="text-[11px] text-text-muted hover:text-red-400 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       <ConfirmDialog

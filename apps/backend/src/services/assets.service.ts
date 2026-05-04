@@ -2,6 +2,9 @@ import { prisma } from "../config/database.js";
 import { audited } from "./audit.service.js";
 import type { ActorCtx } from "./audit.service.js";
 import { NotFoundError, ValidationError } from "../utils/errors.js";
+import { toMonthlyAmount } from "@finplan/shared";
+import { getIsaTaxYearWindow } from "../utils/isa-tax-year.js";
+import { forecastContribution, type ForecastInput } from "../utils/isa-forecast.js";
 import type {
   AssetType,
   AccountType,
@@ -56,20 +59,89 @@ async function assertMemberInHousehold(householdId: string, memberId: string) {
   }
 }
 
+// ── Disposal helpers ─────────────────────────────────────────────────────────
+
+interface DisposalPatch {
+  disposedAt?: string | null;
+  disposalAccountId?: string | null;
+}
+
+interface ResolvedDisposal {
+  /** undefined = field not in patch (no change); Date | null otherwise */
+  disposedAt?: Date | null;
+  /** undefined = field not in patch (no change); string | null otherwise */
+  disposalAccountId?: string | null;
+}
+
+/**
+ * Validate a disposal patch and resolve the ISO date string into a Date.
+ *
+ * Rules:
+ *   - If neither disposedAt nor disposalAccountId is in the patch → no-op.
+ *   - If one is provided, the other must be too (both set, or both null).
+ *   - When set: target Account must exist in this household and ≠ source.
+ */
+async function resolveDisposalPatch(
+  householdId: string,
+  data: DisposalPatch,
+  sourceAccountId: string | null
+): Promise<ResolvedDisposal> {
+  const { disposedAt, disposalAccountId } = data;
+  const dateProvided = disposedAt !== undefined;
+  const acctProvided = disposalAccountId !== undefined;
+  if (!dateProvided && !acctProvided) return {};
+  if (dateProvided !== acctProvided) {
+    throw new ValidationError("disposedAt and disposalAccountId must be set or cleared together");
+  }
+  const dateSet = disposedAt != null;
+  const acctSet = disposalAccountId != null;
+  if (dateSet !== acctSet) {
+    throw new ValidationError("disposedAt and disposalAccountId must be set or cleared together");
+  }
+  if (acctSet) {
+    if (sourceAccountId && disposalAccountId === sourceAccountId) {
+      throw new ValidationError("An account cannot dispose into itself");
+    }
+    await assertAccountOwned(householdId, disposalAccountId!);
+    return { disposedAt: new Date(disposedAt!), disposalAccountId };
+  }
+  return { disposedAt: null, disposalAccountId: null };
+}
+
 const ASSET_TYPES: AssetType[] = ["Property", "Vehicle", "Other"];
 const ACCOUNT_TYPES: AccountType[] = ["Current", "Savings", "Pension", "StocksAndShares", "Other"];
 
-// ── Summary ───────────────────────────────────────────────────────────────────
+function assertLimitOnlyOnSavings(type: AccountType | undefined, limit: unknown) {
+  if (limit !== undefined && limit !== null && type !== "Savings") {
+    throw new ValidationError("monthlyContributionLimit is only valid on Savings accounts");
+  }
+}
+
+// "Active" = no disposal date set, OR disposal date is in the future.
+// Items with disposedAt <= today are historical and excluded from default lists.
+function activeWhere() {
+  const today = startOfDayUtc(new Date());
+  return {
+    OR: [{ disposedAt: null }, { disposedAt: { gt: today } }],
+  };
+}
+
+function startOfDayUtc(d: Date): Date {
+  return new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate()));
+}
+
+// ── Service ──────────────────────────────────────────────────────────────────
 
 export const assetsService = {
   async getSummary(householdId: string) {
+    // Summaries reflect ACTIVE holdings only — disposed items are historical.
     const [assets, accounts] = await Promise.all([
       prisma.asset.findMany({
-        where: { householdId },
+        where: { householdId, ...activeWhere() },
         include: { balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }] } },
       }),
       prisma.account.findMany({
-        where: { householdId },
+        where: { householdId, ...activeWhere() },
         include: { balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }] } },
       }),
     ]);
@@ -101,9 +173,13 @@ export const assetsService = {
 
   // ── Assets ──────────────────────────────────────────────────────────────────
 
-  async listAssetsByType(householdId: string, type: AssetType) {
+  async listAssetsByType(
+    householdId: string,
+    type: AssetType,
+    opts: { includeDisposed?: boolean } = {}
+  ) {
     const assets = await prisma.asset.findMany({
-      where: { householdId, type },
+      where: { householdId, type, ...(opts.includeDisposed ? {} : activeWhere()) },
       include: {
         balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }] },
       },
@@ -124,7 +200,19 @@ export const assetsService = {
     if (data.memberId) {
       await assertMemberInHousehold(householdId, data.memberId);
     }
-    const { initialValue, ...assetData } = data;
+    const resolved = await resolveDisposalPatch(
+      householdId,
+      { disposedAt: data.disposedAt, disposalAccountId: data.disposalAccountId },
+      null
+    );
+    const {
+      initialValue,
+      disposedAt: _ignoredDate,
+      disposalAccountId: _ignoredAcct,
+      ...rest
+    } = data;
+    void _ignoredDate;
+    void _ignoredAcct;
     return audited({
       db: prisma,
       ctx,
@@ -134,7 +222,7 @@ export const assetsService = {
       beforeFetch: async () => null,
       mutation: async (tx) => {
         const asset = await tx.asset.create({
-          data: { householdId, ...assetData },
+          data: { householdId, ...rest, ...resolved },
         });
         if (initialValue !== undefined) {
           await tx.assetBalance.create({
@@ -155,6 +243,14 @@ export const assetsService = {
     if (data.memberId) {
       await assertMemberInHousehold(householdId, data.memberId);
     }
+    const resolved = await resolveDisposalPatch(
+      householdId,
+      { disposedAt: data.disposedAt, disposalAccountId: data.disposalAccountId },
+      null
+    );
+    const { disposedAt: _ignoredDate, disposalAccountId: _ignoredAcct, ...rest } = data;
+    void _ignoredDate;
+    void _ignoredAcct;
     return audited({
       db: prisma,
       ctx,
@@ -163,7 +259,8 @@ export const assetsService = {
       resourceId: assetId,
       beforeFetch: async (tx) =>
         tx.asset.findUnique({ where: { id: assetId } }) as Promise<Record<string, unknown> | null>,
-      mutation: async (tx) => tx.asset.update({ where: { id: assetId }, data }),
+      mutation: async (tx) =>
+        tx.asset.update({ where: { id: assetId }, data: { ...rest, ...resolved } }),
     });
   },
 
@@ -232,21 +329,112 @@ export const assetsService = {
 
   // ── Accounts ─────────────────────────────────────────────────────────────────
 
-  async listAccountsByType(householdId: string, type: AccountType) {
+  async listAccountsByType(
+    householdId: string,
+    type: AccountType,
+    opts: { includeDisposed?: boolean } = {}
+  ) {
     const accounts = await prisma.account.findMany({
-      where: { householdId, type },
+      where: { householdId, type, ...(opts.includeDisposed ? {} : activeWhere()) },
       include: {
         balances: { orderBy: [{ date: "desc" }, { createdAt: "desc" }] },
+        linkedItems: { select: { id: true, name: true, spendType: true } },
       },
       orderBy: { createdAt: "asc" },
     });
 
+    const allLinkedItemIds = accounts.flatMap((a) => a.linkedItems.map((i) => i.id));
+    const now = new Date();
+    const activePeriods =
+      allLinkedItemIds.length > 0
+        ? await prisma.itemAmountPeriod.findMany({
+            where: {
+              itemType: "discretionary_item",
+              itemId: { in: allLinkedItemIds },
+              startDate: { lte: now },
+              OR: [{ endDate: null }, { endDate: { gt: now } }],
+            },
+          })
+        : [];
+
+    const amountByItemId = new Map<string, number>();
+    for (const period of activePeriods) {
+      amountByItemId.set(period.itemId, period.amount);
+    }
+
+    let savingsDefaultRate: number | null = null;
+    if (type === "Savings") {
+      const settings = await prisma.householdSettings.findUnique({ where: { householdId } });
+      savingsDefaultRate = settings?.savingsRatePct ?? null;
+    }
+
+    function effectiveRate(a: { growthRatePct: number | null }): number | null {
+      return a.growthRatePct ?? savingsDefaultRate;
+    }
+
     return accounts.map((a) => {
       const latest = getLatestBalance(a.balances);
+      const linkedItems = a.linkedItems.map((item) => {
+        const amount = amountByItemId.get(item.id) ?? 0;
+        const lumpSumExceedsCap =
+          a.monthlyContributionLimit != null && amount > a.monthlyContributionLimit;
+        return { ...item, amount, lumpSumExceedsCap };
+      });
+      const monthlyContribution = linkedItems.reduce(
+        (sum, item) => sum + toMonthlyAmount(item.amount, item.spendType),
+        0
+      );
+
+      const limit = a.monthlyContributionLimit;
+      const spareMonthly = limit != null ? limit - monthlyContribution : null;
+      const isOverCap = limit != null && monthlyContribution > limit;
+      let higherRateTarget: { id: string; name: string; growthRatePct: number } | null = null;
+      let hasSpareCapacityNudge = false;
+
+      if (type === "Savings" && limit != null && spareMonthly != null && spareMonthly >= 25) {
+        const myRate = effectiveRate(a);
+        if (myRate != null) {
+          const candidates = accounts
+            .filter((c) => c.id !== a.id)
+            .filter((c) => c.memberId === a.memberId || c.memberId === null);
+          const eligible = candidates
+            .map((c) => ({ c, rate: effectiveRate(c) }))
+            .filter((x): x is { c: (typeof accounts)[number]; rate: number } => x.rate != null)
+            .filter((x) => x.rate > myRate)
+            .filter((x) => {
+              if (x.c.monthlyContributionLimit == null) return true;
+              const cIds = x.c.linkedItems.map((i) => i.id);
+              const cMonthly = cIds.reduce(
+                (sum, id) =>
+                  sum +
+                  toMonthlyAmount(
+                    amountByItemId.get(id) ?? 0,
+                    x.c.linkedItems.find((i) => i.id === id)!.spendType
+                  ),
+                0
+              );
+              return x.c.monthlyContributionLimit - cMonthly > 0;
+            })
+            .sort((a, b) => b.rate - a.rate || a.c.name.localeCompare(b.c.name));
+          const winner = eligible[0];
+          if (winner) {
+            higherRateTarget = { id: winner.c.id, name: winner.c.name, growthRatePct: winner.rate };
+            hasSpareCapacityNudge = true;
+          }
+        }
+      }
+
       return {
         ...a,
         currentBalance: latest?.value ?? 0,
         currentBalanceDate: latest?.date ?? null,
+        linkedItems,
+        monthlyContribution,
+        spareMonthly,
+        isOverCap,
+        hasSpareCapacityNudge,
+        higherRateTarget,
+        effectiveGrowthRatePct: effectiveRate(a),
       };
     });
   },
@@ -255,7 +443,20 @@ export const assetsService = {
     if (data.memberId) {
       await assertMemberInHousehold(householdId, data.memberId);
     }
-    const { initialValue, ...accountData } = data;
+    assertLimitOnlyOnSavings(data.type, (data as Record<string, unknown>).monthlyContributionLimit);
+    const resolved = await resolveDisposalPatch(
+      householdId,
+      { disposedAt: data.disposedAt, disposalAccountId: data.disposalAccountId },
+      null
+    );
+    const {
+      initialValue,
+      disposedAt: _ignoredDate,
+      disposalAccountId: _ignoredAcct,
+      ...accountData
+    } = data;
+    void _ignoredDate;
+    void _ignoredAcct;
     return audited({
       db: prisma,
       ctx,
@@ -265,7 +466,7 @@ export const assetsService = {
       beforeFetch: async (_tx) => null,
       mutation: async (tx) => {
         const account = await tx.account.create({
-          data: { householdId, ...accountData },
+          data: { householdId, ...accountData, ...resolved },
         });
         if (initialValue !== undefined) {
           await tx.accountBalance.create({
@@ -291,6 +492,14 @@ export const assetsService = {
     if (data.memberId) {
       await assertMemberInHousehold(householdId, data.memberId);
     }
+    const resolved = await resolveDisposalPatch(
+      householdId,
+      { disposedAt: data.disposedAt, disposalAccountId: data.disposalAccountId },
+      accountId
+    );
+    const { disposedAt: _ignoredDate, disposalAccountId: _ignoredAcct, ...rest } = data;
+    void _ignoredDate;
+    void _ignoredAcct;
     return audited({
       db: prisma,
       ctx,
@@ -302,7 +511,19 @@ export const assetsService = {
           string,
           unknown
         > | null>,
-      mutation: async (tx) => tx.account.update({ where: { id: accountId }, data }),
+      mutation: async (tx) => {
+        const existing = await tx.account.findUnique({ where: { id: accountId } });
+        const effectiveType = ((data as Record<string, unknown>).type ?? existing?.type) as
+          | AccountType
+          | undefined;
+        const incomingLimit = (data as Record<string, unknown>).monthlyContributionLimit;
+        assertLimitOnlyOnSavings(effectiveType, incomingLimit);
+        const patch: Record<string, unknown> = { ...rest, ...resolved };
+        if (effectiveType !== "Savings" && existing?.monthlyContributionLimit != null) {
+          patch.monthlyContributionLimit = null;
+        }
+        return tx.account.update({ where: { id: accountId }, data: patch });
+      },
     });
   },
 
@@ -370,5 +591,104 @@ export const assetsService = {
           data: { lastReviewedAt: new Date() },
         }),
     });
+  },
+
+  async getIsaAllowanceSummary(householdId: string, today: Date = new Date()) {
+    const settings = await prisma.householdSettings.findUnique({ where: { householdId } });
+    const annualLimit = settings?.isaAnnualLimit ?? 20000;
+    const window = getIsaTaxYearWindow(today);
+
+    const isaAccounts = await prisma.account.findMany({
+      where: {
+        householdId,
+        isISA: true,
+        type: "Savings",
+        ...activeWhere(),
+      },
+      include: {
+        member: { select: { id: true, name: true } },
+        linkedItems: { select: { id: true, spendType: true, dueDate: true } },
+      },
+    });
+
+    if (isaAccounts.length === 0) {
+      return {
+        taxYearStart: window.start.toISOString().slice(0, 10),
+        taxYearEnd: window.end.toISOString().slice(0, 10),
+        daysRemaining: window.daysRemaining,
+        annualLimit,
+        byMember: [],
+      };
+    }
+
+    // Resolve current amounts for all linked items via ItemAmountPeriod (matches existing pattern).
+    const allLinkedItemIds = isaAccounts.flatMap((a) => a.linkedItems.map((i) => i.id));
+    const periods =
+      allLinkedItemIds.length > 0
+        ? await prisma.itemAmountPeriod.findMany({
+            where: {
+              itemType: "discretionary_item",
+              itemId: { in: allLinkedItemIds },
+              startDate: { lte: today },
+              OR: [{ endDate: null }, { endDate: { gt: today } }],
+            },
+          })
+        : [];
+    const amountByItemId = new Map<string, number>();
+    for (const p of periods) amountByItemId.set(p.itemId, p.amount);
+
+    // Group by member.
+    type Bucket = {
+      memberId: string;
+      name: string;
+      used: number;
+      forecastInputs: ForecastInput[];
+    };
+    const buckets = new Map<string, Bucket>();
+    for (const a of isaAccounts) {
+      if (!a.memberId || !a.member) continue;
+      const b = buckets.get(a.memberId) ?? {
+        memberId: a.memberId,
+        name: a.member.name,
+        used: 0,
+        forecastInputs: [],
+      };
+      b.used += a.isaYearContribution ?? 0;
+      for (const item of a.linkedItems) {
+        b.forecastInputs.push({
+          amount: amountByItemId.get(item.id) ?? 0,
+          spendType: item.spendType,
+          dueDate: item.dueDate,
+        });
+      }
+      buckets.set(a.memberId, b);
+    }
+
+    const byMember = Array.from(buckets.values())
+      .map((b) => {
+        const f = forecastContribution(b.forecastInputs, today, window.end);
+        const monthlyPlanned =
+          f.amount > 0 && window.daysRemaining > 0
+            ? (f.amount * 30.4375) / Math.max(1, window.daysRemaining)
+            : 0;
+        return {
+          memberId: b.memberId,
+          name: b.name,
+          used: b.used,
+          forecast: f.amount,
+          forecastedYearTotal: b.used + f.amount,
+          monthlyPlanned,
+          estimatedFlag: f.estimated,
+        };
+      })
+      .sort((x, y) => x.name.localeCompare(y.name));
+
+    return {
+      taxYearStart: window.start.toISOString().slice(0, 10),
+      taxYearEnd: window.end.toISOString().slice(0, 10),
+      daysRemaining: window.daysRemaining,
+      annualLimit,
+      byMember,
+    };
   },
 };

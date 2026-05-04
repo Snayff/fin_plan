@@ -191,6 +191,21 @@ describe("PATCH /api/settings — growth rate role gate", () => {
     expect(res.statusCode).toBe(403);
   });
 
+  it.each(["propertyRatePct", "vehicleRatePct", "otherAssetRatePct"] as const)(
+    "rejects member role from setting %s",
+    async (field) => {
+      mockMember = { role: "member" };
+
+      const res = await app.inject({
+        method: "PATCH",
+        url: "/api/settings",
+        headers: { authorization: "Bearer valid-token" },
+        payload: { [field]: 4 },
+      });
+      expect(res.statusCode).toBe(403);
+    }
+  );
+
   it("allows member to update non-growth-rate fields", async () => {
     mockMember = { role: "member" };
     const updated = { ...mockSettings, surplusBenchmarkPct: 15 };

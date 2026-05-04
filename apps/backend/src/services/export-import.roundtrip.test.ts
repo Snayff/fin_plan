@@ -110,7 +110,7 @@ function setupExportMocks() {
       frequency: "monthly",
       incomeType: "salary",
       dueDate: new Date("2026-04-01"),
-      ownerId: "member-alice",
+      memberId: "member-alice",
       sortOrder: 0,
       lastReviewedAt: new Date("2026-01-15T00:00:00Z"),
       notes: "Primary income",
@@ -127,7 +127,7 @@ function setupExportMocks() {
       name: "Electric",
       spendType: "monthly",
       notes: null,
-      ownerId: "member-bob",
+      memberId: "member-bob",
       dueDate: new Date("2026-04-01"),
       sortOrder: 0,
       lastReviewedAt: new Date("2026-02-01T00:00:00Z"),
@@ -170,8 +170,13 @@ function setupExportMocks() {
       type: "Savings",
       memberId: "member-bob",
       growthRatePct: 4.0,
-      monthlyContribution: 500,
       lastReviewedAt: new Date("2026-03-01T00:00:00Z"),
+      isISA: false,
+      isaYearContribution: null,
+      isCashflowLinked: false,
+      monthlyContributionLimit: null,
+      disposedAt: null,
+      disposalAccountId: null,
       balances: [
         {
           id: "acb-1",
@@ -562,7 +567,7 @@ describe("export → import round-trip", () => {
       }),
     });
 
-    // Income source created with resolved subcategoryId and ownerId
+    // Income source created with resolved subcategoryId and memberId
     expect(prismaMock.incomeSource.create).toHaveBeenCalledTimes(1);
     expect(prismaMock.incomeSource.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -571,12 +576,12 @@ describe("export → import round-trip", () => {
         name: "Day job",
         frequency: "monthly",
         incomeType: "salary",
-        ownerId: "new-member-alice",
+        memberId: "new-member-alice",
         notes: "Primary income",
       }),
     });
 
-    // Committed item created with resolved subcategoryId and ownerId (Bob)
+    // Committed item created with resolved subcategoryId and memberId (Bob)
     expect(prismaMock.committedItem.create).toHaveBeenCalledTimes(1);
     expect(prismaMock.committedItem.create).toHaveBeenCalledWith({
       data: expect.objectContaining({
@@ -584,7 +589,7 @@ describe("export → import round-trip", () => {
         subcategoryId: "new-sub-bills",
         name: "Electric",
         spendType: "monthly",
-        ownerId: "new-member-bob",
+        memberId: "new-member-bob",
       }),
     });
 
@@ -635,7 +640,6 @@ describe("export → import round-trip", () => {
         name: "ISA",
         type: "Savings",
         memberId: "new-member-bob",
-        monthlyContribution: 500,
       }),
     });
 
@@ -736,5 +740,49 @@ describe("export → import round-trip", () => {
     const exported = await exportService.exportHousehold(HOUSEHOLD_ID, CALLER_USER_ID);
     const incomes = exported.incomeSources;
     expect(incomes[0]).toHaveProperty("dueDate");
+  });
+
+  it("round-trips isISA and isaYearContribution on accounts", async () => {
+    // Set up all other mocks first, then override account.findMany with ISA data
+    setupExportMocks();
+
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "acct-isa",
+        householdId: HOUSEHOLD_ID,
+        name: "Cash ISA",
+        type: "Savings",
+        memberId: "member-alice",
+        growthRatePct: null,
+        lastReviewedAt: null,
+        isISA: true,
+        isaYearContribution: 8500,
+        isCashflowLinked: false,
+        monthlyContributionLimit: null,
+        disposedAt: null,
+        disposalAccountId: null,
+        balances: [],
+      },
+    ]);
+
+    const envelope = await exportService.exportHousehold(HOUSEHOLD_ID, CALLER_USER_ID);
+
+    // ISA fields survive into the export envelope
+    expect(envelope.accounts[0]!.isISA).toBe(true);
+    expect(envelope.accounts[0]!.isaYearContribution).toBe(8500);
+
+    // Import wires the fields through to account.create
+    resetPrismaMocks();
+    setupImportMocks();
+
+    // Override account.create mock to capture the call (setupImportMocks already sets it up)
+    await importService.importHousehold("ignored", CALLER_USER_ID, envelope, "create_new");
+
+    expect(prismaMock.account.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        isISA: true,
+        isaYearContribution: 8500,
+      }),
+    });
   });
 });

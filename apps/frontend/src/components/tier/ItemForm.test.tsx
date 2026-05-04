@@ -1,5 +1,16 @@
-import { describe, it, expect } from "bun:test";
+import { describe, it, expect, mock } from "bun:test";
 import { render, screen, fireEvent } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+mock.module("@/hooks/useSettings", () => ({
+  useSettings: () => ({ data: undefined }),
+}));
+
+mock.module("@/hooks/useWaterfall", () => ({
+  useCreatePeriod: () => ({ mutateAsync: mock(() => Promise.resolve()), isPending: false }),
+  useDeletePeriod: () => ({ mutateAsync: mock(() => Promise.resolve()), isPending: false }),
+}));
+
 import ItemForm from "./ItemForm";
 import { TIER_CONFIGS } from "./tierConfig";
 
@@ -8,9 +19,14 @@ const subcategories = [
   { id: "sub-utilities", name: "Utilities" },
 ];
 
+function renderWithClient(ui: React.ReactElement) {
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={qc}>{ui}</QueryClientProvider>);
+}
+
 describe("ItemForm — add mode", () => {
   it("renders field labels with asterisks for required fields", () => {
-    render(
+    renderWithClient(
       <ItemForm
         mode="add"
         config={TIER_CONFIGS.committed}
@@ -28,7 +44,7 @@ describe("ItemForm — add mode", () => {
   });
 
   it("renders descriptive placeholders", () => {
-    render(
+    renderWithClient(
       <ItemForm
         mode="add"
         config={TIER_CONFIGS.committed}
@@ -38,13 +54,13 @@ describe("ItemForm — add mode", () => {
         onCancel={() => {}}
       />
     );
-    expect(screen.getByPlaceholderText("e.g. Netflix, Council Tax")).toBeTruthy();
+    expect(screen.getByPlaceholderText("e.g. Mortgage, Council Tax")).toBeTruthy();
     expect(screen.getByPlaceholderText("0.00")).toBeTruthy();
     expect(screen.getByPlaceholderText("Any details worth remembering")).toBeTruthy();
   });
 
   it("renders Cancel and Save buttons only in add mode", () => {
-    render(
+    renderWithClient(
       <ItemForm
         mode="add"
         config={TIER_CONFIGS.committed}
@@ -61,7 +77,7 @@ describe("ItemForm — add mode", () => {
   });
 
   it("Save is the rightmost button in add mode", () => {
-    const { container } = render(
+    const { container } = renderWithClient(
       <ItemForm
         mode="add"
         config={TIER_CONFIGS.committed}
@@ -78,7 +94,7 @@ describe("ItemForm — add mode", () => {
 
   it("calls onSave with form data on submit", () => {
     let savedData: any = null;
-    render(
+    renderWithClient(
       <ItemForm
         mode="add"
         config={TIER_CONFIGS.committed}
@@ -90,7 +106,7 @@ describe("ItemForm — add mode", () => {
         onCancel={() => {}}
       />
     );
-    fireEvent.change(screen.getByPlaceholderText("e.g. Netflix, Council Tax"), {
+    fireEvent.change(screen.getByPlaceholderText("e.g. Mortgage, Council Tax"), {
       target: { value: "Rent" },
     });
     fireEvent.change(screen.getByPlaceholderText("0.00"), { target: { value: "1200" } });
@@ -98,11 +114,31 @@ describe("ItemForm — add mode", () => {
     expect(savedData).toBeTruthy();
     expect(savedData.name).toBe("Rent");
     expect(savedData.amount).toBe(1200);
+    // Defaults memberId to null ("Household") when no member selected
+    expect(savedData.memberId).toBe(null);
+  });
+
+  it("renders the Assigned-to field with members", () => {
+    renderWithClient(
+      <ItemForm
+        mode="add"
+        config={TIER_CONFIGS.income}
+        subcategories={subcategories}
+        members={[
+          { id: "m1", firstName: "Alice" },
+          { id: "m2", firstName: "Bob" },
+        ]}
+        initialSubcategoryId="sub-housing"
+        onSave={() => {}}
+        onCancel={() => {}}
+      />
+    );
+    expect(screen.getByLabelText("Assigned to")).toBeTruthy();
   });
 
   it("calls onCancel when Cancel is clicked", () => {
     let cancelled = false;
-    render(
+    renderWithClient(
       <ItemForm
         mode="add"
         config={TIER_CONFIGS.committed}
@@ -131,7 +167,7 @@ describe("ItemForm — edit mode (stale item)", () => {
   };
 
   it("renders button order: Cancel, Delete, Still correct, Save", () => {
-    const { container } = render(
+    const { container } = renderWithClient(
       <ItemForm
         mode="edit"
         item={staleItem}
@@ -168,7 +204,7 @@ describe("ItemForm — edit mode (fresh item)", () => {
   };
 
   it("does not show Still correct for non-stale items", () => {
-    render(
+    renderWithClient(
       <ItemForm
         mode="edit"
         item={freshItem}

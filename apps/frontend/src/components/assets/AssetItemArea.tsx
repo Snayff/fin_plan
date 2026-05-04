@@ -9,8 +9,18 @@ import {
   useRecordAssetBalance,
   useConfirmAsset,
 } from "../../hooks/useAssets.js";
+
+function formatDisposedDate(dateStr: string | null): string {
+  if (!dateStr) return "";
+  return new Date(dateStr).toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+  });
+}
 import { AssetAccountRow } from "./AssetAccountRow.js";
 import { AssetForm } from "./AssetForm.js";
+import GhostAddButton from "@/components/tier/GhostAddButton";
 import { GhostedListEmpty } from "@/components/ui/GhostedListEmpty";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import { formatCurrency } from "@/utils/format";
@@ -24,18 +34,21 @@ const TYPE_LABELS: Record<AssetType, string> = {
 
 interface Props {
   type: AssetType;
+  initialIsAdding?: boolean;
 }
 
-export function AssetItemArea({ type }: Props) {
+export function AssetItemArea({ type, initialIsAdding }: Props) {
   const { data: items, isLoading, isError, refetch } = useAssetsByType(type);
+  const { data: allItems } = useAssetsByType(type, { includeDisposed: true });
   const { data: settings } = useSettings();
   const showPence = settings?.showPence ?? false;
 
-  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [isAddingItem, setIsAddingItem] = useState(initialIsAdding ?? false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [recordingId, setRecordingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [disposedOpen, setDisposedOpen] = useState(false);
 
   const createAsset = useCreateAsset();
   const updateAsset = useUpdateAsset();
@@ -43,9 +56,14 @@ export function AssetItemArea({ type }: Props) {
   const recordBalance = useRecordAssetBalance();
   const confirmAsset = useConfirmAsset();
 
+  const now = new Date();
+  const disposedItems = (allItems ?? []).filter(
+    (i) => i.disposedAt != null && new Date(i.disposedAt) <= now
+  );
   const typeTotal = (items ?? []).reduce((sum, i) => sum + i.currentBalance, 0);
   const label = TYPE_LABELS[type];
-  const deletingItem = items?.find((i) => i.id === deletingId);
+  const deletingItem =
+    items?.find((i) => i.id === deletingId) ?? disposedItems.find((i) => i.id === deletingId);
 
   if (isLoading) {
     return (
@@ -86,22 +104,18 @@ export function AssetItemArea({ type }: Props) {
             {formatCurrency(typeTotal, showPence)}
           </span>
         </div>
-        <button
-          type="button"
+        <GhostAddButton
           onClick={() => {
             setIsAddingItem(true);
             setExpandedId(null);
             setEditingId(null);
           }}
           disabled={isAddingItem}
-          className="rounded-md border px-3 py-1 text-xs font-medium transition-all duration-150 border-foreground/20 text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          + Add
-        </button>
+        />
       </div>
 
       {/* Content */}
-      <div className="px-6 flex-1 overflow-y-auto">
+      <div className="px-6 flex-1 min-h-0 overflow-y-auto">
         {/* Add form at top */}
         <AnimatePresence initial={false}>
           {isAddingItem && (
@@ -122,8 +136,16 @@ export function AssetItemArea({ type }: Props) {
             >
               <AssetForm
                 mode="add"
+                assetType={type}
                 isSaving={createAsset.isPending}
-                onSave={async ({ name, memberId, growthRatePct, initialValue }) => {
+                onSave={async ({
+                  name,
+                  memberId,
+                  growthRatePct,
+                  disposedAt,
+                  disposalAccountId,
+                  initialValue,
+                }) => {
                   try {
                     await createAsset.mutateAsync({
                       name,
@@ -131,6 +153,8 @@ export function AssetItemArea({ type }: Props) {
                       memberId: memberId ?? undefined,
                       growthRatePct,
                       initialValue,
+                      disposedAt: disposedAt ?? undefined,
+                      disposalAccountId: disposalAccountId ?? undefined,
                     });
                     setIsAddingItem(false);
                   } catch {
@@ -155,62 +179,129 @@ export function AssetItemArea({ type }: Props) {
 
         {/* Item list */}
         {items?.map((item) => (
-          <AssetAccountRow
-            key={item.id}
-            item={item}
-            itemKind="asset"
-            stalenessThresholdMonths={12}
-            isExpanded={expandedId === item.id}
-            isEditing={editingId === item.id}
-            isRecording={recordingId === item.id}
-            isSavingEdit={updateAsset.isPending}
-            isSavingRecord={recordBalance.isPending}
-            isSavingConfirm={confirmAsset.isPending}
-            onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
-            onStartEdit={() => {
-              setEditingId(item.id);
-              setExpandedId(item.id);
-              setRecordingId(null);
-            }}
-            onStartRecord={() => {
-              setRecordingId(item.id);
-              setExpandedId(item.id);
-            }}
-            onCancelEdit={() => setEditingId(null)}
-            onCancelRecord={() => setRecordingId(null)}
-            onDeleteRequest={() => setDeletingId(item.id)}
-            onConfirm={async () => {
-              try {
-                await confirmAsset.mutateAsync(item.id);
-                setEditingId(null);
-              } catch {
-                // error handled by mutation onError (toast)
-              }
-            }}
-            onSaveEdit={async ({ name, memberId, growthRatePct }) => {
-              try {
-                await updateAsset.mutateAsync({
-                  assetId: item.id,
-                  data: { name, memberId, growthRatePct },
-                });
-                setEditingId(null);
-              } catch {
-                // error handled by mutation onError (toast)
-              }
-            }}
-            onSaveRecord={async ({ value, date, note }) => {
-              try {
-                await recordBalance.mutateAsync({
-                  assetId: item.id,
-                  data: { value, date, note },
-                });
+          <div key={item.id} data-search-focus={item.id}>
+            <AssetAccountRow
+              item={item}
+              itemKind="asset"
+              stalenessThresholdMonths={12}
+              isExpanded={expandedId === item.id}
+              isEditing={editingId === item.id}
+              isRecording={recordingId === item.id}
+              isSavingEdit={updateAsset.isPending}
+              isSavingRecord={recordBalance.isPending}
+              isSavingConfirm={confirmAsset.isPending}
+              onToggle={() => setExpandedId(expandedId === item.id ? null : item.id)}
+              onStartEdit={() => {
+                setEditingId(item.id);
+                setExpandedId(item.id);
                 setRecordingId(null);
-              } catch {
-                // error handled by mutation onError (toast)
-              }
-            }}
-          />
+              }}
+              onStartRecord={() => {
+                setRecordingId(item.id);
+                setExpandedId(item.id);
+              }}
+              onCancelEdit={() => setEditingId(null)}
+              onCancelRecord={() => setRecordingId(null)}
+              onDeleteRequest={() => setDeletingId(item.id)}
+              onConfirm={async () => {
+                try {
+                  await confirmAsset.mutateAsync(item.id);
+                  setEditingId(null);
+                } catch {
+                  // error handled by mutation onError (toast)
+                }
+              }}
+              onSaveEdit={async ({
+                name,
+                memberId,
+                growthRatePct,
+                disposedAt,
+                disposalAccountId,
+              }) => {
+                try {
+                  await updateAsset.mutateAsync({
+                    assetId: item.id,
+                    data: {
+                      name,
+                      memberId,
+                      growthRatePct,
+                      disposedAt: disposedAt ?? undefined,
+                      disposalAccountId: disposalAccountId ?? undefined,
+                    },
+                  });
+                  setEditingId(null);
+                } catch {
+                  // error handled by mutation onError (toast)
+                }
+              }}
+              onSaveRecord={async ({ value, date, note }) => {
+                try {
+                  await recordBalance.mutateAsync({
+                    assetId: item.id,
+                    data: { value, date, note },
+                  });
+                  setRecordingId(null);
+                } catch {
+                  // error handled by mutation onError (toast)
+                }
+              }}
+            />
+          </div>
         ))}
+
+        {/* Disposed section */}
+        {disposedItems.length > 0 && (
+          <div className="mt-2 border-t border-foreground/5 pt-2">
+            <button
+              type="button"
+              onClick={() => setDisposedOpen((o) => !o)}
+              className="flex items-center gap-1.5 px-0 py-1 text-[11px] text-text-muted hover:text-text-tertiary transition-colors"
+              aria-expanded={disposedOpen}
+            >
+              <span>{disposedOpen ? "▾" : "▸"}</span>
+              <span>Disposed ({disposedItems.length})</span>
+            </button>
+            <AnimatePresence initial={false}>
+              {disposedOpen && (
+                <motion.div
+                  key="disposed-list"
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{
+                    height: "auto",
+                    opacity: 1,
+                    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+                  }}
+                  exit={{
+                    height: 0,
+                    opacity: 0,
+                    transition: { duration: 0.2, ease: [0.25, 1, 0.5, 1] as number[] },
+                  }}
+                  style={{ overflow: "hidden" }}
+                >
+                  {disposedItems.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between py-2 border-b border-foreground/5 opacity-60"
+                    >
+                      <span className="flex flex-col gap-px">
+                        <span className="text-xs text-text-secondary">{item.name}</span>
+                        <span className="text-[11px] text-text-muted">
+                          Disposed {formatDisposedDate(item.disposedAt)}
+                        </span>
+                      </span>
+                      <button
+                        onClick={() => setDeletingId(item.id)}
+                        className="text-[11px] text-text-muted hover:text-red-400 transition-colors"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
       </div>
 
       <ConfirmDialog

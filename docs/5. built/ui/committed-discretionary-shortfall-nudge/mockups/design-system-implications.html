@@ -1,0 +1,173 @@
+<h2>Part B — design-system implications, made concrete</h2>
+<p class="subtitle">Same code is shipped either way. The difference is what the design system <em>says</em> about it — and therefore what future patterns inherit from it.</p>
+
+<style>
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-top: 16px;
+  }
+  .col {
+    background: #0e1220;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 18px 20px;
+    color: #e6e8ee;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .col h3 {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: #a5a8ff;
+  }
+  .col h4 {
+    margin: 18px 0 8px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: rgba(230,232,238,0.55);
+    font-weight: 600;
+  }
+  .col p, .col li {
+    font-size: 12px;
+    line-height: 1.6;
+    color: rgba(230,232,238,0.8);
+  }
+  .doc-snippet {
+    background: rgba(255,255,255,0.03);
+    border-left: 2px solid #6366f1;
+    padding: 10px 14px;
+    margin: 8px 0 12px;
+    border-radius: 0 4px 4px 0;
+    font-size: 11.5px;
+    line-height: 1.65;
+    font-family: ui-monospace, Menlo, monospace;
+    color: rgba(230,232,238,0.85);
+    white-space: pre-wrap;
+  }
+  .doc-snippet .h { color: #a5a8ff; font-weight: 600; }
+  .future {
+    background: rgba(245,158,11,0.04);
+    border: 1px solid rgba(245,158,11,0.12);
+    border-radius: 4px;
+    padding: 10px 12px;
+    margin-top: 8px;
+    font-size: 11.5px;
+    line-height: 1.55;
+  }
+  .future .ok { color: #4ade80; }
+  .future .no { color: #f87171; }
+  .future strong { color: #f59e0b; }
+  .col ul { padding-left: 18px; margin: 6px 0; }
+  .label-tag {
+    display: inline-block;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    padding: 2px 8px;
+    border-radius: 999px;
+    margin-bottom: 8px;
+  }
+  .tag-d1 { background: rgba(99,102,241,0.18); color: #a5a8ff; }
+  .tag-d2 { background: rgba(168,85,247,0.18); color: #d8b4fe; }
+</style>
+
+<div class="columns">
+
+  <div class="col">
+    <span class="label-tag tag-d1">D1 · first-class addition</span>
+    <h3>"AttentionStrip" becomes a documented component</h3>
+    <p>We add a new section to <code>design-system.md</code> describing a slim left-panel attention strip that any future left-panel feature can reuse.</p>
+
+    <h4>What gets added to design-system.md</h4>
+    <div class="doc-snippet"><span class="h">### `AttentionStrip`</span>
+
+A slim attention bar pinned below the
+left-panel <code>PageHeader</code>. Surfaces a single
+arithmetic signal that warrants attention
+without occluding the panel content.
+
+<span class="h">Anatomy:</span>
+- 5px <code>attention</code> dot, body text, optional
+  bold figure inline
+- Background: <code>attention-bg</code>; border-bottom:
+  <code>attention-border</code>
+- Hover: tooltip with detail (figures + list)
+
+<span class="h">Rules:</span>
+- Left panel only — never in the right panel
+  (NudgeCard occupies that role)
+- One AttentionStrip per panel at a time
+- Arithmetic-only language (Anchor 13)</div>
+
+    <h4>What this enables tomorrow</h4>
+    <div class="future">
+      A future feature wants to flag <strong>"ISA allowance ending in 14 days"</strong> on the Surplus left panel.
+      <div class="ok">→ Reuse <code>AttentionStrip</code>. No new design discussion needed.</div>
+    </div>
+    <div class="future">
+      A designer wants <strong>"linked accounts last synced 3h ago"</strong> on the Forecast page.
+      <div class="ok">→ Reuse <code>AttentionStrip</code>. The pattern is sanctioned.</div>
+    </div>
+
+    <h4>Cost</h4>
+    <ul>
+      <li>One extra design-doc update this session.</li>
+      <li>Slight risk of the pattern being misused later (anything amber gets jammed into a strip).</li>
+    </ul>
+  </div>
+
+  <div class="col">
+    <span class="label-tag tag-d2">D2 · scoped exception</span>
+    <h3>"ShortfallStrip" is purpose-built for this nudge</h3>
+    <p>The strip ships, but the design system stays silent on it as a general pattern. The spec notes it's a one-off for cashflow shortfalls.</p>
+
+    <h4>What gets added to the spec</h4>
+    <div class="doc-snippet"><span class="h">> Implementation note</span>
+
+The shortfall surface introduces a new
+left-panel attention strip <em>scoped to this
+feature only</em>. Do not generalise into a
+reusable component without a follow-up
+design pass.
+
+design-system.md is unchanged.</div>
+
+    <h4>What this means tomorrow</h4>
+    <div class="future">
+      A future feature wants to flag <strong>"ISA allowance ending in 14 days"</strong> on the Surplus left panel.
+      <div class="no">→ Cannot reuse the shortfall strip. Run a fresh design pass first.</div>
+    </div>
+    <div class="future">
+      A designer copies the shortfall strip CSS into a Forecast warning.
+      <div class="no">→ Code-review feedback: this is undocumented; needs a design decision.</div>
+    </div>
+
+    <h4>Cost</h4>
+    <ul>
+      <li>Each future left-panel attention need triggers another design conversation.</li>
+      <li>Risk: people copy the shortfall strip anyway because no documented alternative exists, and divergence creeps in.</li>
+    </ul>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:24px;">Both options ship the <em>same UI</em> for this feature. The choice is whether the pattern is reusable next time without re-deciding.</p>
+
+<div class="options">
+  <div class="option" data-choice="d1" onclick="toggleSelect(this)">
+    <div class="letter">D1</div>
+    <div class="content">
+      <h3>First-class addition</h3>
+      <p>Add <code>AttentionStrip</code> to design-system.md this session. Future left-panel attention can reuse it without ceremony.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="d2" onclick="toggleSelect(this)">
+    <div class="letter">D2</div>
+    <div class="content">
+      <h3>Scoped exception</h3>
+      <p>Spec-only note. design-system.md unchanged. Future patterns force a fresh design discussion.</p>
+    </div>
+  </div>
+</div>

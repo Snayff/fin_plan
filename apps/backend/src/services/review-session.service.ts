@@ -31,57 +31,44 @@ export const reviewSessionService = {
     };
   },
 
-  async createOrResetSession(householdId: string, ctx?: ActorCtx) {
-    if (ctx) {
-      return audited({
-        db: prisma,
-        ctx,
-        action: "CREATE_REVIEW_SESSION",
-        resource: "review-session",
-        resourceId: householdId,
-        beforeFetch: async (tx) =>
-          tx.reviewSession.findUnique({ where: { householdId } }) as Promise<Record<
-            string,
-            unknown
-          > | null>,
-        mutation: async (tx) =>
-          tx.reviewSession.upsert({
-            where: { householdId },
-            create: { householdId },
-            update: { currentStep: 0, confirmedItems: {}, updatedItems: {}, startedAt: new Date() },
-          }),
-      });
-    }
-    return prisma.reviewSession.upsert({
-      where: { householdId },
-      create: { householdId },
-      update: { currentStep: 0, confirmedItems: {}, updatedItems: {}, startedAt: new Date() },
+  async createOrResetSession(householdId: string, ctx: ActorCtx) {
+    return audited({
+      db: prisma,
+      ctx,
+      action: "CREATE_REVIEW_SESSION",
+      resource: "review-session",
+      resourceId: householdId,
+      beforeFetch: async (tx) =>
+        tx.reviewSession.findUnique({ where: { householdId } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) =>
+        tx.reviewSession.upsert({
+          where: { householdId },
+          create: { householdId },
+          update: { currentStep: 0, confirmedItems: {}, updatedItems: {}, startedAt: new Date() },
+        }),
     });
   },
 
-  async updateSession(householdId: string, data: UpdateReviewSessionInput, ctx?: ActorCtx) {
-    if (ctx) {
-      return audited({
-        db: prisma,
-        ctx,
-        action: "UPDATE_REVIEW_SESSION",
-        resource: "review-session",
-        resourceId: householdId,
-        beforeFetch: async (tx) =>
-          tx.reviewSession.findUnique({ where: { householdId } }) as Promise<Record<
-            string,
-            unknown
-          > | null>,
-        mutation: async (tx) =>
-          tx.reviewSession.update({
-            where: { householdId },
-            data,
-          }),
-      });
-    }
-    return prisma.reviewSession.update({
-      where: { householdId },
-      data,
+  async updateSession(householdId: string, data: UpdateReviewSessionInput, ctx: ActorCtx) {
+    return audited({
+      db: prisma,
+      ctx,
+      action: "UPDATE_REVIEW_SESSION",
+      resource: "review-session",
+      resourceId: householdId,
+      beforeFetch: async (tx) =>
+        tx.reviewSession.findUnique({ where: { householdId } }) as Promise<Record<
+          string,
+          unknown
+        > | null>,
+      mutation: async (tx) =>
+        tx.reviewSession.update({
+          where: { householdId },
+          data,
+        }),
     });
   },
 

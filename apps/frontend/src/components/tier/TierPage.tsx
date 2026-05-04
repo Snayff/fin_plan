@@ -1,11 +1,18 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import SubcategoryList from "./SubcategoryList";
-import ItemArea from "./ItemArea";
+import ItemArea, { type LockedManager } from "./ItemArea";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { PageHeader } from "@/components/common/PageHeader";
+import { AttentionStrip } from "@/components/common/AttentionStrip";
+import { ShortfallTooltip } from "@/components/common/ShortfallTooltip";
 import { useSubcategories, useTierItems, type TierItemRow } from "@/hooks/useWaterfall";
+import { useHouseholdMembers, useSettings } from "@/hooks/useSettings";
+import { useGiftPlannerSettings } from "@/hooks/useGifts";
+import { useTierShortfall } from "@/hooks/useShortfall";
 import { TIER_CONFIGS, type TierKey } from "./tierConfig";
+import { useFocusParam } from "@/features/search/useFocusParam";
+import { useAddParam } from "@/features/search/useAddParam";
 
 interface TierPageProps {
   tier: TierKey;
@@ -23,6 +30,22 @@ export default function TierPage({ tier }: TierPageProps) {
   const [searchParams] = useSearchParams();
   const { data: subcategories, isLoading: subsLoading } = useSubcategories(tier);
   const { data: allItems, isLoading: itemsLoading } = useTierItems(tier);
+  const { data: members } = useHouseholdMembers();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
+
+  const hasAddParam = searchParams.get("add") === "1";
+  useAddParam((_kind) => {
+    // add param consumed — ItemArea initialIsAdding prop handles opening
+  });
+  useFocusParam((id) => {
+    const el = document.querySelector(`[data-search-focus="${id}"]`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("search-focus-pulse");
+      setTimeout(() => el.classList.remove("search-focus-pulse"), 1200);
+    }
+  });
 
   // Group items by subcategoryId and compute monthly totals
   const subcategoryTotals = useMemo<Record<string, SubcategorySummary>>(() => {
@@ -64,6 +87,20 @@ export default function TierPage({ tier }: TierPageProps) {
     ? (subcategoryTotals[resolvedSelectedId] ?? null)
     : null;
 
+  const isShortfallTier = tier === "committed" || tier === "discretionary";
+  const shortfall = useTierShortfall(isShortfallTier ? tier : "committed", {
+    isSnapshot: !isShortfallTier,
+  });
+  const showShortfallStrip = isShortfallTier && shortfall.isLive && shortfall.count > 0;
+
+  const isGiftsSubcategory =
+    tier === "discretionary" && selectedSubcategory?.name.toLowerCase().trim() === "gifts";
+  const { data: giftSettings } = useGiftPlannerSettings({ enabled: isGiftsSubcategory });
+  const lockedManager: LockedManager | undefined =
+    isGiftsSubcategory && giftSettings?.mode === "synced"
+      ? { label: "Gift Planner", path: "/gifts" }
+      : undefined;
+
   return (
     <div data-page={tier} data-testid={`tier-page-${tier}`} className="h-full">
       <TwoPanelLayout
@@ -75,6 +112,27 @@ export default function TierPage({ tier }: TierPageProps) {
               total={tierTotal}
               totalColorClass={config.textClass}
             />
+            {showShortfallStrip && shortfall.lowest && (
+              <AttentionStrip
+                ariaLabel={`Cashflow shortfall: ${shortfall.count} item${shortfall.count === 1 ? "" : "s"} in the next 30 days`}
+                body={
+                  <>
+                    Cashflow won't cover{" "}
+                    <strong>
+                      {shortfall.count} item{shortfall.count === 1 ? "" : "s"}
+                    </strong>
+                  </>
+                }
+                tooltip={
+                  <ShortfallTooltip
+                    items={shortfall.items}
+                    balanceToday={shortfall.balanceToday}
+                    lowest={shortfall.lowest}
+                    showPence={showPence}
+                  />
+                }
+              />
+            )}
             <div className="flex-1 overflow-y-auto">
               <SubcategoryList
                 tier={tier}
@@ -96,9 +154,12 @@ export default function TierPage({ tier }: TierPageProps) {
             config={config}
             subcategory={selectedSubcategory}
             subcategories={(subcategories ?? []).map((s) => ({ id: s.id, name: s.name }))}
+            members={members.map((m) => ({ id: m.id, firstName: m.firstName }))}
             items={selectedSummary?.items ?? []}
             isLoading={itemsLoading}
+            initialIsAdding={hasAddParam}
             onSubcategorySelect={setSelectedId}
+            lockedManager={lockedManager}
           />
         }
       />

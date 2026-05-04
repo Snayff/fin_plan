@@ -1,6 +1,7 @@
 import type { FastifyInstance } from "fastify";
 import { authMiddleware } from "../middleware/auth.middleware.js";
 import { snapshotService } from "../services/snapshot.service.js";
+import { actorCtx } from "../lib/actor-ctx.js";
 import { createSnapshotSchema, renameSnapshotSchema } from "@finplan/shared";
 
 export async function snapshotRoutes(fastify: FastifyInstance) {
@@ -19,20 +20,25 @@ export async function snapshotRoutes(fastify: FastifyInstance) {
 
   fastify.post("/", pre, async (req, reply) => {
     const data = createSnapshotSchema.parse(req.body);
-    const snapshot = await snapshotService.createSnapshot(req.householdId!, data);
+    const snapshot = await snapshotService.createSnapshot(req.householdId!, data, actorCtx(req));
     return reply.status(201).send(snapshot);
   });
 
   fastify.patch("/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
     const data = renameSnapshotSchema.parse(req.body);
-    const snapshot = await snapshotService.renameSnapshot(req.householdId!, id, data);
+    const snapshot = await snapshotService.renameSnapshot(
+      req.householdId!,
+      id,
+      data,
+      actorCtx(req)
+    );
     return reply.send(snapshot);
   });
 
   fastify.delete("/:id", pre, async (req, reply) => {
     const { id } = req.params as { id: string };
-    await snapshotService.deleteSnapshot(req.householdId!, id);
+    await snapshotService.deleteSnapshot(req.householdId!, id, actorCtx(req));
     return reply.status(204).send();
   });
 }

@@ -66,4 +66,52 @@ describe("queryAuditLog", () => {
       })
     );
   });
+
+  it("resolves FK UUIDs (linkedAccountId) to account names", async () => {
+    prismaMock.auditLog.findMany.mockResolvedValue([
+      {
+        ...mockEntry,
+        changes: [
+          { field: "name", after: "Tandem" },
+          { field: "linkedAccountId", after: "acc_123" },
+        ],
+      },
+    ] as any);
+    prismaMock.account.findMany.mockResolvedValue([
+      { id: "acc_123", name: "Tandem Savings" },
+    ] as any);
+
+    const result = await queryAuditLog(prismaMock as any, {
+      householdId: "hh_1",
+      limit: 50,
+    });
+
+    expect(prismaMock.account.findMany).toHaveBeenCalledWith({
+      where: { id: { in: ["acc_123"] }, householdId: "hh_1" },
+      select: { id: true, name: true },
+    });
+    expect(result.entries[0]!.changes).toEqual([
+      { field: "name", after: "Tandem" },
+      { field: "linkedAccountId", after: "Tandem Savings" },
+    ]);
+  });
+
+  it("falls back to (deleted) when a referenced FK is missing", async () => {
+    prismaMock.auditLog.findMany.mockResolvedValue([
+      {
+        ...mockEntry,
+        changes: [{ field: "linkedAccountId", before: "acc_old", after: "acc_new" }],
+      },
+    ] as any);
+    prismaMock.account.findMany.mockResolvedValue([{ id: "acc_new", name: "New Account" }] as any);
+
+    const result = await queryAuditLog(prismaMock as any, {
+      householdId: "hh_1",
+      limit: 50,
+    });
+
+    expect(result.entries[0]!.changes).toEqual([
+      { field: "linkedAccountId", before: "(deleted)", after: "New Account" },
+    ]);
+  });
 });

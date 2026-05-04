@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 
 interface WaterfallSankeyProps {
   income: number;
@@ -122,6 +123,8 @@ export function WaterfallSankey({
   discretionary,
   surplus,
 }: WaterfallSankeyProps) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const [hoveredBand, setHoveredBand] = useState<BandKey | null>(null);
 
   const amounts: Record<BandKey, number> = { committed, discretionary, surplus };
@@ -181,7 +184,7 @@ export function WaterfallSankey({
             <path
               key={band.key}
               role="img"
-              aria-label={`${TIER_LABELS[band.key]}: ${formatCurrency(amounts[band.key])}`}
+              aria-label={`${TIER_LABELS[band.key]}: ${formatCurrency(amounts[band.key], showPence)}`}
               d={bandPath(
                 COL_LEFT + 8,
                 COL_MID - 8,
@@ -222,7 +225,7 @@ export function WaterfallSankey({
               <path
                 key={band.key}
                 role="img"
-                aria-label={`${TIER_LABELS[band.key]}: ${formatCurrency(amounts[band.key])}`}
+                aria-label={`${TIER_LABELS[band.key]}: ${formatCurrency(amounts[band.key], showPence)}`}
                 d={bandPath(
                   COL_MID + 8,
                   COL_RIGHT - 8,
@@ -281,7 +284,7 @@ export function WaterfallSankey({
               fontFamily: "'JetBrains Mono', monospace",
             }}
           >
-            {formatCurrency(amounts[hoveredBand])}/mo
+            {formatCurrency(amounts[hoveredBand], showPence)}/mo
           </span>
         </div>
       )}

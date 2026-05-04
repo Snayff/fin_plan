@@ -87,10 +87,12 @@ export {
   type PeriodRow,
   batchSaveSubcategoriesSchema,
   resetSubcategoriesSchema,
+  createSubcategorySchema,
   type BatchSaveSubcategoriesInput,
   type SubcategoryEntry,
   type SubcategoryReassignment,
   type ResetSubcategoriesInput,
+  type CreateSubcategoryInput,
 } from "./waterfall.schemas";
 
 // Settings schemas and types
@@ -120,9 +122,6 @@ export {
   updateReviewSessionSchema,
   type UpdateReviewSessionInput,
 } from "./review-session.schemas";
-
-// Setup session schemas and types
-export { updateSetupSessionSchema, type UpdateSetupSessionInput } from "./setup-session.schemas";
 
 // Assets schemas and types
 export * from "./assets.schemas.js";
@@ -164,20 +163,27 @@ export {
   ForecastQuerySchema,
   NetWorthPointSchema,
   SurplusPointSchema,
+  AccountBalancePointSchema,
   RetirementPointSchema,
   RetirementMemberProjectionSchema,
   ForecastProjectionSchema,
+  MonthlyContributionsByScopeSchema,
   type ForecastHorizon,
   type ForecastQuery,
   type NetWorthPoint,
   type SurplusPoint,
+  type AccountBalancePoint,
   type RetirementPoint,
   type RetirementMemberProjection,
   type ForecastProjection,
+  type MonthlyContributionsByScope,
 } from "./forecast.schemas";
 
 // Gifts schemas and types
 export * from "./gifts.schemas";
+
+// Search schemas and types
+export * from "./search.schemas";
 
 // Response schemas and types (contracts + security allowlists for API responses)
 export {

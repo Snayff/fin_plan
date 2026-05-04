@@ -8,6 +8,7 @@ import type {
   CreateAccountInput,
   UpdateAccountInput,
   RecordAccountBalanceInput,
+  IsaAllowanceSummary,
 } from "@finplan/shared";
 
 export interface AssetItem {
@@ -18,6 +19,8 @@ export interface AssetItem {
   memberId: string | null;
   growthRatePct: number | null;
   lastReviewedAt: string | null;
+  disposedAt: string | null;
+  disposalAccountId: string | null;
   createdAt: string;
   updatedAt: string;
   currentBalance: number;
@@ -31,6 +34,14 @@ export interface AssetItem {
   }>;
 }
 
+export interface LinkedContributionItem {
+  id: string;
+  name: string;
+  spendType: string;
+  amount: number;
+  lumpSumExceedsCap: boolean;
+}
+
 export interface AccountItem {
   id: string;
   name: string;
@@ -39,10 +50,22 @@ export interface AccountItem {
   memberId: string | null;
   growthRatePct: number | null;
   lastReviewedAt: string | null;
+  disposedAt: string | null;
+  disposalAccountId: string | null;
   createdAt: string;
   updatedAt: string;
   currentBalance: number;
   currentBalanceDate: string | null;
+  monthlyContribution: number;
+  monthlyContributionLimit: number | null;
+  isISA: boolean;
+  isaYearContribution: number | null;
+  spareMonthly: number | null;
+  isOverCap: boolean;
+  hasSpareCapacityNudge: boolean;
+  higherRateTarget: { id: string; name: string; growthRatePct: number } | null;
+  effectiveGrowthRatePct: number | null;
+  linkedItems: LinkedContributionItem[];
   balances: Array<{
     id: string;
     value: number;
@@ -61,7 +84,10 @@ export interface AssetsSummary {
 export const assetsApiService = {
   getSummary: () => apiClient.get<AssetsSummary>("/api/assets/summary"),
 
-  listAssetsByType: (type: AssetType) => apiClient.get<AssetItem[]>(`/api/assets/assets/${type}`),
+  listAssetsByType: (type: AssetType, opts: { includeDisposed?: boolean } = {}) =>
+    apiClient.get<AssetItem[]>(
+      `/api/assets/assets/${type}${opts.includeDisposed ? "?disposed=true" : ""}`
+    ),
 
   createAsset: (data: CreateAssetInput) => apiClient.post<AssetItem>("/api/assets/assets", data),
 
@@ -75,8 +101,10 @@ export const assetsApiService = {
 
   confirmAsset: (assetId: string) => apiClient.post(`/api/assets/assets/${assetId}/confirm`, {}),
 
-  listAccountsByType: (type: AccountType) =>
-    apiClient.get<AccountItem[]>(`/api/assets/accounts/${type}`),
+  listAccountsByType: (type: AccountType, opts: { includeDisposed?: boolean } = {}) =>
+    apiClient.get<AccountItem[]>(
+      `/api/assets/accounts/${type}${opts.includeDisposed ? "?disposed=true" : ""}`
+    ),
 
   createAccount: (data: CreateAccountInput) =>
     apiClient.post<AccountItem>("/api/assets/accounts", data),
@@ -92,3 +120,7 @@ export const assetsApiService = {
   confirmAccount: (accountId: string) =>
     apiClient.post(`/api/assets/accounts/${accountId}/confirm`, {}),
 };
+
+export async function getIsaAllowance(): Promise<IsaAllowanceSummary> {
+  return apiClient.get<IsaAllowanceSummary>("/api/accounts/isa-allowance");
+}

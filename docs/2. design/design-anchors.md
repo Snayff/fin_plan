@@ -57,4 +57,4 @@
 
 16. **Snapshots are read-only.** When viewing a historical snapshot, all editing is disabled. The current plan is always editable; historical states never are.
 
-17. **Wizards are the only full-screen mode.** The Review Wizard and Waterfall Creation Wizard are exempt from the two-panel layout rule. Every other page uses the two-panel layout.
+17. **Full-screen focused surfaces are exempt from the two-panel layout rule.** This class includes wizards (e.g. Review Wizard) and full-screen workbench surfaces (e.g. the Full Waterfall at `/waterfall` — a dense multi-tier bulk-entry surface). Every other page uses the two-panel layout. New surfaces may join this class only when (a) a two-panel shell would materially hurt the task — e.g. dense bulk entry across multiple related tables — and (b) the surface reinforces the waterfall mental model or another core anchor.

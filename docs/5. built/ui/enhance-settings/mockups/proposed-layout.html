@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { margin: 0; padding: 0; font-family: 'Nunito Sans', system-ui, sans-serif; background: #080a14; color: rgba(238,242,255,0.92); min-height: 100vh; }
+
+  /* Top nav mock */
+  .topnav { height: 48px; border-bottom: 1px solid #1a1f35; display: flex; align-items: center; padding: 0 24px; font-size: 12px; color: rgba(238,242,255,0.4); }
+  .topnav-brand { font-family: 'Outfit', sans-serif; font-weight: 800; color: rgba(238,242,255,0.92); margin-right: 32px; }
+
+  /* Main layout */
+  .shell { display: flex; height: calc(100vh - 48px); }
+
+  /* Left panel */
+  .left {
+    width: 360px;
+    flex-shrink: 0;
+    border-right: 1px solid #1a1f35;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .page-header {
+    flex-shrink: 0;
+    padding: 16px 16px 12px;
+  }
+  .page-header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+    color: #8b5cf6;
+    margin: 0;
+  }
+  .left-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Group header */
+  .group-header {
+    padding: 14px 16px 6px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(238,242,255,0.35);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .group-header:first-of-type { padding-top: 8px; }
+  .scope-chip {
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    background: rgba(139,92,246,0.08);
+    color: rgba(139,92,246,0.8);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+  .scope-chip.household { background: rgba(14,165,233,0.08); color: rgba(14,165,233,0.9); }
+
+  /* Nav item */
+  .nav-item {
+    position: relative;
+    display: block;
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-size: 13px;
+    color: rgba(238,242,255,0.6);
+    cursor: pointer;
+    font-family: inherit;
+    transition: background-color 120ms;
+  }
+  .nav-item:hover {
+    background: rgba(139,92,246,0.05);
+    color: rgba(238,242,255,0.85);
+  }
+  .nav-item.active {
+    color: #8b5cf6;
+    font-weight: 500;
+    background: rgba(139,92,246,0.14);
+    border-left: 2px solid #8b5cf6;
+    border-radius: 0 2px 2px 0;
+    padding-left: 14px;
+  }
+
+  /* Left footer */
+  .left-footer {
+    flex-shrink: 0;
+    border-top: 1px solid rgba(238,242,255,0.08);
+    padding: 10px 16px;
+    font-size: 11px;
+    color: rgba(238,242,255,0.3);
+  }
+
+  /* Right panel */
+  .right {
+    flex: 1;
+    overflow-y: auto;
+  }
+  .right-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 24px;
+    border-bottom: 1px solid rgba(238,242,255,0.05);
+  }
+  .right-header h2 { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; margin: 0; }
+
+  .right-body {
+    max-width: 720px;
+    padding: 24px 24px 120px;
+  }
+
+  /* Settings section */
+  .settings-section { padding: 20px 0 28px; }
+  .settings-section + .settings-section { border-top: 1px solid rgba(238,242,255,0.06); }
+  .settings-section:first-child { padding-top: 8px; }
+
+  .section-head { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .section-title { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; color: rgba(238,242,255,0.92); }
+  .section-scope { font-size: 9px; padding: 2px 6px; border-radius: 3px; background: rgba(14,165,233,0.08); color: rgba(14,165,233,0.9); letter-spacing: 0.04em; font-weight: 500; }
+  .section-scope.personal { background: rgba(139,92,246,0.08); color: rgba(139,92,246,0.9); }
+  .section-desc { font-size: 12px; color: rgba(238,242,255,0.45); margin-bottom: 16px; }
+
+  /* Form elements */
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; max-width: 360px; }
+  .field label { font-size: 12px; font-weight: 500; color: rgba(238,242,255,0.75); }
+  .field input {
+    background: #0d1120;
+    border: 1px solid #1a1f35;
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: rgba(238,242,255,0.92);
+    font-family: inherit;
+    font-size: 13px;
+  }
+  .field .sub { font-size: 11px; color: rgba(238,242,255,0.35); }
+
+  /* Auto-save indicator */
+  .autosave-hint {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; color: rgba(34,197,94,0.65);
+    background: rgba(34,197,94,0.06); padding: 2px 6px;
+    border-radius: 3px; font-weight: 500;
+    margin-left: auto;
+  }
+  .autosave-hint .dot { width: 4px; height: 4px; border-radius: 50%; background: #22c55e; }
+
+  .checkbox-row { display: flex; align-items: flex-start; gap: 10px; }
+  .checkbox { width: 16px; height: 16px; border-radius: 3px; background: #7c3aed; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  .checkbox-row .desc { font-size: 12px; color: rgba(238,242,255,0.5); margin-top: 2px; }
+
+  /* Callouts */
+  .annotation {
+    position: fixed;
+    bottom: 20px; right: 20px;
+    background: rgba(139,92,246,0.12);
+    border: 1px solid rgba(139,92,246,0.3);
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 12px;
+    color: rgba(238,242,255,0.8);
+    max-width: 280px;
+    line-height: 1.5;
+  }
+  .annotation strong { color: #8b5cf6; display: block; margin-bottom: 4px; font-family: 'Outfit', sans-serif; text-transform: uppercase; font-size: 10px; letter-spacing: 0.08em; }
+</style>
+</head>
+<body>
+
+<div class="topnav">
+  <div class="topnav-brand">finplan</div>
+  <div>Overview · Income · Committed · Discretionary · Surplus · Forecast · Assets · Goals · Gifts · Help</div>
+</div>
+
+<div class="shell">
+
+  <!-- LEFT PANEL -->
+  <aside class="left">
+    <div class="page-header">
+      <h1>Settings</h1>
+    </div>
+
+    <div class="left-scroll">
+
+      <!-- Personal group -->
+      <div class="group-header">Personal <span class="scope-chip">You</span></div>
+      <button class="nav-item active">Profile</button>
+      <button class="nav-item">Display</button>
+
+      <!-- Household group -->
+      <div class="group-header">Household <span class="scope-chip household">Snaith</span></div>
+      <button class="nav-item">Members &amp; invites</button>
+      <button class="nav-item">Household details</button>
+
+      <!-- Financial group -->
+      <div class="group-header">Financial <span class="scope-chip household">Snaith</span></div>
+      <button class="nav-item">Surplus benchmark</button>
+      <button class="nav-item">ISA settings</button>
+      <button class="nav-item">Staleness thresholds</button>
+      <button class="nav-item">Growth rates</button>
+
+      <!-- Structure group -->
+      <div class="group-header">Structure <span class="scope-chip household">Snaith</span></div>
+      <button class="nav-item">Subcategories</button>
+
+      <!-- Advanced group -->
+      <div class="group-header">Advanced <span class="scope-chip household">Snaith</span></div>
+      <button class="nav-item">Data</button>
+      <button class="nav-item">Audit log</button>
+
+    </div>
+
+    <div class="left-footer">finplan v0.1.0</div>
+  </aside>
+
+  <!-- RIGHT PANEL -->
+  <main class="right">
+    <div class="right-header">
+      <h2>Settings</h2>
+    </div>
+
+    <div class="right-body">
+
+      <!-- Profile section -->
+      <div class="settings-section">
+        <div class="section-head">
+          <span class="section-title">Profile</span>
+          <span class="section-scope personal">Personal</span>
+          <span class="autosave-hint"><span class="dot"></span>Saved</span>
+        </div>
+        <p class="section-desc">Your personal account details. Changes apply across all your households.</p>
+        <div class="field">
+          <label>Name</label>
+          <input value="Josh Snaith" />
+        </div>
+        <div class="field">
+          <span class="sub">snaith2@gmail.com</span>
+        </div>
+      </div>
+
+      <!-- Display section -->
+      <div class="settings-section">
+        <div class="section-head">
+          <span class="section-title">Display</span>
+          <span class="section-scope personal">Personal</span>
+          <span class="autosave-hint"><span class="dot"></span>Saved</span>
+        </div>
+        <p class="section-desc">How finplan renders values on screen.</p>
+        <div class="checkbox-row">
+          <div class="checkbox">✓</div>
+          <div>
+            <label style="font-size: 13px; font-weight: 500;">Show pence</label>
+            <span style="font-family: monospace; font-size: 11px; color: rgba(238,242,255,0.4); margin-left: 8px;">e.g. £1,234.56</span>
+            <div class="desc">Display pence on all financial values. When off, values are rounded to the nearest pound.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Members section -->
+      <div class="settings-section">
+        <div class="section-head">
+          <span class="section-title">Members &amp; invites</span>
+          <span class="section-scope">Household</span>
+        </div>
+        <p class="section-desc">People who can see and edit this household's plan.</p>
+        <div style="opacity: 0.5; font-size: 12px;">[member list, invite form, pending invites]</div>
+      </div>
+
+    </div>
+  </main>
+
+</div>
+
+<div class="annotation">
+  <strong>Key Mechanics</strong>
+  • Left panel: <strong>grouped</strong> with scope chips (You / Snaith) so it's clear which household they apply to.<br>
+  • Right panel: <strong>horizontal dividers</strong> between sections.<br>
+  • Each section header shows a <strong>scope badge</strong> and an <strong>autosave status</strong> chip (appears briefly on save).<br>
+  • Household settings grouped under the active household's name — when you switch households, these update accordingly.
+</div>
+
+</body>
+</html>

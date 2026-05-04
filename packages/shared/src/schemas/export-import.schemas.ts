@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { IncomeFrequencyEnum, SpendTypeEnum } from "./waterfall.schemas";
 
 const CURRENT_SCHEMA_VERSION = 2;
 
@@ -21,7 +22,7 @@ const exportSubcategorySchema = z.object({
 const exportIncomeSourceSchema = z.object({
   subcategoryName: z.string(),
   name: z.string(),
-  frequency: z.enum(["monthly", "annual", "one_off"]),
+  frequency: IncomeFrequencyEnum,
   incomeType: z.enum(["salary", "dividends", "freelance", "rental", "benefits", "other"]),
   dueDate: z.coerce.date(),
   ownerName: z.string().nullable().optional(),
@@ -40,7 +41,7 @@ const exportIncomeSourceSchema = z.object({
 const exportCommittedItemSchema = z.object({
   subcategoryName: z.string(),
   name: z.string(),
-  spendType: z.enum(["monthly", "yearly", "one_off"]),
+  spendType: SpendTypeEnum,
   notes: z.string().nullable().optional(),
   ownerName: z.string().nullable().optional(),
   dueDate: z.coerce.date(),
@@ -58,8 +59,9 @@ const exportCommittedItemSchema = z.object({
 const exportDiscretionaryItemSchema = z.object({
   subcategoryName: z.string(),
   name: z.string(),
-  spendType: z.enum(["monthly", "yearly", "one_off"]),
+  spendType: SpendTypeEnum,
   notes: z.string().nullable().optional(),
+  ownerName: z.string().nullable().optional(),
   dueDate: z.coerce.date().nullable(),
   sortOrder: z.number().int(),
   lastReviewedAt: z.string().datetime(),
@@ -107,8 +109,9 @@ const exportAccountSchema = z.object({
   type: z.enum(["Current", "Savings", "Pension", "StocksAndShares", "Other"]),
   ownerName: z.string().nullable().optional(),
   growthRatePct: z.number().nullable().optional(),
-  monthlyContribution: z.number(),
   isCashflowLinked: z.boolean().default(false),
+  isISA: z.boolean().optional().default(false),
+  isaYearContribution: z.number().nullable().optional(),
   lastReviewedAt: z.string().datetime().nullable().optional(),
   balances: z.array(
     z.object({

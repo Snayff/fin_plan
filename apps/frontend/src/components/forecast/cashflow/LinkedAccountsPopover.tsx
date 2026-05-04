@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { useLinkableAccounts, useBulkUpdateLinkedAccounts } from "@/hooks/useCashflow";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { format } from "date-fns";
 
 interface LinkedAccountsPopoverProps {
@@ -10,6 +11,8 @@ interface LinkedAccountsPopoverProps {
 const EMPTY_ACCOUNTS: never[] = [];
 
 export function LinkedAccountsPopover({ onClose }: LinkedAccountsPopoverProps) {
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const { data, isLoading } = useLinkableAccounts();
   const accounts = data ?? EMPTY_ACCOUNTS;
   const bulkUpdate = useBulkUpdateLinkedAccounts();
@@ -96,7 +99,7 @@ export function LinkedAccountsPopover({ onClose }: LinkedAccountsPopoverProps) {
                     <span className="label-chart shrink-0">{a.type}</span>
                   </span>
                   <span className="font-numeric text-xs text-text-secondary shrink-0 w-16 text-right">
-                    {formatCurrency(a.latestBalance ?? 0)}
+                    {formatCurrency(a.latestBalance ?? 0, showPence)}
                   </span>
                   <span className="text-[10px] text-text-tertiary shrink-0 w-12 text-right">
                     {a.latestBalanceDate ? format(new Date(a.latestBalanceDate), "d MMM") : ""}

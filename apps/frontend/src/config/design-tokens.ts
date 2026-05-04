@@ -40,11 +40,13 @@ export const primitiveColors = {
 
   // Tier Colours — semantically protected
   tierIncome: { h: 199, s: 86, l: 49 }, // #0ea5e9 — energetic electric blue
+  tierIncomeSubtle: { h: 199, s: 40, l: 18 },
   tierCommitted: { h: 239, s: 84, l: 67 }, // #6366f1 — settled indigo
   tierCommittedSubtle: { h: 239, s: 40, l: 18 },
   tierDiscretionary: { h: 271, s: 91, l: 65 }, // #a855f7 — expressive purple
   tierDiscretionarySubtle: { h: 271, s: 40, l: 18 },
   tierSurplus: { h: 175, s: 72, l: 57 }, // #4adcd0 — rewarding teal-mint
+  tierSurplusSubtle: { h: 175, s: 40, l: 18 },
 
   // Attention — amber (the only "noteworthy" signal)
   attention: { h: 38, s: 92, l: 50 }, // #f59e0b
@@ -130,11 +132,13 @@ export const semanticColors = {
 
   // Waterfall tier accents
   tierIncome: primitiveColors.tierIncome,
+  tierIncomeSubtle: primitiveColors.tierIncomeSubtle,
   tierCommitted: primitiveColors.tierCommitted,
   tierCommittedSubtle: primitiveColors.tierCommittedSubtle,
   tierDiscretionary: primitiveColors.tierDiscretionary,
   tierDiscretionarySubtle: primitiveColors.tierDiscretionarySubtle,
   tierSurplus: primitiveColors.tierSurplus,
+  tierSurplusSubtle: primitiveColors.tierSurplusSubtle,
 
   // Callout gradients
   calloutPrimaryFrom: primitiveColors.calloutPrimaryFrom,

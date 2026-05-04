@@ -1,0 +1,242 @@
+<style>
+  .app-frame { background: #080a14; border-radius: 8px; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; color: #e6e8ee; border: 1px solid #1b1f2e; height: 320px; display: flex; flex-direction: column; position: relative; }
+  .app-header { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #0b1020; border-bottom: 1px solid #1b1f2e; flex-shrink: 0; }
+  .brand { font-weight: 600; color: #c4b8ff; font-size: 13px; }
+  .nav-link { color: #a9b0c4; font-size: 11px; padding: 3px 7px; border-radius: 4px; }
+  .nav-link.wf-income { color: #7c8cff; }
+  .nav-link.wf-committed { color: #a78cff; }
+  .nav-link.wf-discretionary { color: #c78cff; }
+  .nav-link.wf-surplus { color: #6ee7b7; }
+  .nav-link.active { background: rgba(124,140,255,0.14); border-left: 2px solid #7c8cff; padding-left: 5px; border-radius: 0 4px 4px 0; color: #e6e8ee; }
+  .nav-spacer { width: 10px; }
+  .avatar { width: 22px; height: 22px; border-radius: 50%; background: #252b3d; flex-shrink: 0; display:flex; align-items:center; justify-content:center; color: #8b90a3; font-size: 9px; }
+  .household { display: flex; align-items: center; gap: 4px; font-size: 10px; color: #a9b0c4; padding: 3px 7px; background: #121625; border-radius: 4px; }
+  .search-trigger { width: 26px; height: 26px; border-radius: 6px; background: #121625; border: 1px solid #252b3d; display: flex; align-items: center; justify-content: center; color: #a9b0c4; flex-shrink: 0; cursor: pointer; }
+  .search-trigger svg { width: 14px; height: 14px; }
+  .search-trigger.highlighted { border-color: #7c8cff; color: #e6e8ee; }
+  .app-body { display: flex; flex: 1; position: relative; overflow: hidden; }
+  .left-panel { width: 130px; background: #0b1020; border-right: 1px solid #1b1f2e; padding: 10px; font-size: 11px; flex-shrink: 0; color: #8b90a3; }
+  .content-area { flex: 1; padding: 14px; font-size: 11px; color: #8b90a3; overflow: hidden; }
+  .page-title { color: #e6e8ee; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+  .scrim { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(8,10,20,0.6); z-index: 5; }
+  /* Anchored overlay — drops from top, full width */
+  .overlay-anchored { position: absolute; top: 48px; left: 14px; right: 14px; background: #0b1020; border: 1px solid #252b3d; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); z-index: 10; overflow: hidden; }
+  /* Centre overlay — floating dialog */
+  .overlay-centre { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 70%; background: #0b1020; border: 1px solid #252b3d; border-radius: 10px; box-shadow: 0 12px 40px rgba(0,0,0,0.6); z-index: 10; overflow: hidden; }
+  .overlay-input { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid #1b1f2e; }
+  .overlay-input svg { width: 14px; height: 14px; color: #7c8cff; }
+  .overlay-input-text { flex: 1; color: #e6e8ee; font-size: 12px; }
+  .overlay-input-text .query { font-weight: 500; }
+  .overlay-input-text .cursor { display: inline-block; width: 1px; height: 12px; background: #e6e8ee; vertical-align: middle; margin-left: 1px; animation: blink 1s infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .overlay-input-kbd { background: #1b1f2e; color: #8b90a3; border-radius: 3px; padding: 2px 5px; font-size: 9px; }
+  .result-group { padding: 4px; }
+  .result-group-label { text-transform: uppercase; font-size: 8px; letter-spacing: 1px; color: #6b7180; padding: 4px 8px; }
+  .result-row { padding: 6px 8px; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #e6e8ee; border-radius: 5px; gap: 8px; }
+  .result-row.highlighted { background: rgba(124,140,255,0.14); }
+  .row-left { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; }
+  .result-icon { width: 16px; height: 16px; border-radius: 3px; background: #1b1f2e; display: flex; align-items: center; justify-content: center; color: #8b90a3; font-size: 9px; flex-shrink: 0; }
+  .result-sub { color: #8b90a3; font-size: 10px; flex-shrink: 0; }
+  .mockup-label { font-weight: 600; margin-bottom: 6px; color: #e6e8ee; font-size: 13px; }
+  .mockup-note { font-size: 11px; color: #8b90a3; margin-top: 6px; line-height: 1.4; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 16px; }
+  h3.qheading { margin-top: 28px; margin-bottom: 4px; font-size: 15px; color: #e6e8ee; }
+  .qheading-sub { font-size: 12px; color: #8b90a3; margin-bottom: 4px; }
+</style>
+
+<h2>Two decisions: icon position + open behaviour</h2>
+<p class="subtitle">Resolving both lets us lock the trigger and open animation into the design.</p>
+
+<!-- QUESTION 1: POSITION -->
+<h3 class="qheading">1. Where does the trigger icon sit?</h3>
+<p class="qheading-sub">Both options show the same open behaviour (anchored overlay) for consistent comparison.</p>
+
+<div class="options">
+  <div class="option" data-choice="pos-left" onclick="toggleSelect(this)">
+    <div class="letter">L</div>
+    <div class="content">
+      <h3>Left — right after the brand</h3>
+      <p>Signals "primary, universal". Matches GitHub, Stripe, Vercel conventions. Separates utility from user/household context on the right.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="pos-right" onclick="toggleSelect(this)">
+    <div class="letter">R</div>
+    <div class="content">
+      <h3>Right — before the household switcher</h3>
+      <p>Groups with other chrome icons (household, avatar). Reads as "utility" rather than "primary nav". Doesn't compete with the main nav row on the left.</p>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div>
+    <div class="mockup-label">L — Icon left of nav</div>
+    <div class="app-frame">
+      <div class="app-header">
+        <div class="brand">finplan</div>
+        <div class="search-trigger highlighted">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="nav-spacer"></div>
+        <span class="nav-link">Overview</span>
+        <span class="nav-link wf-income active">Income</span>
+        <span class="nav-link wf-committed">Committed</span>
+        <span class="nav-link wf-discretionary">Discretionary</span>
+        <span class="nav-link wf-surplus">Surplus</span>
+        <span class="nav-link">Forecast</span>
+        <span class="nav-link">Assets</span>
+        <span class="nav-link">Goals</span>
+        <span class="nav-link">Gifts</span>
+        <span class="nav-link">Help</span>
+        <div style="flex:1"></div>
+        <div class="household">Snaith ▾</div>
+        <div class="avatar">GS</div>
+      </div>
+      <div class="app-body">
+        <div class="left-panel">Income subcats…</div>
+        <div class="content-area"><div class="page-title">Income</div></div>
+      </div>
+    </div>
+    <div class="mockup-note">Most prominent. First element the eye hits after the brand. Also creates a natural cluster: [brand] [search] | [nav].</div>
+  </div>
+  <div>
+    <div class="mockup-label">R — Icon right, before household switcher</div>
+    <div class="app-frame">
+      <div class="app-header">
+        <div class="brand">finplan</div>
+        <span class="nav-link">Overview</span>
+        <span class="nav-link wf-income active">Income</span>
+        <span class="nav-link wf-committed">Committed</span>
+        <span class="nav-link wf-discretionary">Discretionary</span>
+        <span class="nav-link wf-surplus">Surplus</span>
+        <div class="nav-spacer"></div>
+        <span class="nav-link">Forecast</span>
+        <span class="nav-link">Assets</span>
+        <span class="nav-link">Goals</span>
+        <span class="nav-link">Gifts</span>
+        <span class="nav-link">Help</span>
+        <div style="flex:1"></div>
+        <div class="search-trigger highlighted">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="household">Snaith ▾</div>
+        <div class="avatar">GS</div>
+      </div>
+      <div class="app-body">
+        <div class="left-panel">Income subcats…</div>
+        <div class="content-area"><div class="page-title">Income</div></div>
+      </div>
+    </div>
+    <div class="mockup-note">Lives with the other utility controls. Less prominent but feels tidier — the nav row stays "pure" on the left.</div>
+  </div>
+</div>
+
+<!-- QUESTION 2: OPEN BEHAVIOUR -->
+<h3 class="qheading">2. How does the search appear when opened?</h3>
+<p class="qheading-sub">Both options: input+results in one card, rest of page dimmed, Escape closes. The difference is where the card sits on screen.</p>
+
+<div class="options">
+  <div class="option" data-choice="open-anchored" onclick="toggleSelect(this)">
+    <div class="letter">E</div>
+    <div class="content">
+      <h3>Expand anchored — drops from the top</h3>
+      <p>Card attaches under the top bar and spans most of the viewport width. Feels like the trigger is "blooming" into the search. Closer to your Spotify reference.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="open-centre" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Centre modal — floats in middle</h3>
+      <p>Classic Raycast/Cmd-K style. Card centred on screen, narrower than full-width. More focused, but detached from the trigger position.</p>
+    </div>
+  </div>
+</div>
+
+<div class="split">
+  <div>
+    <div class="mockup-label">E — Anchored overlay (drops from top)</div>
+    <div class="app-frame">
+      <div class="app-header">
+        <div class="brand">finplan</div>
+        <span class="nav-link">Overview</span>
+        <span class="nav-link wf-income active">Income</span>
+        <span class="nav-link wf-committed">Committed</span>
+        <span class="nav-link wf-discretionary">Discretionary</span>
+        <span class="nav-link wf-surplus">Surplus</span>
+        <span class="nav-link">Forecast</span>
+        <span class="nav-link">Assets</span>
+        <span class="nav-link">Help</span>
+        <div style="flex:1"></div>
+        <div class="search-trigger highlighted">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="avatar">GS</div>
+      </div>
+      <div class="app-body">
+        <div class="left-panel">Income…</div>
+        <div class="content-area">Page…</div>
+        <div class="scrim"></div>
+        <div class="overlay-anchored">
+          <div class="overlay-input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+            <span class="overlay-input-text"><span class="query">mort</span><span class="cursor"></span></span>
+            <span class="overlay-input-kbd">Esc</span>
+          </div>
+          <div class="result-group">
+            <div class="result-group-label">Data</div>
+            <div class="result-row highlighted">
+              <div class="row-left"><div class="result-icon" style="background:rgba(167,140,255,0.2); color:#a78cff">C</div><span><b>Mort</b>gage</span></div>
+              <span class="result-sub">Committed · Monthly</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup-note">Card pinned to top of viewport. Feels connected to the trigger. Roomy.</div>
+  </div>
+  <div>
+    <div class="mockup-label">C — Centre modal</div>
+    <div class="app-frame">
+      <div class="app-header">
+        <div class="brand">finplan</div>
+        <span class="nav-link">Overview</span>
+        <span class="nav-link wf-income active">Income</span>
+        <span class="nav-link wf-committed">Committed</span>
+        <span class="nav-link wf-discretionary">Discretionary</span>
+        <span class="nav-link wf-surplus">Surplus</span>
+        <span class="nav-link">Forecast</span>
+        <span class="nav-link">Assets</span>
+        <span class="nav-link">Help</span>
+        <div style="flex:1"></div>
+        <div class="search-trigger highlighted">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+        </div>
+        <div class="avatar">GS</div>
+      </div>
+      <div class="app-body">
+        <div class="left-panel">Income…</div>
+        <div class="content-area">Page…</div>
+        <div class="scrim"></div>
+        <div class="overlay-centre">
+          <div class="overlay-input">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg>
+            <span class="overlay-input-text"><span class="query">mort</span><span class="cursor"></span></span>
+            <span class="overlay-input-kbd">Esc</span>
+          </div>
+          <div class="result-group">
+            <div class="result-group-label">Data</div>
+            <div class="result-row highlighted">
+              <div class="row-left"><div class="result-icon" style="background:rgba(167,140,255,0.2); color:#a78cff">C</div><span><b>Mort</b>gage</span></div>
+              <span class="result-sub">Committed</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mockup-note">Card floats in centre. More detached from the trigger. Feels like a "popup" — which you previously said we don't want.</div>
+  </div>
+</div>
+
+<div style="margin-top:22px; padding: 12px 14px; border: 1px solid #252b3d; border-radius: 8px; background: #0b1020; font-size: 12px; color: #a9b0c4;">
+  <strong>My lean:</strong> <strong>R + E</strong> — icon on the right (groups with utility chrome), anchored overlay (matches your earlier "not a modal popup" guidance and the Spotify reference).
+</div>

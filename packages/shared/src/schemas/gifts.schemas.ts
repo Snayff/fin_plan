@@ -155,6 +155,11 @@ export type GiftPlannerStateResponse = {
   rolloverPending: boolean;
 };
 
+export type GiftPlannerSettingsResponse = {
+  mode: GiftPlannerMode;
+  syncedDiscretionaryItemId: string | null;
+};
+
 export type GiftPersonDetailResponse = {
   person: GiftPersonRow;
   allocations: GiftAllocationRow[];

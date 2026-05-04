@@ -1,7 +1,9 @@
 import { prisma } from "../config/database.js";
 import { NotFoundError, ConflictError, AuthorizationError } from "../utils/errors.js";
 import { waterfallService } from "./waterfall.service.js";
-import { toGBP } from "@finplan/shared";
+import { audited } from "./audit.service.js";
+import type { ActorCtx } from "./audit.service.js";
+import { toGBP, AuditAction } from "@finplan/shared";
 import { FinancialSummarySchema } from "@finplan/shared";
 import type { CreateSnapshotInput, RenameSnapshotInput, FinancialSummary } from "@finplan/shared";
 
@@ -50,16 +52,20 @@ export const snapshotService = {
     return snapshot;
   },
 
-  async createSnapshot(householdId: string, input: CreateSnapshotInput) {
+  async createSnapshot(householdId: string, input: CreateSnapshotInput, ctx: ActorCtx) {
     const data = await waterfallService.getWaterfallSummary(householdId);
     try {
-      return await prisma.snapshot.create({
-        data: {
-          householdId,
-          name: input.name,
-          isAuto: false,
-          data: data as object,
-        },
+      return await audited({
+        db: prisma,
+        ctx,
+        action: AuditAction.CREATE_SNAPSHOT,
+        resource: "snapshot",
+        resourceId: (after: { id: string }) => after.id,
+        beforeFetch: async () => null,
+        mutation: (tx) =>
+          tx.snapshot.create({
+            data: { householdId, name: input.name, isAuto: false, data: data as object },
+          }),
       });
     } catch (err: any) {
       if (err?.code === "P2002") {
@@ -69,7 +75,7 @@ export const snapshotService = {
     }
   },
 
-  async renameSnapshot(householdId: string, id: string, input: RenameSnapshotInput) {
+  async renameSnapshot(householdId: string, id: string, input: RenameSnapshotInput, ctx: ActorCtx) {
     const snapshot = await prisma.snapshot.findUnique({ where: { id } });
     if (!snapshot || snapshot.householdId !== householdId) {
       throw new NotFoundError("Snapshot not found");
@@ -78,7 +84,16 @@ export const snapshotService = {
       throw new AuthorizationError("Auto-snapshots cannot be renamed");
     }
     try {
-      return await prisma.snapshot.update({ where: { id }, data: { name: input.name } });
+      return await audited({
+        db: prisma,
+        ctx,
+        action: AuditAction.UPDATE_SNAPSHOT,
+        resource: "snapshot",
+        resourceId: id,
+        beforeFetch: async (tx) =>
+          tx.snapshot.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+        mutation: (tx) => tx.snapshot.update({ where: { id }, data: { name: input.name } }),
+      });
     } catch (err: any) {
       if (err?.code === "P2002") {
         throw new ConflictError("A snapshot with that name already exists");
@@ -87,7 +102,7 @@ export const snapshotService = {
     }
   },
 
-  async deleteSnapshot(householdId: string, id: string) {
+  async deleteSnapshot(householdId: string, id: string, ctx: ActorCtx) {
     const snapshot = await prisma.snapshot.findUnique({ where: { id } });
     if (!snapshot || snapshot.householdId !== householdId) {
       throw new NotFoundError("Snapshot not found");
@@ -95,7 +110,16 @@ export const snapshotService = {
     if (snapshot.isAuto) {
       throw new AuthorizationError("Auto-snapshots cannot be deleted");
     }
-    await prisma.snapshot.delete({ where: { id } });
+    await audited({
+      db: prisma,
+      ctx,
+      action: AuditAction.DELETE_SNAPSHOT,
+      resource: "snapshot",
+      resourceId: id,
+      beforeFetch: async (tx) =>
+        tx.snapshot.findUnique({ where: { id } }) as Promise<Record<string, unknown> | null>,
+      mutation: (tx) => tx.snapshot.delete({ where: { id } }),
+    });
   },
 
   async ensureJan1Snapshot(householdId: string, now: Date = new Date()) {

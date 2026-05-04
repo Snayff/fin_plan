@@ -1,0 +1,69 @@
+<h2>Area 1 — Revised: add <code>monthlyContribution</code> to <code>AccountForm</code></h2>
+<p class="subtitle">The existing edit form is the correct home. The only visible change is one new field below "Growth rate override", scoped to Savings / S&amp;S / Pension.</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">Today — AccountForm (edit, Savings)</div>
+    <div class="mockup-body" style="background:#0b0b0e;padding:14px">
+      <div style="border-left:2px solid #a78bfa;padding-left:16px">
+        <div style="color:#8a8a93;font-size:10px;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px">Name *</div>
+        <div style="border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 10px;background:rgba(255,255,255,0.04);font-size:12px;margin-bottom:10px">Chase Saver</div>
+
+        <div style="color:#8a8a93;font-size:10px;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px">Assigned to</div>
+        <div style="border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 10px;background:rgba(255,255,255,0.04);font-size:12px;margin-bottom:10px">Household ▾</div>
+
+        <div style="color:#8a8a93;font-size:10px;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px">Growth rate override (%)</div>
+        <div style="border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 10px;background:rgba(255,255,255,0.04);font-size:12px;color:#6a6a73;font-style:italic">Default: 4%</div>
+        <div style="font-size:10px;color:#6a6a73;margin-top:3px">Leave blank to use household default (Default: 4%)</div>
+
+        <div style="height:24px"></div>
+        <div style="font-size:10px;color:#6a6a73">— End of form —</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">Proposed — same form + one new field</div>
+    <div class="mockup-body" style="background:#0b0b0e;padding:14px">
+      <div style="border-left:2px solid #a78bfa;padding-left:16px">
+        <div style="color:#8a8a93;font-size:10px;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px">Name *</div>
+        <div style="border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 10px;background:rgba(255,255,255,0.04);font-size:12px;margin-bottom:10px">Chase Saver</div>
+
+        <div style="color:#8a8a93;font-size:10px;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px">Assigned to</div>
+        <div style="border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 10px;background:rgba(255,255,255,0.04);font-size:12px;margin-bottom:10px">Household ▾</div>
+
+        <div style="color:#8a8a93;font-size:10px;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px">Growth rate override (%)</div>
+        <div style="border:1px solid rgba(255,255,255,0.1);border-radius:6px;padding:6px 10px;background:rgba(255,255,255,0.04);font-size:12px;color:#6a6a73;font-style:italic">Default: 4%</div>
+        <div style="font-size:10px;color:#6a6a73;margin-top:3px;margin-bottom:10px">Leave blank to use household default (Default: 4%)</div>
+
+        <div style="color:#a78bfa;font-size:10px;letter-spacing:0.07em;text-transform:uppercase;margin-bottom:4px">Monthly contribution <span style="opacity:0.6">(new)</span></div>
+        <div style="border:1px solid rgba(167,139,250,0.4);border-radius:6px;padding:6px 10px;background:rgba(167,139,250,0.06);font-size:12px;font-family:ui-monospace,monospace">£ 400.00</div>
+        <div style="font-size:10px;color:#6a6a73;margin-top:3px">How much you regularly deposit into this account each month.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="options" style="margin-top:18px">
+  <div class="option" data-choice="confirm" onclick="toggleSelect(this)">
+    <div class="letter">✓</div>
+    <div class="content">
+      <h3>Yes — add it here, scoped to Savings / S&amp;S / Pension</h3>
+      <p>Zero new UI surfaces. Current accounts stay as-is (they're a bank balance, not a contribution target).</p>
+    </div>
+  </div>
+  <div class="option" data-choice="also-current" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Also show on Current accounts</h3>
+      <p>Lets users model regular deposits into a current account too.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="rethink" onclick="toggleSelect(this)">
+    <div class="letter">?</div>
+    <div class="content">
+      <h3>Rethink — this isn't the right home</h3>
+      <p>Talk through an alternative in the terminal.</p>
+    </div>
+  </div>
+</div>

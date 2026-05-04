@@ -37,7 +37,7 @@ describe("CONCEPT_ENTRIES", () => {
 describe("getConceptEntry", () => {
   it("returns entry by id", () => {
     const entry = getConceptEntry("amortisation");
-    expect(entry?.title).toBe("Amortisation (÷12)");
+    expect(entry?.title).toBe("Amortisation (÷12, ÷3, × 52/12)");
   });
 
   it("returns undefined for unknown id", () => {

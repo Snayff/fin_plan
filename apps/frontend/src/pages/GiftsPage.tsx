@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { useAddParam } from "@/features/search/useAddParam";
 import { TwoPanelLayout } from "@/components/layout/TwoPanelLayout";
 import { GiftsLeftAside, type GiftsMode } from "@/components/gifts/GiftsLeftAside";
 import { GiftsModePanel } from "@/components/gifts/GiftsModePanel";
@@ -26,6 +27,10 @@ export default function GiftsPage() {
     },
     [mode, configDirty]
   );
+
+  useAddParam(() => {
+    // TODO: wire add modal for gifts
+  });
 
   const stateQuery = useGiftsState(year);
 

@@ -8,7 +8,7 @@ const baseSummary: WaterfallSummary = {
     byType: [],
     bySubcategory: [],
     monthly: [],
-    annual: [],
+    nonMonthly: [],
     oneOff: [],
   },
   committed: {
@@ -30,7 +30,7 @@ const baseSummary: WaterfallSummary = {
         householdId: "h1",
         name: "Mortgage",
         amount: 1200,
-        ownerId: null,
+        memberId: null,
         sortOrder: 0,
         lastReviewedAt: new Date(),
         createdAt: new Date(),
@@ -39,7 +39,7 @@ const baseSummary: WaterfallSummary = {
         spendType: "monthly",
       },
     ],
-    yearlyBills: [
+    nonMonthlyBills: [
       {
         id: "y1",
         householdId: "h1",
@@ -135,7 +135,7 @@ describe("extractDrillItems", () => {
       committed: {
         ...baseSummary.committed,
         bills: [],
-        yearlyBills: [],
+        nonMonthlyBills: [],
       },
     };
     const items = extractDrillItems("committed", summary);
@@ -158,14 +158,14 @@ describe("extractDrillItems", () => {
             householdId: "h1",
             name: "No SubCat Bill",
             amount: 100,
-            ownerId: null,
+            memberId: null,
             sortOrder: 0,
             lastReviewedAt: new Date(),
             createdAt: new Date(),
             updatedAt: new Date(),
           },
         ],
-        yearlyBills: [],
+        nonMonthlyBills: [],
       },
     };
     const items = extractDrillItems("committed", summary);

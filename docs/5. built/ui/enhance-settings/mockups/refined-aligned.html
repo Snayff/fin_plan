@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@500;600;700;800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --background: #080a14;
+    --surface: #0d1120;
+    --surface-border: #1a1f35;
+    --surface-elevated: #141b2e;
+    --surface-elevated-border: #222c45;
+    --surface-overlay: #1c2540;
+    --surface-overlay-border: #2a3558;
+    --text-primary: rgba(238,242,255,0.92);
+    --text-secondary: rgba(238,242,255,0.65);
+    --text-tertiary: rgba(238,242,255,0.40);
+    --text-muted: rgba(238,242,255,0.25);
+    --tier-income: #0ea5e9;
+    --action: #7c3aed;
+    --page-accent: #8b5cf6;
+    --success: #22c55e;
+    --attention: #f59e0b;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px;
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    background: var(--background);
+    color: var(--text-primary);
+    font-size: 14px;
+  }
+
+  /* Settings-page ambient glow — per § 1.2 */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 100% 0%, rgba(238,242,255,0.04) 0%, transparent 25%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  h1.doc-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 14px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--page-accent);
+    margin: 0 0 16px;
+    position: relative;
+  }
+
+  .mock {
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    margin-bottom: 28px;
+    overflow: hidden;
+    background: var(--background);
+    position: relative;
+  }
+  .mock-label {
+    background: rgba(139,92,246,0.08);
+    padding: 8px 16px;
+    font-size: 11px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--page-accent);
+    border-bottom: 1px solid rgba(139,92,246,0.15);
+    font-family: 'Outfit', sans-serif;
+  }
+
+  /* === Top nav (per § 7) === */
+  .topnav {
+    height: 48px; display: flex; align-items: center;
+    padding: 0 20px; background: var(--background);
+    border-bottom: 1px solid var(--surface-border);
+    font-size: 13px; position: relative;
+  }
+  .brand {
+    font-family: 'Outfit', sans-serif; font-weight: 800;
+    font-size: 16px; letter-spacing: -0.02em;
+    color: var(--text-primary); margin-right: 32px;
+  }
+  .nav-links {
+    display: flex; gap: 18px;
+    flex: 1;
+    font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .nav-links a { color: inherit; text-decoration: none; cursor: pointer; }
+  .nav-links a:hover { color: var(--text-primary); }
+  .nav-links .active {
+    color: var(--action);
+    position: relative;
+  }
+  .nav-links .active::after {
+    content: ''; position: absolute;
+    bottom: -14px; left: 0; right: 0;
+    height: 2px; background: var(--action);
+  }
+  .nav-right { display: flex; align-items: center; gap: 12px; }
+
+  /* Household switcher button (Select-like, § 1.2 / Component Catalogue) */
+  .hh-btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-family: 'Nunito Sans', sans-serif; font-size: 13px; font-weight: 500;
+    color: var(--text-secondary);
+    padding: 6px 10px; border-radius: 8px;
+    background: transparent; border: 1px solid transparent;
+    cursor: pointer;
+    max-width: 180px;
+  }
+  .hh-btn:hover { color: var(--text-primary); background: rgba(255,255,255,0.02); }
+  .hh-btn.open { background: var(--surface-elevated); border-color: var(--surface-elevated-border); color: var(--text-primary); }
+  .hh-btn .name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .hh-btn .chev { font-size: 10px; color: var(--text-tertiary); flex-shrink: 0; }
+
+  /* Avatar (full radius, per § 1.7) */
+  .avatar {
+    width: 32px; height: 32px;
+    border-radius: 9999px;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 12px;
+    color: white; cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color 150ms ease-out, transform 150ms ease-out;
+  }
+  .avatar:hover { border-color: rgba(124,58,237,0.4); }
+  .avatar:active { transform: scale(0.97); }
+  .avatar.open { border-color: var(--action); }
+
+  /* Dropdown panel (§ Select) */
+  .dd-wrap { position: relative; }
+  .dropdown {
+    position: absolute; top: calc(100% + 6px); right: 0;
+    min-width: 240px; max-width: 300px;
+    max-height: min(420px, calc(100vh - 70px));
+    overflow-y: auto;
+    background: var(--surface-overlay);
+    border: 1px solid var(--surface-overlay-border);
+    border-radius: 8px;
+    padding: 6px; z-index: 30;
+  }
+  .dd-group + .dd-group { border-top: 1px solid rgba(238,242,255,0.08); margin-top: 6px; padding-top: 6px; }
+  .dd-header {
+    font-family: 'Outfit', sans-serif;
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    padding: 6px 10px 4px; font-weight: 600;
+  }
+  .dd-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; border-radius: 6px;
+    font-size: 13px; color: var(--text-secondary);
+    cursor: pointer; font-family: inherit;
+    transition: background-color 120ms, color 120ms;
+  }
+  .dd-item:hover { background: rgba(124,58,237,0.12); color: var(--text-primary); }
+  .dd-item.current { color: var(--text-primary); }
+  .dd-item .check { margin-left: auto; color: var(--action); font-size: 12px; }
+  .dd-item .ic { width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; color: var(--text-tertiary); font-size: 13px; }
+  .dd-item.cta { color: var(--action); }
+  .dd-item.cta .ic { color: var(--action); }
+  .dd-profile-head { padding: 8px 10px 2px; }
+  .dd-profile-head .n { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+  .dd-profile-head .e { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .dd-sep { height: 1px; background: rgba(238,242,255,0.08); margin: 6px 0; }
+
+  /* === Settings page shell (two-panel per § 3.1) === */
+  .page-shell { display: flex; height: 560px; position: relative; z-index: 1; }
+  .left-panel {
+    width: 360px; flex-shrink: 0;
+    border-right: 1px solid var(--surface-border);
+    display: flex; flex-direction: column;
+    height: 100%;
+    background: transparent;
+  }
+
+  /* PageHeader (§ 3.1 Left Panel Header Anatomy) */
+  .page-header {
+    flex-shrink: 0;
+    padding: 16px 16px 12px;
+  }
+  .page-header h1 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 18px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.09em;
+    color: var(--page-accent);
+    margin: 0;
+  }
+  .page-header .scope {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 11px; font-weight: 500;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+  }
+  .page-header .scope strong {
+    color: var(--text-secondary);
+    font-weight: 600;
+  }
+
+  /* Scroll area */
+  .left-scroll {
+    flex: 1; min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Group header (same treatment as § Section Label canonical) */
+  .group-header {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.1em;
+    color: var(--text-tertiary);
+    padding: 14px 16px 4px;
+  }
+  .left-scroll > .group-header:first-child { padding-top: 8px; }
+
+  /* Nav button (§ 3.1 Left Panel Navigation Anatomy) */
+  .nav-item {
+    position: relative;
+    display: flex; align-items: center;
+    width: 100%;
+    padding: 10px 16px;
+    text-align: left;
+    font-family: 'Nunito Sans', sans-serif; font-size: 13px;
+    color: rgba(238,242,255,0.60);
+    border: none; background: transparent;
+    cursor: pointer;
+    transition: background-color 120ms ease-out, color 120ms ease-out;
+  }
+  .nav-item:hover { background: rgba(139,92,246,0.05); }
+  .nav-item.active {
+    font-weight: 500;
+    color: var(--page-accent);
+  }
+  .nav-item.active::before {
+    content: ''; position: absolute;
+    inset: 0;
+    background: rgba(139,92,246,0.14);
+    border-left: 2px solid var(--page-accent);
+    border-radius: 0 2px 2px 0;
+    z-index: 0;
+  }
+  .nav-item.active .label { position: relative; z-index: 1; }
+
+  /* Left footer (§ 3.1 Left Panel Footer) */
+  .left-footer {
+    flex-shrink: 0;
+    border-top: 1px solid rgba(238,242,255,0.10);
+    padding: 12px 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 13px; color: var(--text-tertiary);
+  }
+  .left-footer .v {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* Right panel */
+  .right-panel {
+    flex: 1;
+    overflow-y: auto;
+    display: flex; flex-direction: column;
+  }
+  /* Right panel header (§ 3.1) */
+  .right-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(238,242,255,0.05);
+    flex-shrink: 0;
+    position: sticky; top: 0; z-index: 2;
+    background: var(--background);
+  }
+  .right-header h2 {
+    font-family: 'Outfit', sans-serif;
+    font-size: 16px; font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+  }
+
+  /* Right body — § 1.4 settings exception uses space-y-12 */
+  .right-body {
+    padding: 24px 24px 120px;
+    max-width: 720px;
+  }
+
+  /* Section (per § 8 — section headers page-accent uppercase 0.06em) */
+  .settings-section {
+    padding-top: 0;
+    padding-bottom: 48px; /* space-y-12 equivalent between sections */
+  }
+  .settings-section + .settings-section {
+    border-top: 1px solid rgba(238,242,255,0.06);
+    padding-top: 48px;
+  }
+  .section-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 13px; font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--page-accent);
+    margin: 0 0 4px;
+  }
+  .section-desc {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin: 0 0 16px;
+    line-height: 1.55;
+  }
+
+  /* Fields */
+  .field { display: flex; flex-direction: column; gap: 6px; margin-bottom: 16px; max-width: 360px; position: relative; }
+  .field-label-row { display: flex; align-items: center; gap: 8px; min-height: 16px; }
+  .field label {
+    font-size: 12px; font-weight: 500;
+    color: var(--text-secondary);
+  }
+  .field input {
+    background: var(--surface);
+    border: 1px solid var(--surface-border);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: var(--text-primary);
+    font-family: inherit; font-size: 13px;
+    transition: border-color 150ms ease-out, box-shadow 150ms ease-out;
+  }
+  .field input:focus {
+    outline: none;
+    border-color: var(--action);
+    box-shadow: 0 0 0 2px rgba(124,58,237,0.3);
+  }
+  .field .readonly-value {
+    font-size: 13px; color: var(--text-tertiary);
+    padding: 8px 0;
+  }
+
+  /* Auto-save micro-reaction: brief green flash on input border + label checkmark */
+  .field.saved input {
+    animation: save-border 1.5s ease-out forwards;
+  }
+  @keyframes save-border {
+    0%   { border-color: var(--success); box-shadow: 0 0 0 3px rgba(34,197,94,0.18); }
+    40%  { border-color: var(--success); box-shadow: 0 0 0 3px rgba(34,197,94,0.10); }
+    100% { border-color: var(--surface-border); box-shadow: 0 0 0 0 rgba(34,197,94,0); }
+  }
+  .saved-flash {
+    display: inline-flex; align-items: center; gap: 3px;
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 10.5px; font-weight: 500;
+    color: var(--success);
+    animation: saved-flash 1.6s ease-out forwards;
+  }
+  @keyframes saved-flash {
+    0%   { opacity: 0; transform: translateY(2px); }
+    15%  { opacity: 1; transform: translateY(0); }
+    75%  { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(-2px); }
+  }
+
+  /* Checkbox-row */
+  .checkbox-row { display: flex; align-items: flex-start; gap: 10px; max-width: 420px; }
+  .cbx {
+    width: 16px; height: 16px; border-radius: 4px;
+    background: var(--action);
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 10px; color: white; flex-shrink: 0; margin-top: 2px;
+  }
+  .cbx-body label {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 13px; font-weight: 500;
+    color: var(--text-primary);
+    cursor: pointer;
+  }
+  .cbx-body .ex {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px; color: var(--text-muted);
+    margin-left: 8px;
+  }
+  .cbx-body .desc {
+    font-size: 12px; color: var(--text-tertiary);
+    margin-top: 4px; line-height: 1.5;
+  }
+
+  /* Dropdown demo offset fix */
+  .topnav.with-dd { padding-bottom: 0; overflow: visible; }
+  .dd-demo-spacer { height: 260px; }
+
+  /* Callout box for annotations */
+  .callout {
+    background: rgba(139,92,246,0.08);
+    border-left: 3px solid var(--page-accent);
+    padding: 10px 14px;
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin: 12px 0;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.6;
+  }
+  .callout strong { color: var(--page-accent); font-family: 'Outfit', sans-serif; }
+  .callout code {
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(139,92,246,0.12);
+    padding: 1px 5px; border-radius: 3px;
+    font-size: 11px;
+  }
+</style>
+</head>
+<body>
+
+<h1 class="doc-title">Refined · Aligned to Design Tokens</h1>
+
+<!-- Top nav -->
+<div class="mock">
+  <div class="mock-label">Top navigation — Settings link removed; avatar added (§ 7 update)</div>
+  <div class="topnav">
+    <div class="brand">finplan</div>
+    <div class="nav-links">
+      <a class="active">Overview</a>
+      <a>Income</a>
+      <a>Committed</a>
+      <a>Discretionary</a>
+      <a>Surplus</a>
+      <a>Forecast</a>
+      <a>Assets</a>
+      <a>Goals</a>
+      <a>Gifts</a>
+      <a>Help</a>
+    </div>
+    <div class="nav-right">
+      <div class="hh-btn"><span class="name">Snaith</span><span class="chev">▾</span></div>
+      <div class="avatar">JS</div>
+    </div>
+  </div>
+</div>
+
+<!-- Household dropdown -->
+<div class="mock">
+  <div class="mock-label">Household switcher — anchored right, max-height viewport-safe</div>
+  <div class="topnav with-dd">
+    <div class="brand">finplan</div>
+    <div class="nav-links" style="opacity: 0.35;">
+      <a>Overview</a><a>Income</a><a>Committed</a><a>Discretionary</a><a>Surplus</a><a>Forecast</a><a>Assets</a><a>Goals</a><a>Gifts</a>
+    </div>
+    <div class="nav-right">
+      <div class="dd-wrap">
+        <div class="hh-btn open"><span class="name">Snaith</span><span class="chev">▴</span></div>
+        <div class="dropdown" style="display: block;">
+          <div class="dd-group">
+            <div class="dd-header">Switch household</div>
+            <div class="dd-item current">Snaith <span class="check">✓</span></div>
+            <div class="dd-item">Parents</div>
+          </div>
+          <div class="dd-group">
+            <div class="dd-item"><span class="ic">⚙</span>Household settings</div>
+            <div class="dd-item cta"><span class="ic">+</span>Create new household</div>
+          </div>
+        </div>
+      </div>
+      <div class="avatar">JS</div>
+    </div>
+  </div>
+  <div class="dd-demo-spacer"></div>
+</div>
+
+<!-- Profile dropdown -->
+<div class="mock">
+  <div class="mock-label">Profile avatar — personal menu</div>
+  <div class="topnav with-dd">
+    <div class="brand">finplan</div>
+    <div class="nav-links" style="opacity: 0.35;">
+      <a>Overview</a><a>Income</a><a>Committed</a><a>Discretionary</a><a>Surplus</a><a>Forecast</a><a>Assets</a><a>Goals</a><a>Gifts</a>
+    </div>
+    <div class="nav-right">
+      <div class="hh-btn"><span class="name">Snaith</span><span class="chev">▾</span></div>
+      <div class="dd-wrap">
+        <div class="avatar open">JS</div>
+        <div class="dropdown" style="display: block;">
+          <div class="dd-profile-head">
+            <div class="n">Josh Snaith</div>
+            <div class="e">snaith2@gmail.com</div>
+          </div>
+          <div class="dd-sep"></div>
+          <div class="dd-item"><span class="ic">👤</span>Profile settings</div>
+          <div class="dd-item"><span class="ic">↪</span>Sign out</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="dd-demo-spacer"></div>
+</div>
+
+<!-- Profile Settings page -->
+<div class="mock">
+  <div class="mock-label">Profile settings — 360px left panel, PageHeader, canonical nav, space-y-12 sections</div>
+  <div class="page-shell">
+    <aside class="left-panel">
+      <div class="page-header">
+        <h1>Profile</h1>
+        <div class="scope">Your personal preferences</div>
+      </div>
+      <div class="left-scroll">
+        <button class="nav-item active"><span class="label">Account</span></button>
+        <button class="nav-item"><span class="label">Display</span></button>
+      </div>
+      <div class="left-footer">
+        <span>finplan</span>
+        <span class="v">v0.1.0</span>
+      </div>
+    </aside>
+    <main class="right-panel">
+      <div class="right-header"><h2>Profile</h2></div>
+      <div class="right-body">
+        <div class="settings-section">
+          <h3 class="section-title">Account</h3>
+          <p class="section-desc">Your account details. Applied across every household you're a member of.</p>
+          <div class="field saved">
+            <div class="field-label-row">
+              <label>Name</label>
+              <span class="saved-flash">✓ saved</span>
+            </div>
+            <input value="Josh Snaith" />
+          </div>
+          <div class="field">
+            <div class="field-label-row"><label>Email</label></div>
+            <div class="readonly-value">snaith2@gmail.com</div>
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3 class="section-title">Display</h3>
+          <p class="section-desc">How values render for you specifically. Does not affect other household members.</p>
+          <div class="checkbox-row">
+            <div class="cbx">✓</div>
+            <div class="cbx-body">
+              <label>Show pence <span class="ex">e.g. £1,234.56</span></label>
+              <div class="desc">Display pence on all financial values for full precision. When off, values are rounded to the nearest pound.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- Household Settings page -->
+<div class="mock">
+  <div class="mock-label">Household settings — 360px left panel with grouped nav, scroll-spy</div>
+  <div class="page-shell">
+    <aside class="left-panel">
+      <div class="page-header">
+        <h1>Household</h1>
+        <div class="scope"><strong>Snaith</strong></div>
+      </div>
+      <div class="left-scroll">
+        <div class="group-header">General</div>
+        <button class="nav-item active"><span class="label">Details</span></button>
+        <button class="nav-item"><span class="label">Members &amp; invites</span></button>
+
+        <div class="group-header">Financial</div>
+        <button class="nav-item"><span class="label">Surplus benchmark</span></button>
+        <button class="nav-item"><span class="label">ISA settings</span></button>
+        <button class="nav-item"><span class="label">Staleness thresholds</span></button>
+        <button class="nav-item"><span class="label">Growth rates</span></button>
+
+        <div class="group-header">Structure</div>
+        <button class="nav-item"><span class="label">Subcategories</span></button>
+
+        <div class="group-header">Advanced</div>
+        <button class="nav-item"><span class="label">Data</span></button>
+        <button class="nav-item"><span class="label">Audit log</span></button>
+      </div>
+      <div class="left-footer">
+        <span>finplan</span>
+        <span class="v">v0.1.0</span>
+      </div>
+    </aside>
+    <main class="right-panel">
+      <div class="right-header"><h2>Household</h2></div>
+      <div class="right-body">
+        <div class="settings-section">
+          <h3 class="section-title">Details</h3>
+          <p class="section-desc">Name and basic information about this household.</p>
+          <div class="field saved">
+            <div class="field-label-row">
+              <label>Household name</label>
+              <span class="saved-flash">✓ saved</span>
+            </div>
+            <input value="Snaith" />
+          </div>
+        </div>
+        <div class="settings-section">
+          <h3 class="section-title">Members &amp; invites</h3>
+          <p class="section-desc">People who can see and edit this household's plan.</p>
+          <div style="font-size: 12px; color: var(--text-tertiary); font-style: italic;">[member list, role controls, invite form, pending invites]</div>
+        </div>
+        <div class="settings-section">
+          <h3 class="section-title">Surplus benchmark</h3>
+          <p class="section-desc">Percentage of net income that should remain as surplus before a cashflow attention is surfaced.</p>
+          <div class="field">
+            <div class="field-label-row"><label>Benchmark</label></div>
+            <input value="10" style="width: 90px;" />
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<div class="callout">
+  <strong>Alignment notes applied:</strong><br>
+  • Left panel <code>360px</code> fixed (§ 1.4).<br>
+  • <code>PageHeader</code> component shape — <code>font-heading text-lg font-bold uppercase tracking-tier</code>, <code>text-page-accent</code>.<br>
+  • Nav items use <code>bg-page-accent/14 border-l-2 border-page-accent</code> indicator pattern (§ 3.1), not full-fill.<br>
+  • Left footer <code>border-t border-foreground/10 px-4 py-3</code> (§ 3.1).<br>
+  • Right panel header <code>px-4 py-3 border-b border-foreground/5</code>, sticky so it persists through scroll-spy.<br>
+  • Section headers: <code>page-accent</code>, <code>font-heading 700</code>, uppercase, <code>0.06em</code> (§ 8).<br>
+  • Right body uses <code>space-y-12</code> between sections (§ 1.4 exception) + horizontal <code>border-t</code> dividers.<br>
+  • Avatar: <code>rounded-full</code>, <code>active:scale-0.97</code>.<br>
+  • Dropdowns: <code>surface-overlay</code> bg, <code>right-0</code> anchor, <code>max-height: min(420px, 100vh - 70px)</code>.<br>
+  • Focus rings: <code>action</code> token at 2px (§ 1.5).<br>
+  • Save feedback: <code>success</code> border pulse + <code>✓ saved</code> micro-reaction inline — aligns with § 4.7 "prefer micro-reactions over toasts."
+</div>
+
+</body>
+</html>

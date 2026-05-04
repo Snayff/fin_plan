@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { AnimatePresence, motion } from "framer-motion";
+import { Lock } from "lucide-react";
 import GhostAddButton from "./GhostAddButton";
 import ItemAreaRow from "./ItemAreaRow";
 import ItemForm from "./ItemForm";
@@ -26,16 +28,29 @@ interface SubcategoryInfo {
   isLocked: boolean;
 }
 
+export interface LockedManager {
+  label: string;
+  path: string;
+}
+
+interface MemberOption {
+  id: string;
+  firstName: string;
+}
+
 interface Props {
   tier: TierKey;
   config: TierConfig;
   subcategory: SubcategoryInfo | null;
   subcategories: SubcategoryOption[];
+  members?: MemberOption[];
   items: TierItemRow[];
   isLoading: boolean;
   now?: Date;
   stalenessMonths?: number;
+  initialIsAdding?: boolean;
   onSubcategorySelect?: (id: string) => void;
+  lockedManager?: LockedManager;
 }
 
 export default function ItemArea({
@@ -43,15 +58,18 @@ export default function ItemArea({
   config,
   subcategory,
   subcategories,
+  members = [],
   items,
   isLoading,
   now = new Date(),
   stalenessMonths = 12,
+  initialIsAdding,
   onSubcategorySelect,
+  lockedManager,
 }: Props) {
   const [expandedItemId, setExpandedItemId] = useState<string | null>(null);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
-  const [isAddingItem, setIsAddingItem] = useState(false);
+  const [isAddingItem, setIsAddingItem] = useState(initialIsAdding ?? false);
   const [deletingItemId, setDeletingItemId] = useState<string | null>(null);
   const [sortField, setSortField] = useState<"name" | "createdAt" | "monthlyValue">("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
@@ -59,6 +77,7 @@ export default function ItemArea({
   const [selectedStates, setSelectedStates] = useState<Set<ItemLifecycleState>>(
     new Set(["active"])
   );
+  const navigate = useNavigate();
 
   const stateCounts = useMemo(() => {
     const counts: Record<ItemLifecycleState, number> = { active: 0, future: 0, expired: 0 };
@@ -129,6 +148,9 @@ export default function ItemArea({
       <div className="flex items-center justify-between px-4 py-3 border-b border-foreground/5">
         <div className="flex items-center gap-3">
           <h2 className="font-heading text-base font-bold text-foreground">{subcategory.name}</h2>
+          {lockedManager && (
+            <Lock className="h-3.5 w-3.5 text-foreground/40" aria-label="Synced subcategory" />
+          )}
           <span className="text-xs text-foreground/40">
             {items.length} {items.length === 1 ? "item" : "items"}
           </span>
@@ -137,7 +159,13 @@ export default function ItemArea({
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          {!subcategory.isLocked && (
+          <Link
+            to={`/waterfall#${tier}`}
+            className="rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
+          >
+            View all
+          </Link>
+          {!lockedManager && (
             <GhostAddButton
               onClick={() => {
                 setIsAddingItem(true);
@@ -146,6 +174,14 @@ export default function ItemArea({
               }}
               disabled={isAddingItem}
             />
+          )}
+          {lockedManager && (
+            <Link
+              to={lockedManager.path}
+              className="rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
+            >
+              Open {lockedManager.label}
+            </Link>
           )}
         </div>
       </div>
@@ -186,7 +222,7 @@ export default function ItemArea({
       </div>
 
       {/* Content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto">
         {/* Add form at top */}
         <AnimatePresence initial={false}>
           {isAddingItem && (
@@ -209,6 +245,7 @@ export default function ItemArea({
                 mode="add"
                 config={config}
                 subcategories={subcategories}
+                members={members}
                 initialSubcategoryId={subcategory.id}
                 isSaving={createItem.isPending}
                 onSave={async (data) => {
@@ -232,11 +269,21 @@ export default function ItemArea({
         </AnimatePresence>
 
         {/* Empty state */}
-        {items.length === 0 && !isAddingItem && (
+        {items.length === 0 && !isAddingItem && !lockedManager && (
           <GhostedListEmpty
             ctaHeading={getEmptyStateCopy(subcategory.name, tier).header}
             ctaText={getEmptyStateCopy(subcategory.name, tier).body}
             onCtaClick={() => setIsAddingItem(true)}
+          />
+        )}
+
+        {/* Synced empty state — subcategory managed elsewhere (e.g. Gift Planner) */}
+        {items.length === 0 && lockedManager && (
+          <GhostedListEmpty
+            ctaHeading={`${subcategory.name} are managed in the ${lockedManager.label}`}
+            ctaText={`Your annual ${subcategory.name.toLowerCase()} budget syncs here automatically from the ${lockedManager.label}.`}
+            ctaButtonLabel={`Open ${lockedManager.label}`}
+            onCtaClick={() => navigate(lockedManager.path)}
           />
         )}
 
@@ -258,22 +305,24 @@ export default function ItemArea({
 
         {/* Item list */}
         {displayItems.map((item) => (
-          <ItemAreaRow
-            key={item.id}
-            tier={tier}
-            config={config}
-            item={item}
-            subcategoryName={subcategory.name}
-            subcategories={subcategories}
-            expandedItemId={expandedItemId}
-            editingItemId={editingItemId}
-            onToggleExpand={(id) => setExpandedItemId(expandedItemId === id ? null : id)}
-            onStartEdit={setEditingItemId}
-            onCancelEdit={() => setEditingItemId(null)}
-            onDeleteRequest={setDeletingItemId}
-            now={now}
-            stalenessMonths={stalenessMonths}
-          />
+          <div key={item.id} data-search-focus={item.id}>
+            <ItemAreaRow
+              tier={tier}
+              config={config}
+              item={item}
+              subcategoryName={subcategory.name}
+              subcategories={subcategories}
+              members={members}
+              expandedItemId={expandedItemId}
+              editingItemId={editingItemId}
+              onToggleExpand={(id) => setExpandedItemId(expandedItemId === id ? null : id)}
+              onStartEdit={setEditingItemId}
+              onCancelEdit={() => setEditingItemId(null)}
+              onDeleteRequest={setDeletingItemId}
+              now={now}
+              stalenessMonths={stalenessMonths}
+            />
+          </div>
         ))}
       </div>
 

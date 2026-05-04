@@ -6,6 +6,9 @@ import {
   ValidationError,
 } from "../utils/errors.js";
 import type { CreateMemberInput, UpdateMemberInput } from "@finplan/shared";
+import { AuditAction } from "@finplan/shared";
+import { audited } from "./audit.service.js";
+import type { ActorCtx } from "./audit.service.js";
 
 async function assertCallerIsOwner(householdId: string, userId: string) {
   const caller = await prisma.member.findFirst({
@@ -18,21 +21,36 @@ async function assertCallerIsOwner(householdId: string, userId: string) {
 }
 
 export const memberService = {
-  async createMember(householdId: string, callerUserId: string, data: CreateMemberInput) {
+  async createMember(
+    householdId: string,
+    callerUserId: string,
+    data: CreateMemberInput,
+    ctx: ActorCtx
+  ) {
     await assertCallerIsOwner(householdId, callerUserId);
 
     try {
-      const created = await prisma.member.create({
-        data: {
-          householdId,
-          userId: null,
-          name: data.name,
-          dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-          retirementYear: data.retirementYear ?? null,
-          role: "member",
-        },
+      const created = await audited({
+        db: prisma,
+        ctx,
+        action: AuditAction.CREATE_MEMBER_PROFILE,
+        resource: "member-profile",
+        resourceId: (after: { id: string }) => after.id,
+        beforeFetch: async () => null,
+        mutation: (tx) =>
+          tx.member.create({
+            data: {
+              householdId,
+              userId: null,
+              name: data.name,
+              dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
+              retirementYear: data.retirementYear ?? null,
+              role: "member",
+            },
+          }),
       });
 
+      // Also create gift person for the new member (outside the transaction)
       try {
         await prisma.giftPerson.create({
           data: { householdId, name: created.name, memberId: created.id },
@@ -64,7 +82,8 @@ export const memberService = {
     householdId: string,
     callerUserId: string,
     memberId: string,
-    data: UpdateMemberInput
+    data: UpdateMemberInput,
+    ctx: ActorCtx
   ) {
     await assertCallerIsOwner(householdId, callerUserId);
 
@@ -74,15 +93,28 @@ export const memberService = {
     }
 
     try {
-      return await prisma.member.update({
-        where: { id: memberId },
-        data: {
-          ...(data.name !== undefined ? { name: data.name } : {}),
-          ...(data.dateOfBirth !== undefined
-            ? { dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null }
-            : {}),
-          ...(data.retirementYear !== undefined ? { retirementYear: data.retirementYear } : {}),
-        },
+      return await audited({
+        db: prisma,
+        ctx,
+        action: AuditAction.UPDATE_MEMBER_PROFILE,
+        resource: "member-profile",
+        resourceId: memberId,
+        beforeFetch: async (tx) =>
+          tx.member.findUnique({ where: { id: memberId } }) as Promise<Record<
+            string,
+            unknown
+          > | null>,
+        mutation: (tx) =>
+          tx.member.update({
+            where: { id: memberId },
+            data: {
+              ...(data.name !== undefined ? { name: data.name } : {}),
+              ...(data.dateOfBirth !== undefined
+                ? { dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null }
+                : {}),
+              ...(data.retirementYear !== undefined ? { retirementYear: data.retirementYear } : {}),
+            },
+          }),
       });
     } catch (err: any) {
       if (err?.code === "P2002") {
@@ -96,6 +128,7 @@ export const memberService = {
     householdId: string,
     callerUserId: string,
     memberId: string,
+    ctx: ActorCtx,
     reassignToMemberId?: string
   ) {
     await assertCallerIsOwner(householdId, callerUserId);
@@ -111,14 +144,17 @@ export const memberService = {
     }
 
     // Check if member has assigned items
-    const [incomeCount, committedCount, assetCount, accountCount] = await Promise.all([
-      prisma.incomeSource.count({ where: { householdId, ownerId: memberId } }),
-      prisma.committedItem.count({ where: { householdId, ownerId: memberId } }),
-      prisma.asset.count({ where: { householdId, memberId: memberId } }),
-      prisma.account.count({ where: { householdId, memberId: memberId } }),
-    ]);
+    const [incomeCount, committedCount, discretionaryCount, assetCount, accountCount] =
+      await Promise.all([
+        prisma.incomeSource.count({ where: { householdId, memberId } }),
+        prisma.committedItem.count({ where: { householdId, memberId } }),
+        prisma.discretionaryItem.count({ where: { householdId, memberId } }),
+        prisma.asset.count({ where: { householdId, memberId } }),
+        prisma.account.count({ where: { householdId, memberId } }),
+      ]);
 
-    const totalItems = incomeCount + committedCount + assetCount + accountCount;
+    const totalItems =
+      incomeCount + committedCount + discretionaryCount + assetCount + accountCount;
 
     if (totalItems > 0 && !reassignToMemberId) {
       throw new ValidationError(
@@ -136,19 +172,23 @@ export const memberService = {
 
         await Promise.all([
           tx.incomeSource.updateMany({
-            where: { householdId, ownerId: memberId },
-            data: { ownerId: reassignToMemberId },
+            where: { householdId, memberId },
+            data: { memberId: reassignToMemberId },
           }),
           tx.committedItem.updateMany({
-            where: { householdId, ownerId: memberId },
-            data: { ownerId: reassignToMemberId },
+            where: { householdId, memberId },
+            data: { memberId: reassignToMemberId },
+          }),
+          tx.discretionaryItem.updateMany({
+            where: { householdId, memberId },
+            data: { memberId: reassignToMemberId },
           }),
           tx.asset.updateMany({
-            where: { householdId, memberId: memberId },
+            where: { householdId, memberId },
             data: { memberId: reassignToMemberId },
           }),
           tx.account.updateMany({
-            where: { householdId, memberId: memberId },
+            where: { householdId, memberId },
             data: { memberId: reassignToMemberId },
           }),
         ]);
@@ -160,16 +200,38 @@ export const memberService = {
       });
 
       await tx.member.delete({ where: { id: memberId } });
+
+      // Write audit row inside transaction
+      await (tx as any).auditLog.create({
+        data: {
+          householdId: ctx.householdId,
+          actorId: ctx.actorId,
+          actorName: ctx.actorName,
+          ipAddress: ctx.ipAddress,
+          userAgent: ctx.userAgent,
+          action: AuditAction.DELETE_MEMBER_PROFILE,
+          resource: "member-profile",
+          resourceId: memberId,
+        },
+      });
     });
   },
 
   async getItemCountsForMember(householdId: string, memberId: string) {
-    const [income, committed, assets, accounts] = await Promise.all([
-      prisma.incomeSource.count({ where: { householdId, ownerId: memberId } }),
-      prisma.committedItem.count({ where: { householdId, ownerId: memberId } }),
-      prisma.asset.count({ where: { householdId, memberId: memberId } }),
-      prisma.account.count({ where: { householdId, memberId: memberId } }),
+    const [income, committed, discretionary, assets, accounts] = await Promise.all([
+      prisma.incomeSource.count({ where: { householdId, memberId } }),
+      prisma.committedItem.count({ where: { householdId, memberId } }),
+      prisma.discretionaryItem.count({ where: { householdId, memberId } }),
+      prisma.asset.count({ where: { householdId, memberId } }),
+      prisma.account.count({ where: { householdId, memberId } }),
     ]);
-    return { total: income + committed + assets + accounts, income, committed, assets, accounts };
+    return {
+      total: income + committed + discretionary + assets + accounts,
+      income,
+      committed,
+      discretionary,
+      assets,
+      accounts,
+    };
   },
 };

@@ -9,6 +9,7 @@ import {
 } from "recharts";
 import { format } from "date-fns";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { usePrefersReducedMotion } from "@/utils/motion";
 
 interface HistoryChartProps {
@@ -18,6 +19,8 @@ interface HistoryChartProps {
 
 export function HistoryChart({ data, snapshotDate }: HistoryChartProps) {
   const prefersReducedMotion = usePrefersReducedMotion();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
 
   if (data.length < 2) {
     return (
@@ -40,18 +43,23 @@ export function HistoryChart({ data, snapshotDate }: HistoryChartProps) {
         <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: 0 }}>
           <XAxis dataKey="label" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
           <YAxis
-            tickFormatter={(v: number) => formatCurrency(v)}
+            tickFormatter={(v: number) => formatCurrency(v, showPence)}
             tick={{ fontSize: 11 }}
             tickLine={false}
             axisLine={false}
             width={72}
           />
           <Tooltip
-            formatter={(value: number) => [formatCurrency(value), "Value"]}
+            formatter={(value: number) => [formatCurrency(value, showPence), "Value"]}
             labelFormatter={(label: string) => label}
           />
           {snapshotX && (
-            <ReferenceLine x={snapshotX} stroke="hsl(var(--attention))" strokeDasharray="4 4" strokeWidth={1.5} />
+            <ReferenceLine
+              x={snapshotX}
+              stroke="hsl(var(--attention))"
+              strokeDasharray="4 4"
+              strokeWidth={1.5}
+            />
           )}
           <Line
             type="monotone"

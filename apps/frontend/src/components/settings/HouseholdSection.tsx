@@ -15,7 +15,7 @@ import {
   useCancelInvite,
   useLeaveHousehold,
 } from "@/hooks/useSettings";
-import { Section } from "./Section";
+import { SettingsSection } from "./SettingsSection";
 import { MemberManagementSection } from "./MemberManagementSection";
 
 export function HouseholdSection() {
@@ -92,7 +92,11 @@ export function HouseholdSection() {
   const inviteUrl = inviteResult ? `${window.location.origin}/invite/${inviteResult.token}` : null;
 
   return (
-    <Section id="household" title="Household">
+    <SettingsSection
+      id="household"
+      title="Household"
+      description="Manage your household details, members, and invitations."
+    >
       {/* Name / rename */}
       <div className="space-y-2">
         {editingName ? (
@@ -231,6 +235,6 @@ export function HouseholdSection() {
           )}
         </div>
       )}
-    </Section>
+    </SettingsSection>
   );
 }

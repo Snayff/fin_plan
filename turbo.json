@@ -23,6 +23,26 @@
     },
     "clean": {
       "cache": false
+    },
+    "@finplan/backend#db:generate": {
+      "inputs": ["prisma/schema.prisma"],
+      "outputs": [
+        "../../node_modules/.bun/@prisma+client@*/node_modules/@prisma/client/**",
+        "../../node_modules/.prisma/**",
+        "node_modules/.prisma/**"
+      ]
+    },
+    "@finplan/backend#build": {
+      "dependsOn": ["^build", "@finplan/backend#db:generate"],
+      "outputs": ["dist/**"]
+    },
+    "@finplan/backend#type-check": {
+      "dependsOn": ["^build", "@finplan/backend#db:generate"],
+      "outputs": []
+    },
+    "@finplan/backend#test": {
+      "dependsOn": ["build", "@finplan/backend#db:generate"],
+      "outputs": ["coverage/**"]
     }
   }
 }

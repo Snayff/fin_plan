@@ -2,8 +2,7 @@
 feature: waterfall-visualisation
 status: approved
 creation_date: 2026-04-05
-status: backlog
-implemented_date:
+implemented_date: 2026-04-20
 ---
 
 # Waterfall Visualisation — Design

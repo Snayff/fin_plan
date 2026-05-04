@@ -47,7 +47,9 @@ const giftsServiceMock = {
   dismissRolloverNotification: mock(() => Promise.resolve()),
   runRolloverIfNeeded: mock(() => Promise.resolve(false)),
   seedLockedEventsIfMissing: mock(() => Promise.resolve()),
-  getOrCreateSettings: mock(() => Promise.resolve({ mode: "synced" })),
+  getOrCreateSettings: mock(() =>
+    Promise.resolve({ mode: "synced", syncedDiscretionaryItemId: null })
+  ),
 };
 
 mock.module("../services/gifts.service.js", () => ({ giftsService: giftsServiceMock }));
@@ -74,6 +76,14 @@ beforeEach(() => {
 });
 
 describe("gifts.routes", () => {
+  it("GET /settings returns mode and syncedDiscretionaryItemId", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "GET", url: "/api/gifts/settings" });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ mode: "synced", syncedDiscretionaryItemId: null });
+    expect(giftsServiceMock.getOrCreateSettings).toHaveBeenCalledWith("hh-1");
+  });
+
   it("GET /state delegates to getPlannerState with current year by default", async () => {
     const app = await buildApp();
     const res = await app.inject({ method: "GET", url: "/api/gifts/state" });

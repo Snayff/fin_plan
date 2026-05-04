@@ -8,6 +8,8 @@ vi.mock("framer-motion", () => ({
 vi.mock("@/hooks/useWaterfall", () => ({
   useTierUpdateItem: () => ({ mutateAsync: vi.fn(), isPending: false }),
   useConfirmWaterfallItem: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useCreatePeriod: () => ({ mutateAsync: vi.fn(), isPending: false }),
+  useDeletePeriod: () => ({ mutateAsync: vi.fn(), isPending: false }),
 }));
 
 describe("ItemAreaRow animations", () => {

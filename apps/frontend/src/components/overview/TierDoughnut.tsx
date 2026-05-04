@@ -3,6 +3,7 @@ import { motion, useReducedMotion } from "framer-motion";
 import * as d3 from "d3";
 import type { SubcategoryTotal } from "@finplan/shared";
 import { formatCurrency } from "@/utils/format";
+import { useSettings } from "@/hooks/useSettings";
 import { generateTierColours } from "@/utils/tierColours";
 import { DoughnutLegend } from "./DoughnutLegend";
 
@@ -38,6 +39,8 @@ export function TierDoughnut({
   isSnapshot,
 }: TierDoughnutProps) {
   const shouldReduce = useReducedMotion();
+  const { data: settings } = useSettings();
+  const showPence = settings?.showPence ?? false;
   const [view, setView] = useState<ViewState>({ mode: "subcategory" });
 
   const sorted = useMemo(
@@ -128,7 +131,7 @@ export function TierDoughnut({
             fontFamily="'JetBrains Mono', monospace"
             fontWeight={500}
           >
-            {formatCurrency(view.subcategoryTotal)}
+            {formatCurrency(view.subcategoryTotal, showPence)}
           </text>
         </svg>
         <div className="flex flex-col gap-2">
@@ -174,7 +177,7 @@ export function TierDoughnut({
               <motion.path
                 key={sub.id}
                 role="button"
-                aria-label={`${sub.name}: ${formatCurrency(sub.monthlyTotal)}`}
+                aria-label={`${sub.name}: ${formatCurrency(sub.monthlyTotal, showPence)}`}
                 tabIndex={0}
                 d={pathD}
                 fill={colour}
@@ -216,7 +219,7 @@ export function TierDoughnut({
           fontFamily="'JetBrains Mono', monospace"
           fontWeight={500}
         >
-          {formatCurrency(tierTotal)}
+          {formatCurrency(tierTotal, showPence)}
         </text>
       </svg>
       <DoughnutLegend entries={legendEntries} />

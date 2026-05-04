@@ -4,6 +4,9 @@ import type {
   ResetSubcategoriesInput,
 } from "@finplan/shared";
 import { prisma } from "../config/database.js";
+import { audited } from "./audit.service.js";
+import type { ActorCtx } from "./audit.service.js";
+import { ConflictError, ValidationError } from "../utils/errors.js";
 
 const DEFAULT_SUBCATEGORIES = {
   income: [
@@ -25,7 +28,7 @@ const DEFAULT_SUBCATEGORIES = {
     { name: "Fun", sortOrder: 1 },
     { name: "Clothes", sortOrder: 2 },
     { name: "Gifts", sortOrder: 3, isLocked: true },
-    { name: "Savings", sortOrder: 4 },
+    { name: "Savings", sortOrder: 4, isLocked: true },
     { name: "Other", sortOrder: 5 },
   ],
 } as const;
@@ -118,19 +121,19 @@ export const subcategoryService = {
 
     // ── Validation ────────────────────────────────────────────────────────────
     if (desired.length > 7) {
-      throw new Error("Maximum 7 subcategories per tier");
+      throw new ValidationError("Maximum 7 subcategories per tier");
     }
 
     // Other must be present
     const otherEntry = desired.find((s) => s.name === "Other");
     if (!otherEntry) {
-      throw new Error("'Other' subcategory must be present in every tier");
+      throw new ValidationError("'Other' subcategory must be present in every tier");
     }
 
     // Other must be last by sortOrder
     const maxSort = Math.max(...desired.map((s) => s.sortOrder));
     if (otherEntry.sortOrder !== maxSort) {
-      throw new Error("'Other' must be last in sort order");
+      throw new ValidationError("'Other' must be last in sort order");
     }
 
     // No new subcategory named "Other" (case-insensitive) besides the existing one
@@ -138,13 +141,13 @@ export const subcategoryService = {
       (s) => s.name.toLowerCase() === "other" && s !== otherEntry
     );
     if (otherDuplicates.length > 0) {
-      throw new Error("The name 'Other' is reserved");
+      throw new ValidationError("The name 'Other' is reserved");
     }
 
     // Unique names (case-insensitive)
     const lowerNames = desired.map((s) => s.name.toLowerCase());
     if (new Set(lowerNames).size !== lowerNames.length) {
-      throw new Error("Subcategory names must be unique within a tier");
+      throw new ValidationError("Subcategory names must be unique within a tier");
     }
 
     // Fetch current state
@@ -158,22 +161,23 @@ export const subcategoryService = {
       if (!ex.isLocked) continue;
       const match = desired.find((d) => d.id === ex.id);
       if (!match) {
-        throw new Error(`Cannot remove locked subcategory "${ex.name}"`);
+        throw new ValidationError(`Cannot remove locked subcategory "${ex.name}"`);
       }
       if (match.name !== ex.name) {
-        throw new Error(`Cannot rename locked subcategory "${ex.name}"`);
+        throw new ValidationError(`Cannot rename locked subcategory "${ex.name}"`);
       }
     }
 
-    // Validate reassignment IDs belong to this household's tier
+    // Validate reassignment IDs belong to this household's tier (DB-sourced only)
     const existingIds = new Set(existing.map((s) => s.id));
-    const desiredIds = new Set(desired.filter((d) => d.id).map((d) => d.id!));
     for (const r of reassignments) {
       if (!existingIds.has(r.fromSubcategoryId)) {
-        throw new Error(`Reassignment source "${r.fromSubcategoryId}" not found in household`);
+        throw new ValidationError(
+          `Reassignment source "${r.fromSubcategoryId}" not found in household`
+        );
       }
-      if (!desiredIds.has(r.toSubcategoryId) && !existingIds.has(r.toSubcategoryId)) {
-        throw new Error(`Reassignment destination "${r.toSubcategoryId}" not found`);
+      if (!existingIds.has(r.toSubcategoryId)) {
+        throw new ValidationError(`Reassignment destination "${r.toSubcategoryId}" not found`);
       }
     }
 
@@ -230,6 +234,46 @@ export const subcategoryService = {
     });
   },
 
+  async create(householdId: string, tier: WaterfallTier, name: string, ctx?: ActorCtx) {
+    const existing = await prisma.subcategory.count({ where: { householdId, tier } });
+    if (existing >= 7) {
+      throw new ValidationError("Maximum 7 subcategories per tier");
+    }
+    const maxSort = await prisma.subcategory.aggregate({
+      where: { householdId, tier },
+      _max: { sortOrder: true },
+    });
+    const nextSort = (maxSort._max.sortOrder ?? -1) + 1;
+    const data = {
+      householdId,
+      tier,
+      name: name.trim(),
+      sortOrder: nextSort,
+      isLocked: false,
+      isDefault: false,
+      lockedByPlanner: false,
+    };
+    try {
+      if (ctx) {
+        return await audited({
+          db: prisma,
+          ctx,
+          action: "CREATE_SUBCATEGORY",
+          resource: "subcategory",
+          resourceId: "",
+          beforeFetch: async () => null,
+          mutation: async (tx) => tx.subcategory.create({ data }),
+        });
+      }
+      return await prisma.subcategory.create({ data });
+    } catch (err: any) {
+      if (err.code === "P2002") {
+        throw new ConflictError("A subcategory with that name already exists");
+      }
+      throw err;
+    }
+  },
+
   getDefaults() {
     return DEFAULT_SUBCATEGORIES;
   },
@@ -251,7 +295,9 @@ export const subcategoryService = {
     // Validate reassignment source IDs
     for (const r of reassignments) {
       if (!existingIds.has(r.fromSubcategoryId)) {
-        throw new Error(`Reassignment source "${r.fromSubcategoryId}" not found in household`);
+        throw new ValidationError(
+          `Reassignment source "${r.fromSubcategoryId}" not found in household`
+        );
       }
     }
 

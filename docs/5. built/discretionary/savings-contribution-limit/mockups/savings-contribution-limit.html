@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Savings contribution limit — mockup</title>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=Nunito+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --background: #080a14;
+    --card: #0d1120;
+    --foreground: rgba(238, 242, 255, 0.92);
+    --text-secondary: rgba(238, 242, 255, 0.65);
+    --text-tertiary: rgba(238, 242, 255, 0.4);
+    --text-muted: rgba(238, 242, 255, 0.25);
+    --border: #1a1f35;
+    --border-subtle: rgba(238, 242, 255, 0.05);
+    --border-soft: rgba(238, 242, 255, 0.1);
+    --page-accent: #8b5cf6;
+    --attention: #f59e0b;
+    --attention-bg: rgba(245, 158, 11, 0.04);
+    --attention-border: rgba(245, 158, 11, 0.18);
+    --tier-discretionary: #a855f7;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: "Nunito Sans", system-ui, sans-serif;
+    margin: 0;
+    padding: 0;
+  }
+  .page {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 32px 64px;
+  }
+  h1 {
+    font-family: "Outfit", sans-serif;
+    font-weight: 800;
+    font-size: 24px;
+    margin: 0 0 6px;
+    background: linear-gradient(135deg, #0ea5e9, #a855f7);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  h2 {
+    font-family: "Outfit", sans-serif;
+    font-weight: 700;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin: 36px 0 12px;
+  }
+  .subtitle {
+    font-size: 13px;
+    color: var(--text-tertiary);
+    margin: 0 0 24px;
+  }
+  .num { font-family: "JetBrains Mono", monospace; }
+
+  .panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    background: var(--card);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .panel { min-height: 320px; }
+  .panel + .panel { border-left: 1px solid var(--border); }
+  .panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .panel-title {
+    font-family: "Outfit", sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: var(--foreground);
+  }
+  .panel-meta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-tertiary);
+  }
+  .accent-num { color: var(--page-accent); font-family: "JetBrains Mono", monospace; }
+
+  .row {
+    border-bottom: 1px solid var(--border-subtle);
+    padding: 12px 16px 12px 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-left: 2px solid transparent;
+  }
+  .row.active {
+    background: rgba(139, 92, 246, 0.04);
+    border-left-color: var(--page-accent);
+  }
+  .row .dot-col { width: 10px; display: flex; justify-content: center; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--attention); }
+  .row .body { flex: 1; display: flex; flex-direction: column; gap: 2px; }
+  .row .name { font-size: 14px; color: var(--text-secondary); }
+  .row .meta { font-size: 11px; color: var(--text-tertiary); }
+  .contrib { color: rgba(139, 92, 246, 0.75); margin-left: 6px; font-weight: 500; font-size: 10px; font-family: "JetBrains Mono", monospace; }
+  .row .right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+  .row .balance { font-family: "JetBrains Mono", monospace; font-size: 14px; color: var(--text-secondary); }
+  .row .date { font-size: 11px; color: var(--text-tertiary); }
+
+  .detail-section {
+    padding: 14px 16px 16px;
+  }
+  .label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    display: block;
+  }
+  .row-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    padding: 3px 0;
+  }
+  .row-line .v {
+    font-family: "JetBrains Mono", monospace;
+    color: var(--text-secondary);
+  }
+  .row-line .v small { color: var(--text-muted); font-size: 10px; margin-left: 4px; }
+  .total {
+    border-top: 1px solid var(--border-subtle);
+    padding-top: 6px !important;
+    margin-top: 4px;
+    color: var(--text-secondary) !important;
+  }
+  .total span:last-child { color: rgba(139, 92, 246, 0.85); font-weight: 500; }
+  .total.over span:last-child { color: var(--attention); }
+  .actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 14px;
+  }
+  .btn {
+    border: 1px solid var(--border-soft);
+    background: transparent;
+    color: var(--text-tertiary);
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 11px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .btn-primary {
+    background: rgba(139, 92, 246, 0.2);
+    color: var(--page-accent);
+    border: none;
+  }
+
+  .capacity-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .capacity-fill {
+    height: 100%;
+    background: var(--tier-discretionary);
+    border-radius: 2px;
+  }
+  .capacity-fill.over { background: var(--attention); }
+  .capacity-meta {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 4px;
+  }
+  .capacity-meta.over { color: var(--attention); }
+
+  .nudge {
+    background: var(--attention-bg);
+    border: 1px solid var(--attention-border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin: 14px 16px 0;
+    font-size: 12px;
+    line-height: 1.55;
+    color: var(--text-secondary);
+  }
+  .nudge .head { display: flex; align-items: flex-start; gap: 8px; }
+  .nudge .head .dot { margin-top: 6px; flex-shrink: 0; }
+  .nudge strong { color: var(--foreground); font-weight: 700; }
+  .over { color: var(--attention); }
+
+  .form {
+    padding: 14px 16px 14px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    border-left: 2px solid var(--page-accent);
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--text-muted);
+  }
+  .field input, .field select {
+    border: 1px solid var(--border-soft);
+    background: rgba(255, 255, 255, 0.04);
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 13px;
+    color: var(--text-secondary);
+    font-family: inherit;
+  }
+  .field .hint { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+  .field-new {
+    background: rgba(139, 92, 246, 0.06);
+    margin: -8px -16px -8px -28px;
+    padding: 10px 16px 10px 28px;
+    border-left: 2px solid rgba(139, 92, 246, 0.5);
+  }
+  .new-tag {
+    background: var(--page-accent);
+    color: white;
+    font-size: 9px;
+    padding: 1px 5px;
+    border-radius: 3px;
+    margin-left: 6px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+  }
+  .form-actions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+  }
+
+  .legend {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 20px;
+    font-size: 12px;
+    color: var(--text-tertiary);
+    line-height: 1.8;
+    margin-top: 32px;
+  }
+  .legend strong { color: var(--foreground); font-weight: 700; }
+  .legend code {
+    font-family: "JetBrains Mono", monospace;
+    color: var(--page-accent);
+    font-size: 11px;
+    background: rgba(139, 92, 246, 0.08);
+    padding: 1px 5px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<h1>Savings contribution limit — UI mockup</h1>
+<p class="subtitle">Four states shown in finplan's two-panel pattern. Left = Assets list (Savings). Right = AccountItemArea detail panel.</p>
+
+<h2>State 1 — Spare capacity, higher-rate target exists (the nudge case)</h2>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Savings</div>
+      <div class="panel-meta">
+        <span>3 items</span>
+        <span class="accent-num">£14,250.00</span>
+      </div>
+    </div>
+    <div class="row active">
+      <div class="dot-col"><div class="dot" title="Spare capacity"></div></div>
+      <div class="body">
+        <div class="name">Lloyds Club Regular Saver</div>
+        <div class="meta">Savings · Alice <span class="contrib">+£125/mo</span></div>
+      </div>
+      <div class="right">
+        <div class="balance">£1,500.00</div>
+        <div class="date">12 Apr 2026</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="dot-col"></div>
+      <div class="body">
+        <div class="name">Marcus Easy Access</div>
+        <div class="meta">Savings · Alice <span class="contrib">+£80/mo</span></div>
+      </div>
+      <div class="right">
+        <div class="balance">£8,250.00</div>
+        <div class="date">18 Apr 2026</div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="dot-col"></div>
+      <div class="body">
+        <div class="name">First Direct Regular Saver</div>
+        <div class="meta">Savings · Household</div>
+      </div>
+      <div class="right">
+        <div class="balance">£4,500.00</div>
+        <div class="date">20 Apr 2026</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Lloyds Club Regular Saver</div>
+      <div class="panel-meta"><span>Savings</span></div>
+    </div>
+
+    <div class="nudge">
+      <div class="head">
+        <div class="dot"></div>
+        <div>
+          <span class="num"><strong>£75/mo</strong></span> spare against this account's
+          <span class="num"><strong>£200/mo</strong></span> limit. <strong>Marcus Easy Access</strong>
+          pays <span class="num"><strong>4.6%</strong></span> vs
+          <span class="num"><strong>3.5%</strong></span> here — redirecting could earn
+          ~<span class="num"><strong>£10/yr</strong></span> more.
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <span class="label">Monthly contributions</span>
+      <div class="row-line"><span>Regular saver allocation</span><span class="v">£125.00</span></div>
+      <div class="row-line total"><span>Total/mo</span><span>£125.00 / £200.00</span></div>
+      <div class="capacity-bar"><div class="capacity-fill" style="width: 62.5%"></div></div>
+      <div class="capacity-meta">62% of monthly limit used · £75/mo spare</div>
+      <div class="actions">
+        <button class="btn">Record balance</button>
+        <button class="btn">Edit</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<h2>State 2 — Limit set, fully used, no nudge (silence = approval)</h2>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Savings</div>
+      <div class="panel-meta"><span>3 items</span><span class="accent-num">£14,250.00</span></div>
+    </div>
+    <div class="row active">
+      <div class="dot-col"></div>
+      <div class="body">
+        <div class="name">Lloyds Club Regular Saver</div>
+        <div class="meta">Savings · Alice <span class="contrib">+£200/mo</span></div>
+      </div>
+      <div class="right"><div class="balance">£1,500.00</div><div class="date">12 Apr 2026</div></div>
+    </div>
+    <div class="row">
+      <div class="dot-col"></div>
+      <div class="body">
+        <div class="name">Marcus Easy Access</div>
+        <div class="meta">Savings · Alice <span class="contrib">+£80/mo</span></div>
+      </div>
+      <div class="right"><div class="balance">£8,250.00</div><div class="date">18 Apr 2026</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Lloyds Club Regular Saver</div>
+      <div class="panel-meta"><span>Savings</span></div>
+    </div>
+    <div class="detail-section">
+      <span class="label">Monthly contributions</span>
+      <div class="row-line"><span>Regular saver allocation</span><span class="v">£200.00</span></div>
+      <div class="row-line total"><span>Total/mo</span><span>£200.00 / £200.00</span></div>
+      <div class="capacity-bar"><div class="capacity-fill" style="width: 100%"></div></div>
+      <div class="capacity-meta">100% of monthly limit used</div>
+      <div class="actions"><button class="btn">Record balance</button><button class="btn">Edit</button></div>
+    </div>
+  </div>
+</div>
+
+<h2>State 3 — Over-cap (informational, never blocking)</h2>
+<div class="panels">
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Savings</div>
+      <div class="panel-meta"><span>3 items</span><span class="accent-num">£14,250.00</span></div>
+    </div>
+    <div class="row active">
+      <div class="dot-col"><div class="dot" title="Over cap"></div></div>
+      <div class="body">
+        <div class="name">Lloyds Club Regular Saver</div>
+        <div class="meta">Savings · Alice <span class="contrib">+£250/mo</span></div>
+      </div>
+      <div class="right"><div class="balance">£1,500.00</div><div class="date">12 Apr 2026</div></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-header">
+      <div class="panel-title">Lloyds Club Regular Saver</div>
+      <div class="panel-meta"><span>Savings</span></div>
+    </div>
+    <div class="nudge">
+      <div class="head">
+        <div class="dot"></div>
+        <div>
+          Linked contributions total <span class="num"><strong>£250/mo</strong></span> —
+          <strong class="over">£50 over</strong> this account's
+          <span class="num"><strong>£200/mo</strong></span> limit. The cap is set on the account;
+          review the linked discretionary items if this is unintended.
+        </div>
+      </div>
+    </div>
+    <div class="detail-section">
+      <span class="label">Monthly contributions</span>
+      <div class="row-line"><span>Bonus pot</span><span class="v">£150.00</span></div>
+      <div class="row-line"><span>Annual ISA top-up</span><span class="v">£100.00 <small>(£1,200/yr ÷12)</small></span></div>
+      <div class="row-line total over"><span>Total/mo</span><span>£250.00 / £200.00</span></div>
+      <div class="capacity-bar"><div class="capacity-fill over" style="width: 100%"></div></div>
+      <div class="capacity-meta over">Over cap by £50/mo</div>
+      <div class="actions"><button class="btn">Record balance</button><button class="btn">Edit</button></div>
+    </div>
+  </div>
+</div>
+
+<h2>State 4 — AccountForm with the new field (Savings type only)</h2>
+<div class="panels" style="grid-template-columns: 1fr; max-width: 540px;">
+  <div class="panel">
+    <div class="panel-header"><div class="panel-title">Edit · Lloyds Club Regular Saver</div></div>
+    <div class="form">
+      <div class="field">
+        <label>Name *</label>
+        <input value="Lloyds Club Regular Saver" />
+      </div>
+      <div class="field">
+        <label>Assigned to</label>
+        <select><option>Alice</option></select>
+      </div>
+      <div class="field">
+        <label>Growth rate override (%)</label>
+        <input value="3.5" />
+        <span class="hint">Leave blank to use household default (Default: 4%)</span>
+      </div>
+      <div class="field field-new">
+        <label>Monthly contribution limit (optional)<span class="new-tag">NEW</span></label>
+        <input value="200" placeholder="£0.00" />
+        <span class="hint">Used to flag spare capacity and rate-optimisation nudges. Savings accounts only.</span>
+      </div>
+      <div class="form-actions">
+        <button class="btn">Cancel</button>
+        <button class="btn btn-primary">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="legend">
+  <strong>Pattern compliance notes</strong><br />
+  · Nudge appears in the <strong>right panel only</strong> as a <code>NudgeCard</code> — never as an inline tag on rows (anchor #13).<br />
+  · Row dot reuses the existing <code>attention</code> amber pattern — single colour, single meaning ("noteworthy"). Disambiguated by the right panel.<br />
+  · Language is arithmetic-only: spare amount, two rates, annual £ uplift. No "should", no recommendations (anchor #9).<br />
+  · Over-cap is informational, never blocks save (anchor #12).<br />
+  · The capacity meter uses <code>tier-discretionary</code> purple normally (Savings is a discretionary destination) and switches to <code>attention</code> amber only when over-cap.<br />
+  · Form field hidden unless <code>type === "Savings"</code>.
+</div>
+
+</div>
+</body>
+</html>

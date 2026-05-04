@@ -5,11 +5,15 @@ import { Toaster } from "@/components/common/Toast";
 import { useQueryClient } from "@tanstack/react-query";
 import { useAuthStore } from "@/stores/authStore";
 import { HouseholdSwitcher } from "./HouseholdSwitcher";
+import { ProfileAvatar } from "./ProfileAvatar";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useStaleDataBanner } from "@/hooks/useStaleDataBanner";
 import { StaleDataBanner } from "@/components/common/StaleDataBanner";
 import { cn } from "@/lib/utils";
 import { GlossaryPopoverProvider } from "@/components/help/GlossaryPopoverContext";
+import { SearchTriggerIcon } from "@/features/search/SearchTriggerIcon";
+import { SearchPalette } from "@/features/search/SearchPalette";
+import { useSearchHotkey } from "@/features/search/useSearchHotkey";
 
 const NAV_ITEMS_GROUP1 = [
   { to: "/overview", label: "Overview", colorClass: "text-page-accent" },
@@ -30,12 +34,13 @@ const NAV_ITEMS_GROUP3 = [
   { to: "/help", label: "Help", colorClass: "text-foreground" },
 ] as const;
 
-const SETTINGS_ITEM = { to: "/settings", label: "Settings", colorClass: "text-foreground" };
-
 export default function Layout({ children }: { children: ReactNode }) {
   const logout = useAuthStore((s) => s.logout);
+  const userId = useAuthStore((s) => s.user?.id ?? null);
   const navigate = useNavigate();
   const [navOpen, setNavOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  useSearchHotkey(() => setSearchOpen(true));
 
   const handleSignOut = useCallback(async () => {
     await logout();
@@ -80,26 +85,24 @@ export default function Layout({ children }: { children: ReactNode }) {
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
               <nav className="flex flex-col gap-1 p-4 pt-8">
-                {[...NAV_ITEMS_GROUP1, ...NAV_ITEMS_GROUP2, ...NAV_ITEMS_GROUP3, SETTINGS_ITEM].map(
-                  (item) => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      onClick={() => setNavOpen(false)}
-                      className={({ isActive }) =>
-                        cn(
-                          "px-3 py-2 rounded text-sm font-medium transition-colors",
-                          item.colorClass,
-                          isActive
-                            ? "opacity-100 bg-accent/10"
-                            : "opacity-70 hover:opacity-90 hover:bg-accent/5"
-                        )
-                      }
-                    >
-                      {item.label}
-                    </NavLink>
-                  )
-                )}
+                {[...NAV_ITEMS_GROUP1, ...NAV_ITEMS_GROUP2, ...NAV_ITEMS_GROUP3].map((item) => (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    onClick={() => setNavOpen(false)}
+                    className={({ isActive }) =>
+                      cn(
+                        "px-3 py-2 rounded text-sm font-medium transition-colors",
+                        item.colorClass,
+                        isActive
+                          ? "opacity-100 bg-accent/10"
+                          : "opacity-70 hover:opacity-90 hover:bg-accent/5"
+                      )
+                    }
+                  >
+                    {item.label}
+                  </NavLink>
+                ))}
                 <div className="border-t mt-4 pt-4 space-y-2">
                   <button
                     onClick={() => {
@@ -184,21 +187,9 @@ export default function Layout({ children }: { children: ReactNode }) {
             </NavLink>
           ))}
           <div className="flex items-center gap-3 ml-auto">
+            <SearchTriggerIcon onOpen={() => setSearchOpen(true)} />
             <HouseholdSwitcher />
-            <NavLink
-              to={SETTINGS_ITEM.to}
-              className={({ isActive }) =>
-                cn(
-                  "relative pb-0.5 text-sm font-medium transition-colors duration-150",
-                  SETTINGS_ITEM.colorClass,
-                  isActive
-                    ? "opacity-100 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:rounded-full after:bg-current"
-                    : "opacity-70 hover:opacity-90"
-                )
-              }
-            >
-              {SETTINGS_ITEM.label}
-            </NavLink>
+            <ProfileAvatar />
           </div>
         </nav>
       </header>
@@ -211,6 +202,7 @@ export default function Layout({ children }: { children: ReactNode }) {
       </main>
 
       <Toaster />
+      {userId && <SearchPalette open={searchOpen} onOpenChange={setSearchOpen} userId={userId} />}
     </div>
   );
 }

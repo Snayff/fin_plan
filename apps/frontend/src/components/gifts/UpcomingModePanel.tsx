@@ -50,7 +50,7 @@ export function UpcomingModePanel({ year, onNavigateToGifts }: Props) {
           </span>
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 min-h-0 overflow-y-auto p-6">
         <CalloutGrid callouts={data.callouts} />
         {!hasRows ? (
           <div className="mt-6">

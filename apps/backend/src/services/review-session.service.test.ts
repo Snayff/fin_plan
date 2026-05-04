@@ -22,9 +22,12 @@ describe("reviewSessionService.getSession", () => {
 
 describe("reviewSessionService.createOrResetSession", () => {
   it("upserts with reset values", async () => {
+    const ctx = { householdId: "hh-1", actorId: "user-1", actorName: "Test" };
+    prismaMock.reviewSession.findUnique.mockResolvedValue(null);
     prismaMock.reviewSession.upsert.mockResolvedValue({ householdId: "hh-1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await reviewSessionService.createOrResetSession("hh-1");
+    await reviewSessionService.createOrResetSession("hh-1", ctx);
 
     expect(prismaMock.reviewSession.upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -63,12 +66,14 @@ describe("reviewSessionService.createOrResetSession with audited()", () => {
     );
   });
 
-  it("does not write AuditLog when actorCtx is absent (backward compat)", async () => {
+  it("always writes AuditLog (ctx is required)", async () => {
+    prismaMock.reviewSession.findUnique.mockResolvedValue(null);
     prismaMock.reviewSession.upsert.mockResolvedValue({ householdId: "hh-1" } as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
 
-    await reviewSessionService.createOrResetSession("hh-1");
+    await reviewSessionService.createOrResetSession("hh-1", actor);
 
-    expect(prismaMock.auditLog.create).not.toHaveBeenCalled();
+    expect(prismaMock.auditLog.create).toHaveBeenCalled();
   });
 });
 

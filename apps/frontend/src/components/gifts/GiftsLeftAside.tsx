@@ -23,7 +23,7 @@ export function GiftsLeftAside({ mode, onModeChange, budget, readOnly }: Props) 
       <PageHeader title="Gifts" />
       <div className="flex-1 overflow-y-auto">
         <GiftsBudgetSummary budget={budget} readOnly={readOnly} />
-        <nav className="mt-2 flex flex-col">
+        <nav aria-label="Gift modes" className="mt-2 flex flex-col">
           {TABS.map((tab) => {
             const isActive = mode === tab.id;
             return (

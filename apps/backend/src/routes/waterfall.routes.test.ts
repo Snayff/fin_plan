@@ -2,13 +2,13 @@ import { describe, it, expect, mock, beforeEach, beforeAll, afterAll } from "bun
 import type { FastifyInstance } from "fastify";
 import { buildTestApp } from "../test/helpers/fastify";
 import { errorHandler } from "../middleware/errorHandler";
-import { AuthenticationError } from "../utils/errors";
+import { AuthenticationError, ConflictError } from "../utils/errors";
 
 const waterfallServiceMock = {
   getWaterfallSummary: mock(() =>
     Promise.resolve({
-      income: { total: 0, byType: [], monthly: [], annual: [], oneOff: [] },
-      committed: { monthlyTotal: 0, monthlyAvg12: 0, bills: [], yearlyBills: [] },
+      income: { total: 0, byType: [], monthly: [], nonMonthly: [], oneOff: [] },
+      committed: { monthlyTotal: 0, monthlyAvg12: 0, bills: [], nonMonthlyBills: [] },
       discretionary: { total: 0, categories: [], savings: { total: 0, allocations: [] } },
       surplus: { amount: 0, percentOfIncome: 0 },
     })
@@ -87,6 +87,20 @@ const subcategoryServiceMock = {
   batchSave: mock(() => Promise.resolve()),
   getItemCounts: mock(() => Promise.resolve({})),
   resetToDefaults: mock(() => Promise.resolve()),
+  create: mock(() =>
+    Promise.resolve({
+      id: "sub-new",
+      householdId: "hh-1",
+      tier: "committed",
+      name: "Subscriptions",
+      sortOrder: 7,
+      isLocked: false,
+      isDefault: false,
+      lockedByPlanner: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    })
+  ),
   getDefaults: mock(() => ({
     income: [
       { name: "Salary", sortOrder: 0 },
@@ -139,8 +153,8 @@ afterAll(async () => {
 });
 
 const mockSummary = {
-  income: { total: 5000, byType: [], monthly: [], annual: [], oneOff: [] },
-  committed: { monthlyTotal: 1000, monthlyAvg12: 100, bills: [], yearlyBills: [] },
+  income: { total: 5000, byType: [], monthly: [], nonMonthly: [], oneOff: [] },
+  committed: { monthlyTotal: 1000, monthlyAvg12: 100, bills: [], nonMonthlyBills: [] },
   discretionary: { total: 500, categories: [], savings: { total: 0, allocations: [] } },
   surplus: { amount: 3400, percentOfIncome: 68 },
 };
@@ -152,7 +166,7 @@ const mockIncomeSource = {
   frequency: "monthly",
   incomeType: "salary",
   dueDate: new Date("2026-01-01"),
-  ownerId: null,
+  memberId: null,
   sortOrder: 0,
   lastReviewedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
@@ -163,7 +177,7 @@ const mockCommittedBill = {
   id: "bill-1",
   householdId: "hh-1",
   name: "Rent",
-  ownerId: null,
+  memberId: null,
   sortOrder: 0,
   lastReviewedAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
@@ -260,6 +274,18 @@ beforeEach(() => {
   subcategoryServiceMock.seedDefaults.mockResolvedValue(undefined as any);
   subcategoryServiceMock.getDefaultSubcategoryId.mockResolvedValue("sub-other" as any);
   subcategoryServiceMock.getSubcategoryIdByName.mockResolvedValue(null as any);
+  subcategoryServiceMock.create.mockResolvedValue({
+    id: "sub-new",
+    householdId: "hh-1",
+    tier: "committed",
+    name: "Subscriptions",
+    sortOrder: 7,
+    isLocked: false,
+    isDefault: false,
+    lockedByPlanner: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  } as any);
 
   periodServiceMock.listPeriods.mockResolvedValue([] as any);
   periodServiceMock.createPeriod.mockResolvedValue({ id: "p1", amount: 0 } as any);
@@ -783,6 +809,79 @@ describe("GET /api/waterfall/subcategories/:tier/counts", () => {
       headers: { authorization: "Bearer valid-token" },
     });
 
+    expect(res.statusCode).toBe(400);
+  });
+});
+
+describe("POST /api/waterfall/subcategories/:tier", () => {
+  it("creates a new subcategory with unlocked/non-default flags", async () => {
+    subcategoryServiceMock.create.mockResolvedValue({
+      id: "sub-new",
+      householdId: "hh-1",
+      tier: "committed",
+      name: "Subscriptions",
+      sortOrder: 7,
+      isLocked: false,
+      isDefault: false,
+      lockedByPlanner: false,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/subcategories/committed",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { name: "Subscriptions" },
+    });
+    expect(res.statusCode).toBe(201);
+    const body = res.json();
+    expect(body.name).toBe("Subscriptions");
+    expect(body.tier).toBe("committed");
+    expect(body.isLocked).toBe(false);
+    expect(body.isDefault).toBe(false);
+    expect(body.householdId).toBe("hh-1");
+  });
+
+  it("rejects duplicate names in same tier with 409", async () => {
+    const dupErr = new ConflictError("A subcategory with that name already exists");
+    subcategoryServiceMock.create.mockRejectedValue(dupErr);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/subcategories/committed",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { name: "Subscriptions" },
+    });
+    expect(res.statusCode).toBe(409);
+  });
+
+  it("rejects without auth", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/subcategories/income",
+      payload: { name: "Foo" },
+    });
+    expect(res.statusCode).toBe(401);
+  });
+
+  it("rejects invalid tier with 400", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/subcategories/surplus",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { name: "Foo" },
+    });
+    expect(res.statusCode).toBe(400);
+  });
+
+  it("rejects blank name with 400", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/subcategories/income",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { name: "  " },
+    });
     expect(res.statusCode).toBe(400);
   });
 });

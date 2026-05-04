@@ -1,0 +1,192 @@
+<h2>Tooltip — item-level shortfall</h2>
+<p class="subtitle">Detection now per-item: "would paying this item push the balance below £0?" Tooltip lists the uncovered items.</p>
+
+<style>
+  .stage {
+    background: #0e1220;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 0;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    color: #e6e8ee;
+  }
+  .tier-name {
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    font-size: 14px;
+    text-transform: uppercase;
+    color: #6366f1;
+  }
+  .num { font-variant-numeric: tabular-nums; font-size: 13px; color: rgba(230,232,238,0.7); }
+  .strip {
+    padding: 8px 16px;
+    background: rgba(245,158,11,0.04);
+    border-bottom: 1px solid rgba(245,158,11,0.18);
+    border-top: 1px solid rgba(245,158,11,0.08);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #f59e0b;
+    border-radius: 4px;
+    font-variant-numeric: tabular-nums;
+  }
+  .strip strong { color: #f59e0b; font-variant-numeric: tabular-nums; }
+  .dot {
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #f59e0b;
+    flex-shrink: 0;
+  }
+  .tooltip {
+    margin-top: 10px;
+    background: #1a1f2e;
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-size: 12px;
+    color: rgba(230,232,238,0.85);
+    line-height: 1.55;
+    width: 320px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+    position: relative;
+  }
+  .tooltip::before {
+    content: "";
+    position: absolute;
+    top: -5px;
+    left: 24px;
+    width: 10px;
+    height: 10px;
+    background: #1a1f2e;
+    border-left: 1px solid rgba(255,255,255,0.08);
+    border-top: 1px solid rgba(255,255,255,0.08);
+    transform: rotate(45deg);
+  }
+  .tooltip strong { color: #e6e8ee; font-variant-numeric: tabular-nums; }
+  .tooltip .amber { color: #f59e0b; font-variant-numeric: tabular-nums; }
+  .lede {
+    font-size: 12px;
+    color: rgba(230,232,238,0.85);
+    margin: 0 0 10px;
+  }
+  .item {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 12px;
+    padding: 5px 0;
+    align-items: baseline;
+    font-size: 11.5px;
+  }
+  .item .name { color: rgba(230,232,238,0.85); }
+  .item .when { color: rgba(230,232,238,0.45); font-variant-numeric: tabular-nums; }
+  .item .amt { color: #f59e0b; font-variant-numeric: tabular-nums; font-weight: 600; }
+  .more { color: rgba(230,232,238,0.45); font-size: 11px; margin-top: 4px; padding-top: 6px; border-top: 1px solid rgba(255,255,255,0.05); }
+  .center { display: flex; flex-direction: column; align-items: center; }
+  .variants {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    margin-top: 24px;
+  }
+  .variant-label {
+    font-size: 11px;
+    color: rgba(230,232,238,0.5);
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-top: 12px;
+  }
+  .col { display: flex; flex-direction: column; align-items: center; }
+  .strip-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 16px;
+    margin: 24px 0 12px;
+  }
+</style>
+
+<h3 style="margin-top:24px;">Strip text — pick one</h3>
+<div class="strip-options">
+  <div class="stage">
+    <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;">
+      <span class="tier-name">COMMITTED</span><span class="num">£4,817</span>
+    </div>
+    <div class="strip"><span class="dot"></span><strong>2 items</strong> not covered in 30 days</div>
+  </div>
+  <div class="stage">
+    <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;">
+      <span class="tier-name">COMMITTED</span><span class="num">£4,817</span>
+    </div>
+    <div class="strip"><span class="dot"></span>Cashflow won't cover <strong>2 items</strong></div>
+  </div>
+  <div class="stage">
+    <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;">
+      <span class="tier-name">COMMITTED</span><span class="num">£4,817</span>
+    </div>
+    <div class="strip"><span class="dot"></span>Shortfall: <strong>2 items</strong> in next 30 days</div>
+  </div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;text-align:center;font-size:11px;color:rgba(230,232,238,0.5);text-transform:uppercase;letter-spacing:0.06em;">
+  <div>S1 — items first</div>
+  <div>S2 — verb first</div>
+  <div>S3 — labelled "shortfall"</div>
+</div>
+
+<h3 style="margin-top:36px;">Tooltip — pick one</h3>
+
+<div class="variants">
+
+  <div class="col">
+    <div class="stage" style="width:320px;">
+      <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;">
+        <span class="tier-name">COMMITTED</span><span class="num">£4,817</span>
+      </div>
+      <div class="strip"><span class="dot"></span>Cashflow won't cover <strong>2 items</strong></div>
+    </div>
+    <div class="tooltip">
+      <p class="lede">Some items won't be covered by your cashflow.</p>
+      <div class="item"><span class="name">Council Tax</span><span class="when">8 May</span><span class="amt">£420</span></div>
+      <div class="item"><span class="name">Car insurance</span><span class="when">14 May</span><span class="amt">£540</span></div>
+    </div>
+    <div class="variant-label">U1 — list only</div>
+  </div>
+
+  <div class="col">
+    <div class="stage" style="width:320px;">
+      <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;">
+        <span class="tier-name">COMMITTED</span><span class="num">£4,817</span>
+      </div>
+      <div class="strip"><span class="dot"></span>Cashflow won't cover <strong>2 items</strong></div>
+    </div>
+    <div class="tooltip">
+      <p class="lede">Some items won't be covered by your cashflow.</p>
+      <div class="item"><span class="name">Council Tax</span><span class="when">8 May</span><span class="amt">£420</span></div>
+      <div class="item"><span class="name">Car insurance</span><span class="when">14 May</span><span class="amt">£540</span></div>
+      <div class="more">Balance today <strong style="color:#e6e8ee;">£540</strong> · Lowest <strong class="amber">−£420 · 8 May</strong></div>
+    </div>
+    <div class="variant-label">U2 — list + grounding figures</div>
+  </div>
+
+</div>
+
+<h3 style="margin-top:36px;">Overflow — when many items are uncovered</h3>
+<div style="display:flex;justify-content:center;">
+  <div style="width:340px;">
+    <div class="stage">
+      <div style="padding:14px 16px 10px;display:flex;justify-content:space-between;align-items:baseline;">
+        <span class="tier-name">COMMITTED</span><span class="num">£4,817</span>
+      </div>
+      <div class="strip"><span class="dot"></span>Cashflow won't cover <strong>5 items</strong></div>
+    </div>
+    <div class="tooltip">
+      <p class="lede">Some items won't be covered by your cashflow.</p>
+      <div class="item"><span class="name">Council Tax</span><span class="when">8 May</span><span class="amt">£420</span></div>
+      <div class="item"><span class="name">Car insurance</span><span class="when">14 May</span><span class="amt">£540</span></div>
+      <div class="item"><span class="name">TV licence</span><span class="when">19 May</span><span class="amt">£170</span></div>
+      <div class="more">+ 2 more · open Forecast → Cashflow for the full list</div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:24px;">Reply with strip choice + tooltip choice, e.g. <code>S2 + U2</code>. Also confirm or change the two assumptions: <em>(a) only discrete scheduled events count, not the discretionary daily baseline; (b) cap visible items at 3 with "+ N more" overflow.</em></p>

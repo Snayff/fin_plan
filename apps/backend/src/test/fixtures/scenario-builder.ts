@@ -33,14 +33,14 @@ export interface ScenarioMemberConfig {
 export interface ScenarioIncomeConfig {
   name?: string;
   amount: number;
-  frequency?: "monthly" | "annual" | "one_off";
+  frequency?: "monthly" | "annual" | "one_off" | "weekly" | "quarterly";
   ownerIndex?: number;
 }
 
 export interface ScenarioCommittedConfig {
   name?: string;
   amount: number;
-  spendType?: "monthly" | "yearly" | "one_off";
+  spendType?: "monthly" | "yearly" | "one_off" | "weekly" | "quarterly";
 }
 
 export interface ScenarioDiscretionaryConfig {
@@ -174,7 +174,7 @@ export function buildScenario(config: ScenarioConfig = {}): Scenario {
   if (config.incomeSources) {
     for (let i = 0; i < config.incomeSources.length; i++) {
       const ic = config.incomeSources[i]!;
-      const ownerId = ic.ownerIndex !== undefined ? (users[ic.ownerIndex]?.id ?? null) : null;
+      const memberId = ic.ownerIndex !== undefined ? (members[ic.ownerIndex]?.id ?? null) : null;
       incomeSources.push(
         buildIncomeSource({
           householdId,
@@ -182,7 +182,7 @@ export function buildScenario(config: ScenarioConfig = {}): Scenario {
           name: ic.name ?? `Income ${i + 1}`,
           amount: ic.amount,
           frequency: ic.frequency ?? "monthly",
-          ownerId,
+          memberId,
           sortOrder: i,
         })
       );
@@ -231,12 +231,12 @@ export function buildScenario(config: ScenarioConfig = {}): Scenario {
   if (config.accounts) {
     for (let i = 0; i < config.accounts.length; i++) {
       const ac = config.accounts[i]!;
-      const ownerId = ac.ownerIndex !== undefined ? (users[ac.ownerIndex]?.id ?? null) : null;
+      const memberId = ac.ownerIndex !== undefined ? (members[ac.ownerIndex]?.id ?? null) : null;
       const account = buildAccount({
         householdId,
         name: ac.name ?? `Account ${i + 1}`,
         accountType: ac.accountType ?? "current",
-        ownerId,
+        memberId,
         sortOrder: i,
       });
       accounts.push(account);
@@ -258,12 +258,12 @@ export function buildScenario(config: ScenarioConfig = {}): Scenario {
   if (config.assets) {
     for (let i = 0; i < config.assets.length; i++) {
       const as_ = config.assets[i]!;
-      const ownerId = as_.ownerIndex !== undefined ? (users[as_.ownerIndex]?.id ?? null) : null;
+      const memberId = as_.ownerIndex !== undefined ? (members[as_.ownerIndex]?.id ?? null) : null;
       const asset = buildAsset({
         householdId,
         name: as_.name ?? `Asset ${i + 1}`,
         assetType: as_.assetType ?? "property",
-        ownerId,
+        memberId,
         sortOrder: i,
       });
       assets.push(asset);
@@ -311,6 +311,22 @@ export function buildMinimalScenario(): Scenario {
     incomeSources: [{ name: "Salary", amount: 3000 }],
     committedItems: [{ name: "Rent", amount: 1000 }],
     discretionaryItems: [{ name: "Groceries", amount: 200 }],
+  });
+}
+
+/** Solo owner with a weekly income source. */
+export function buildWeeklyIncomeScenario(amount: number = 520): Scenario {
+  return buildScenario({
+    householdName: "Weekly Income Household",
+    incomeSources: [{ name: "Weekly Salary", amount, frequency: "weekly" }],
+  });
+}
+
+/** Solo owner with a quarterly committed item. */
+export function buildQuarterlyBillScenario(amount: number = 300): Scenario {
+  return buildScenario({
+    householdName: "Quarterly Bill Household",
+    committedItems: [{ name: "Quarterly Service", amount, spendType: "quarterly" }],
   });
 }
 

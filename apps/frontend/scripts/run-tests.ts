@@ -7,6 +7,7 @@
  */
 
 import { Glob } from "bun";
+import { resolve } from "node:path";
 
 const preload = "./src/test/setup.ts";
 const testDir = "src";
@@ -18,9 +19,7 @@ const coverage = process.argv.includes("--coverage");
 
 // Allow filtering by pattern passed as CLI arg: `bun scripts/run-tests.ts auth`
 const filterPattern = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
-const filesToRun = filterPattern
-  ? testFiles.filter((f) => f.includes(filterPattern))
-  : testFiles;
+const filesToRun = filterPattern ? testFiles.filter((f) => f.includes(filterPattern)) : testFiles;
 
 if (filesToRun.length === 0) {
   console.log("No test files matched.");
@@ -34,13 +33,16 @@ let failed = 0;
 const failures: string[] = [];
 
 for (const file of filesToRun) {
-  const filePath = `${testDir}/${file}`;
+  // Use an absolute path so bun treats it as an exact file, not a glob pattern.
+  // Without this, `bun test src/hooks/foo.test.ts` also picks up `foo.test.tsx`
+  // in the same process, causing mock.module() leaks between files.
+  const filePath = resolve(testDir, file);
   const proc = Bun.spawn(
     ["bun", "test", ...(coverage ? ["--coverage"] : []), "--preload", preload, filePath],
     {
-    stdout: "inherit",
-    stderr: "inherit",
-    env: process.env,
+      stdout: "inherit",
+      stderr: "inherit",
+      env: process.env,
     }
   );
 
@@ -55,9 +57,7 @@ for (const file of filesToRun) {
 }
 
 console.log(`\n${"=".repeat(50)}`);
-console.log(
-  `Test files: ${passed + failed} total, ${passed} passed, ${failed} failed`
-);
+console.log(`Test files: ${passed + failed} total, ${passed} passed, ${failed} failed`);
 
 if (failures.length > 0) {
   console.log(`\nFailed files:`);

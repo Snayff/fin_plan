@@ -205,6 +205,7 @@ describe("assetsService.listAccountsByType", () => {
         lastReviewedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
+        linkedItems: [],
         balances: [
           {
             id: "b1",
@@ -222,6 +223,84 @@ describe("assetsService.listAccountsByType", () => {
 
     expect(result[0]!.currentBalance).toBe(42100);
     expect(result[0]!.balances).toHaveLength(1);
+    expect(result[0]!.monthlyContribution).toBe(0);
+    expect(result[0]!.linkedItems).toEqual([]);
+  });
+
+  it("derives monthlyContribution from active ItemAmountPeriods of linked items", async () => {
+    const ITEM_ID_1 = "item-1";
+    const ITEM_ID_2 = "item-2";
+
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: ACCOUNT_ID,
+        name: "ISA",
+        type: "Savings",
+        householdId: HOUSEHOLD_ID,
+        memberId: null,
+        growthRatePct: null,
+        lastReviewedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        linkedItems: [
+          { id: ITEM_ID_1, name: "ISA monthly", spendType: "monthly" },
+          { id: ITEM_ID_2, name: "ISA yearly top-up", spendType: "yearly" },
+        ],
+        balances: [],
+      },
+    ] as any);
+
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      {
+        id: "p1",
+        itemType: "discretionary_item",
+        itemId: ITEM_ID_1,
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 300,
+        createdAt: new Date(),
+      },
+      {
+        id: "p2",
+        itemType: "discretionary_item",
+        itemId: ITEM_ID_2,
+        startDate: new Date("2026-01-01"),
+        endDate: null,
+        amount: 1200,
+        createdAt: new Date(),
+      },
+    ] as any);
+
+    const result = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Savings");
+
+    // 300 monthly + 1200/12 yearly = 300 + 100 = 400
+    expect(result[0]!.monthlyContribution).toBe(400);
+    expect(result[0]!.linkedItems).toHaveLength(2);
+    expect(result[0]!.linkedItems[0]!.amount).toBe(300);
+    expect(result[0]!.linkedItems[1]!.amount).toBe(1200);
+  });
+
+  it("returns monthlyContribution 0 and does not query periods when no linked items", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: ACCOUNT_ID,
+        name: "Current",
+        type: "Current",
+        householdId: HOUSEHOLD_ID,
+        memberId: null,
+        growthRatePct: null,
+        lastReviewedAt: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        linkedItems: [],
+        balances: [],
+      },
+    ] as any);
+
+    const result = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Current");
+
+    expect(result[0]!.monthlyContribution).toBe(0);
+    expect(prismaMock.itemAmountPeriod.findMany).not.toHaveBeenCalled();
   });
 });
 
@@ -234,7 +313,6 @@ describe("assetsService.createAccount", () => {
       householdId: HOUSEHOLD_ID,
       memberId: null,
       growthRatePct: null,
-      monthlyContribution: 0,
       isCashflowLinked: false,
       lastReviewedAt: null,
       createdAt: new Date(),
@@ -305,5 +383,387 @@ describe("assetsService.deleteAccount", () => {
     expect(prismaMock.account.delete).toHaveBeenCalledWith({
       where: { id: ACCOUNT_ID },
     });
+  });
+});
+
+describe("assetsService.listAccountsByType — derived limit fields", () => {
+  it("derives spareMonthly, hasSpareCapacityNudge, higherRateTarget, and isOverCap", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a-low",
+        name: "Lloyds Club",
+        type: "Savings",
+        memberId: "m-1",
+        growthRatePct: 3.5,
+        monthlyContributionLimit: 200,
+        balances: [],
+        linkedItems: [{ id: "li-1", name: "Saver", spendType: "monthly" }],
+      },
+      {
+        id: "a-high",
+        name: "Marcus Easy Access",
+        type: "Savings",
+        memberId: "m-1",
+        growthRatePct: 4.6,
+        monthlyContributionLimit: null,
+        balances: [],
+        linkedItems: [],
+      },
+      {
+        id: "a-other",
+        name: "Bob's Saver",
+        type: "Savings",
+        memberId: "m-2",
+        growthRatePct: 6.0,
+        monthlyContributionLimit: null,
+        balances: [],
+        linkedItems: [],
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      { itemId: "li-1", amount: 125 },
+    ] as any);
+
+    const accounts = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Savings");
+    const low = accounts.find((a) => a.id === "a-low")!;
+    expect(low.monthlyContribution).toBe(125);
+    expect(low.spareMonthly).toBe(75);
+    expect(low.isOverCap).toBe(false);
+    expect(low.hasSpareCapacityNudge).toBe(true);
+    expect(low.higherRateTarget?.id).toBe("a-high");
+    expect(low.higherRateTarget?.growthRatePct).toBe(4.6);
+
+    const high = accounts.find((a) => a.id === "a-high")!;
+    expect(high.spareMonthly).toBeNull();
+    expect(high.hasSpareCapacityNudge).toBe(false);
+    expect(high.higherRateTarget).toBeNull();
+  });
+
+  it("flags a single linked item whose raw amount exceeds the cap", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a-1",
+        name: "Lloyds Club",
+        type: "Savings",
+        memberId: null,
+        growthRatePct: 3.5,
+        monthlyContributionLimit: 200,
+        balances: [],
+        linkedItems: [{ id: "li-yearly", name: "ISA top-up", spendType: "annual" }],
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      { itemId: "li-yearly", amount: 1200 },
+    ] as any);
+    const [acc] = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Savings");
+    expect(acc!.linkedItems[0]!.lumpSumExceedsCap).toBe(true);
+    expect(acc!.monthlyContribution).toBeCloseTo(100);
+    expect(acc!.isOverCap).toBe(false);
+  });
+
+  it("computes isOverCap and suppresses spare-capacity nudge when over-cap", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a-1",
+        name: "Lloyds Club",
+        type: "Savings",
+        memberId: null,
+        growthRatePct: 3.5,
+        monthlyContributionLimit: 200,
+        balances: [],
+        linkedItems: [{ id: "li-1", name: "Saver", spendType: "monthly" }],
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([
+      { itemId: "li-1", amount: 250 },
+    ] as any);
+    const [acc] = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Savings");
+    expect(acc!.isOverCap).toBe(true);
+    expect(acc!.hasSpareCapacityNudge).toBe(false);
+    expect(acc!.spareMonthly).toBe(-50);
+  });
+
+  it("excludes candidates whose effective rate cannot be resolved", async () => {
+    prismaMock.account.findMany.mockResolvedValue([
+      {
+        id: "a-low",
+        name: "L",
+        type: "Savings",
+        memberId: null,
+        growthRatePct: 3.5,
+        monthlyContributionLimit: 200,
+        balances: [],
+        linkedItems: [],
+      },
+      {
+        id: "a-norate",
+        name: "N",
+        type: "Savings",
+        memberId: null,
+        growthRatePct: null,
+        monthlyContributionLimit: null,
+        balances: [],
+        linkedItems: [],
+      },
+    ] as any);
+    prismaMock.itemAmountPeriod.findMany.mockResolvedValue([] as any);
+    prismaMock.householdSettings.findUnique.mockResolvedValue(null as any);
+    const [low] = await assetsService.listAccountsByType(HOUSEHOLD_ID, "Savings");
+    expect(low!.higherRateTarget).toBeNull();
+    expect(low!.hasSpareCapacityNudge).toBe(false);
+  });
+});
+
+describe("assetsService.createAccount — monthlyContributionLimit guard", () => {
+  it("rejects a non-null limit on a non-Savings account", async () => {
+    await expect(
+      assetsService.createAccount(
+        HOUSEHOLD_ID,
+        { name: "Halifax", type: "Current", monthlyContributionLimit: 200 } as any,
+        mockCtx
+      )
+    ).rejects.toThrow(/Savings/);
+  });
+
+  it("accepts a non-null limit on a Savings account", async () => {
+    prismaMock.account.create.mockResolvedValue({ id: "a-1" } as any);
+    await expect(
+      assetsService.createAccount(
+        HOUSEHOLD_ID,
+        { name: "Marcus", type: "Savings", monthlyContributionLimit: 200 } as any,
+        mockCtx
+      )
+    ).resolves.toBeDefined();
+  });
+});
+
+describe("assetsService.updateAccount — monthlyContributionLimit guard", () => {
+  it("nulls the limit when type changes away from Savings", async () => {
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: ACCOUNT_ID,
+      householdId: HOUSEHOLD_ID,
+      type: "Savings",
+      monthlyContributionLimit: 200,
+    } as any);
+    prismaMock.account.update.mockResolvedValue({ id: ACCOUNT_ID } as any);
+    await assetsService.updateAccount(HOUSEHOLD_ID, ACCOUNT_ID, { type: "Other" } as any, mockCtx);
+    const call = prismaMock.account.update.mock.calls.at(-1)?.[0];
+    expect(call?.data.monthlyContributionLimit).toBe(null);
+  });
+
+  it("rejects setting a non-null limit on a non-Savings account", async () => {
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: ACCOUNT_ID,
+      householdId: HOUSEHOLD_ID,
+      type: "Current",
+    } as any);
+    await expect(
+      assetsService.updateAccount(
+        HOUSEHOLD_ID,
+        ACCOUNT_ID,
+        { monthlyContributionLimit: 200 } as any,
+        mockCtx
+      )
+    ).rejects.toThrow(/Savings/);
+  });
+});
+
+// ── Disposal fields ───────────────────────────────────────────────────────────
+
+describe("assetsService.listAssetsByType — disposal filtering", () => {
+  const activeAsset = {
+    id: "active-1",
+    name: "Active House",
+    type: "Property",
+    householdId: HOUSEHOLD_ID,
+    memberId: null,
+    growthRatePct: null,
+    disposedAt: null,
+    disposalAccountId: null,
+    lastReviewedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    balances: [
+      {
+        id: "b1",
+        value: 200000,
+        date: new Date("2026-01-01"),
+        createdAt: new Date(),
+        assetId: "active-1",
+        note: null,
+      },
+    ],
+  };
+  const disposedAsset = {
+    id: "disposed-1",
+    name: "Old Boat",
+    type: "Vehicle",
+    householdId: HOUSEHOLD_ID,
+    memberId: null,
+    growthRatePct: null,
+    // Disposed yesterday (in the past)
+    disposedAt: new Date(Date.now() - 86400_000),
+    disposalAccountId: ACCOUNT_ID,
+    lastReviewedAt: null,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    balances: [
+      {
+        id: "b2",
+        value: 5000,
+        date: new Date("2025-06-01"),
+        createdAt: new Date(),
+        assetId: "disposed-1",
+        note: null,
+      },
+    ],
+  };
+
+  it("default (no opts) applies active filter — Prisma called with OR disposedAt condition", async () => {
+    prismaMock.asset.findMany.mockResolvedValue([activeAsset] as any);
+
+    await assetsService.listAssetsByType(HOUSEHOLD_ID, "Property");
+
+    const call = prismaMock.asset.findMany.mock.calls[0]?.[0] as { where: object };
+    expect(call.where).toMatchObject({ OR: expect.any(Array) });
+  });
+
+  it("includeDisposed: true omits the active filter from where clause", async () => {
+    prismaMock.asset.findMany.mockResolvedValue([activeAsset, disposedAsset] as any);
+
+    const result = await assetsService.listAssetsByType(HOUSEHOLD_ID, "Property", {
+      includeDisposed: true,
+    });
+
+    const call = prismaMock.asset.findMany.mock.calls[0]?.[0] as { where: object };
+    // The OR clause should NOT be present when includeDisposed is true
+    expect(call.where).not.toHaveProperty("OR");
+    expect(result).toHaveLength(2);
+  });
+});
+
+describe("assetsService.createAsset — disposal validation", () => {
+  it("throws ValidationError when disposedAt is set without disposalAccountId", async () => {
+    await expect(
+      assetsService.createAsset(
+        HOUSEHOLD_ID,
+        { name: "Test House", type: "Property", disposedAt: "2028-01-01" },
+        mockCtx
+      )
+    ).rejects.toThrow("disposedAt and disposalAccountId must be set or cleared together");
+  });
+
+  it("throws ValidationError when disposalAccountId is set without disposedAt", async () => {
+    await expect(
+      assetsService.createAsset(
+        HOUSEHOLD_ID,
+        { name: "Test House", type: "Property", disposalAccountId: ACCOUNT_ID },
+        mockCtx
+      )
+    ).rejects.toThrow("disposedAt and disposalAccountId must be set or cleared together");
+  });
+
+  it("throws NotFoundError when disposal target account does not exist", async () => {
+    prismaMock.account.findUnique.mockResolvedValue(null);
+
+    await expect(
+      assetsService.createAsset(
+        HOUSEHOLD_ID,
+        {
+          name: "Test House",
+          type: "Property",
+          disposedAt: "2028-01-01",
+          disposalAccountId: "nonexistent",
+        },
+        mockCtx
+      )
+    ).rejects.toThrow("Account not found");
+  });
+
+  it("creates asset with valid disposal pair", async () => {
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: ACCOUNT_ID,
+      householdId: HOUSEHOLD_ID,
+    } as any);
+    prismaMock.asset.create.mockResolvedValue({
+      id: ASSET_ID,
+      name: "Future Sale House",
+      type: "Property",
+      householdId: HOUSEHOLD_ID,
+      memberId: null,
+      disposedAt: new Date("2028-01-01"),
+      disposalAccountId: ACCOUNT_ID,
+      lastReviewedAt: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as any);
+
+    const result = await assetsService.createAsset(
+      HOUSEHOLD_ID,
+      {
+        name: "Future Sale House",
+        type: "Property",
+        disposedAt: "2028-01-01",
+        disposalAccountId: ACCOUNT_ID,
+      },
+      mockCtx
+    );
+
+    expect(result.name).toBe("Future Sale House");
+    expect(prismaMock.asset.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        disposedAt: new Date("2028-01-01"),
+        disposalAccountId: ACCOUNT_ID,
+      }),
+    });
+  });
+});
+
+describe("assetsService.createAccount — disposal validation", () => {
+  const TARGET_ID = "target-acc";
+
+  it("throws ValidationError when disposedAt and disposalAccountId are not both set", async () => {
+    await expect(
+      assetsService.createAccount(
+        HOUSEHOLD_ID,
+        { name: "ISA", type: "Savings", disposedAt: "2030-06-01" },
+        mockCtx
+      )
+    ).rejects.toThrow("disposedAt and disposalAccountId must be set or cleared together");
+  });
+
+  it("throws ValidationError when an account tries to dispose into itself", async () => {
+    // createAccount doesn't have the account id yet (it's being created), so self-referential
+    // disposal can only happen on update. Skip this for create and verify it's tested on update.
+    // Instead test that a foreign-household target account fails:
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: TARGET_ID,
+      householdId: "other-hh",
+    } as any);
+
+    await expect(
+      assetsService.createAccount(
+        HOUSEHOLD_ID,
+        { name: "SIPP", type: "Pension", disposedAt: "2030-06-01", disposalAccountId: TARGET_ID },
+        mockCtx
+      )
+    ).rejects.toThrow("Account not found");
+  });
+});
+
+describe("assetsService.updateAccount — disposal self-reference guard", () => {
+  it("throws ValidationError when an account is set to dispose into itself", async () => {
+    prismaMock.account.findUnique.mockResolvedValue({
+      id: ACCOUNT_ID,
+      householdId: HOUSEHOLD_ID,
+    } as any);
+    await expect(
+      assetsService.updateAccount(
+        HOUSEHOLD_ID,
+        ACCOUNT_ID,
+        { disposedAt: "2030-06-01", disposalAccountId: ACCOUNT_ID },
+        mockCtx
+      )
+    ).rejects.toThrow("An account cannot dispose into itself");
   });
 });

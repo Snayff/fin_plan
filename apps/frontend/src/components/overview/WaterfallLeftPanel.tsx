@@ -1,4 +1,5 @@
 import { motion } from "framer-motion";
+import type { ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import type { WaterfallSummary } from "@finplan/shared";
 import { usePrefersReducedMotion } from "@/utils/motion";
@@ -10,10 +11,13 @@ import { StalenessIndicator } from "@/components/common/StalenessIndicator";
 import { GlossaryTermMarker } from "@/components/help/GlossaryTermMarker";
 import { useSettings } from "@/hooks/useSettings";
 import { WaterfallConnector } from "@/components/overview/WaterfallConnector";
+import { ShortfallBadge } from "@/components/common/ShortfallBadge";
+import { useTierShortfall } from "@/hooks/useShortfall";
 
 interface WaterfallLeftPanelProps {
   summary: WaterfallSummary;
   selectedItemId: string | null;
+  isSnapshot?: boolean;
 }
 
 const ROW_CLASS =
@@ -42,13 +46,15 @@ function SectionHeader({
   total,
   colorClass,
   staleCount,
+  extraBadge,
   onHeaderClick,
   headerTestId,
 }: {
-  label: React.ReactNode;
-  total: React.ReactNode;
+  label: ReactNode;
+  total: ReactNode;
   colorClass: string;
   staleCount: number;
+  extraBadge?: ReactNode;
   onHeaderClick?: () => void;
   headerTestId?: string;
 }) {
@@ -64,6 +70,7 @@ function SectionHeader({
           {label}
         </h3>
         <StaleCountBadge count={staleCount} />
+        {extraBadge}
       </div>
       <span className={cn("text-[15px] font-numeric font-semibold", colorClass)}>{total}</span>
     </div>
@@ -87,9 +94,14 @@ function SectionHeader({
 export function WaterfallLeftPanel({
   summary,
   selectedItemId: _selectedItemId,
+  isSnapshot = false,
 }: WaterfallLeftPanelProps) {
   const navigate = useNavigate();
   const { data: settings } = useSettings();
+
+  const committedShortfall = useTierShortfall("committed", { isSnapshot });
+  const discretionaryShortfall = useTierShortfall("discretionary", { isSnapshot });
+  const showPence = settings?.showPence ?? false;
   const thresholds = settings?.stalenessThresholds ?? {
     income_source: 12,
     committed_bill: 6,
@@ -129,7 +141,8 @@ export function WaterfallLeftPanel({
   };
 
   return (
-    <motion.div
+    <motion.nav
+      aria-label="Waterfall items"
       className="space-y-4 p-4 text-sm"
       variants={containerVariants}
       initial={reduced ? false : "initial"}
@@ -166,7 +179,7 @@ export function WaterfallLeftPanel({
                     />
                   )}
                 </div>
-                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal)}</span>
+                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal, showPence)}</span>
               </div>
             );
           })}
@@ -184,6 +197,20 @@ export function WaterfallLeftPanel({
           total={<AnimatedCurrency value={committed.monthlyTotal + committed.monthlyAvg12} />}
           colorClass="text-tier-committed"
           staleCount={committedStaleCount}
+          extraBadge={
+            committedShortfall.isLive &&
+            committedShortfall.daysToFirst !== null &&
+            committedShortfall.lowest ? (
+              <ShortfallBadge
+                daysToFirst={committedShortfall.daysToFirst}
+                count={committedShortfall.count}
+                items={committedShortfall.items}
+                balanceToday={committedShortfall.balanceToday}
+                lowest={committedShortfall.lowest}
+                showPence={showPence}
+              />
+            ) : null
+          }
           onHeaderClick={() => navigate("/committed")}
           headerTestId="tier-heading-committed"
         />
@@ -208,7 +235,7 @@ export function WaterfallLeftPanel({
                     />
                   )}
                 </div>
-                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal)}</span>
+                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal, showPence)}</span>
               </div>
             );
           })}
@@ -219,7 +246,9 @@ export function WaterfallLeftPanel({
               )}
             >
               <GlossaryTermMarker entryId="amortised">incl. yearly ÷12</GlossaryTermMarker>
-              <span className={AMOUNT_CLASS}>{formatCurrency(committed.monthlyAvg12)}</span>
+              <span className={AMOUNT_CLASS}>
+                {formatCurrency(committed.monthlyAvg12, showPence)}
+              </span>
             </div>
           )}
         </div>
@@ -238,6 +267,20 @@ export function WaterfallLeftPanel({
           total={<AnimatedCurrency value={discretionary.total} />}
           colorClass="text-tier-discretionary"
           staleCount={discretionaryStaleCount}
+          extraBadge={
+            discretionaryShortfall.isLive &&
+            discretionaryShortfall.daysToFirst !== null &&
+            discretionaryShortfall.lowest ? (
+              <ShortfallBadge
+                daysToFirst={discretionaryShortfall.daysToFirst}
+                count={discretionaryShortfall.count}
+                items={discretionaryShortfall.items}
+                balanceToday={discretionaryShortfall.balanceToday}
+                lowest={discretionaryShortfall.lowest}
+                showPence={showPence}
+              />
+            ) : null
+          }
           onHeaderClick={() => navigate("/discretionary")}
           headerTestId="tier-heading-discretionary"
         />
@@ -262,7 +305,7 @@ export function WaterfallLeftPanel({
                     />
                   )}
                 </div>
-                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal)}</span>
+                <span className={AMOUNT_CLASS}>{formatCurrency(sub.monthlyTotal, showPence)}</span>
               </div>
             );
           })}
@@ -304,6 +347,6 @@ export function WaterfallLeftPanel({
           )}
         </div>
       </motion.div>
-    </motion.div>
+    </motion.nav>
   );
 }

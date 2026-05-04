@@ -68,43 +68,45 @@ export function HelpSidebar({ selectedId, onSelect }: Props) {
           </p>
         ) : (
           <>
-            {filteredGlossary.length > 0 && (
-              <section aria-label="Glossary">
-                <p className="px-3 py-1.5 label-section">Glossary</p>
-                {filteredGlossary.map((entry) => (
-                  <button
-                    key={entry.id}
-                    type="button"
-                    className={itemClass(entry.id)}
-                    aria-current={selectedId === entry.id ? "true" : undefined}
-                    onClick={() => onSelect(entry.id)}
-                  >
-                    {entry.term}
-                  </button>
-                ))}
-              </section>
-            )}
+            <nav aria-label="Help topics">
+              {filteredGlossary.length > 0 && (
+                <section aria-label="Glossary">
+                  <p className="px-3 py-1.5 label-section">Glossary</p>
+                  {filteredGlossary.map((entry) => (
+                    <button
+                      key={entry.id}
+                      type="button"
+                      className={itemClass(entry.id)}
+                      aria-current={selectedId === entry.id ? "true" : undefined}
+                      onClick={() => onSelect(entry.id)}
+                    >
+                      {entry.term}
+                    </button>
+                  ))}
+                </section>
+              )}
 
-            {filteredGlossary.length > 0 && filteredConcepts.length > 0 && (
-              <hr className="my-2 border-border" />
-            )}
+              {filteredGlossary.length > 0 && filteredConcepts.length > 0 && (
+                <hr className="my-2 border-border" />
+              )}
 
-            {filteredConcepts.length > 0 && (
-              <section aria-label="Concepts">
-                <p className="px-3 py-1.5 label-section">Concepts</p>
-                {filteredConcepts.map((concept) => (
-                  <button
-                    key={concept.id}
-                    type="button"
-                    className={itemClass(concept.id)}
-                    aria-current={selectedId === concept.id ? "true" : undefined}
-                    onClick={() => onSelect(concept.id)}
-                  >
-                    {concept.title}
-                  </button>
-                ))}
-              </section>
-            )}
+              {filteredConcepts.length > 0 && (
+                <section aria-label="Concepts">
+                  <p className="px-3 py-1.5 label-section">Concepts</p>
+                  {filteredConcepts.map((concept) => (
+                    <button
+                      key={concept.id}
+                      type="button"
+                      className={itemClass(concept.id)}
+                      aria-current={selectedId === concept.id ? "true" : undefined}
+                      onClick={() => onSelect(concept.id)}
+                    >
+                      {concept.title}
+                    </button>
+                  ))}
+                </section>
+              )}
+            </nav>
 
             <hr className="my-2 border-border" />
 

@@ -28,7 +28,7 @@ describe("HelpSidebar", () => {
   it("renders all 5 concept entries", () => {
     renderSidebar();
     expect(screen.getByText("The Waterfall")).toBeTruthy();
-    expect(screen.getByText("Amortisation (÷12)")).toBeTruthy();
+    expect(screen.getByText("Amortisation (÷12, ÷3, × 52/12)")).toBeTruthy();
   });
 
   it("renders User Manual as coming soon (not clickable)", () => {

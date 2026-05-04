@@ -9,47 +9,115 @@ export const accountTypeSchema = z.enum([
   "Other",
 ]);
 
-// Asset CRUD
-export const createAssetSchema = z.object({
-  name: z.string().min(1).max(100).trim(),
-  type: assetTypeSchema,
-  memberId: z.string().nullable().optional(),
-  growthRatePct: z.number().min(-100).max(100).nullable().optional(),
-  initialValue: z.number().positive().optional(),
-});
+// ─── Disposal helpers ────────────────────────────────────────────────────────
+// `disposedAt` and `disposalAccountId` must be set together (or both cleared).
+// undefined = field not in the patch (no change); null = explicit clear.
+const isoDateString = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD");
 
-export const updateAssetSchema = z.object({
-  name: z.string().min(1).max(100).trim().optional(),
-  memberId: z.string().nullable().optional(),
-  growthRatePct: z.number().min(-100).max(100).nullable().optional(),
-});
+const disposalPair = {
+  disposedAt: isoDateString.nullable().optional(),
+  disposalAccountId: z.string().min(1).nullable().optional(),
+};
+
+type DisposalShape = { disposedAt?: string | null; disposalAccountId?: string | null };
+
+function disposalRefine(data: DisposalShape): boolean {
+  const dateProvided = data.disposedAt !== undefined;
+  const acctProvided = data.disposalAccountId !== undefined;
+  if (!dateProvided && !acctProvided) return true;
+  // When either field is in the patch, both must be present and match (both set or both null).
+  if (dateProvided !== acctProvided) return false;
+  const dateSet = data.disposedAt != null;
+  const acctSet = data.disposalAccountId != null;
+  return dateSet === acctSet;
+}
+
+const disposalRefineMessage: { message: string; path: (string | number)[] } = {
+  message: "disposedAt and disposalAccountId must be set or cleared together",
+  path: ["disposedAt"],
+};
+
+// Asset CRUD
+export const createAssetSchema = z
+  .object({
+    name: z.string().min(1).max(100).trim(),
+    type: assetTypeSchema,
+    memberId: z.string().nullable().optional(),
+    growthRatePct: z.number().min(-100).max(100).nullable().optional(),
+    initialValue: z.number().positive().optional(),
+    ...disposalPair,
+  })
+  .refine(disposalRefine, disposalRefineMessage);
+
+export const updateAssetSchema = z
+  .object({
+    name: z.string().min(1).max(100).trim().optional(),
+    memberId: z.string().nullable().optional(),
+    growthRatePct: z.number().min(-100).max(100).nullable().optional(),
+    ...disposalPair,
+  })
+  .refine(disposalRefine, disposalRefineMessage);
 
 export const recordAssetBalanceSchema = z.object({
   value: z.number().positive(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+  date: isoDateString,
   note: z.string().max(500).nullable().optional(),
 });
 
-// Account CRUD
-export const createAccountSchema = z.object({
-  name: z.string().min(1).max(100).trim(),
-  type: accountTypeSchema,
-  memberId: z.string().nullable().optional(),
-  growthRatePct: z.number().min(0).max(100).nullable().optional(),
-  isCashflowLinked: z.boolean().optional(),
-  initialValue: z.number().positive().optional(),
-});
+// ISA helpers
+type IsaShape = {
+  isISA?: boolean;
+  memberId?: string | null;
+  type?: "Current" | "Savings" | "Pension" | "StocksAndShares" | "Other";
+};
 
-export const updateAccountSchema = z.object({
-  name: z.string().min(1).max(100).trim().optional(),
-  memberId: z.string().nullable().optional(),
-  growthRatePct: z.number().min(0).max(100).nullable().optional(),
-  isCashflowLinked: z.boolean().optional(),
-});
+function isaRefine(data: IsaShape): boolean {
+  if (data.isISA !== true) return true;
+  if (data.memberId == null) return false;
+  // type may be absent on update payloads; if present it must be Savings
+  if (data.type !== undefined && data.type !== "Savings") return false;
+  return true;
+}
+
+const isaRefineMessage: { message: string; path: (string | number)[] } = {
+  message: "ISA accounts must be Savings type and have a memberId assigned",
+  path: ["isISA"],
+};
+
+// Account CRUD
+export const createAccountSchema = z
+  .object({
+    name: z.string().min(1).max(100).trim(),
+    type: accountTypeSchema,
+    memberId: z.string().nullable().optional(),
+    growthRatePct: z.number().min(0).max(100).nullable().optional(),
+    monthlyContributionLimit: z.number().min(0).nullable().optional(),
+    isCashflowLinked: z.boolean().optional(),
+    initialValue: z.number().positive().optional(),
+    isISA: z.boolean().optional(),
+    isaYearContribution: z.number().min(0).nullable().optional(),
+    ...disposalPair,
+  })
+  .refine(disposalRefine, disposalRefineMessage)
+  .refine(isaRefine, isaRefineMessage);
+
+export const updateAccountSchema = z
+  .object({
+    name: z.string().min(1).max(100).trim().optional(),
+    memberId: z.string().nullable().optional(),
+    growthRatePct: z.number().min(0).max(100).nullable().optional(),
+    monthlyContributionLimit: z.number().min(0).nullable().optional(),
+    isCashflowLinked: z.boolean().optional(),
+    isISA: z.boolean().optional(),
+    isaYearContribution: z.number().min(0).nullable().optional(),
+    ...disposalPair,
+  })
+  .refine(disposalRefine, disposalRefineMessage)
+  .refine(isaRefine, isaRefineMessage);
 
 export const recordAccountBalanceSchema = z.object({
   value: z.number().positive(),
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD"),
+  date: isoDateString,
   note: z.string().max(500).nullable().optional(),
 });
 
@@ -68,3 +136,25 @@ export type CreateAccountInput = z.infer<typeof createAccountSchema>;
 export type UpdateAccountInput = z.infer<typeof updateAccountSchema>;
 export type RecordAccountBalanceInput = z.infer<typeof recordAccountBalanceSchema>;
 export type UpdateMemberProfileInput = z.infer<typeof updateMemberProfileSchema>;
+
+// ISA allowance summary (response schema)
+export const isaMemberPositionSchema = z.object({
+  memberId: z.string(),
+  name: z.string(),
+  used: z.number().min(0),
+  forecast: z.number().min(0),
+  forecastedYearTotal: z.number().min(0),
+  monthlyPlanned: z.number().min(0),
+  estimatedFlag: z.boolean(),
+});
+
+export const isaAllowanceSummarySchema = z.object({
+  taxYearStart: isoDateString,
+  taxYearEnd: isoDateString,
+  daysRemaining: z.number().int().min(0),
+  annualLimit: z.number().min(0),
+  byMember: z.array(isaMemberPositionSchema),
+});
+
+export type IsaMemberPosition = z.infer<typeof isaMemberPositionSchema>;
+export type IsaAllowanceSummary = z.infer<typeof isaAllowanceSummarySchema>;

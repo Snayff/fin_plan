@@ -22,6 +22,9 @@ export async function settingsRoutes(fastify: FastifyInstance) {
       "investmentRatePct",
       "pensionRatePct",
       "inflationRatePct",
+      "propertyRatePct",
+      "vehicleRatePct",
+      "otherAssetRatePct",
     ] as const;
     const hasGrowthRateChange = growthRateFields.some((f) => f in (req.body as object));
     if (hasGrowthRateChange) {

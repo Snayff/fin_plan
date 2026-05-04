@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { margin: 0; padding: 24px; font-family: 'Nunito Sans', system-ui, sans-serif; background: #080a14; color: rgba(238,242,255,0.92); }
+
+  h1.doc-title { font-family: 'Outfit', sans-serif; font-size: 16px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.09em; color: #8b5cf6; margin: 0 0 20px; }
+
+  /* Three mockups stacked */
+  .mock { border: 1px solid #1a1f35; border-radius: 12px; margin-bottom: 32px; overflow: hidden; background: #080a14; }
+  .mock-label { background: rgba(139,92,246,0.08); padding: 8px 16px; font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: #8b5cf6; border-bottom: 1px solid rgba(139,92,246,0.15); }
+
+  /* Top nav */
+  .topnav { height: 48px; display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid #1a1f35; font-size: 13px; }
+  .brand { font-family: 'Outfit', sans-serif; font-weight: 800; color: rgba(238,242,255,0.92); margin-right: 32px; font-size: 15px; }
+  .brand span { color: #8b5cf6; }
+  .nav-links { display: flex; gap: 20px; color: rgba(238,242,255,0.55); flex: 1; font-family: 'Outfit', sans-serif; font-weight: 500; font-size: 13px; }
+  .nav-links a { color: inherit; text-decoration: none; }
+  .nav-links .active { color: #7c3aed; position: relative; }
+  .nav-links .active::after { content: ''; position: absolute; bottom: -14px; left: 0; right: 0; height: 2px; background: #7c3aed; }
+  .nav-right { display: flex; align-items: center; gap: 14px; }
+
+  /* Household switcher */
+  .hh-switcher {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 13px; color: rgba(238,242,255,0.85);
+    padding: 4px 10px; border-radius: 6px; border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .hh-switcher.open { background: #141b2e; border-color: #222c45; }
+  .hh-chevron { font-size: 9px; opacity: 0.5; }
+
+  /* Dropdown */
+  .dropdown-wrap { position: relative; }
+  .dropdown {
+    position: absolute; top: calc(100% + 6px); right: 0;
+    min-width: 240px; max-width: 280px;
+    background: #1c2540; border: 1px solid #2a3558; border-radius: 8px;
+    padding: 4px; z-index: 100;
+  }
+  .dropdown-section + .dropdown-section { border-top: 1px solid rgba(238,242,255,0.08); margin-top: 4px; padding-top: 4px; }
+  .dd-header { font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(238,242,255,0.35); padding: 6px 10px 4px; font-weight: 600; }
+  .dd-item { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 5px; font-size: 12.5px; color: rgba(238,242,255,0.85); cursor: pointer; }
+  .dd-item:hover { background: rgba(124,58,237,0.12); }
+  .dd-item.selected { color: rgba(238,242,255,0.95); font-weight: 500; }
+  .dd-item .check { margin-left: auto; color: #7c3aed; font-size: 11px; }
+  .dd-item .icon { width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; opacity: 0.6; font-size: 12px; }
+  .dd-item.action { color: #7c3aed; }
+
+  /* Avatar button */
+  .avatar-btn {
+    width: 28px; height: 28px; border-radius: 50%;
+    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 11px;
+    color: white; cursor: pointer; border: 2px solid transparent;
+    transition: border-color 120ms;
+  }
+  .avatar-btn:hover { border-color: rgba(124,58,237,0.4); }
+  .avatar-btn.open { border-color: #7c3aed; }
+
+  /* Profile dropdown */
+  .profile-dd { left: auto; right: 0; min-width: 200px; }
+
+  /* Settings pages */
+  .page-shell { display: flex; height: 520px; }
+  .left {
+    width: 260px; flex-shrink: 0; border-right: 1px solid #1a1f35;
+    display: flex; flex-direction: column;
+  }
+  .page-header { padding: 14px 16px 10px; flex-shrink: 0; }
+  .page-header h1 {
+    font-family: 'Outfit', sans-serif; font-size: 17px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.09em; color: #8b5cf6; margin: 0;
+  }
+  .page-header .page-sub { font-size: 11px; color: rgba(238,242,255,0.4); margin-top: 2px; font-family: 'Nunito Sans', sans-serif; letter-spacing: 0.02em; text-transform: none; font-weight: 500; }
+  .page-header .page-sub.household { color: #0ea5e9; }
+
+  .left-scroll { flex: 1; overflow-y: auto; padding-bottom: 12px; }
+  .group-header { padding: 12px 16px 4px; font-size: 9.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: rgba(238,242,255,0.35); }
+
+  .nav-item {
+    position: relative; display: block; width: 100%;
+    padding: 8px 16px; border: none; background: transparent;
+    text-align: left; font-size: 13px; color: rgba(238,242,255,0.6);
+    cursor: pointer; font-family: inherit;
+  }
+  .nav-item:hover { background: rgba(139,92,246,0.05); }
+  .nav-item.active {
+    color: #8b5cf6; font-weight: 500;
+    background: rgba(139,92,246,0.14);
+    border-left: 2px solid #8b5cf6;
+    padding-left: 14px;
+  }
+
+  .right { flex: 1; overflow-y: auto; }
+  .right-header { padding: 12px 22px; border-bottom: 1px solid rgba(238,242,255,0.05); font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 15px; }
+  .right-body { padding: 20px 22px; max-width: 600px; }
+
+  .settings-section { padding: 18px 0 22px; }
+  .settings-section + .settings-section { border-top: 1px solid rgba(238,242,255,0.06); }
+  .settings-section:first-child { padding-top: 4px; }
+
+  .section-title { font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 700; margin-bottom: 4px; display: flex; align-items: center; gap: 10px; }
+  .section-desc { font-size: 12px; color: rgba(238,242,255,0.45); margin-bottom: 14px; }
+
+  .field { display: flex; flex-direction: column; gap: 5px; margin-bottom: 12px; max-width: 320px; }
+  .field label { font-size: 12px; font-weight: 500; color: rgba(238,242,255,0.72); }
+  .field input {
+    background: #0d1120; border: 1px solid #1a1f35; border-radius: 6px;
+    padding: 7px 10px; color: rgba(238,242,255,0.92);
+    font-family: inherit; font-size: 13px;
+  }
+  .field .sub { font-size: 11px; color: rgba(238,242,255,0.35); }
+
+  /* Save pulse demo */
+  .field.pulsing input { animation: save-pulse 1.4s ease-out; border-color: #22c55e; }
+  @keyframes save-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(34,197,94,0.4); border-color: #22c55e; }
+    60% { box-shadow: 0 0 0 6px rgba(34,197,94,0); border-color: #22c55e; }
+    100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); border-color: #1a1f35; }
+  }
+  .saved-flash {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-size: 10px; color: #22c55e;
+    opacity: 1; animation: fade-out 1.8s ease-out forwards;
+    animation-delay: 0.4s;
+    margin-left: 6px;
+  }
+  @keyframes fade-out { 0% { opacity: 1; } 80% { opacity: 1; } 100% { opacity: 0; transform: translateY(-2px); } }
+
+  .callout {
+    background: rgba(139,92,246,0.08);
+    border-left: 3px solid #8b5cf6;
+    padding: 10px 14px;
+    font-size: 12px;
+    color: rgba(238,242,255,0.75);
+    margin: 16px 0 8px;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.5;
+  }
+  .callout strong { color: #8b5cf6; }
+</style>
+</head>
+<body>
+
+<h1 class="doc-title">Proposed Structure — Split Settings</h1>
+
+<!-- MOCKUP 1: TOP NAV -->
+<div class="mock">
+  <div class="mock-label">1 · Top nav — Settings link removed, profile avatar added</div>
+  <div class="topnav">
+    <div class="brand">finplan</div>
+    <div class="nav-links">
+      <a class="active">Overview</a>
+      <a>Income</a>
+      <a>Committed</a>
+      <a>Discretionary</a>
+      <a>Surplus</a>
+      <a>Forecast</a>
+      <a>Assets</a>
+      <a>Goals</a>
+      <a>Gifts</a>
+      <a>Help</a>
+    </div>
+    <div class="nav-right">
+      <div class="dropdown-wrap">
+        <div class="hh-switcher">
+          <span>Snaith</span>
+          <span class="hh-chevron">▾</span>
+        </div>
+      </div>
+      <div class="dropdown-wrap">
+        <div class="avatar-btn">JS</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOCKUP 2: HOUSEHOLD DROPDOWN -->
+<div class="mock">
+  <div class="mock-label">2 · Household switcher — now hosts household actions, anchored right, viewport-safe</div>
+  <div class="topnav" style="position: relative; padding-bottom: 100px;">
+    <div class="brand">finplan</div>
+    <div class="nav-links" style="opacity: 0.4;">
+      <a>Overview</a><a>Income</a><a>Committed</a><a>Discretionary</a><a>Surplus</a>
+    </div>
+    <div class="nav-right">
+      <div class="dropdown-wrap">
+        <div class="hh-switcher open">
+          <span>Snaith</span>
+          <span class="hh-chevron">▴</span>
+        </div>
+        <div class="dropdown">
+          <div class="dropdown-section">
+            <div class="dd-header">Switch household</div>
+            <div class="dd-item selected">Snaith <span class="check">✓</span></div>
+            <div class="dd-item">Parents</div>
+          </div>
+          <div class="dropdown-section">
+            <div class="dd-item"><span class="icon">⚙</span> Household settings</div>
+            <div class="dd-item action"><span class="icon">+</span> Create new household</div>
+          </div>
+        </div>
+      </div>
+      <div class="avatar-btn">JS</div>
+    </div>
+  </div>
+</div>
+
+<!-- MOCKUP 3: PROFILE DROPDOWN -->
+<div class="mock">
+  <div class="mock-label">3 · Profile avatar — opens personal menu</div>
+  <div class="topnav" style="position: relative; padding-bottom: 140px;">
+    <div class="brand">finplan</div>
+    <div class="nav-links" style="opacity: 0.4;">
+      <a>Overview</a><a>Income</a><a>Committed</a><a>Discretionary</a><a>Surplus</a>
+    </div>
+    <div class="nav-right">
+      <div class="hh-switcher"><span>Snaith</span><span class="hh-chevron">▾</span></div>
+      <div class="dropdown-wrap">
+        <div class="avatar-btn open">JS</div>
+        <div class="dropdown profile-dd">
+          <div style="padding: 8px 10px 4px;">
+            <div style="font-size: 13px; font-weight: 500;">Josh Snaith</div>
+            <div style="font-size: 11px; color: rgba(238,242,255,0.4);">snaith2@gmail.com</div>
+          </div>
+          <div style="height: 1px; background: rgba(238,242,255,0.08); margin: 4px 0;"></div>
+          <div class="dd-item"><span class="icon">👤</span> Profile settings</div>
+          <div class="dd-item"><span class="icon">↪</span> Sign out</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MOCKUP 4: PROFILE SETTINGS PAGE -->
+<div class="mock">
+  <div class="mock-label">4 · Profile settings (minimal — personal only, cross-household)</div>
+  <div class="page-shell">
+    <aside class="left">
+      <div class="page-header">
+        <h1>Profile</h1>
+        <div class="page-sub">Your personal preferences</div>
+      </div>
+      <div class="left-scroll">
+        <button class="nav-item active">Account</button>
+        <button class="nav-item">Display</button>
+      </div>
+    </aside>
+    <main class="right">
+      <div class="right-header">Profile</div>
+      <div class="right-body">
+        <div class="settings-section">
+          <div class="section-title">Account</div>
+          <p class="section-desc">Your account details, applied across every household you're a member of.</p>
+          <div class="field pulsing">
+            <label>Name <span class="saved-flash">✓ saved</span></label>
+            <input value="Josh Snaith" />
+          </div>
+          <div class="field">
+            <label>Email</label>
+            <span class="sub">snaith2@gmail.com</span>
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="section-title">Display</div>
+          <p class="section-desc">How values render for you specifically. Does not affect other household members.</p>
+          <div style="font-size: 12px; opacity: 0.5;">[Show pence toggle]</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- MOCKUP 5: HOUSEHOLD SETTINGS PAGE -->
+<div class="mock">
+  <div class="mock-label">5 · Household settings (everything else — per-household, grouped nav)</div>
+  <div class="page-shell">
+    <aside class="left">
+      <div class="page-header">
+        <h1>Household</h1>
+        <div class="page-sub household">Snaith</div>
+      </div>
+      <div class="left-scroll">
+        <div class="group-header">General</div>
+        <button class="nav-item active">Details</button>
+        <button class="nav-item">Members &amp; invites</button>
+
+        <div class="group-header">Financial</div>
+        <button class="nav-item">Surplus benchmark</button>
+        <button class="nav-item">ISA settings</button>
+        <button class="nav-item">Staleness thresholds</button>
+        <button class="nav-item">Growth rates</button>
+
+        <div class="group-header">Structure</div>
+        <button class="nav-item">Subcategories</button>
+
+        <div class="group-header">Advanced</div>
+        <button class="nav-item">Data</button>
+        <button class="nav-item">Audit log</button>
+      </div>
+    </aside>
+    <main class="right">
+      <div class="right-header">Household</div>
+      <div class="right-body">
+        <div class="settings-section">
+          <div class="section-title">Details</div>
+          <p class="section-desc">Name and basic information about this household.</p>
+          <div class="field pulsing">
+            <label>Household name <span class="saved-flash">✓ saved</span></label>
+            <input value="Snaith" />
+          </div>
+        </div>
+        <div class="settings-section">
+          <div class="section-title">Members &amp; invites</div>
+          <p class="section-desc">People who can see and edit this household's plan.</p>
+          <div style="font-size: 12px; opacity: 0.5;">[member list, invite form]</div>
+        </div>
+        <div class="settings-section">
+          <div class="section-title">Surplus benchmark</div>
+          <p class="section-desc">Percentage of net income that should remain as surplus.</p>
+          <div style="font-size: 12px; opacity: 0.5;">[% input]</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- CALLOUT -->
+<div class="callout">
+  <strong>Save feedback:</strong> no persistent indicator. On change, input border pulses green → "✓ saved" flash next to field label for ~1.5s → fades. No Save buttons anywhere. Failures would revert the field and show an inline error message below it.
+</div>
+
+</body>
+</html>

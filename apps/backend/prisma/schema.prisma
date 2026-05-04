@@ -61,6 +61,9 @@ model Member {
   user           User?         @relation("MemberUser", fields: [userId], references: [id], onDelete: SetNull)
   assets         Asset[]
   accounts       Account[]
+  incomeSources       IncomeSource[]
+  committedItems      CommittedItem[]
+  discretionaryItems  DiscretionaryItem[]
 
   @@unique([householdId, userId])
   @@unique([householdId, name])
@@ -173,9 +176,13 @@ model HouseholdSettings {
   investmentRatePct   Float    @default(7)
   pensionRatePct      Float    @default(6)
   inflationRatePct    Float    @default(2.5)
-  showPence           Boolean  @default(false)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  showPence             Boolean  @default(false)
+  waterfallTipDismissed Boolean  @default(false)
+  propertyRatePct       Float    @default(3.5)
+  vehicleRatePct        Float    @default(-15)
+  otherAssetRatePct     Float    @default(0)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 }
 
 // ─── Waterfall ────────────────────────────────────────────────────────────────
@@ -184,6 +191,8 @@ enum IncomeFrequency {
   monthly
   annual
   one_off
+  weekly
+  quarterly
 }
 
 enum WaterfallTier {
@@ -196,6 +205,8 @@ enum SpendType {
   monthly
   yearly
   one_off
+  weekly
+  quarterly
 }
 
 enum IncomeType {
@@ -234,15 +245,17 @@ model IncomeSource {
   frequency      IncomeFrequency
   incomeType     IncomeType      @default(other)
   dueDate        DateTime        @db.Date
-  ownerId        String?
+  memberId       String?
   sortOrder      Int             @default(0)
   lastReviewedAt DateTime        @default(now())
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
   notes          String?
   subcategory    Subcategory     @relation(fields: [subcategoryId], references: [id])
+  member         Member?         @relation(fields: [memberId], references: [id], onDelete: SetNull)
 
   @@index([householdId])
+  @@index([memberId])
 }
 
 model CommittedItem {
@@ -252,15 +265,17 @@ model CommittedItem {
   name           String
   spendType      SpendType   @default(monthly)
   notes          String?
-  ownerId        String?
+  memberId       String?
   dueDate        DateTime    @db.Date
   sortOrder      Int         @default(0)
   lastReviewedAt DateTime    @default(now())
   createdAt      DateTime    @default(now())
   updatedAt      DateTime    @updatedAt
   subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
+  member         Member?     @relation(fields: [memberId], references: [id], onDelete: SetNull)
 
   @@index([householdId])
+  @@index([memberId])
 }
 
 model DiscretionaryItem {
@@ -270,15 +285,21 @@ model DiscretionaryItem {
   name           String
   spendType      SpendType   @default(monthly)
   notes          String?
+  memberId       String?
   dueDate        DateTime?   @db.Date
   sortOrder      Int         @default(0)
   lastReviewedAt DateTime    @default(now())
-  isPlannerOwned Boolean     @default(false)
-  createdAt      DateTime    @default(now())
-  updatedAt      DateTime    @updatedAt
-  subcategory    Subcategory @relation(fields: [subcategoryId], references: [id])
+  isPlannerOwned  Boolean     @default(false)
+  linkedAccountId String?
+  linkedAccount   Account?    @relation("DiscretionaryAccountLink", fields: [linkedAccountId], references: [id], onDelete: SetNull)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  subcategory     Subcategory @relation(fields: [subcategoryId], references: [id])
+  member          Member?     @relation(fields: [memberId], references: [id], onDelete: SetNull)
 
   @@index([householdId])
+  @@index([memberId])
+  @@index([linkedAccountId])
 }
 
 enum WaterfallItemType {
@@ -315,21 +336,25 @@ model ItemAmountPeriod {
 // ─── Assets & Accounts ────────────────────────────────────────────────────────
 
 model Asset {
-  id             String         @id @default(cuid())
-  householdId    String
-  memberId       String?
-  name           String
-  type           AssetType
-  growthRatePct  Float?
-  lastReviewedAt DateTime?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  household      Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  member         Member?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  balances       AssetBalance[]
+  id                String         @id @default(cuid())
+  householdId       String
+  memberId          String?
+  name              String
+  type              AssetType
+  growthRatePct     Float?
+  lastReviewedAt    DateTime?
+  disposedAt        DateTime?      @db.Date
+  disposalAccountId String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+  household         Household      @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member            Member?        @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  disposalAccount   Account?       @relation("AssetDisposalTarget", fields: [disposalAccountId], references: [id], onDelete: SetNull)
+  balances          AssetBalance[]
 
   @@index([householdId])
   @@index([memberId])
+  @@index([disposalAccountId])
 }
 
 model AssetBalance {
@@ -345,23 +370,32 @@ model AssetBalance {
 }
 
 model Account {
-  id                  String           @id @default(cuid())
-  householdId         String
-  memberId            String?
-  name                String
-  type                AccountType
-  growthRatePct       Float?
-  monthlyContribution Float            @default(0)
-  isCashflowLinked    Boolean          @default(false)
-  lastReviewedAt      DateTime?
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
-  household           Household        @relation(fields: [householdId], references: [id], onDelete: Cascade)
-  member              Member?          @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  balances            AccountBalance[]
+  id                       String              @id @default(cuid())
+  householdId              String
+  memberId                 String?
+  name                     String
+  type                     AccountType
+  growthRatePct            Float?
+  monthlyContributionLimit Float?
+  isISA                    Boolean             @default(false)
+  isaYearContribution      Float?
+  isCashflowLinked         Boolean             @default(false)
+  lastReviewedAt           DateTime?
+  disposedAt               DateTime?           @db.Date
+  disposalAccountId        String?
+  createdAt                DateTime            @default(now())
+  updatedAt                DateTime            @updatedAt
+  household                Household           @relation(fields: [householdId], references: [id], onDelete: Cascade)
+  member                   Member?             @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  disposalAccount          Account?            @relation("AccountDisposalTarget", fields: [disposalAccountId], references: [id], onDelete: SetNull)
+  balances                 AccountBalance[]
+  linkedItems              DiscretionaryItem[] @relation("DiscretionaryAccountLink")
+  assetDisposalTargets     Asset[]             @relation("AssetDisposalTarget")
+  accountDisposalTargets   Account[]           @relation("AccountDisposalTarget")
 
   @@index([householdId])
   @@index([memberId])
+  @@index([disposalAccountId])
 }
 
 model AccountBalance {
@@ -564,12 +598,4 @@ model ReviewSession {
   updatedItems   Json     @default("{}")
   startedAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-}
-
-model WaterfallSetupSession {
-  id          String   @id @default(cuid())
-  householdId String   @unique
-  currentStep Int      @default(0)
-  startedAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 }

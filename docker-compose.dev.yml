@@ -13,7 +13,7 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./apps/backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U finplan"]
+      test: ["CMD-SHELL", "pg_isready -U finplan -d finplan_dev"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -40,7 +40,7 @@ services:
       CORS_ORIGIN: http://localhost:3000
       # Environment
       NODE_ENV: development
-    command: sh -c "cd /workspace && bun install && cd /workspace/apps/backend && bunx prisma migrate deploy && bun src/db/seed.ts && bunx nodemon --legacy-watch --watch src --watch ../../packages/shared/src --ext ts --exec 'bun src/server.ts'"
+    command: sh -c "cd /workspace && bun install && cd /workspace/apps/backend && bunx prisma migrate deploy && bunx prisma generate && bun src/db/seed.ts && bunx nodemon --legacy-watch --watch src --watch ../../packages/shared/src --ext ts --exec 'bun src/server.ts'"
     volumes:
       # Mount source code for hot reload
       - ./apps/backend/src:/workspace/apps/backend/src

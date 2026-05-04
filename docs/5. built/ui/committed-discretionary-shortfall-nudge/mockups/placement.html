@@ -1,0 +1,232 @@
+<h2>Where should the shortfall nudge appear?</h2>
+<p class="subtitle">All three options use the same data — total linked-account balance dipping below £0 within 30 days. The question is which surface(s) display it.</p>
+
+<style>
+  .panel {
+    background: #0e1220;
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    width: 280px;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    color: #e6e8ee;
+    overflow: hidden;
+    margin: 0 auto;
+  }
+  .panel-header {
+    padding: 14px 16px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .panel-header .title {
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    font-size: 14px;
+    text-transform: uppercase;
+  }
+  .panel-header .total {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+    font-size: 14px;
+  }
+  .ind { color: #6366f1; }
+  .dis { color: #a855f7; }
+  .income { color: #0ea5e9; }
+  .teal { color: #4adcd0; }
+  .row {
+    padding: 10px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 13px;
+  }
+  .row.selected {
+    background: rgba(99,102,241,0.14);
+    border-left: 2px solid #6366f1;
+  }
+  .row.dis-sel {
+    background: rgba(168,85,247,0.14);
+    border-left: 2px solid #a855f7;
+  }
+  .muted { color: rgba(230,232,238,0.6); }
+  .num { font-variant-numeric: tabular-nums; font-size: 12px; color: rgba(230,232,238,0.5); }
+  .footer {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+  }
+
+  /* Tier row attention badge */
+  .tier-row {
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .tier-row .left { display: flex; align-items: center; gap: 8px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: #f59e0b;
+    font-size: 11px;
+    margin-left: 8px;
+  }
+  .badge::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #f59e0b;
+  }
+  .connector {
+    color: rgba(230,232,238,0.4);
+    font-size: 11px;
+    padding: 4px 16px 4px 24px;
+    font-style: italic;
+  }
+
+  /* Banner strip */
+  .strip {
+    padding: 8px 16px;
+    background: rgba(245,158,11,0.04);
+    border-bottom: 1px solid rgba(245,158,11,0.18);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #f59e0b;
+  }
+  .strip::before {
+    content: "";
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: #f59e0b;
+  }
+
+  .columns {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 24px;
+    margin-top: 24px;
+  }
+  .col-label {
+    text-align: center;
+    color: rgba(230,232,238,0.7);
+    font-size: 13px;
+    margin-bottom: 12px;
+    font-weight: 600;
+  }
+  .col-desc {
+    text-align: center;
+    color: rgba(230,232,238,0.5);
+    font-size: 11px;
+    margin-top: 12px;
+    line-height: 1.5;
+    padding: 0 8px;
+  }
+  .options { margin-top: 28px; }
+</style>
+
+<div class="columns">
+  <div>
+    <div class="col-label">Option A — Overview waterfall</div>
+    <div class="panel">
+      <div class="tier-row">
+        <div class="left"><span class="income">●</span> <span style="font-weight:800;letter-spacing:0.09em;color:#0ea5e9">INCOME</span></div>
+        <span class="num">£8,856</span>
+      </div>
+      <div class="connector">↓ minus committed spend</div>
+      <div class="tier-row">
+        <div class="left">
+          <span class="ind">●</span>
+          <span style="font-weight:800;letter-spacing:0.09em;color:#6366f1">COMMITTED</span>
+          <span class="badge">shortfall</span>
+        </div>
+        <span class="num">£4,817</span>
+      </div>
+      <div class="connector">↓ minus discretionary</div>
+      <div class="tier-row">
+        <div class="left">
+          <span class="dis">●</span>
+          <span style="font-weight:800;letter-spacing:0.09em;color:#a855f7">DISCRETIONARY</span>
+          <span class="badge">shortfall</span>
+        </div>
+        <span class="num">£3,830</span>
+      </div>
+      <div class="connector">═ equals</div>
+      <div class="tier-row">
+        <div class="left"><span class="teal">●</span> <span style="font-weight:800;letter-spacing:0.09em;color:#4adcd0">SURPLUS</span></div>
+        <span class="num">£209</span>
+      </div>
+    </div>
+    <div class="col-desc">Inline amber badge on the Committed and Discretionary tier rows in the Overview waterfall. Reuses the existing <code>WaterfallTierRow</code> attention-badge pattern (<code>● 3 stale</code>). Visible whenever the user is on the Overview page.</div>
+  </div>
+
+  <div>
+    <div class="col-label">Option B — Tier page strip</div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="title ind">COMMITTED</span>
+        <span class="total ind">£4,817</span>
+      </div>
+      <div class="strip">Projected shortfall in 12 days</div>
+      <div class="row selected"><span>Yearly Bills</span><span class="num">£420</span></div>
+      <div class="row"><span class="muted">Mortgage</span><span class="num">£1,800</span></div>
+      <div class="row"><span class="muted">Utilities</span><span class="num">£280</span></div>
+      <div class="row"><span class="muted">Insurance</span><span class="num">£420</span></div>
+      <div class="footer"><span class="muted">Total</span><span class="ind" style="font-weight:600;">£4,817</span></div>
+    </div>
+    <div class="col-desc">Slim amber strip below <code>PageHeader</code> on the Committed and Discretionary pages. Visible only when the user is on those pages. Modelled on <code>StaleDataBanner</code>. Hover the strip for the full explanation.</div>
+  </div>
+
+  <div>
+    <div class="col-label">Option C — Both surfaces</div>
+    <div class="panel" style="margin-bottom:14px;">
+      <div class="tier-row" style="padding:10px 16px;">
+        <div class="left">
+          <span class="ind">●</span>
+          <span style="font-weight:800;letter-spacing:0.09em;color:#6366f1;font-size:12px;">COMMITTED</span>
+          <span class="badge" style="font-size:10px;">shortfall</span>
+        </div>
+        <span class="num">£4,817</span>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="panel-header">
+        <span class="title ind">COMMITTED</span>
+        <span class="total ind">£4,817</span>
+      </div>
+      <div class="strip">Projected shortfall in 12 days</div>
+      <div class="row selected"><span>Yearly Bills</span><span class="num">£420</span></div>
+      <div class="row"><span class="muted">Mortgage</span><span class="num">£1,800</span></div>
+      <div class="footer"><span class="muted">Total</span><span class="ind" style="font-weight:600;">£4,817</span></div>
+    </div>
+    <div class="col-desc">Both surfaces show the signal: the Overview waterfall flags it from the high level, and the tier page strip explains it in context. Single source of truth — same arithmetic, two presentations.</div>
+  </div>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Overview waterfall only</h3>
+      <p>Inline amber badge on Committed and Discretionary tier rows. Stays close to the existing attention-badge pattern.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Tier page strip only</h3>
+      <p>Slim amber banner below the page header on the dedicated Committed and Discretionary pages. Matches your original framing.</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Both surfaces</h3>
+      <p>Overview surfaces it at a glance; the tier pages explain it in context. Two presentations, one signal.</p>
+    </div>
+  </div>
+</div>

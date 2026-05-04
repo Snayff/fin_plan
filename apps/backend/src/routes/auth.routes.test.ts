@@ -22,6 +22,11 @@ mock.module("../middleware/auth.middleware", () => ({
   authMiddleware: mock(() => {}),
 }));
 
+const mockAuditLog = mock(() => {});
+mock.module("../services/audit.service", () => ({
+  auditService: { log: mockAuditLog },
+}));
+
 import { authService } from "../services/auth.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { authRoutes } from "./auth.routes";
@@ -40,6 +45,7 @@ afterAll(async () => {
 });
 
 beforeEach(() => {
+  mockAuditLog.mockClear();
   (authMiddleware as any).mockImplementation(async (request: any) => {
     const authHeader = request.headers.authorization;
     if (!authHeader?.startsWith("Bearer ")) {
@@ -77,6 +83,19 @@ describe("POST /api/auth/register", () => {
     const body = response.json();
     expect(body.accessToken).toBe("access-token");
     expect(body.user.email).toBe("test@test.com");
+  });
+
+  it("does not expose refreshToken in response body", async () => {
+    (authService.register as any).mockResolvedValue(mockAuthResponse);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/register",
+      payload: { email: "test@test.com", password: "password123456", name: "Test User" },
+    });
+
+    const body = response.json();
+    expect(body.refreshToken).toBeUndefined();
   });
 
   it("sets refreshToken cookie", async () => {
@@ -140,6 +159,19 @@ describe("POST /api/auth/login", () => {
     const body = response.json();
     expect(body.accessToken).toBe("access-token");
     expect(body.user.email).toBe("test@test.com");
+  });
+
+  it("does not expose refreshToken in response body", async () => {
+    (authService.login as any).mockResolvedValue(mockAuthResponse);
+
+    const response = await app.inject({
+      method: "POST",
+      url: "/api/auth/login",
+      payload: { email: "test@test.com", password: "password123456" },
+    });
+
+    const body = response.json();
+    expect(body.refreshToken).toBeUndefined();
   });
 
   it("sets refreshToken cookie", async () => {
@@ -295,7 +327,7 @@ describe("POST /api/auth/refresh", () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(response.json().error.code).toBe("MISSING_REFRESH_TOKEN");
+    expect(response.json().error.code).toBe("VALIDATION_ERROR");
   });
 
   it("returns 401 for invalid refresh token", async () => {
@@ -399,5 +431,30 @@ describe("PATCH /api/auth/me", () => {
     });
 
     expect(response.statusCode).toBe(401);
+  });
+
+  it("PATCH /api/auth/me writes UPDATE_PROFILE audit row with before/after name", async () => {
+    const oldUser = { id: "user-1", email: "test@test.com", name: "Old Name" };
+    const updatedUser = { id: "user-1", email: "test@test.com", name: "New Name" };
+    (authService.findUserById as any).mockResolvedValueOnce(oldUser);
+    (authService.updateUserName as any).mockResolvedValue(updatedUser);
+
+    const response = await app.inject({
+      method: "PATCH",
+      url: "/api/auth/me",
+      headers: { Authorization: "Bearer valid-token" },
+      payload: { name: "New Name" },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(mockAuditLog).toHaveBeenCalledWith(
+      expect.objectContaining({
+        userId: "user-1",
+        action: "UPDATE_PROFILE",
+        resource: "user",
+        resourceId: "user-1",
+        metadata: { before: { name: "Old Name" }, after: { name: "New Name" } },
+      })
+    );
   });
 });

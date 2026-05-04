@@ -6,6 +6,7 @@ import { actorCtx } from "../lib/actor-ctx.js";
 import {
   cashflowProjectionQuerySchema,
   cashflowMonthDetailQuerySchema,
+  cashflowShortfallQuerySchema,
   updateLinkedAccountSchema,
   bulkUpdateLinkedAccountsSchema,
 } from "@finplan/shared";
@@ -41,6 +42,12 @@ export async function cashflowRoutes(fastify: FastifyInstance) {
     const query = cashflowMonthDetailQuerySchema.parse(req.query);
     const detail = await cashflowService.getMonthDetail(req.householdId!, query.year, query.month);
     return reply.send(detail);
+  });
+
+  fastify.get("/shortfall", preRead, async (req, reply) => {
+    const query = cashflowShortfallQuerySchema.parse(req.query);
+    const result = await cashflowService.getShortfallItems(req.householdId!, query);
+    return reply.send(result);
   });
 
   // ─── Linkable accounts ────────────────────────────────────────────────────
