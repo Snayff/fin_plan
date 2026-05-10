@@ -132,10 +132,13 @@ export function WaterfallSankey({
 
   return (
     <div className="relative">
+      {/* Responsive SVG: scales to fill the container. The page container provides
+          max width; viewBox preserves the 320×200 internal coordinate system used
+          by all positional constants below. See plan § Phase 3. */}
       <svg
-        width={WIDTH}
-        height={HEIGHT}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+        preserveAspectRatio="xMidYMid meet"
+        className="h-auto w-full"
         aria-label="Waterfall flow diagram"
       >
         {/* Column labels */}

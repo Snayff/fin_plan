@@ -87,7 +87,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   }, [qc]);
 
   return (
-    <div className="flex flex-col h-screen bg-background text-foreground">
+    <div className="flex h-dvh flex-col bg-background text-foreground">
       <a
         href="#main-content"
         className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-card focus:text-foreground focus:rounded-md focus:ring-2 focus:ring-ring"
@@ -103,10 +103,11 @@ export default function Layout({ children }: { children: ReactNode }) {
             <SheetTrigger asChild>
               <button
                 type="button"
-                className="md:hidden p-1 text-muted-foreground hover:text-foreground transition-colors"
+                className="-ml-2 inline-flex h-11 w-11 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-foreground/5 hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring lg:hidden"
                 aria-label="Open navigation"
+                aria-expanded={navOpen}
               >
-                <Menu className="h-5 w-5" />
+                <Menu className="h-5 w-5" aria-hidden="true" />
               </button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
@@ -150,8 +151,9 @@ export default function Layout({ children }: { children: ReactNode }) {
           </span>
         </div>
 
-        {/* Centre: nav (desktop) */}
-        <nav className="hidden md:flex items-center gap-3 flex-1">
+        {/* Centre: nav (desktop) — visible at lg:1024px+ to match the layout
+            breakpoint. Tablets in portrait use the hamburger nav. */}
+        <nav className="hidden flex-1 items-center gap-3 lg:flex">
           {NAV_ITEMS_GROUP1.map((item) => (
             <NavLink
               key={item.to}
