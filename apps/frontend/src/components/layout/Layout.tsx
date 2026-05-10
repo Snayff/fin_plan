@@ -14,25 +14,50 @@ import { GlossaryPopoverProvider } from "@/components/help/GlossaryPopoverContex
 import { SearchTriggerIcon } from "@/features/search/SearchTriggerIcon";
 import { SearchPalette } from "@/features/search/SearchPalette";
 import { useSearchHotkey } from "@/features/search/useSearchHotkey";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
-const NAV_ITEMS_GROUP1 = [
+/**
+ * Nav item config. `desktopOnly: true` marks routes that soft-block on mobile
+ * (FullWaterfall, Goals, Gifts, Help, Household Settings — see Decision 1).
+ * On mobile, the hamburger nav renders these with a "(desktop only)" badge;
+ * tapping still navigates and shows the soft-block notice (Item 2 amendment).
+ */
+type NavItem = {
+  to: string;
+  label: string;
+  colorClass: string;
+  desktopOnly?: boolean;
+};
+
+const NAV_ITEMS_GROUP1: readonly NavItem[] = [
   { to: "/overview", label: "Overview", colorClass: "text-page-accent" },
-] as const;
+];
 
-const NAV_ITEMS_GROUP2 = [
+const NAV_ITEMS_GROUP2: readonly NavItem[] = [
   { to: "/income", label: "Income", colorClass: "text-tier-income" },
   { to: "/committed", label: "Committed", colorClass: "text-tier-committed" },
   { to: "/discretionary", label: "Discretionary", colorClass: "text-tier-discretionary" },
   { to: "/surplus", label: "Surplus", colorClass: "text-tier-surplus" },
-] as const;
+];
 
-const NAV_ITEMS_GROUP3 = [
+const NAV_ITEMS_GROUP3: readonly NavItem[] = [
   { to: "/forecast", label: "Forecast", colorClass: "text-foreground" },
   { to: "/assets", label: "Assets", colorClass: "text-foreground" },
-  { to: "/goals", label: "Goals", colorClass: "text-foreground" },
-  { to: "/gifts", label: "Gifts", colorClass: "text-foreground" },
-  { to: "/help", label: "Help", colorClass: "text-foreground" },
-] as const;
+  { to: "/goals", label: "Goals", colorClass: "text-foreground", desktopOnly: true },
+  { to: "/gifts", label: "Gifts", colorClass: "text-foreground", desktopOnly: true },
+  { to: "/help", label: "Help", colorClass: "text-foreground", desktopOnly: true },
+];
+
+function DesktopOnlyBadge() {
+  return (
+    <span
+      aria-label="Desktop only"
+      className="ml-1.5 rounded-sm bg-foreground/10 px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-foreground/55"
+    >
+      desktop only
+    </span>
+  );
+}
 
 export default function Layout({ children }: { children: ReactNode }) {
   const logout = useAuthStore((s) => s.logout);
@@ -41,6 +66,7 @@ export default function Layout({ children }: { children: ReactNode }) {
   const [navOpen, setNavOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   useSearchHotkey(() => setSearchOpen(true));
+  const isMobile = useIsMobile();
 
   const handleSignOut = useCallback(async () => {
     await logout();
@@ -92,7 +118,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     onClick={() => setNavOpen(false)}
                     className={({ isActive }) =>
                       cn(
-                        "px-3 py-2 rounded text-sm font-medium transition-colors",
+                        "px-3 py-2 rounded text-sm font-medium transition-colors flex items-center",
                         item.colorClass,
                         isActive
                           ? "opacity-100 bg-accent/10"
@@ -101,6 +127,7 @@ export default function Layout({ children }: { children: ReactNode }) {
                     }
                   >
                     {item.label}
+                    {isMobile && item.desktopOnly && <DesktopOnlyBadge />}
                   </NavLink>
                 ))}
                 <div className="border-t mt-4 pt-4 space-y-2">
