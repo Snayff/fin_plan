@@ -16,7 +16,7 @@ This plan supersedes the deferred `docs/4. planning/_future/mobile-experience/mo
 
 ### In scope (responsive view + edit)
 
-Overview, Income, Committed, Discretionary, Surplus, Assets, Forecast, Settings, Auth.
+Overview, Income, Committed, Discretionary, Surplus, Assets, Forecast (view + navigation controls; linked-accounts is the only edit surface), Settings, Auth.
 
 ### Soft-block on mobile (desktop-only with in-app notice)
 
@@ -220,7 +220,7 @@ The defensive items cost ~0.5 dev-days total. Not worth dropping just because we
 **In-scope pages**:
 
 - **Overview**: in `WaterfallSankey` replace fixed `width="320" height="200"` with `viewBox="0 0 320 200"` + `preserveAspectRatio="xMidYMid meet"` + `className="w-full h-auto"` (no `max-w-[320px]` cap — the page container provides max). Mobile right-panel is empty by default (no `?view=` param); tap on Sankey item / income type / committed bills sets the param and pushes to right panel. SnapshotTimeline component hidden on mobile.
-- **Forecast**: wrap recharts in `<ResponsiveContainer width="100%" height={220}>`. Stat cards `grid-cols-4` → `grid-cols-2 sm:grid-cols-4`.
+- **Forecast**: wrap recharts in `<ResponsiveContainer width="100%" height={220}>`. Stat cards `grid-cols-4` → `grid-cols-2 sm:grid-cols-4`. `LinkedAccountsPopover` (the only edit surface) converts to `ResponsiveDialog` (sheet variant) on mobile.
 - **Income / Committed / Discretionary / Surplus**: master-detail push (Phase 2 covers the layout). `WaterfallTierTable` two-line stacked card on mobile per Decision 9. Subcategory reorder controls hidden on mobile via `useIsMobile()` gate.
 - **Assets**: master-detail push. AssetItemArea / AccountItemArea full-width on mobile.
 - **Settings (Profile, Household)**: form inputs `text-base sm:text-sm` (prevents iOS focus zoom). Stack horizontal field-pairs vertically below `sm:`.
