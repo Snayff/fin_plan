@@ -210,7 +210,14 @@
 
 @layer components {
   /* Subheading label system — three semantic roles for uppercase section labels.
-     See design-tokens.md § Typography > Subheading Labels. */
+     See design-tokens.md § Typography > Subheading Labels.
+
+     Contrast against --card (#0d1120) — computed for WCAG 2.1 AA:
+       .label-section (muted-fg/60 ≈ #9598a6)   → 6.60:1  ✓ AA normal text
+       .label-detail  (muted-fg/70 ≈ #abadbc)   → 8.66:1  ✓ AA normal text
+       .label-chart   was text-text-tertiary    → 3.54:1  ✗ failed AA for small text
+                      now text-secondary (0.65) → 7.59:1  ✓ AA normal text
+     Re-audit if --card or these foreground tokens change. */
   .label-section {
     @apply text-[11px] font-heading font-semibold uppercase tracking-wider text-muted-foreground/60;
   }
@@ -218,7 +225,7 @@
     @apply text-xs font-heading font-semibold uppercase tracking-wider text-muted-foreground/70;
   }
   .label-chart {
-    @apply text-[10px] font-heading font-semibold uppercase tracking-widest text-text-tertiary;
+    @apply text-[10px] font-heading font-semibold uppercase tracking-widest text-secondary;
   }
 }
 
