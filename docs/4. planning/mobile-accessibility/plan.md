@@ -226,7 +226,7 @@ The defensive items cost ~0.5 dev-days total. Not worth dropping just because we
 - **Income / Committed / Discretionary / Surplus**: master-detail push (Phase 2 covers the layout). `WaterfallTierTable` two-line stacked card on mobile per Decision 9. Subcategory reorder controls hidden on mobile via `useIsMobile()` gate.
 - **Assets**: master-detail push. AssetItemArea / AccountItemArea full-width on mobile.
 - **Profile Settings**: form inputs `text-base sm:text-sm` (prevents iOS focus zoom). Stack horizontal field-pairs vertically below `sm:`. ProfileSection, DisplaySection, SecurityActivitySection all render responsively. Household Settings is soft-blocked — see below.
-- **Auth**: confirm `max-w-md mx-auto`; reduce `px-8` to `px-4 sm:px-8`. Touch-target audit on submit buttons (use `lg` variant).
+- **Auth pages** (`LoginPage`, `RegisterPage`, `AcceptInvitePage`, `WelcomePage`): confirm `max-w-md mx-auto`; reduce `px-8` to `px-4 sm:px-8`. Submit buttons use `lg` size variant (48px mobile). `AcceptInvitePage` in particular must work cleanly on mobile — invite links are typically opened on a phone via email/SMS. No password-reset, email-verification, or magic-link flows currently exist; any added later default to in-scope per this plan.
 - **Cashflow grids** (`CashflowMonthView.tsx`, `CashflowYearView.tsx`, `UpcomingModePanel.tsx`): `grid-cols-4` → `grid-cols-2 sm:grid-cols-4`.
 - **Stat grids** (`CompoundInterestCalculator`, `NetWorthBar`, `GrowthSectionPanel`): `grid-cols-3` → `grid-cols-1 sm:grid-cols-3`.
 
