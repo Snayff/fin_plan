@@ -291,7 +291,7 @@ The defensive items cost ~0.5 dev-days total. Not worth dropping just because we
 - **Contrast sweep**: grep `text-foreground/[0-4]0`, `text-muted-foreground/[0-6]0`. For each occurrence, compute rendered colour against the local background; verify ≥4.5:1 (large text ≥3:1). Fix utility classes once, propagate.
 - **Placeholder-only inputs**: audit forms across `apps/frontend/src/features/**/forms/*.tsx`. Add `<Label htmlFor>` or `aria-label`. ~5–15 instances expected.
 - **Scrollable containers with focusable children**: grep `overflow-y-auto`. Containers that are scroll-only get `tabIndex={0}`. Ones whose children take focus naturally don't.
-- **Manual TalkBack pass on Android** (no iOS device available — see iOS verification gap): Overview, Assets, one tier page, one form page. Document any issues.
+- **Manual TalkBack pass on Android** (no iOS device available — see iOS verification gap): Overview, Assets, one tier page, one form page. Document any issues. Note: TalkBack is the closest available proxy for VoiceOver but not equivalent — heading navigation, landmark behaviour, gesture vocabulary, and default verbosity differ. Bugs specific to VoiceOver may not surface here; the iOS verification gap covers this honestly.
 
 **Risks**: contrast sweep may surface dozens of violations — triage by frequency, fix utility classes first.
 
