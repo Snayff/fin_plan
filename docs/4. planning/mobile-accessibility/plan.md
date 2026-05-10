@@ -167,6 +167,7 @@ The defensive items cost ~0.5 dev-days total. Not worth dropping just because we
 - **`MobileUnsupportedNotice`**: a shared component used by the soft-blocked pages (Phase 3). Renders the page name, a one-line "best on desktop" message, and a back button.
 - **Touch targets in button.tsx** — implement the size variants from Decision 8 above. Audit raw `<button>` elements (Layout hamburger, NavLinks) and ensure mobile padding hits 44px.
 - **Label contrast in `apps/frontend/src/index.css`**: rather than guessing at numeric bumps, **compute the rendered ratio** for each utility against `--card`/`--background` and adjust to ≥4.5:1 (large text ≥3:1). Document the chosen ratio per utility.
+- **recharts code-split spike (~30 min)**: confirm dynamic imports of recharts work cleanly in this Vite setup before Phase 6 needs them. If awkward (e.g. tree-shaking issues, SSR concerns, or chunk-size regressions), raise as a small spec carve-out now rather than discover at the end. The chart-heavy pages (Forecast, Overview's Sankey, NetWorthBar) are the perf risk for Lighthouse mobile.
 
 **Tests (inline invariants)**:
 
@@ -303,7 +304,7 @@ The defensive items cost ~0.5 dev-days total. Not worth dropping just because we
 - **Local emulation**: Chrome DevTools at 375×667 (iPhone SE), 393×852 (iPhone 14 Pro), 412×915 (Pixel 7), 820×1180 (iPad portrait — must match mobile push-nav), 1024×1366 (iPad landscape — must match desktop), 1440×900 (laptop).
 - **Real device**: Android via Tailscale to stage. Confirm no horizontal scroll, no stuck modals, hamburger / search work, every in-scope form submittable, soft-block pages render the notice.
 - **Automated**: `bun run lint`, `bun run type-check`, `bun run test` (incl. a11y smoke + design-system invariants), backend tests via `cd apps/backend && bun scripts/run-tests.ts`.
-- **Lighthouse mobile**: Accessibility ≥95, Best Practices ≥95, Performance ≥85. If perf falls short, code-split the chart-heavy pages (Forecast, Overview's Sankey) via dynamic imports.
+- **Lighthouse mobile**: Accessibility ≥95, Best Practices ≥95, Performance ≥85. If perf falls short, apply the chart code-splitting pattern de-risked in Phase 1 to Forecast, Overview's Sankey, NetWorthBar, and any other chart-heavy page.
 - **Manual checklist per in-scope page**: navigable, every form submittable, every modal usable as Sheet, every chart readable, no horizontal scroll, all primary touch targets ≥44px, no zoom needed, back button works.
 - **iOS verification gap**: documented as a known limitation in the project's mobile section (consider a `docs/3. architecture/mobile.md` for this).
 
