@@ -193,9 +193,9 @@ The defensive items cost ~0.5 dev-days total. Not worth dropping just because we
 **Approach**:
 
 - **TwoPanelLayout**: `w-[360px] min-w-[360px]` → `w-full lg:w-[360px] lg:min-w-[360px]`. Add optional `selectedKey?: string | null` prop. When `useIsMobile()` is true and `selectedKey != null`, render only the right panel full-screen with a slide-in transition (gated on `useReducedMotion()`). When `selectedKey == null` on mobile, render only the left aside full-screen.
-- **`useUrlSelection({ param, validate? })` hook**: `[value, setValue, clear]`. Reads `useSearchParams`. Writes via `setSearchParams({ [param]: value }, { replace: useIsMobile() ? false : true })`. Optional `validate` callback for "is this id in the loaded list" — invalid silently clears via effect.
+- **`useUrlSelection({ param, validate? })` hook**: `[value, setValue, clear]`. Reads `useSearchParams`. Writes via `setSearchParams({ [param]: value }, { replace: useIsMobile() ? false : true })`. Optional `validate: (value: string) => boolean` callback — caller decides whether the value is acceptable (id-in-list for TierPage, enum-membership for AssetsPage, resolver-success for OverviewPage). Invalid silently clears via effect.
 - **PageHeader**: when mobile + a `onBack` is supplied, render a leading 44px chevron back-button. Desktop ignores. Preserves the "PageHeader as first child" invariant.
-- **Page wiring**: each in-scope list+detail page replaces `useState`+`searchParams.get(...)` with `useUrlSelection({ param })`. AssetsPage uses `param: "type"`. TierPage uses `param: "subcategory"`. OverviewPage's existing local `view` state stays — its detail content is derived from interactions inside the left panel rather than a single id, so the master-detail bridge is the `selectedKey` prop on TwoPanelLayout, not a URL param.
+- **Page wiring**: each in-scope list+detail page replaces `useState`+`searchParams.get(...)` with `useUrlSelection`. AssetsPage uses `param: "type"` (validates against the asset/account enum). TierPage uses `param: "subcategory"` (validates against loaded subcategories). OverviewPage migrates its local discriminated `view` union to a composite URL param: `?view=item:<id>` / `?view=type:<incomeType>` / `?view=committed-bills` / absent. A small resolver re-derives the active panel from the param + loaded summary; this also fixes a latent bug where the right panel showed stale snapshots of `name`/`amount` after edits to the underlying record.
 - **`design-system.test.tsx`**: update TwoPanelLayout invariant to allow `w-full lg:w-[360px]`. Allow PageHeader's optional back-button slot. Relax left-panel scroll structure assertions to permit mobile single-panel rendering.
 
 **Tests (inline invariants)**:
@@ -219,7 +219,7 @@ The defensive items cost ~0.5 dev-days total. Not worth dropping just because we
 
 **In-scope pages**:
 
-- **Overview**: in `WaterfallSankey` replace fixed `width="320" height="200"` with `viewBox="0 0 320 200"` + `preserveAspectRatio="xMidYMid meet"` + `className="w-full h-auto"` (no `max-w-[320px]` cap — the page container provides max). Mobile right-panel is empty by default (existing `view: { type: "none" }`); tap on Sankey item / income type / committed bills pushes to right panel. SnapshotTimeline component hidden on mobile.
+- **Overview**: in `WaterfallSankey` replace fixed `width="320" height="200"` with `viewBox="0 0 320 200"` + `preserveAspectRatio="xMidYMid meet"` + `className="w-full h-auto"` (no `max-w-[320px]` cap — the page container provides max). Mobile right-panel is empty by default (no `?view=` param); tap on Sankey item / income type / committed bills sets the param and pushes to right panel. SnapshotTimeline component hidden on mobile.
 - **Forecast**: wrap recharts in `<ResponsiveContainer width="100%" height={220}>`. Stat cards `grid-cols-4` → `grid-cols-2 sm:grid-cols-4`.
 - **Income / Committed / Discretionary / Surplus**: master-detail push (Phase 2 covers the layout). `WaterfallTierTable` two-line stacked card on mobile per Decision 9. Subcategory reorder controls hidden on mobile via `useIsMobile()` gate.
 - **Assets**: master-detail push. AssetItemArea / AccountItemArea full-width on mobile.
@@ -232,6 +232,7 @@ The defensive items cost ~0.5 dev-days total. Not worth dropping just because we
 
 - FullWaterfall, Goals, Gifts, Help: render `<MobileUnsupportedNotice pageName="…" />` when `useIsMobile()` is true. Desktop unchanged.
 - Snapshot routes: same treatment — historical snapshots are desktop-only.
+- **Discoverability**: each soft-blocked route gets a `desktopOnly: true` config flag. The hamburger nav (`Layout.tsx`) and search results (`SearchPalette.tsx`) render these routes with a "(desktop only)" badge on mobile rather than hiding them — tap still leads to the soft-block notice. Balances scope honesty with feature discoverability.
 
 **Tests (inline invariants)**:
 
