@@ -16,11 +16,13 @@ This plan supersedes the deferred `docs/4. planning/_future/mobile-experience/mo
 
 ### In scope (responsive view + edit)
 
-Overview, Income, Committed, Discretionary, Surplus, Assets, Forecast (view + navigation controls; linked-accounts is the only edit surface), Settings, Auth.
+Overview, Income, Committed, Discretionary, Surplus, Assets, Forecast (view + navigation controls; linked-accounts is the only edit surface), Profile Settings, Auth.
 
 ### Soft-block on mobile (desktop-only with in-app notice)
 
-FullWaterfall, Goals, Gifts, Help, snapshot routes. A shared `<MobileUnsupportedNotice />` renders in place of the page content with a back button — URL semantics preserved, deep-links handled gracefully.
+FullWaterfall, Goals, Gifts, Help, Household Settings, snapshot routes. A shared `<MobileUnsupportedNotice />` renders in place of the page content with a back button — URL semantics preserved, deep-links handled gracefully.
+
+Household Settings is overwhelmingly configuration, assumption-tuning, audit-review, data import/export, and destructive admin (rebuild waterfall) — all Anchor #6 desktop territory. Profile Settings (user details, display preferences, security activity) stays mobile-accessible since it covers the realistic mobile cases (logout, password change, basic info).
 
 ### Hidden on mobile (within in-scope pages)
 
@@ -223,14 +225,14 @@ The defensive items cost ~0.5 dev-days total. Not worth dropping just because we
 - **Forecast**: wrap recharts in `<ResponsiveContainer width="100%" height={220}>`. Stat cards `grid-cols-4` → `grid-cols-2 sm:grid-cols-4`. `LinkedAccountsPopover` (the only edit surface) converts to `ResponsiveDialog` (sheet variant) on mobile.
 - **Income / Committed / Discretionary / Surplus**: master-detail push (Phase 2 covers the layout). `WaterfallTierTable` two-line stacked card on mobile per Decision 9. Subcategory reorder controls hidden on mobile via `useIsMobile()` gate.
 - **Assets**: master-detail push. AssetItemArea / AccountItemArea full-width on mobile.
-- **Settings (Profile, Household)**: form inputs `text-base sm:text-sm` (prevents iOS focus zoom). Stack horizontal field-pairs vertically below `sm:`.
+- **Profile Settings**: form inputs `text-base sm:text-sm` (prevents iOS focus zoom). Stack horizontal field-pairs vertically below `sm:`. ProfileSection, DisplaySection, SecurityActivitySection all render responsively. Household Settings is soft-blocked — see below.
 - **Auth**: confirm `max-w-md mx-auto`; reduce `px-8` to `px-4 sm:px-8`. Touch-target audit on submit buttons (use `lg` variant).
 - **Cashflow grids** (`CashflowMonthView.tsx`, `CashflowYearView.tsx`, `UpcomingModePanel.tsx`): `grid-cols-4` → `grid-cols-2 sm:grid-cols-4`.
 - **Stat grids** (`CompoundInterestCalculator`, `NetWorthBar`, `GrowthSectionPanel`): `grid-cols-3` → `grid-cols-1 sm:grid-cols-3`.
 
 **Soft-blocked pages**:
 
-- FullWaterfall, Goals, Gifts, Help: render `<MobileUnsupportedNotice pageName="…" />` when `useIsMobile()` is true. Desktop unchanged.
+- FullWaterfall, Goals, Gifts, Help, Household Settings: render `<MobileUnsupportedNotice pageName="…" />` when `useIsMobile()` is true. Desktop unchanged.
 - Snapshot routes: same treatment — historical snapshots are desktop-only.
 - **Discoverability**: each soft-blocked route gets a `desktopOnly: true` config flag. The hamburger nav (`Layout.tsx`) and search results (`SearchPalette.tsx`) render these routes with a "(desktop only)" badge on mobile rather than hiding them — tap still leads to the soft-block notice. Balances scope honesty with feature discoverability.
 
