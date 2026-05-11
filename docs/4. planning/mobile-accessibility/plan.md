@@ -1,5 +1,35 @@
 # Mobile Accessibility & WCAG 2.1 AA Pass
 
+## Implementation status
+
+Implementation committed on branch `feat/mobile-implementation` (7 commits, off `claude/review-finplan-mobile-plan-BcleC` to carry the planning docs). Runtime artefact: `docs/3. architecture/mobile.md`.
+
+| Phase                              | Status                  | Notes                                                                                       |
+| ---------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------- |
+| 1a — Lint + axe infra              | **Done**                | `eslint-plugin-jsx-a11y` at warn, `axe-core` + `expectNoA11yViolations` helper              |
+| 1b — Shared primitives             | **Done**                | `useIsMobile`, `ResponsiveDialog`, `MobileUnsupportedNotice`, Button 44px touch targets     |
+| 1c — Contrast + recharts spike     | **Done**                | `.label-chart` fixed; recharts code-split already in place via route-based splitting        |
+| 2 — Layout & URL state             | **Done**                | `useUrlSelection`, `TwoPanelLayout` responsive, `PageHeader` onBack, Tier/Assets/Overview   |
+| 3a — Soft-block + nav/search badge | **Done**                | 5 pages soft-block, `(desktop only)` badge in hamburger + search                            |
+| 3b/c/d — Page-by-page pass         | **Done**                | Sankey responsive, stat grids, auth padding+CTAs, search palette fullscreen on mobile       |
+| 4 — Defensive iOS + nav audit      | **Done**                | `h-dvh` audit, hamburger 44px, `inputMode="decimal"` on numeric forms, Input touch target   |
+| 5 — A11y completion                | **Partial**             | Smoke test green (9 tests). Manual TalkBack pass pending — needs real Android via Tailscale |
+| 6 — Verification                   | **Pending manual**      | Lighthouse mobile run, real-device walkthrough, screenshot sweep                            |
+| iOS verification                   | **Documented as a gap** | No iPhone available to project; defensive build shipped without empirical verification      |
+
+**Lint:** 102 warnings remaining (down from 194). Off project-wide: `label-has-for` (deprecated), `no-autofocus` (modal focus-on-open is the correct WCAG behaviour). Remaining warnings are real `label-has-associated-control` / `control-has-associated-label` issues, mostly in soft-blocked pages — tracked as Phase 5 follow-up, none block mobile usability.
+
+**Tests:** 163 frontend test files passing, including 9 new a11y smoke tests, 7 `useUrlSelection`, 5 `TwoPanelLayout`, 4 `ResponsiveDialog`, 4 `Button` size variants, 5 `MobileUnsupportedNotice`, 9 `resolveOverviewView`, and the 3 new PageHeader-mobile tests.
+
+**Deferred (not blocking mobile usability):**
+
+- `LinkedAccountsPopover` → `ResponsiveDialog` conversion (custom positioned popover, bigger refactor)
+- `WaterfallTierTable` two-line stacked mobile layout (used only in `FullWaterfallPage` which is soft-blocked)
+- `SubcategoriesSection` reorder hide-on-mobile and `SnapshotTimeline` scrub replacement (host pages are soft-blocked)
+- Full contrast sweep across `text-foreground/[0-4]0` and `text-muted-foreground/[0-6]0` usages — only the label utilities audited
+
+---
+
 ## Context
 
 The finplan frontend is desktop-first by design (Anchor #6). This plan adds a **deliberately scoped** mobile-responsive layer on top of the existing desktop experience: the in-scope pages re-flow at small viewports via a single shared component layer; the out-of-scope pages soft-block with a "use desktop" notice. The waterfall pages and the assets page get full view + edit on mobile. The full-waterfall workbench, configuration-heavy surfaces, and snapshot views remain desktop-only.
