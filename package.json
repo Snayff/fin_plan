@@ -25,7 +25,8 @@
     "restart": "bun run stop && bun run start",
     "db:migrate": "docker-compose -f docker-compose.dev.yml exec backend bun run db:migrate",
     "db:seed": "docker-compose -f docker-compose.dev.yml exec backend bun run db:seed",
-    "db:studio": "cd apps/backend && bun run db:studio"
+    "db:studio": "cd apps/backend && bun run db:studio",
+    "test:e2e": "cd apps/frontend && bun run test:e2e"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
