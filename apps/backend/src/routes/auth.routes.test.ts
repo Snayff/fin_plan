@@ -22,9 +22,9 @@ mock.module("../middleware/auth.middleware", () => ({
   authMiddleware: mock(() => {}),
 }));
 
-const mockAuditLog = mock(() => {});
+const mockAuditLog = mock(() => Promise.resolve());
 mock.module("../services/audit.service", () => ({
-  auditService: { log: mockAuditLog },
+  auditEvent: mockAuditLog,
 }));
 
 import { authService } from "../services/auth.service";

@@ -1,7 +1,7 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest, RouteShorthandOptions } from "fastify";
 import { z } from "zod";
 import { authService } from "../services/auth.service";
-import { auditService } from "../services/audit.service";
+import { auditEvent } from "../services/audit.service";
 import { authMiddleware } from "../middleware/auth.middleware";
 import { config } from "../config/env";
 import { blacklistToken } from "../utils/tokenBlacklist";
@@ -114,7 +114,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     const body = registerSchema.parse(request.body);
     const result = await authService.register(body);
 
-    auditService.log({
+    await auditEvent({
       userId: result.user.id,
       action: "REGISTER",
       resource: "user",
@@ -144,7 +144,7 @@ export async function authRoutes(fastify: FastifyInstance) {
         ...ctx,
       });
 
-      auditService.log({
+      await auditEvent({
         userId: result.user.id,
         action: "LOGIN_SUCCESS",
         resource: "session",
@@ -159,7 +159,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       const { refreshToken: _rt, ...publicResult } = result;
       return reply.status(200).send(publicResult);
     } catch (error) {
-      auditService.log({
+      await auditEvent({
         action: "LOGIN_FAILED",
         resource: "session",
         metadata: { email: body.email },
@@ -194,7 +194,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     const existingUser = await authService.findUserById(userId);
     const oldName = existingUser?.name ?? null;
     const user = await authService.updateUserName(userId, body.name);
-    auditService.log({
+    await auditEvent({
       userId,
       action: AuditAction.UPDATE_PROFILE,
       resource: "user",
@@ -224,7 +224,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     const ctx = requestContext(request);
     const result = await authService.refreshAccessToken(refreshToken, ctx);
 
-    auditService.log({
+    await auditEvent({
       action: "TOKEN_REFRESH",
       resource: "session",
       ...ctx,
@@ -264,7 +264,7 @@ export async function authRoutes(fastify: FastifyInstance) {
     // Revoke all refresh tokens for this user
     await authService.revokeAllUserTokens(userId);
 
-    auditService.log({
+    await auditEvent({
       userId,
       action: "LOGOUT",
       resource: "session",
@@ -300,7 +300,7 @@ export async function authRoutes(fastify: FastifyInstance) {
       throw new NotFoundError("Session not found");
     }
 
-    auditService.log({
+    await auditEvent({
       userId,
       action: "SESSION_REVOKED",
       resource: "session",
@@ -320,7 +320,7 @@ export async function authRoutes(fastify: FastifyInstance) {
 
     await authService.revokeAllUserTokens(userId);
 
-    auditService.log({
+    await auditEvent({
       userId,
       action: "ALL_SESSIONS_REVOKED",
       resource: "session",
