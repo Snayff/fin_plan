@@ -48,7 +48,7 @@
 
     /* Muted/Disabled */
     --muted: 225 32% 16%;
-    --muted-foreground: 230 100% 97% / 0.4;
+    --muted-foreground: 230 100% 97% / 0.55;
 
     /* Accent (kept for shadcn compat — maps to page-accent) */
     --accent: 258 90% 66%;
@@ -69,7 +69,7 @@
     /* Waterfall tier colours — semantically protected */
     --tier-income: 199 86% 49%; /* #0ea5e9 — energetic electric blue */
     --tier-income-subtle: 199 40% 18%;
-    --tier-committed: 239 84% 67%; /* #6366f1 — settled indigo */
+    --tier-committed: 239 84% 68%; /* #6b6ff3 — settled indigo */
     --tier-committed-subtle: 239 40% 18%;
     --tier-discretionary: 271 91% 65%; /* #a855f7 — expressive purple */
     --tier-discretionary-subtle: 271 40% 18%;

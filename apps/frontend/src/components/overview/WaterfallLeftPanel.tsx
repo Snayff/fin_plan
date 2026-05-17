@@ -23,7 +23,7 @@ interface WaterfallLeftPanelProps {
 const ROW_CLASS =
   "flex items-center justify-between py-1.5 px-2 rounded cursor-pointer hover:bg-accent/50 transition-colors text-[13px] font-body text-text-secondary";
 
-const AMOUNT_CLASS = "font-numeric text-foreground/60";
+const AMOUNT_CLASS = "font-numeric text-muted-foreground";
 
 function StaleCountBadge({ count }: { count: number }) {
   if (count === 0) return null;
@@ -61,14 +61,14 @@ function SectionHeader({
   const content = (
     <div className="flex items-center justify-between py-1.5 px-2">
       <div className="flex items-center gap-2">
-        <h3
+        <h2
           className={cn(
             "text-[13px] font-heading font-semibold tracking-tier uppercase",
             colorClass
           )}
         >
           {label}
-        </h3>
+        </h2>
         <StaleCountBadge count={staleCount} />
         {extraBadge}
       </div>
