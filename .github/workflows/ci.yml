@@ -102,8 +102,18 @@ jobs:
       - name: Push schema to test database
         run: cd apps/backend && bunx prisma db push
 
-      - name: Run tests
-        run: bun run test
+      - name: Run tests with coverage
+        run: cd apps/backend && bun scripts/run-tests.ts --coverage
+
+      - name: Check coverage floor & ratchet
+        run: bun scripts/check-coverage.ts coverage-current.json
+
+      - name: Upload coverage artefact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage-current.json
 
   # ─────────────────────────────────────────
   # Security Audit (runs on PRs)
