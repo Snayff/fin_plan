@@ -18,7 +18,8 @@
     "db:push": "prisma db push",
     "postinstall": "prisma generate",
     "db:generate": "prisma generate",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "db:reset-e2e": "NODE_ENV=test bun scripts/reset-e2e-db.ts && NODE_ENV=test bun prisma/seed-e2e.ts"
   },
   "dependencies": {
     "@fastify/cookie": "^10.0.1",
