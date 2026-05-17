@@ -197,8 +197,8 @@ jobs:
       - name: Generate Prisma Client
         run: cd apps/backend && bunx prisma generate
 
-      - name: Build frontend
-        run: cd apps/frontend && bun run build
+      - name: Build all packages
+        run: bun run build
 
       - name: Check bundle sizes
         run: cd apps/frontend && bun run size
@@ -262,8 +262,8 @@ jobs:
       - name: Seed test data
         run: cd apps/backend && bun run db:seed
 
-      - name: Build frontend
-        run: cd apps/frontend && bun run build
+      - name: Build all packages
+        run: bun run build
 
       - name: Start backend
         run: cd apps/backend && bun run start &
