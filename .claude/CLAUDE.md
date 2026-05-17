@@ -20,6 +20,7 @@ Full-stack TypeScript monorepo: Fastify backend + React/Vite frontend + shared Z
 - Fix **all** lint errors, including unused imports. No partial fixes left behind.
 - When investigating CI failures, read the **full** CI output — don't stop at the first error.
 - **Implement batch changes incrementally.** After each file or logical group of changes, run lint and type-check before continuing. If anything fails, fix it before moving on.
+- See `docs/3. architecture/dev-tooling.md` for hook bypass policy, watch-mode usage, and coverage baseline updates.
 
 ---
 

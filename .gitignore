@@ -6,6 +6,7 @@ node_modules/
 # Testing
 coverage/
 .nyc_output/
+coverage-current.json
 
 # Production
 dist/
