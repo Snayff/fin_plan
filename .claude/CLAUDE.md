@@ -117,7 +117,7 @@ Structural layout is in **Architecture** above. Domain rules:
 - **Auth middleware required:** Every new route must use `authMiddleware` in `preHandler` unless explicitly public
 - **householdId from middleware only:** Never accept householdId from URL params for data scoping — always use `req.householdId!`
 - **Throw, don't inline errors:** Use error class hierarchy (`NotFoundError`, `AuthenticationError`, etc.), never `reply.status().send()` for errors
-- **Audit all mutations:** Wrap every create/update/delete in `audited()` with `actorCtx(req)`
+- **Audit all actions:** Wrap mutations in `audited()` with `actorCtx(req)`. For mutationless events (login attempts, logout, refresh) use `auditEvent()` from `audit.service.ts`. Never call `prisma.auditLog.create` directly — enforced by ESLint.
 - **No `any` in security paths:** Auth middleware, token handling, and API client must be fully typed
 - **Generic auth messages:** Login/register errors must never reveal whether an account exists
 - **Error masking:** Use `NotFoundError` for both "not found" and "not owned" — never reveal resource existence to unauthorised callers
