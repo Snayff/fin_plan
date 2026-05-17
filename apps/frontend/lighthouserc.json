@@ -27,7 +27,7 @@
         },
         "chromeFlags": "--headless --no-sandbox --disable-dev-shm-usage"
       },
-      "puppeteerScript": "./lhci-login.js",
+      "puppeteerScript": "./lhci-login.cjs",
       "puppeteerLaunchOptions": {
         "args": ["--no-sandbox", "--disable-dev-shm-usage"]
       }
