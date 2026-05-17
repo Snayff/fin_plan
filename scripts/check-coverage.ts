@@ -1,3 +1,5 @@
+import { existsSync, readFileSync } from "node:fs";
+
 export type Metric = "functions" | "lines";
 
 export interface PackageCoverage {
@@ -74,4 +76,73 @@ export function evaluateCoverage(input: EvaluateInput): EvaluateResult {
   }
 
   return { ok: violations.length === 0, violations };
+}
+
+interface RunOptions {
+  baselinePath: string;
+  currentPath: string;
+  floor: Floor;
+  ratchetTolerancePp: number;
+}
+
+export function runCli(opts: RunOptions): number {
+  if (!existsSync(opts.baselinePath)) {
+    console.error(`coverage-baseline file not found: ${opts.baselinePath}`);
+    return 1;
+  }
+  if (!existsSync(opts.currentPath)) {
+    console.error(`current coverage file not found: ${opts.currentPath}`);
+    return 1;
+  }
+
+  const baseline = JSON.parse(readFileSync(opts.baselinePath, "utf8")) as Record<
+    string,
+    PackageCoverage
+  >;
+  const current = JSON.parse(readFileSync(opts.currentPath, "utf8")) as Record<
+    string,
+    PackageCoverage
+  >;
+
+  const { ok, violations } = evaluateCoverage({
+    current,
+    baseline,
+    floor: opts.floor,
+    ratchetTolerancePp: opts.ratchetTolerancePp,
+  });
+
+  if (ok) {
+    console.log("✅ coverage check passed");
+    return 0;
+  }
+
+  console.error("❌ coverage check failed:");
+  for (const v of violations) {
+    if (v.kind === "floor") {
+      console.error(`  [${v.pkg}] ${v.metric} ${v.current.toFixed(1)}% below floor ${v.floor}%`);
+    } else if (v.kind === "ratchet") {
+      console.error(
+        `  [${v.pkg}] ${v.metric} dropped ${v.dropPp.toFixed(2)}pp (baseline ${v.baseline.toFixed(1)}% → current ${v.current.toFixed(1)}%)`
+      );
+    } else {
+      console.error(
+        `  [${v.pkg}] missing from coverage-baseline.json — add an entry or remove the package`
+      );
+    }
+  }
+  console.error(
+    `\nIf this drop is intentional, update coverage-baseline.json in the same PR and reviewers will see it.`
+  );
+  return 1;
+}
+
+// Only execute CLI when invoked directly (not when imported by tests).
+if (import.meta.main) {
+  const exitCode = runCli({
+    baselinePath: "coverage-baseline.json",
+    currentPath: process.argv[2] ?? "coverage-current.json",
+    floor: { functions: 63, lines: 74 },
+    ratchetTolerancePp: 1,
+  });
+  process.exit(exitCode);
 }
