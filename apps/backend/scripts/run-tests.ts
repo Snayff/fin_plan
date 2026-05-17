@@ -58,15 +58,23 @@ export async function runFiles(files: string[]): Promise<number> {
       ["bun", "test", ...(coverage ? ["--coverage"] : []), "--preload", preload, filePath],
       {
         stdout: usePipe ? "pipe" : "inherit",
-        stderr: "inherit",
+        // Pipe stderr too when coverage is on — Bun writes its coverage table to stderr,
+        // so we need to capture it for parsing while still forwarding it to the terminal.
+        stderr: usePipe ? "pipe" : "inherit",
         env: process.env,
       }
     );
 
-    let stdout = "";
-    if (usePipe && proc.stdout) {
-      stdout = await new Response(proc.stdout).text();
-      process.stdout.write(stdout);
+    let combined = "";
+    if (usePipe) {
+      // Read both streams concurrently to prevent deadlock if either buffer fills.
+      const [stdoutText, stderrText] = await Promise.all([
+        proc.stdout ? new Response(proc.stdout).text() : Promise.resolve(""),
+        proc.stderr ? new Response(proc.stderr).text() : Promise.resolve(""),
+      ]);
+      process.stdout.write(stdoutText);
+      process.stderr.write(stderrText);
+      combined = stdoutText + "\n" + stderrText;
     }
 
     const exitCode = await proc.exited;
@@ -76,8 +84,8 @@ export async function runFiles(files: string[]): Promise<number> {
       failures.push(filePath);
     }
 
-    if (usePipe && stdout) {
-      const row = parseBunCoverageRow(stdout);
+    if (usePipe && combined) {
+      const row = parseBunCoverageRow(combined);
       if (row) coverageRows.push(row);
     }
   }
