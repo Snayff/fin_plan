@@ -269,13 +269,13 @@ jobs:
         run: cd apps/backend && bun run start &
 
       - name: Start frontend preview
-        run: cd apps/frontend && bunx vite preview --port 3000 --host 0.0.0.0 &
+        run: cd apps/frontend && bunx vite preview --port 3000 --host 127.0.0.1 &
 
       - name: Wait for stack to be ready
         run: |
           for i in $(seq 1 30); do
-            curl -sf http://localhost:3000 > /dev/null 2>&1 && \
-            curl -sf http://localhost:3001/health > /dev/null 2>&1 && exit 0
+            curl -sf http://127.0.0.1:3000 > /dev/null 2>&1 && \
+            curl -sf http://127.0.0.1:3001/health > /dev/null 2>&1 && exit 0
             sleep 2
           done
           echo "Stack failed to start within 60s" && exit 1

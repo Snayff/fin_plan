@@ -3,9 +3,9 @@
     "collect": {
       "numberOfRuns": 3,
       "url": [
-        "http://localhost:3000/login",
-        "http://localhost:3000/overview",
-        "http://localhost:3000/waterfall"
+        "http://127.0.0.1:3000/login",
+        "http://127.0.0.1:3000/overview",
+        "http://127.0.0.1:3000/waterfall"
       ],
       "settings": {
         "formFactor": "mobile",
