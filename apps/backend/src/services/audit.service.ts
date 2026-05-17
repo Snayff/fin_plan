@@ -47,19 +47,65 @@ export interface AuditLogEntry {
   metadata?: Prisma.InputJsonValue;
   ipAddress?: string;
   userAgent?: string;
+  actorName?: string;
+  actorId?: string;
+  householdId?: string;
 }
 
 /**
- * Fire-and-forget audit logging.
- * Writes are non-blocking — failures are logged but never throw to callers.
+ * Transient Prisma error codes that justify a single retry.
+ * P1001 = can't reach DB; P2024 = connection pool timeout.
  */
-export const auditService = {
-  log(entry: AuditLogEntry): void {
-    prisma.auditLog.create({ data: entry }).catch((err) => {
-      console.error("Audit log write failed:", err);
-    });
-  },
-};
+const TRANSIENT_AUDIT_ERROR_CODES = new Set(["P1001", "P2024"]);
+
+function isTransientAuditError(err: unknown): boolean {
+  if (err === null || typeof err !== "object") return false;
+  const code = (err as { code?: unknown }).code;
+  return typeof code === "string" && TRANSIENT_AUDIT_ERROR_CODES.has(code);
+}
+
+/** Redact PII-ish fields before logging an audit payload to stderr. */
+function redactAuditEntry(entry: AuditLogEntry): Record<string, unknown> {
+  const { metadata: _metadata, userAgent: _ua, ipAddress: _ip, ...safe } = entry;
+  return {
+    ...safe,
+    metadataKeys: entry.metadata ? Object.keys(entry.metadata as object) : [],
+  };
+}
+
+/**
+ * Durable audit write for mutationless events (login attempts, refresh, logout).
+ *
+ * Retries once after 100ms on transient Prisma errors (P1001 / P2024).
+ * On retry exhaustion, logs a structured error with a redacted payload and rethrows.
+ *
+ * For mutations, use `audited()` instead.
+ */
+export async function auditEvent(entry: AuditLogEntry): Promise<void> {
+  const MAX_ATTEMPTS = 2;
+  const BACKOFF_MS = 100;
+
+  let lastError: unknown;
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    try {
+      await prisma.auditLog.create({ data: entry });
+      return;
+    } catch (err) {
+      lastError = err;
+      if (attempt < MAX_ATTEMPTS && isTransientAuditError(err)) {
+        await new Promise((r) => setTimeout(r, BACKOFF_MS));
+        continue;
+      }
+      break;
+    }
+  }
+
+  console.error("Audit log write failed after retries:", {
+    entry: redactAuditEntry(entry),
+    error: lastError instanceof Error ? lastError.message : String(lastError),
+  });
+  throw lastError;
+}
 
 // ── transactional wrapper ─────────────────────────────────────────────────────
 
