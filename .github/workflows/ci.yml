@@ -21,7 +21,7 @@ jobs:
   lint-and-typecheck:
     name: Lint & Type Check
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
 
     steps:
       - uses: actions/checkout@v4
@@ -55,7 +55,7 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
 
     services:
       postgres:
@@ -122,7 +122,7 @@ jobs:
   security-audit:
     name: Security Audit
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
 
     steps:
       - uses: actions/checkout@v4
@@ -148,7 +148,7 @@ jobs:
   check-compile:
     name: Check Compile
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
 
     env:
       DATABASE_URL: postgresql://finplan:unused@localhost:5432/unused
@@ -182,7 +182,7 @@ jobs:
   frontend-perf-size:
     name: Frontend Bundle Size
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     needs: [check-compile]
 
     env:
@@ -220,7 +220,7 @@ jobs:
   frontend-perf-lhci:
     name: Frontend Lighthouse
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch'
     needs: [check-compile]
     timeout-minutes: 15
 
