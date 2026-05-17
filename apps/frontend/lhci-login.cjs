@@ -6,6 +6,13 @@
 module.exports = async (browser, _context) => {
   const page = await browser.newPage();
   await page.goto("http://127.0.0.1:3000/login", { waitUntil: "networkidle0" });
+
+  // If already authenticated the app redirects away from /login — nothing to do.
+  if (!page.url().includes("/login")) {
+    await page.close();
+    return;
+  }
+
   await page.waitForSelector("#email", { timeout: 15000 });
   await page.type("#email", "owner@finplan.test");
   await page.type("#password", "BrowserTest123!");
