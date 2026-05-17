@@ -148,7 +148,7 @@ export default function Layout({ children }: { children: ReactNode }) {
           </Sheet>
           <NavLink
             to="/overview"
-            aria-label="Go to Overview"
+            aria-label="finplan home"
             className="font-heading text-lg font-bold tracking-tight text-foreground hover:opacity-80 transition-opacity"
           >
             finplan
