@@ -13,6 +13,7 @@ import { CommittedBillsPanel } from "@/components/overview/CommittedBillsPanel";
 import { FinancialSummaryPanel } from "@/components/overview/FinancialSummaryPanel";
 import OverviewEmptyState from "@/components/overview/OverviewEmptyState";
 import { useUrlSelection } from "@/hooks/useUrlSelection";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 /**
  * Composite URL param schema for the right panel:
@@ -152,6 +153,7 @@ export default function OverviewPage() {
 
   const [rawView, setView, clearView] = useUrlSelection({ param: "view", validate: validateView });
   const view = resolveOverviewView(rawView, summary);
+  const isMobile = useIsMobile();
 
   const selectView = useCallback((next: ResolvedView) => setView(encodeViewParam(next)), [setView]);
 
@@ -178,10 +180,22 @@ export default function OverviewPage() {
     <OverviewEmptyState />
   );
 
+  // On mobile with no specific item selection, stack the FinancialSummaryPanel
+  // inline beneath the waterfall list so users can scroll the full overview in
+  // one go (right panel push-nav stays reserved for item drill-ins).
+  const showInlineSummary = isMobile && view.type === "none" && summary != null;
+
   const left = (
     <div className="flex h-full flex-col">
       <PageHeader title="Overview" />
-      <div className="min-h-0 flex-1 overflow-y-auto">{leftContent}</div>
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {leftContent}
+        {showInlineSummary && (
+          <div className="mt-4 border-t border-foreground/10">
+            <FinancialSummaryPanel waterfallSummary={summary} isSnapshot={false} inline />
+          </div>
+        )}
+      </div>
     </div>
   );
 

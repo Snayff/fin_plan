@@ -5,6 +5,7 @@ import { useGlossaryPopover } from "./GlossaryPopoverContext";
 import { getGlossaryEntry } from "@/data/glossary";
 import { getConceptEntry } from "@/data/concepts";
 import { usePrefersReducedMotion } from "@/utils/motion";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import { cn } from "@/lib/utils";
 
 interface Props {
@@ -20,6 +21,7 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
   const triggerRef = useRef<HTMLSpanElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
   const reduced = usePrefersReducedMotion();
+  const isMobile = useIsMobile();
   const entry = getGlossaryEntry(entryId);
   const [popoverStyle, setPopoverStyle] = useState<React.CSSProperties>({});
 
@@ -88,10 +90,27 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         className="border-b border-dotted border-current cursor-help"
-        onMouseEnter={scheduleOpen}
-        onMouseLeave={scheduleClose}
+        // Hover-to-open is desktop-only — on touch devices, the mouseenter
+        // event fires during a tap which causes the tooltip to flash
+        // briefly before the link click navigates away. Mobile users open
+        // the tooltip explicitly via tap (handled by onClick below).
+        onMouseEnter={isMobile ? undefined : scheduleOpen}
+        onMouseLeave={isMobile ? undefined : scheduleClose}
         onFocus={() => openPopover(entryId)}
         onBlur={scheduleClose}
+        onClick={(e) => {
+          // On mobile only: tap toggles the tooltip. Stops propagation so
+          // an ancestor link doesn't navigate. Desktop click is a no-op
+          // (hover handles open; this avoids a double-trigger).
+          if (!isMobile) return;
+          e.preventDefault();
+          e.stopPropagation();
+          if (isOpen) {
+            closePopover();
+          } else {
+            openPopover(entryId);
+          }
+        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();

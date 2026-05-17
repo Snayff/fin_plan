@@ -179,12 +179,16 @@ export default function ItemArea({
           </span>
         </div>
         <div className="flex items-center gap-1.5">
-          <Link
-            to={`/waterfall#${tier}`}
-            className="rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
-          >
-            View all
-          </Link>
+          {/* "View all" links to FullWaterfall which is soft-blocked on mobile;
+              hide the link to avoid landing the user on a dead end. */}
+          {!isMobile && (
+            <Link
+              to={`/waterfall#${tier}`}
+              className="rounded-md border border-foreground/20 px-3 py-1 text-xs font-medium text-foreground/60 hover:border-page-accent/40 hover:bg-page-accent/8 hover:text-foreground/80 transition-all duration-150"
+            >
+              View all
+            </Link>
+          )}
           {!lockedManager && (
             <GhostAddButton
               onClick={() => {

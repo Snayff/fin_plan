@@ -146,9 +146,13 @@ export default function Layout({ children }: { children: ReactNode }) {
               </nav>
             </SheetContent>
           </Sheet>
-          <span className="font-heading font-bold text-lg tracking-tight text-foreground">
+          <NavLink
+            to="/overview"
+            aria-label="Go to Overview"
+            className="font-heading text-lg font-bold tracking-tight text-foreground hover:opacity-80 transition-opacity"
+          >
             finplan
-          </span>
+          </NavLink>
         </div>
 
         {/* Centre: nav (desktop) — visible at lg:1024px+ to match the layout
