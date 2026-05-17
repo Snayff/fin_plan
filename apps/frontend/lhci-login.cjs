@@ -6,6 +6,7 @@
 module.exports = async (browser, _context) => {
   const page = await browser.newPage();
   await page.goto("http://127.0.0.1:3000/login", { waitUntil: "networkidle0" });
+  await page.waitForSelector("#email", { timeout: 15000 });
   await page.type("#email", "owner@finplan.test");
   await page.type("#password", "BrowserTest123!");
   await Promise.all([
