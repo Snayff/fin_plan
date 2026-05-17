@@ -47,6 +47,7 @@ export function AddSubcategoryButton({ onCreate }: Props) {
     <div className="flex flex-col gap-1">
       <div className="flex items-center gap-2">
         <input
+          // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: inline add field, immediately visible to user
           autoFocus
           type="text"
           aria-label="New subcategory name"

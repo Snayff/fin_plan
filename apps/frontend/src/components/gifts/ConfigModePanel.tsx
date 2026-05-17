@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/no-noninteractive-element-to-interactive-role -- TODO(a11y): li[role=button] pattern; refactor to button elements */
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ConfigBudgetPanel } from "./ConfigBudgetPanel";

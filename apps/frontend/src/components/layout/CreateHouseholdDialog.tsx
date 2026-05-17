@@ -50,6 +50,7 @@ export function CreateHouseholdDialog({
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g. Smith Household"
+            // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: first field in a dialog; focus management is appropriate here
             autoFocus
           />
         </div>

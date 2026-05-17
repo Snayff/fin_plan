@@ -103,6 +103,7 @@ export function SearchPalette({ open, onOpenChange, userId }: Props) {
                 onValueChange={setQuery}
                 placeholder="Search..."
                 className="w-full bg-transparent outline-none text-sm text-foreground"
+                // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: search palette opens with focused input for immediate keyboard use
                 autoFocus
               />
             </div>

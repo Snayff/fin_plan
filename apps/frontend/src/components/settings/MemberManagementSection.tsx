@@ -205,6 +205,7 @@ export function MemberManagementSection() {
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               placeholder="e.g. Alex"
+              // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: first field in add-member form
               autoFocus
             />
           </div>

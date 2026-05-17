@@ -38,6 +38,7 @@ export function GiftPersonList({ people, onSelect }: Props) {
         </div>
       </div>
       <ul className="flex-1 divide-y divide-foreground/5 overflow-y-auto">
+        {/* eslint-disable jsx-a11y/no-noninteractive-element-to-interactive-role -- TODO(a11y): li[role=button] pattern; refactor to button element */}
         {people.map((p) => (
           <li
             key={p.id}
