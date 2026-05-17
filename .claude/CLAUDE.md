@@ -159,6 +159,8 @@ Before implementing any feature, read the relevant specs in `docs/`:
 
 GitHub Actions (`.github/workflows/ci.yml`): lint + type-check → test (real postgres service) → build → deploy to Coolify (webhook on push to main).
 
+Frontend perf budgets (bundle size + Lighthouse): see `docs/3. architecture/frontend-perf.md`. Local: `cd apps/frontend && bun run size` (bundle) or `bun run lhci` (Lighthouse, needs full stack running).
+
 ---
 
 ## Design Context
