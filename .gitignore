@@ -88,3 +88,6 @@ tmp/
 
 # Git worktrees
 .worktrees/
+
+# Lighthouse CI output
+apps/frontend/.lighthouseci/
