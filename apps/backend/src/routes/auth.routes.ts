@@ -144,6 +144,8 @@ export async function authRoutes(fastify: FastifyInstance) {
         ...ctx,
       });
 
+      // Durability trade-off: if auditEvent exhausts retries it rethrows, returning a 500
+      // even though login succeeded. Accepted — silent audit loss is worse than a transient 500.
       await auditEvent({
         userId: result.user.id,
         action: "LOGIN_SUCCESS",

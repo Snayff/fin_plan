@@ -54,9 +54,11 @@ export interface AuditLogEntry {
 
 /**
  * Transient Prisma error codes that justify a single retry.
- * P1001 = can't reach DB; P2024 = connection pool timeout.
+ * P1001 = can't reach DB; P1002 = DB connection timeout; P1008 = operation timeout;
+ * P1017 = server closed connection; P2024 = connection pool timeout.
+ * Non-transient codes (schema errors, constraint violations, etc.) fail immediately.
  */
-const TRANSIENT_AUDIT_ERROR_CODES = new Set(["P1001", "P2024"]);
+const TRANSIENT_AUDIT_ERROR_CODES = new Set(["P1001", "P1002", "P1008", "P1017", "P2024"]);
 
 function isTransientAuditError(err: unknown): boolean {
   if (err === null || typeof err !== "object") return false;
@@ -66,10 +68,16 @@ function isTransientAuditError(err: unknown): boolean {
 
 /** Redact PII-ish fields before logging an audit payload to stderr. */
 function redactAuditEntry(entry: AuditLogEntry): Record<string, unknown> {
-  const { metadata: _metadata, userAgent: _ua, ipAddress: _ip, ...safe } = entry;
+  const {
+    metadata: _metadata,
+    userAgent: _ua,
+    ipAddress: _ip,
+    actorName: _actorName,
+    ...safe
+  } = entry;
   return {
     ...safe,
-    metadataKeys: entry.metadata ? Object.keys(entry.metadata as object) : [],
+    metadata: "[redacted]",
   };
 }
 
