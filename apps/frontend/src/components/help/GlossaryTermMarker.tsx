@@ -80,6 +80,12 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
   }, [isOpen, closePopover]);
 
   if (!entry) return <>{children}</>;
+  // Glossary tooltips are desktop-only. On mobile the dotted-underline
+  // affordance can't be distinguished from regular body text, and any
+  // tap-to-open behaviour collides with parents that handle taps (list rows,
+  // tier links). Render children as plain text on mobile — definitions remain
+  // accessible on desktop via hover/focus.
+  if (isMobile) return <>{children}</>;
 
   return (
     <span className="relative inline-block">
@@ -90,27 +96,10 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         className="border-b border-dotted border-current cursor-help"
-        // Hover-to-open is desktop-only — on touch devices, the mouseenter
-        // event fires during a tap which causes the tooltip to flash
-        // briefly before the link click navigates away. Mobile users open
-        // the tooltip explicitly via tap (handled by onClick below).
-        onMouseEnter={isMobile ? undefined : scheduleOpen}
-        onMouseLeave={isMobile ? undefined : scheduleClose}
+        onMouseEnter={scheduleOpen}
+        onMouseLeave={scheduleClose}
         onFocus={() => openPopover(entryId)}
         onBlur={scheduleClose}
-        onClick={(e) => {
-          // On mobile only: tap toggles the tooltip. Stops propagation so
-          // an ancestor link doesn't navigate. Desktop click is a no-op
-          // (hover handles open; this avoids a double-trigger).
-          if (!isMobile) return;
-          e.preventDefault();
-          e.stopPropagation();
-          if (isOpen) {
-            closePopover();
-          } else {
-            openPopover(entryId);
-          }
-        }}
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") {
             e.preventDefault();
