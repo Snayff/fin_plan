@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/label-has-associated-control -- TODO(a11y): labels use visual wrapping with aria-label on inputs; needs htmlFor/id refactor */
 import { useState } from "react";
 import type { AccountType } from "@finplan/shared";
 import { useHouseholdMembers, useSettings } from "../../hooks/useSettings.js";

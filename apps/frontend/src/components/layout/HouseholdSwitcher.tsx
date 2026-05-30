@@ -108,6 +108,7 @@ export function HouseholdSwitcher() {
         <div
           ref={menuRef}
           role="menu"
+          tabIndex={-1}
           aria-label="Household options"
           className="absolute right-0 top-[calc(100%+6px)] min-w-[240px] max-w-[300px] bg-popover border rounded-md p-1.5 z-30 shadow-lg"
           style={{ maxHeight: "min(420px, calc(100dvh - 70px))", overflowY: "auto" }}

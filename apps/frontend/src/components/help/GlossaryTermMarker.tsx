@@ -116,6 +116,7 @@ export function GlossaryTermMarker({ entryId, children }: Props) {
 
       {isOpen &&
         createPortal(
+          // eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-noninteractive-element-interactions -- onClick is stopPropagation only; actual interactivity is on the trigger span above
           <div
             ref={popoverRef}
             role="dialog"

@@ -1,6 +1,7 @@
 import { describe, it, expect, mock, afterEach } from "bun:test";
 import { screen } from "@testing-library/react";
 import { renderWithProviders } from "@/test/helpers/render";
+import { expectNoA11yViolations } from "@/test/helpers/axe";
 import { PageHeader } from "./PageHeader";
 
 mock.module("@/hooks/useAnimatedValue", () => ({
@@ -66,6 +67,11 @@ describe("PageHeader", () => {
     renderWithProviders(<PageHeader title="Household" />);
     const heading = screen.getByRole("heading", { level: 1 });
     expect(heading.textContent).not.toContain("/");
+  });
+
+  it("has no serious or critical a11y violations", async () => {
+    const { container } = renderWithProviders(<PageHeader title="Income" />);
+    await expectNoA11yViolations(container);
   });
 
   describe("mobile back button (onBack slot)", () => {

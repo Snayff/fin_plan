@@ -27,6 +27,7 @@
     "db:migrate": "docker-compose -f docker-compose.dev.yml exec backend bun run db:migrate",
     "db:seed": "docker-compose -f docker-compose.dev.yml exec backend bun run db:seed",
     "db:studio": "cd apps/backend && bun run db:studio",
+    "test:e2e": "cd apps/frontend && bun run test:e2e",
     "prepare": "husky"
   },
   "devDependencies": {

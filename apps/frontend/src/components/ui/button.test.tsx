@@ -1,6 +1,15 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, it, test } from "bun:test";
 import { render, screen } from "@testing-library/react";
+import { renderWithProviders } from "@/test/helpers/render";
 import { Button } from "./button";
+import { expectNoA11yViolations } from "@/test/helpers/axe";
+
+describe("Button", () => {
+  it("has no serious or critical a11y violations", async () => {
+    const { container } = renderWithProviders(<Button>Save</Button>);
+    await expectNoA11yViolations(container);
+  });
+});
 
 describe("Button size variants (mobile a11y)", () => {
   test("default size hits 44px mobile (h-11) and 36px desktop (sm:h-9)", () => {
