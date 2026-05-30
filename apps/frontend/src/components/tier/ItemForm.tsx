@@ -1,4 +1,4 @@
-/* eslint-disable jsx-a11y/label-has-associated-control, jsx-a11y/no-autofocus -- TODO(a11y): labels need htmlFor/id refactor; autoFocus is intentional for form open */
+/* eslint-disable jsx-a11y/label-has-associated-control -- TODO(a11y): labels need htmlFor/id refactor; autoFocus is intentional for form open */
 import { useState } from "react";
 import {
   Select,

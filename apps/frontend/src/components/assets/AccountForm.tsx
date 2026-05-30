@@ -274,6 +274,7 @@ export function AccountForm({
             <label className={labelClass}>Growth rate override (%)</label>
             <input
               type="number"
+              inputMode="decimal"
               step="0.1"
               min="0"
               max="100"
@@ -302,6 +303,7 @@ export function AccountForm({
               <label className={labelClass}>Monthly contribution limit (optional)</label>
               <input
                 type="number"
+                inputMode="decimal"
                 step="1"
                 min="0"
                 value={limitRaw}
@@ -349,6 +351,7 @@ export function AccountForm({
                 <input
                   id="isaYearContribution"
                   type="number"
+                  inputMode="decimal"
                   step="1"
                   min="0"
                   value={isaContribRaw}

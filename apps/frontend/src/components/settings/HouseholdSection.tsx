@@ -105,7 +105,6 @@ export function HouseholdSection() {
               className="flex-1"
               value={editName}
               onChange={(e) => setEditName(e.target.value)}
-              // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: first field activated on edit mode
               autoFocus
               aria-label="Household name"
             />

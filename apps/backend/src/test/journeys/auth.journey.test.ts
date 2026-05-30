@@ -357,17 +357,10 @@ describe("Auth Journey", () => {
     const registerBody = JSON.parse(registerRes.body);
     const userId = registerBody.user.id as string;
 
-    // auditService.log is intentionally fire-and-forget (see audit.service.ts),
-    // so the REGISTER row may land a few ms after the response. Poll briefly.
-    let registerLog: Awaited<ReturnType<typeof prisma.auditLog.findFirst>> = null;
-    const deadline = Date.now() + 2000;
-    while (Date.now() < deadline) {
-      registerLog = await prisma.auditLog.findFirst({
-        where: { userId, action: "REGISTER" },
-      });
-      if (registerLog) break;
-      await new Promise((r) => setTimeout(r, 25));
-    }
+    // auditEvent is awaited inside the route handler — row is durable on response return.
+    const registerLog = await prisma.auditLog.findFirst({
+      where: { userId, action: "REGISTER" },
+    });
 
     expect(registerLog).not.toBeNull();
     expect(registerLog!.resource).toBe("user");

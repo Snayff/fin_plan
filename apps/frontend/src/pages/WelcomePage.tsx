@@ -105,7 +105,6 @@ export default function WelcomePage() {
                 placeholder="e.g. The Smiths, Our flat, My finances"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: onboarding first-field focus for immediate input
                 autoFocus
                 className="text-center text-lg h-12"
               />

@@ -56,7 +56,6 @@ export function CreateSnapshotModal({ onClose, onCreated }: CreateSnapshotModalP
                 setName(e.target.value);
                 setDuplicateError(false);
               }}
-              // eslint-disable-next-line jsx-a11y/no-autofocus -- intentional: first field in a modal dialog
               autoFocus
               required
             />
