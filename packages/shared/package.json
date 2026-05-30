@@ -21,6 +21,7 @@
     "build": "tsc",
     "test": "bun test",
     "test:coverage": "bun test --coverage",
+    "test:coverage:ci": "bun scripts/run-coverage.ts",
     "type-check": "tsc --noEmit",
     "clean": "rm -rf dist"
   },

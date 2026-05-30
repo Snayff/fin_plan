@@ -27,7 +27,10 @@ export type Violation =
 export interface EvaluateInput {
   current: Record<string, PackageCoverage>;
   baseline: Record<string, PackageCoverage>;
+  /** Default floor applied to any package without a `floors` override. */
   floor: Floor;
+  /** Optional per-package floor overrides, keyed by package path. */
+  floors?: Record<string, Floor>;
   ratchetTolerancePp: number;
 }
 
@@ -42,14 +45,15 @@ export function evaluateCoverage(input: EvaluateInput): EvaluateResult {
   const violations: Violation[] = [];
 
   for (const [pkg, cur] of Object.entries(input.current)) {
+    const floor = input.floors?.[pkg] ?? input.floor;
     for (const metric of METRICS) {
-      if (cur[metric] < input.floor[metric]) {
+      if (cur[metric] < floor[metric]) {
         violations.push({
           kind: "floor",
           pkg,
           metric,
           current: cur[metric],
-          floor: input.floor[metric],
+          floor: floor[metric],
         });
       }
     }
@@ -82,6 +86,7 @@ interface RunOptions {
   baselinePath: string;
   currentPath: string;
   floor: Floor;
+  floors?: Record<string, Floor>;
   ratchetTolerancePp: number;
 }
 
@@ -108,6 +113,7 @@ export function runCli(opts: RunOptions): number {
     current,
     baseline,
     floor: opts.floor,
+    floors: opts.floors,
     ratchetTolerancePp: opts.ratchetTolerancePp,
   });
 
@@ -141,7 +147,15 @@ if (import.meta.main) {
   const exitCode = runCli({
     baselinePath: "coverage-baseline.json",
     currentPath: process.argv[2] ?? "coverage-current.json",
+    // Default floor — applied to any package without an explicit override below.
     floor: { functions: 63, lines: 74 },
+    // Per-package floors. Each sits a few points below the package's current
+    // baseline; the 1pp ratchet catches gradual erosion above the floor.
+    floors: {
+      "apps/backend": { functions: 63, lines: 74 },
+      "apps/frontend": { functions: 38, lines: 54 },
+      "packages/shared": { functions: 99, lines: 97 },
+    },
     ratchetTolerancePp: 1,
   });
   process.exit(exitCode);

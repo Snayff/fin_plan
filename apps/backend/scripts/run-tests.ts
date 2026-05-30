@@ -9,22 +9,12 @@
  */
 
 import { Glob } from "bun";
-import { writeFileSync } from "node:fs";
 import { filterTestFiles } from "./test-runner-helpers";
-
-function parseBunCoverageRow(output: string): { functions: number; lines: number } | null {
-  const allFilesLine = output
-    .split("\n")
-    .reverse()
-    .find((l) => /^\s*All files\s*\|/.test(l));
-  if (!allFilesLine) return null;
-  const parts = allFilesLine.split("|").map((p) => p.trim());
-  // Bun coverage table: File | % Funcs | % Lines | Uncovered Line #s
-  const functions = Number(parts[1]);
-  const lines = Number(parts[2]);
-  if (Number.isNaN(functions) || Number.isNaN(lines)) return null;
-  return { functions, lines };
-}
+import {
+  meanCoverage,
+  parseBunCoverageRow,
+  writeCoverageSlice,
+} from "../../../scripts/coverage-utils";
 
 const preload = "./src/test/setup.ts";
 const testDir = "src";
@@ -98,17 +88,12 @@ export async function runFiles(files: string[]): Promise<number> {
   }
 
   if (coverage && coverageRows.length > 0) {
-    const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
-    const meanFunctions = Math.round(avg(coverageRows.map((r) => r.functions)) * 10) / 10;
-    const meanLines = Math.round(avg(coverageRows.map((r) => r.lines)) * 10) / 10;
-    const currentJson = JSON.stringify(
-      { "apps/backend": { functions: meanFunctions, lines: meanLines } },
-      null,
-      2
+    const slice = meanCoverage(coverageRows);
+    // Write to repo root (three levels up from apps/backend/scripts).
+    writeCoverageSlice("apps/backend", slice, "../../coverage-current.json");
+    console.log(
+      `\nwrote coverage-current.json (functions ${slice.functions}%, lines ${slice.lines}%)`
     );
-    // Write to repo root (two levels up from apps/backend)
-    writeFileSync("../../coverage-current.json", currentJson);
-    console.log(`\nwrote coverage-current.json (functions ${meanFunctions}%, lines ${meanLines}%)`);
   } else if (coverage) {
     console.warn("⚠ could not parse any coverage rows; coverage-current.json not written");
   }

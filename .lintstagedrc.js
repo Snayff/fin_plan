@@ -10,7 +10,10 @@ import path from "path";
  * flat config regardless of CWD.
  */
 
-const WORKSPACES = ["apps/backend", "apps/frontend", "packages/shared"];
+// Only apps/backend and apps/frontend have flat ESLint configs and lint scripts;
+// packages/shared is type-checked but not linted (CI's turbo lint skips it too),
+// so staged shared files are intentionally left out and skipped by getWorkspace.
+const WORKSPACES = ["apps/backend", "apps/frontend"];
 
 /** Return the workspace root for a given absolute file path, or null. */
 function getWorkspace(filePath) {
