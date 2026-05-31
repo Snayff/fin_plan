@@ -176,7 +176,8 @@ if (import.meta.main) {
     // run `bun scripts/bump-baseline.ts` to lock in the gains — this drags each
     // floor upward toward the 90% target below.
     floors: {
-      "apps/backend": { functions: 85, lines: 72 },
+      // Backend functions has reached the 90% target — hold the line there.
+      "apps/backend": { functions: 90, lines: 73 },
       "apps/frontend": { functions: 53, lines: 70 },
       "packages/shared": { functions: 90, lines: 90 },
     },
