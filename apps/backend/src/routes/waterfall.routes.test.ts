@@ -120,13 +120,14 @@ mock.module("../services/subcategory.service", () => ({
   subcategoryService: subcategoryServiceMock,
 }));
 
-mock.module("../config/database.js", () => ({
-  prisma: {
-    incomeSource: { findUnique: mock(() => Promise.resolve(null)) },
-    committedItem: { findUnique: mock(() => Promise.resolve(null)) },
-    discretionaryItem: { findUnique: mock(() => Promise.resolve(null)) },
-  },
-}));
+const prismaRouteMock = {
+  incomeSource: { findUnique: mock(() => Promise.resolve(null as any)) },
+  committedItem: { findUnique: mock(() => Promise.resolve(null as any)) },
+  discretionaryItem: { findUnique: mock(() => Promise.resolve(null as any)) },
+  itemAmountPeriod: { findUnique: mock(() => Promise.resolve(null as any)) },
+};
+
+mock.module("../config/database.js", () => ({ prisma: prismaRouteMock }));
 
 mock.module("../lib/actor-ctx.js", () => ({
   actorCtx: mock(() => ({ userId: "user-1", email: "test@test.com" })),
@@ -1050,11 +1051,7 @@ describe("GET /api/waterfall/history/:type/:id", () => {
       headers: { authorization: "Bearer valid-token" },
     });
     expect(res.statusCode).toBe(200);
-    expect(waterfallServiceMock.getHistory).toHaveBeenCalledWith(
-      "hh-1",
-      "income",
-      "inc-1"
-    );
+    expect(waterfallServiceMock.getHistory).toHaveBeenCalledWith("hh-1", "income", "inc-1");
   });
 });
 
@@ -1079,5 +1076,157 @@ describe("DELETE /api/waterfall/all", () => {
     });
     expect(res.statusCode).toBe(400);
     expect(waterfallServiceMock.deleteAll).not.toHaveBeenCalled();
+  });
+});
+
+describe("waterfall periods endpoints", () => {
+  const auth = { authorization: "Bearer valid-token" };
+
+  beforeEach(() => {
+    prismaRouteMock.incomeSource.findUnique.mockResolvedValue(null as any);
+    prismaRouteMock.committedItem.findUnique.mockResolvedValue(null as any);
+    prismaRouteMock.discretionaryItem.findUnique.mockResolvedValue(null as any);
+    prismaRouteMock.itemAmountPeriod.findUnique.mockResolvedValue(null as any);
+  });
+
+  it("GET /periods lists periods for an owned item", async () => {
+    prismaRouteMock.incomeSource.findUnique.mockResolvedValue({
+      id: "inc-1",
+      householdId: "hh-1",
+    } as any);
+
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/waterfall/periods/income_source/inc-1",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(periodServiceMock.listPeriods).toHaveBeenCalledWith("income_source", "inc-1");
+  });
+
+  it("GET /periods 404s when the parent item is not owned/found", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/waterfall/periods/income_source/ghost",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(404);
+    expect(periodServiceMock.listPeriods).not.toHaveBeenCalled();
+  });
+
+  it("GET /periods 404s for an unknown item type", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/waterfall/periods/not_a_type/x",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(404);
+  });
+
+  it("POST /periods creates a period for an owned item (201)", async () => {
+    prismaRouteMock.committedItem.findUnique.mockResolvedValue({
+      id: "c-1",
+      householdId: "hh-1",
+    } as any);
+
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/periods",
+      headers: auth,
+      payload: { itemType: "committed_item", itemId: "c-1", startDate: "2026-01-01", amount: 500 },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(periodServiceMock.createPeriod).toHaveBeenCalled();
+  });
+
+  it("PATCH /periods/:id 404s when the period does not exist", async () => {
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/waterfall/periods/p-ghost",
+      headers: auth,
+      payload: { amount: 100 },
+    });
+    expect(res.statusCode).toBe(404);
+    expect(periodServiceMock.updatePeriod).not.toHaveBeenCalled();
+  });
+
+  it("PATCH /periods/:id updates an existing owned period", async () => {
+    prismaRouteMock.itemAmountPeriod.findUnique.mockResolvedValue({
+      id: "p-1",
+      itemType: "income_source",
+      itemId: "inc-1",
+    } as any);
+    prismaRouteMock.incomeSource.findUnique.mockResolvedValue({
+      id: "inc-1",
+      householdId: "hh-1",
+    } as any);
+
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/waterfall/periods/p-1",
+      headers: auth,
+      payload: { amount: 250 },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(periodServiceMock.updatePeriod).toHaveBeenCalledWith("p-1", expect.anything());
+  });
+
+  it("DELETE /periods/:id returns 204 when only the period is removed", async () => {
+    prismaRouteMock.itemAmountPeriod.findUnique.mockResolvedValue({
+      id: "p-1",
+      itemType: "income_source",
+      itemId: "inc-1",
+    } as any);
+    prismaRouteMock.incomeSource.findUnique.mockResolvedValue({
+      id: "inc-1",
+      householdId: "hh-1",
+    } as any);
+    periodServiceMock.deletePeriod.mockResolvedValue(undefined as any);
+
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/waterfall/periods/p-1",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(204);
+  });
+
+  it("DELETE /periods/:id cascades to deleting the parent item when signalled", async () => {
+    prismaRouteMock.itemAmountPeriod.findUnique.mockResolvedValue({
+      id: "p-1",
+      itemType: "income_source",
+      itemId: "inc-1",
+    } as any);
+    prismaRouteMock.incomeSource.findUnique.mockResolvedValue({
+      id: "inc-1",
+      householdId: "hh-1",
+    } as any);
+    periodServiceMock.deletePeriod.mockResolvedValue({
+      deleteItem: true,
+      itemType: "income_source",
+      itemId: "inc-1",
+    } as any);
+
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/waterfall/periods/p-1",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual({ deleted: "item", itemId: "inc-1" });
+    expect(waterfallServiceMock.deleteIncome).toHaveBeenCalledWith(
+      "hh-1",
+      "inc-1",
+      expect.anything()
+    );
+  });
+
+  it("DELETE /periods/:id 404s when the period does not exist", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/waterfall/periods/p-ghost",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(404);
   });
 });
