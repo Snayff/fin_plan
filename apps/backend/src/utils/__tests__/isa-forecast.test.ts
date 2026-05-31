@@ -78,4 +78,92 @@ describe("forecastContribution", () => {
     );
     expect(result.amount).toBeCloseTo(500 * 8 + 3000, 5);
   });
+
+  // ── weekly ────────────────────────────────────────────────────────────────
+  it("weekly with dueDate counts every 7 days in the window", () => {
+    // 4-week window, anchor inside it → 5 occurrences (day 0,7,14,21,28).
+    const start = new Date("2026-08-01");
+    const windowEnd = new Date("2026-08-29");
+    const result = forecastContribution(
+      [{ amount: 10, spendType: "weekly", dueDate: new Date("2026-08-01") }],
+      start,
+      windowEnd
+    );
+    expect(result.amount).toBe(10 * 5);
+    expect(result.estimated).toBe(false);
+  });
+
+  it("weekly anchored before the window rolls forward to the first occurrence", () => {
+    // Anchor two weeks before start; first in-window hit is start itself.
+    const start = new Date("2026-08-15");
+    const windowEnd = new Date("2026-08-28"); // two weeks → 2 occurrences
+    const result = forecastContribution(
+      [{ amount: 4, spendType: "weekly", dueDate: new Date("2026-08-01") }],
+      start,
+      windowEnd
+    );
+    expect(result.amount).toBe(4 * 2);
+  });
+
+  it("weekly without dueDate pro-rates by days/7 and flags estimated", () => {
+    const start = new Date("2026-08-01");
+    const windowEnd = new Date("2026-08-29"); // 28 days → 4 weeks
+    const result = forecastContribution(
+      [{ amount: 10, spendType: "weekly", dueDate: null }],
+      start,
+      windowEnd
+    );
+    expect(result.amount).toBeCloseTo(10 * (28 / 7), 5);
+    expect(result.estimated).toBe(true);
+  });
+
+  // ── quarterly ─────────────────────────────────────────────────────────────
+  it("quarterly with dueDate counts 3-month steps in the window", () => {
+    const result = forecastContribution(
+      [{ amount: 100, spendType: "quarterly", dueDate: new Date("2026-08-15") }],
+      today,
+      end
+    );
+    // Aug, Nov, Feb fall in [Aug 2026, Apr 2027] → 3 occurrences.
+    expect(result.amount).toBe(100 * 3);
+    expect(result.estimated).toBe(false);
+  });
+
+  it("quarterly without dueDate pro-rates and flags estimated", () => {
+    const result = forecastContribution(
+      [{ amount: 90, spendType: "quarterly", dueDate: null }],
+      today,
+      end
+    );
+    expect(result.estimated).toBe(true);
+    expect(result.amount).toBeGreaterThan(0);
+  });
+
+  // ── edge cases ──────────────────────────────────────────────────────────────
+  it("ignores items with a non-positive amount", () => {
+    const result = forecastContribution(
+      [
+        { amount: 0, spendType: "monthly", dueDate: new Date("2026-08-15") },
+        { amount: -50, spendType: "weekly", dueDate: new Date("2026-08-15") },
+      ],
+      today,
+      end
+    );
+    expect(result.amount).toBe(0);
+    expect(result.estimated).toBe(false);
+  });
+
+  it("returns 0 when the window is empty (end before start)", () => {
+    const result = forecastContribution(
+      [{ amount: 100, spendType: "weekly", dueDate: new Date("2026-08-15") }],
+      new Date("2026-08-29"),
+      new Date("2026-08-01")
+    );
+    expect(result.amount).toBe(0);
+  });
+
+  it("returns an empty, non-estimated result for no items", () => {
+    const result = forecastContribution([], today, end);
+    expect(result).toEqual({ amount: 0, estimated: false });
+  });
 });
