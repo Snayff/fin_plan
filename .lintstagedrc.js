@@ -4,10 +4,18 @@ import path from "path";
  * Monorepo-aware lint-staged config.
  *
  * ESLint v9 flat config files live per-workspace (apps/backend, apps/frontend).
- * Running `eslint` from the repo root fails because there is no root-level
- * eslint.config.js. This function groups staged files by their nearest workspace
- * and passes `--config <workspace>/eslint.config.js` so ESLint finds the right
- * flat config regardless of CWD.
+ * Two things matter here:
+ *   1. There is no root-level eslint.config.js, so eslint must use each
+ *      workspace's config.
+ *   2. ESLint resolves a config's relative `files` globs (e.g. the
+ *      `src/**\/*.ts` override that disables `no-explicit-any`) against the
+ *      *current working directory*, not the config's directory. Running from
+ *      the repo root with absolute paths makes those overrides silently miss,
+ *      so test files get linted with the wrong ruleset and fail on rules CI
+ *      (which runs from inside the workspace) allows.
+ *
+ * Both are fixed by `cd`-ing into the workspace and passing workspace-relative
+ * paths — identical to how `bun run lint` and CI invoke eslint.
  */
 
 // Only apps/backend and apps/frontend have flat ESLint configs and lint scripts;
@@ -32,9 +40,13 @@ export default (stagedFiles) => {
     byWorkspace[ws].push(file);
   }
 
+  const root = process.cwd();
   return Object.entries(byWorkspace).map(([ws, files]) => {
-    const configPath = path.resolve(process.cwd(), ws, "eslint.config.js").replace(/\\/g, "/");
-    const fileList = files.map((f) => `"${f.replace(/\\/g, "/")}"`).join(" ");
-    return `eslint --fix --max-warnings=0 --no-warn-ignored --config ${configPath} ${fileList}`;
+    // Paths relative to the workspace so eslint's `files` overrides resolve
+    // correctly once we cd into it.
+    const fileList = files
+      .map((f) => `"${path.relative(path.join(root, ws), f).replace(/\\/g, "/")}"`)
+      .join(" ");
+    return `bash -c 'cd ${ws} && eslint --fix --max-warnings=0 --no-warn-ignored ${fileList}'`;
   });
 };
