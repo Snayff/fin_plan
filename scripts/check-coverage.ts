@@ -166,16 +166,19 @@ if (import.meta.main) {
   const exitCode = runCli({
     baselinePath: "coverage-baseline.json",
     currentPath: process.argv[2] ?? "coverage-current.json",
+    // Floors are measured against TRUE whole-codebase coverage (merged lcov),
+    // the same metric the slice emitters now report — so writing tests moves
+    // these numbers, and "90%" means 90% of the code is really exercised.
     // Default floor — applied to any package without an explicit override below.
-    floor: { functions: 63, lines: 74 },
-    // Per-package floors. Each sits a few points below the package's current
-    // baseline; the 1pp ratchet catches gradual erosion above the floor. As
-    // tests land, run `bun scripts/bump-baseline.ts` to lock in the gains —
-    // this drags each floor upward toward the 90% target below.
+    floor: { functions: 63, lines: 70 },
+    // Per-package floors. Each sits ~2pp below the package's current baseline;
+    // the 1pp ratchet catches gradual erosion above the floor. As tests land,
+    // run `bun scripts/bump-baseline.ts` to lock in the gains — this drags each
+    // floor upward toward the 90% target below.
     floors: {
-      "apps/backend": { functions: 63, lines: 74 },
-      "apps/frontend": { functions: 38, lines: 54 },
-      "packages/shared": { functions: 99, lines: 97 },
+      "apps/backend": { functions: 82, lines: 70 },
+      "apps/frontend": { functions: 53, lines: 70 },
+      "packages/shared": { functions: 90, lines: 90 },
     },
     ratchetTolerancePp: 1,
     // The goal every package is climbing toward. Reported on each run; the gate

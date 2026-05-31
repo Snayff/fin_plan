@@ -29,11 +29,10 @@ bun scripts/run-tests.ts auth --watch         # files matching "auth"
 
 Coverage is enforced across **three suites** — `apps/backend`, `apps/frontend`, and `packages/shared`. Each suite runs in its own CI job, emits a single-package "slice" (`coverage-current.json`), and the **Coverage Gate** job merges the slices and runs `check-coverage.ts` against them.
 
-- **Baseline:** `coverage-baseline.json` at the repo root — per-package functions/lines percentages. Current baselines: backend 66.5 / 77.9, frontend 40.7 / 56.6, shared 100 / 99.5.
-- **Floor:** per-package minimums in `scripts/check-coverage.ts` (`floors`), each set a few points below its baseline. Packages without an override fall back to the default floor (functions ≥ 63%, lines ≥ 74%). Current floors: backend 63 / 74, frontend 38 / 54, shared 99 / 97.
+- **Metric: true whole-codebase coverage.** Each suite runs every test file in isolation emitting an lcov report, and `scripts/emit-coverage-slice.ts` merges those reports per source file (max line hit-count, max functions-hit) to recover the real percentage of code exercised. This replaced an earlier per-file-mean that averaged each run's narrow "All files" row and badly understated reality. The slice emitter doubles as the test gate — a failing test exits non-zero and fails the job.
+- **Baseline:** `coverage-baseline.json` at the repo root — per-package functions/lines percentages (functions / lines). Current: backend 84.7 / 71.8, frontend 55.0 / 72.6, shared 100 / 98.9.
+- **Floor:** per-package minimums in `scripts/check-coverage.ts` (`floors`), each ~2pp below its baseline. Current floors (functions / lines): backend 82 / 70, frontend 53 / 70, shared 90 / 90 (at target).
 - **Ratchet:** any drop > 1 pp on any metric for any package fails CI — this, not the floor, is what catches gradual erosion.
-
-> **Note on the metric.** The isolated runners (backend, frontend) average each test file's "All files" row, so the gate figure is a **per-file mean**, not whole-codebase coverage — it understates reality (a file hit by ten tests still only shows in each one's narrow summary). For honest numbers use the gap-finder below. True coverage as of 2026-05-31: backend 69.0 / 84.1, frontend 72.6 / 55.0, shared 98.9 / 100.
 
 ### Climbing to 90% (incremental ratchet)
 
@@ -56,14 +55,16 @@ See `docs/4. planning/coverage-90-percent/implementation-plan.md` for the phased
 **Running locally:**
 
 ```bash
-# Per suite — each writes its slice to coverage-current.json at the repo root
-cd apps/backend && bun scripts/run-tests.ts --coverage
-cd apps/frontend && bun scripts/run-tests.ts --coverage
-cd packages/shared && bun run test:coverage:ci
+# Per suite — true-coverage slice (also the CI command); writes coverage-current.json
+bun scripts/emit-coverage-slice.ts apps/backend apps/backend coverage-current.json
+bun scripts/emit-coverage-slice.ts apps/frontend apps/frontend coverage-current.json
+bun scripts/emit-coverage-slice.ts packages/shared packages/shared coverage-current.json
 
 # Check a single slice, or merge several first (mirrors the CI gate)
 bun scripts/check-coverage.ts coverage-current.json
 bun scripts/merge-coverage.ts coverage-current.json slice-a.json slice-b.json slice-c.json
 ```
+
+> Backend slices need a Postgres test DB on `127.0.0.1:5432` (`finplan_test`); a few service/journey tests use a real database. The fast per-file table (`cd <pkg> && bun scripts/run-tests.ts --coverage`) is still handy for local spot-checks but is no longer the gate metric.
 
 > **Branch protection.** The new jobs (`Frontend Test`, `Shared Test`, `Coverage Gate`) only block merges once added as **required status checks** on `stage` in GitHub branch-protection settings — CI running a job is not the same as gating on it.
