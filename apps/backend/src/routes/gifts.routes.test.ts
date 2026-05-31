@@ -50,6 +50,7 @@ const giftsServiceMock = {
   getOrCreateSettings: mock(() =>
     Promise.resolve({ mode: "synced", syncedDiscretionaryItemId: null })
   ),
+  getQuickAddMatrix: mock(() => Promise.resolve({ people: [], events: [] })),
 };
 
 mock.module("../services/gifts.service.js", () => ({ giftsService: giftsServiceMock }));
@@ -144,5 +145,169 @@ describe("gifts.routes", () => {
     });
     expect(res.statusCode).toBe(200);
     expect(giftsServiceMock.setMode).toHaveBeenCalled();
+  });
+
+  // ── Read endpoints ──────────────────────────────────────────────────────────
+  it("GET /people/:id passes the parsed year to getPersonDetail", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "GET", url: "/api/gifts/people/p1?year=2025" });
+    expect(res.statusCode).toBe(200);
+    expect(giftsServiceMock.getPersonDetail).toHaveBeenCalledWith("hh-1", "p1", 2025);
+  });
+
+  it("GET /upcoming delegates to getUpcoming", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "GET", url: "/api/gifts/upcoming?year=2026" });
+    expect(res.statusCode).toBe(200);
+    expect(giftsServiceMock.getUpcoming).toHaveBeenCalledWith("hh-1", 2026);
+  });
+
+  it("GET /years lists years with data", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "GET", url: "/api/gifts/years" });
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toEqual([2026]);
+    expect(giftsServiceMock.listYearsWithData).toHaveBeenCalledWith("hh-1");
+  });
+
+  it("GET /config/people defaults the filter to 'all'", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "GET", url: "/api/gifts/config/people?year=2026" });
+    expect(res.statusCode).toBe(200);
+    expect(giftsServiceMock.listPeopleForConfig).toHaveBeenCalledWith("hh-1", "all", 2026);
+  });
+
+  it("GET /config/people forwards an explicit filter", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/gifts/config/people?filter=household",
+    });
+    expect(res.statusCode).toBe(200);
+    expect(giftsServiceMock.listPeopleForConfig).toHaveBeenCalledWith(
+      "hh-1",
+      "household",
+      expect.any(Number)
+    );
+  });
+
+  it("GET /config/events lists events", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "GET", url: "/api/gifts/config/events" });
+    expect(res.statusCode).toBe(200);
+    expect(giftsServiceMock.listEventsForConfig).toHaveBeenCalledWith("hh-1");
+  });
+
+  it("GET /config/quick-add-matrix delegates with the parsed year", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/gifts/config/quick-add-matrix?year=2026",
+    });
+    expect(res.statusCode).toBe(200);
+    expect(giftsServiceMock.getQuickAddMatrix).toHaveBeenCalledWith("hh-1", 2026);
+  });
+
+  // ── People mutations ──────────────────────────────────────────────────────────
+  it("POST /people creates a person and returns 201", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/gifts/people",
+      payload: { name: "Grandma" },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(giftsServiceMock.createPerson).toHaveBeenCalledWith(
+      "hh-1",
+      expect.objectContaining({ name: "Grandma" }),
+      expect.anything()
+    );
+  });
+
+  it("POST /people rejects an invalid body (blank name)", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/gifts/people",
+      payload: { name: "" },
+    });
+    expect(res.statusCode).toBeGreaterThanOrEqual(400);
+    expect(giftsServiceMock.createPerson).not.toHaveBeenCalled();
+  });
+
+  it("PATCH /people/:id updates a person", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/gifts/people/p1",
+      payload: { name: "Grandpa" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(giftsServiceMock.updatePerson).toHaveBeenCalledWith(
+      "hh-1",
+      "p1",
+      expect.objectContaining({ name: "Grandpa" }),
+      expect.anything()
+    );
+  });
+
+  it("DELETE /people/:id returns 204", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "DELETE", url: "/api/gifts/people/p1" });
+    expect(res.statusCode).toBe(204);
+    expect(giftsServiceMock.deletePerson).toHaveBeenCalledWith("hh-1", "p1", expect.anything());
+  });
+
+  // ── Event mutations ───────────────────────────────────────────────────────────
+  it("POST /events creates a personal-date event and returns 201", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/gifts/events",
+      payload: { name: "Birthday", dateType: "personal" },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(giftsServiceMock.createEvent).toHaveBeenCalled();
+  });
+
+  it("POST /events rejects a shared-date event missing month/day", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/gifts/events",
+      payload: { name: "Christmas", dateType: "shared" },
+    });
+    expect(res.statusCode).toBeGreaterThanOrEqual(400);
+    expect(giftsServiceMock.createEvent).not.toHaveBeenCalled();
+  });
+
+  it("PATCH /events/:id updates an event", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/gifts/events/e1",
+      payload: { name: "Renamed" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(giftsServiceMock.updateEvent).toHaveBeenCalled();
+  });
+
+  it("DELETE /events/:id returns 204", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "DELETE", url: "/api/gifts/events/e1" });
+    expect(res.statusCode).toBe(204);
+    expect(giftsServiceMock.deleteEvent).toHaveBeenCalledWith("hh-1", "e1", expect.anything());
+  });
+
+  // ── Rollover banner ─────────────────────────────────────────────────────────
+  it("DELETE /rollover-banner/:year dismisses the notification", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "DELETE", url: "/api/gifts/rollover-banner/2026" });
+    expect(res.statusCode).toBe(204);
+    expect(giftsServiceMock.dismissRolloverNotification).toHaveBeenCalledWith(
+      "hh-1",
+      "user-1",
+      2026
+    );
   });
 });
