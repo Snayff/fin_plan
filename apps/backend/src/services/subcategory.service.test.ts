@@ -620,3 +620,92 @@ describe("subcategoryService.resetToDefaults", () => {
     ).rejects.toThrow();
   });
 });
+
+describe("subcategoryService.getSubcategoryIdByName", () => {
+  it("returns the id when a matching subcategory exists", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue({ id: "sub-7" } as any);
+
+    const id = await subcategoryService.getSubcategoryIdByName("hh-1", "committed", "Rent");
+
+    expect(id).toBe("sub-7");
+    expect(prismaMock.subcategory.findFirst).toHaveBeenCalledWith({
+      where: { householdId: "hh-1", tier: "committed", name: "Rent" },
+    });
+  });
+
+  it("returns null when no subcategory matches", async () => {
+    prismaMock.subcategory.findFirst.mockResolvedValue(null);
+    expect(await subcategoryService.getSubcategoryIdByName("hh-1", "income", "Ghost")).toBeNull();
+  });
+});
+
+describe("subcategoryService.create", () => {
+  it("creates with the next sortOrder and trimmed name", async () => {
+    prismaMock.subcategory.count.mockResolvedValue(2);
+    prismaMock.subcategory.aggregate.mockResolvedValue({ _max: { sortOrder: 4 } } as any);
+    prismaMock.subcategory.create.mockResolvedValue({ id: "sub-new" } as any);
+
+    await subcategoryService.create("hh-1", "discretionary", "  Holidays  ");
+
+    expect(prismaMock.subcategory.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        householdId: "hh-1",
+        tier: "discretionary",
+        name: "Holidays",
+        sortOrder: 5,
+        isDefault: false,
+        isLocked: false,
+      }),
+    });
+  });
+
+  it("starts sortOrder at 0 for the first subcategory in a tier", async () => {
+    prismaMock.subcategory.count.mockResolvedValue(0);
+    prismaMock.subcategory.aggregate.mockResolvedValue({ _max: { sortOrder: null } } as any);
+    prismaMock.subcategory.create.mockResolvedValue({ id: "sub-new" } as any);
+
+    await subcategoryService.create("hh-1", "income", "Salary");
+
+    const arg = (prismaMock.subcategory.create as any).mock.calls[0][0];
+    expect(arg.data.sortOrder).toBe(0);
+  });
+
+  it("rejects when the tier already has 7 subcategories", async () => {
+    prismaMock.subcategory.count.mockResolvedValue(7);
+
+    await expect(subcategoryService.create("hh-1", "committed", "Eighth")).rejects.toThrow(
+      /Maximum 7 subcategories/
+    );
+    expect(prismaMock.subcategory.create).not.toHaveBeenCalled();
+  });
+
+  it("maps a P2002 unique violation to a ConflictError", async () => {
+    prismaMock.subcategory.count.mockResolvedValue(1);
+    prismaMock.subcategory.aggregate.mockResolvedValue({ _max: { sortOrder: 0 } } as any);
+    prismaMock.subcategory.create.mockRejectedValue({ code: "P2002" });
+
+    await expect(subcategoryService.create("hh-1", "committed", "Rent")).rejects.toThrow(
+      /already exists/
+    );
+  });
+
+  it("rethrows non-P2002 errors unchanged", async () => {
+    prismaMock.subcategory.count.mockResolvedValue(1);
+    prismaMock.subcategory.aggregate.mockResolvedValue({ _max: { sortOrder: 0 } } as any);
+    prismaMock.subcategory.create.mockRejectedValue(new Error("connection lost"));
+
+    await expect(subcategoryService.create("hh-1", "committed", "Rent")).rejects.toThrow(
+      "connection lost"
+    );
+  });
+});
+
+describe("subcategoryService.getDefaults", () => {
+  it("returns the canonical default subcategory definitions per tier", () => {
+    const defaults = subcategoryService.getDefaults();
+    expect(Object.keys(defaults)).toEqual(
+      expect.arrayContaining(["income", "committed", "discretionary"])
+    );
+    expect(defaults.income.length).toBeGreaterThan(0);
+  });
+});

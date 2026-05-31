@@ -280,3 +280,31 @@ describe("snapshotService.ensureJan1Snapshot", () => {
     expect(prismaMock.snapshot.create).not.toHaveBeenCalled();
   });
 });
+
+describe("snapshotService.ensureTodayAutoSnapshot", () => {
+  it("upserts an auto snapshot named for today's date", async () => {
+    prismaMock.snapshot.upsert.mockResolvedValue({ id: "snap-today" } as any);
+
+    // Use a fixed local date so the dateKey is deterministic.
+    const now = new Date(2026, 2, 9, 8, 30); // 9 Mar 2026, local
+    await snapshotService.ensureTodayAutoSnapshot("hh-1", now);
+
+    expect(prismaMock.snapshot.upsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { householdId_name: { householdId: "hh-1", name: "auto:2026-03-09" } },
+        create: expect.objectContaining({ name: "auto:2026-03-09", isAuto: true }),
+        update: expect.objectContaining({ data: expect.anything() }),
+      })
+    );
+  });
+
+  it("zero-pads single-digit months and days in the date key", async () => {
+    prismaMock.snapshot.upsert.mockResolvedValue({ id: "snap-today" } as any);
+
+    const now = new Date(2026, 0, 5, 12, 0); // 5 Jan 2026, local
+    await snapshotService.ensureTodayAutoSnapshot("hh-1", now);
+
+    const arg = (prismaMock.snapshot.upsert as any).mock.calls[0][0];
+    expect(arg.where.householdId_name.name).toBe("auto:2026-01-05");
+  });
+});
