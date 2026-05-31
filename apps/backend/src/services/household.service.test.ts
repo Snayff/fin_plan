@@ -261,6 +261,72 @@ describe("householdService.removeMember", () => {
     );
   });
 
+  it("repoints the removed member's active household to another membership", async () => {
+    const ctx = { householdId: "household-1", actorId: "owner-id", actorName: "Owner" };
+    const owner = buildUser();
+    const ownerMember = buildMember({
+      householdId: "household-1",
+      userId: owner.id,
+      role: "owner",
+    });
+    const targetMember = buildMember({
+      id: "member-1",
+      householdId: "household-1",
+      userId: "target-user",
+      role: "member",
+    });
+    prismaMock.member.findFirst
+      .mockResolvedValueOnce(ownerMember) // caller owner check
+      .mockResolvedValueOnce(buildMember({ householdId: "household-2", userId: "target-user" })); // fallback membership
+    prismaMock.member.findUnique.mockResolvedValue(targetMember);
+    prismaMock.member.delete.mockResolvedValue(targetMember);
+    // The removed user's active household is the one they're being removed from.
+    prismaMock.user.findUnique.mockResolvedValue(
+      buildUser({ id: "target-user", activeHouseholdId: "household-1" })
+    );
+    prismaMock.user.update.mockResolvedValue(buildUser({ id: "target-user" }));
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await householdService.removeMember("household-1", owner.id, "member-1", ctx);
+
+    expect(prismaMock.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "target-user" },
+        data: { activeHouseholdId: "household-2" },
+      })
+    );
+  });
+
+  it("clears the active household to null when no other membership remains", async () => {
+    const ctx = { householdId: "household-1", actorId: "owner-id", actorName: "Owner" };
+    const owner = buildUser();
+    const ownerMember = buildMember({
+      householdId: "household-1",
+      userId: owner.id,
+      role: "owner",
+    });
+    const targetMember = buildMember({
+      id: "member-1",
+      householdId: "household-1",
+      userId: "target-user",
+      role: "member",
+    });
+    prismaMock.member.findFirst.mockResolvedValueOnce(ownerMember).mockResolvedValueOnce(null); // no other membership
+    prismaMock.member.findUnique.mockResolvedValue(targetMember);
+    prismaMock.member.delete.mockResolvedValue(targetMember);
+    prismaMock.user.findUnique.mockResolvedValue(
+      buildUser({ id: "target-user", activeHouseholdId: "household-1" })
+    );
+    prismaMock.user.update.mockResolvedValue(buildUser({ id: "target-user" }));
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await householdService.removeMember("household-1", owner.id, "member-1", ctx);
+
+    expect(prismaMock.user.update).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { activeHouseholdId: null } })
+    );
+  });
+
   it("throws ValidationError when owner tries to remove themselves", async () => {
     const ctx = { householdId: "household-1", actorId: "owner-id", actorName: "Owner" };
     const owner = buildUser();
@@ -492,6 +558,73 @@ describe("householdService.joinViaInvite", () => {
 
     await expect(householdService.joinViaInvite("valid-token", "user-1")).rejects.toThrow(
       ValidationError
+    );
+  });
+
+  it("throws NotFoundError when the joining user does not exist", async () => {
+    prismaMock.householdInvite.findUnique.mockResolvedValue(
+      buildHouseholdInvite({ email: "invitee@example.com" })
+    );
+    prismaMock.user.findUnique.mockResolvedValue(null);
+
+    await expect(householdService.joinViaInvite("valid-token", "ghost")).rejects.toThrow(
+      NotFoundError
+    );
+  });
+
+  it("rejects when the user is already a member of the household", async () => {
+    prismaMock.householdInvite.findUnique.mockResolvedValue(
+      buildHouseholdInvite({ email: "invitee@example.com", householdId: "household-1" })
+    );
+    prismaMock.user.findUnique.mockResolvedValue(
+      buildUser({ id: "user-1", email: "invitee@example.com" })
+    );
+    prismaMock.member.findFirst.mockResolvedValue(
+      buildMember({ householdId: "household-1", userId: "user-1" })
+    );
+
+    await expect(householdService.joinViaInvite("valid-token", "user-1")).rejects.toThrow(
+      ConflictError
+    );
+  });
+
+  it("joins the household via a transaction when no audit ctx is given", async () => {
+    prismaMock.householdInvite.findUnique.mockResolvedValue(
+      buildHouseholdInvite({
+        id: "invite-1",
+        email: "invitee@example.com",
+        householdId: "household-1",
+        intendedRole: "admin",
+        household: { id: "household-1", name: "Test Household" },
+      })
+    );
+    prismaMock.user.findUnique.mockResolvedValue(
+      buildUser({ id: "user-1", name: "Invitee", email: "Invitee@Example.com" })
+    );
+    prismaMock.member.findFirst.mockResolvedValue(null);
+    prismaMock.member.create.mockResolvedValue(buildMember({ id: "m-new" }));
+    prismaMock.user.update.mockResolvedValue(buildUser({ id: "user-1" }));
+    prismaMock.householdInvite.update.mockResolvedValue({ id: "invite-1" } as any);
+    prismaMock.$transaction.mockResolvedValue([] as any);
+
+    await householdService.joinViaInvite("valid-token", "user-1");
+
+    // The non-audit path batches the writes in a single $transaction.
+    expect(prismaMock.$transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it("maps a P2002 unique violation to a ConflictError", async () => {
+    prismaMock.householdInvite.findUnique.mockResolvedValue(
+      buildHouseholdInvite({ email: "invitee@example.com", householdId: "household-1" })
+    );
+    prismaMock.user.findUnique.mockResolvedValue(
+      buildUser({ id: "user-1", email: "invitee@example.com" })
+    );
+    prismaMock.member.findFirst.mockResolvedValue(null);
+    prismaMock.$transaction.mockRejectedValue({ code: "P2002" });
+
+    await expect(householdService.joinViaInvite("valid-token", "user-1")).rejects.toThrow(
+      ConflictError
     );
   });
 });
