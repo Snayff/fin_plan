@@ -916,3 +916,168 @@ describe("POST /api/waterfall/subcategories/reset", () => {
     expect(res.statusCode).toBe(400);
   });
 });
+
+// ─── Mutation endpoints (PATCH / DELETE / confirm) across tiers ───────────────
+describe("waterfall item PATCH / DELETE / confirm", () => {
+  const auth = { authorization: "Bearer valid-token" };
+
+  it("PATCH /income/:id updates and returns the source", async () => {
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/waterfall/income/inc-1",
+      headers: auth,
+      payload: { name: "Renamed Salary" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(waterfallServiceMock.updateIncome).toHaveBeenCalledWith(
+      "hh-1",
+      "inc-1",
+      expect.objectContaining({ name: "Renamed Salary" }),
+      expect.anything()
+    );
+  });
+
+  it("DELETE /income/:id returns 204", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/waterfall/income/inc-1",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(204);
+    expect(waterfallServiceMock.deleteIncome).toHaveBeenCalledWith(
+      "hh-1",
+      "inc-1",
+      expect.anything()
+    );
+  });
+
+  it("POST /income/:id/confirm delegates to confirmIncome", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/income/inc-1/confirm",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(waterfallServiceMock.confirmIncome).toHaveBeenCalledWith("hh-1", "inc-1");
+  });
+
+  it("DELETE /committed/:id returns 204", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/waterfall/committed/c-1",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(204);
+    expect(waterfallServiceMock.deleteCommitted).toHaveBeenCalled();
+  });
+
+  it("POST /committed/:id/confirm delegates to confirmCommitted", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/committed/c-1/confirm",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(waterfallServiceMock.confirmCommitted).toHaveBeenCalledWith("hh-1", "c-1");
+  });
+
+  it("DELETE /yearly/:id returns 204", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/waterfall/yearly/y-1",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(204);
+    expect(waterfallServiceMock.deleteYearly).toHaveBeenCalled();
+  });
+
+  it("POST /yearly/:id/confirm delegates to confirmYearly", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/yearly/y-1/confirm",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(waterfallServiceMock.confirmYearly).toHaveBeenCalled();
+  });
+
+  it("DELETE /discretionary/:id returns 204", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/waterfall/discretionary/d-1",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(204);
+    expect(waterfallServiceMock.deleteDiscretionary).toHaveBeenCalled();
+  });
+
+  it("POST /discretionary/:id/confirm delegates to confirmDiscretionary", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/discretionary/d-1/confirm",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(waterfallServiceMock.confirmDiscretionary).toHaveBeenCalled();
+  });
+
+  it("DELETE /savings/:id returns 204", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/waterfall/savings/s-1",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(204);
+    expect(waterfallServiceMock.deleteSavings).toHaveBeenCalled();
+  });
+
+  it("POST /savings/:id/confirm delegates to confirmSavings", async () => {
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/waterfall/savings/s-1/confirm",
+      headers: auth,
+    });
+    expect(res.statusCode).toBe(200);
+    expect(waterfallServiceMock.confirmSavings).toHaveBeenCalled();
+  });
+});
+
+describe("GET /api/waterfall/history/:type/:id", () => {
+  it("returns the item's history", async () => {
+    const res = await app.inject({
+      method: "GET",
+      url: "/api/waterfall/history/income/inc-1",
+      headers: { authorization: "Bearer valid-token" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(waterfallServiceMock.getHistory).toHaveBeenCalledWith(
+      "hh-1",
+      "income",
+      "inc-1"
+    );
+  });
+});
+
+describe("DELETE /api/waterfall/all", () => {
+  it("wipes the waterfall when confirm:true is sent", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/waterfall/all",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { confirm: true },
+    });
+    expect(res.statusCode).toBe(204);
+    expect(waterfallServiceMock.deleteAll).toHaveBeenCalledWith("hh-1");
+  });
+
+  it("rejects with 400 when confirm is not true", async () => {
+    const res = await app.inject({
+      method: "DELETE",
+      url: "/api/waterfall/all",
+      headers: { authorization: "Bearer valid-token" },
+      payload: { confirm: false },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(waterfallServiceMock.deleteAll).not.toHaveBeenCalled();
+  });
+});
