@@ -239,3 +239,136 @@ describe("memberService audit logging", () => {
     );
   });
 });
+
+describe("memberService.deleteMember guards", () => {
+  const ctx = { householdId: "hh-1", actorId: "owner-user", actorName: "Owner" };
+
+  beforeEach(() => {
+    // Caller is an owner by default.
+    prismaMock.member.findFirst.mockResolvedValue({
+      id: "owner",
+      role: "owner",
+      householdId: "hh-1",
+    } as any);
+  });
+
+  it("throws NotFoundError when the member is absent", async () => {
+    prismaMock.member.findUnique.mockResolvedValue(null);
+    await expect(memberService.deleteMember("hh-1", "owner-user", "ghost", ctx)).rejects.toThrow(
+      "Member not found"
+    );
+  });
+
+  it("throws NotFoundError when the member belongs to another household", async () => {
+    prismaMock.member.findUnique.mockResolvedValue({
+      id: "m-1",
+      householdId: "other-hh",
+      userId: null,
+    } as any);
+    await expect(memberService.deleteMember("hh-1", "owner-user", "m-1", ctx)).rejects.toThrow(
+      "Member not found"
+    );
+  });
+
+  it("refuses to delete a member linked to a user account", async () => {
+    prismaMock.member.findUnique.mockResolvedValue({
+      id: "m-1",
+      householdId: "hh-1",
+      userId: "user-9", // linked account
+    } as any);
+    await expect(memberService.deleteMember("hh-1", "owner-user", "m-1", ctx)).rejects.toThrow(
+      /linked user account/
+    );
+  });
+
+  it("requires a reassignment target when the member has assigned items", async () => {
+    prismaMock.member.findUnique.mockResolvedValue({
+      id: "m-1",
+      householdId: "hh-1",
+      userId: null,
+    } as any);
+    prismaMock.incomeSource.count.mockResolvedValue(2);
+    prismaMock.committedItem.count.mockResolvedValue(0);
+    prismaMock.discretionaryItem.count.mockResolvedValue(0);
+    prismaMock.asset.count.mockResolvedValue(0);
+    prismaMock.account.count.mockResolvedValue(0);
+
+    await expect(
+      memberService.deleteMember("hh-1", "owner-user", "m-1", ctx, undefined)
+    ).rejects.toThrow(/2 assigned items/);
+  });
+
+  it("throws when the reassignment target does not exist", async () => {
+    prismaMock.member.findUnique
+      .mockResolvedValueOnce({ id: "m-1", householdId: "hh-1", userId: null } as any) // the member
+      .mockResolvedValueOnce(null); // the reassignment target (looked up in the tx)
+    prismaMock.incomeSource.count.mockResolvedValue(1);
+    prismaMock.committedItem.count.mockResolvedValue(0);
+    prismaMock.discretionaryItem.count.mockResolvedValue(0);
+    prismaMock.asset.count.mockResolvedValue(0);
+    prismaMock.account.count.mockResolvedValue(0);
+
+    await expect(
+      memberService.deleteMember("hh-1", "owner-user", "m-1", ctx, "target-x")
+    ).rejects.toThrow("Reassignment target member not found");
+  });
+
+  it("reassigns items to the target then deletes the member", async () => {
+    prismaMock.member.findUnique
+      .mockResolvedValueOnce({ id: "m-1", householdId: "hh-1", userId: null } as any)
+      .mockResolvedValueOnce({ id: "target", householdId: "hh-1", userId: null } as any);
+    prismaMock.incomeSource.count.mockResolvedValue(1);
+    prismaMock.committedItem.count.mockResolvedValue(0);
+    prismaMock.discretionaryItem.count.mockResolvedValue(0);
+    prismaMock.asset.count.mockResolvedValue(0);
+    prismaMock.account.count.mockResolvedValue(0);
+    prismaMock.incomeSource.updateMany.mockResolvedValue({ count: 1 } as any);
+    prismaMock.committedItem.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.discretionaryItem.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.asset.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.account.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.giftPerson.updateMany.mockResolvedValue({ count: 0 } as any);
+    prismaMock.member.delete.mockResolvedValue({} as any);
+    prismaMock.auditLog.create.mockResolvedValue({} as any);
+
+    await memberService.deleteMember("hh-1", "owner-user", "m-1", ctx, "target");
+
+    expect(prismaMock.incomeSource.updateMany).toHaveBeenCalledWith({
+      where: { householdId: "hh-1", memberId: "m-1" },
+      data: { memberId: "target" },
+    });
+    expect(prismaMock.member.delete).toHaveBeenCalledWith({ where: { id: "m-1" } });
+  });
+});
+
+describe("memberService.getItemCountsForMember", () => {
+  it("sums counts across all item types", async () => {
+    prismaMock.incomeSource.count.mockResolvedValue(1);
+    prismaMock.committedItem.count.mockResolvedValue(2);
+    prismaMock.discretionaryItem.count.mockResolvedValue(3);
+    prismaMock.asset.count.mockResolvedValue(4);
+    prismaMock.account.count.mockResolvedValue(5);
+
+    const counts = await memberService.getItemCountsForMember("hh-1", "m-1");
+
+    expect(counts).toEqual({
+      total: 15,
+      income: 1,
+      committed: 2,
+      discretionary: 3,
+      assets: 4,
+      accounts: 5,
+    });
+  });
+
+  it("returns a zero total when the member owns nothing", async () => {
+    prismaMock.incomeSource.count.mockResolvedValue(0);
+    prismaMock.committedItem.count.mockResolvedValue(0);
+    prismaMock.discretionaryItem.count.mockResolvedValue(0);
+    prismaMock.asset.count.mockResolvedValue(0);
+    prismaMock.account.count.mockResolvedValue(0);
+
+    const counts = await memberService.getItemCountsForMember("hh-1", "m-1");
+    expect(counts.total).toBe(0);
+  });
+});

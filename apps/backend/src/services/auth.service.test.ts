@@ -297,4 +297,185 @@ describe("authService.refreshAccessToken", () => {
     expect(result.expiresAt.getTime()).toBeLessThanOrEqual(sessionExpiresAt.getTime());
     expect(result.sessionExpiresAt.getTime()).toBe(sessionExpiresAt.getTime());
   });
+
+  it("revokes the whole family when a revoked token is replayed", async () => {
+    (verifyRefreshToken as any).mockReturnValue({ userId: "user-1" });
+    prismaMock.refreshToken.findUnique.mockResolvedValue({
+      id: "rt-old",
+      familyId: "fam-1",
+      isRevoked: true, // already revoked → replay attack
+      rememberMe: false,
+      expiresAt: new Date(Date.now() + 60_000),
+      sessionExpiresAt: new Date(Date.now() + 60_000),
+    } as any);
+
+    await expect(authService.refreshAccessToken("replayed-token")).rejects.toThrow(
+      /reuse detected/
+    );
+    // The entire family must be revoked.
+    expect(prismaMock.refreshToken.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { familyId: "fam-1" }, data: { isRevoked: true } })
+    );
+  });
+
+  it("rejects an unknown (not stored) refresh token", async () => {
+    (verifyRefreshToken as any).mockReturnValue({ userId: "user-1" });
+    prismaMock.refreshToken.findUnique.mockResolvedValue(null);
+
+    // "Invalid refresh token" is an AuthenticationError, re-thrown as-is.
+    await expect(authService.refreshAccessToken("ghost-token")).rejects.toThrow(
+      /invalid refresh token/i
+    );
+  });
+
+  it("rejects when the idle expiry has passed", async () => {
+    (verifyRefreshToken as any).mockReturnValue({ userId: "user-1" });
+    prismaMock.refreshToken.findUnique.mockResolvedValue({
+      id: "rt-1",
+      familyId: "fam-1",
+      isRevoked: false,
+      rememberMe: false,
+      expiresAt: new Date(Date.now() - 1000), // idle-expired
+      sessionExpiresAt: new Date(Date.now() + 60_000),
+    } as any);
+
+    await expect(authService.refreshAccessToken("stale-token")).rejects.toThrow(
+      /refresh token expired/i
+    );
+  });
+
+  it("rejects when the absolute session cap has passed", async () => {
+    (verifyRefreshToken as any).mockReturnValue({ userId: "user-1" });
+    prismaMock.refreshToken.findUnique.mockResolvedValue({
+      id: "rt-1",
+      familyId: "fam-1",
+      isRevoked: false,
+      rememberMe: false,
+      expiresAt: new Date(Date.now() + 60_000),
+      sessionExpiresAt: new Date(Date.now() - 1000), // absolute cap passed
+    } as any);
+
+    await expect(authService.refreshAccessToken("capped-token")).rejects.toThrow(
+      /session expired/i
+    );
+  });
+});
+
+describe("authService.findUserByEmail", () => {
+  it("looks up by lowercased email", async () => {
+    const user = buildUser({ email: "person@example.com" });
+    prismaMock.user.findUnique.mockResolvedValue(user);
+
+    const result = await authService.findUserByEmail("Person@Example.COM");
+
+    expect(result).toBe(user as any);
+    expect(prismaMock.user.findUnique).toHaveBeenCalledWith({
+      where: { email: "person@example.com" },
+    });
+  });
+
+  it("returns null when no user matches", async () => {
+    prismaMock.user.findUnique.mockResolvedValue(null);
+    expect(await authService.findUserByEmail("nobody@example.com")).toBeNull();
+  });
+});
+
+describe("authService.updateUserName", () => {
+  it("updates the name and strips sensitive fields", async () => {
+    prismaMock.user.update.mockResolvedValue(
+      buildUser({ id: "user-1", name: "New Name", passwordHash: "secret-hash" })
+    );
+
+    const result = await authService.updateUserName("user-1", "New Name");
+
+    expect(result.name).toBe("New Name");
+    expect(result).not.toHaveProperty("passwordHash");
+    expect(result).not.toHaveProperty("twoFactorSecret");
+    expect(result).not.toHaveProperty("twoFactorEnabled");
+  });
+
+  it("throws NotFoundError when the user does not exist (P2025)", async () => {
+    const { Prisma } = await import("@prisma/client");
+    const err = new Prisma.PrismaClientKnownRequestError("not found", {
+      code: "P2025",
+      clientVersion: "test",
+    });
+    prismaMock.user.update.mockRejectedValue(err);
+
+    await expect(authService.updateUserName("ghost", "X")).rejects.toThrow("User not found");
+  });
+
+  it("rethrows unexpected errors unchanged", async () => {
+    prismaMock.user.update.mockRejectedValue(new Error("db exploded"));
+    await expect(authService.updateUserName("user-1", "X")).rejects.toThrow("db exploded");
+  });
+});
+
+describe("authService.revokeAllUserTokens", () => {
+  it("revokes only the user's non-revoked tokens", async () => {
+    await authService.revokeAllUserTokens("user-1");
+    expect(prismaMock.refreshToken.updateMany).toHaveBeenCalledWith({
+      where: { userId: "user-1", isRevoked: false },
+      data: { isRevoked: true },
+    });
+  });
+});
+
+describe("authService.revokeTokenFamily", () => {
+  it("revokes a family scoped to the owning user", async () => {
+    await authService.revokeTokenFamily("fam-9", "user-1");
+    expect(prismaMock.refreshToken.updateMany).toHaveBeenCalledWith({
+      where: { familyId: "fam-9", userId: "user-1" },
+      data: { isRevoked: true },
+    });
+  });
+});
+
+describe("authService.getUserSessions", () => {
+  it("returns one entry per family, keeping the most recent", async () => {
+    prismaMock.refreshToken.findMany.mockResolvedValue([
+      { id: "t1", familyId: "fam-A", createdAt: new Date(3) },
+      { id: "t2", familyId: "fam-A", createdAt: new Date(2) }, // dup family → dropped
+      { id: "t3", familyId: "fam-B", createdAt: new Date(1) },
+    ] as any);
+
+    const sessions = await authService.getUserSessions("user-1");
+
+    expect(sessions.map((s: { id: string }) => s.id)).toEqual(["t1", "t3"]);
+    // Only active, non-expired tokens are queried.
+    expect(prismaMock.refreshToken.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ userId: "user-1", isRevoked: false }),
+      })
+    );
+  });
+
+  it("returns an empty list when the user has no active sessions", async () => {
+    prismaMock.refreshToken.findMany.mockResolvedValue([] as any);
+    expect(await authService.getUserSessions("user-1")).toEqual([]);
+  });
+});
+
+describe("authService.revokeSession", () => {
+  it("returns true when a session was revoked", async () => {
+    prismaMock.refreshToken.updateMany.mockResolvedValue({ count: 2 } as any);
+    expect(await authService.revokeSession("fam-1", "user-1")).toBe(true);
+  });
+
+  it("returns false when nothing matched (wrong owner or unknown family)", async () => {
+    prismaMock.refreshToken.updateMany.mockResolvedValue({ count: 0 } as any);
+    expect(await authService.revokeSession("fam-x", "user-1")).toBe(false);
+  });
+});
+
+describe("authService.cleanupExpiredTokens", () => {
+  it("deletes idle- or session-expired tokens and returns the count", async () => {
+    prismaMock.refreshToken.deleteMany.mockResolvedValue({ count: 7 } as any);
+
+    const count = await authService.cleanupExpiredTokens();
+
+    expect(count).toBe(7);
+    const arg = (prismaMock.refreshToken.deleteMany as any).mock.calls[0][0];
+    expect(arg.where.OR).toHaveLength(2);
+  });
 });
