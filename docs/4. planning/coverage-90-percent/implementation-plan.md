@@ -2,7 +2,31 @@
 
 > Goal: bring **every package to ≥ 90% coverage on both lines and functions**, rolled
 > out as an **incremental ratchet** (CI stays green throughout; floors climb as tests
-> land). Owner: engineering. Status: gate + tooling landed; test-writing batches pending.
+> land). Owner: engineering.
+
+## Progress log
+
+The gate now measures **true whole-codebase coverage** (merged lcov) — the per-file-mean
+was abandoned because it could never be driven to 90% by writing tests. Tooling, the
+ratchet, and the local backend-coverage helper are landed.
+
+| Package           | Start (true) | Latest          | Floor         | Target                           |
+| ----------------- | ------------ | --------------- | ------------- | -------------------------------- |
+| `packages/shared` | 98.9 / 100   | **98.9 / 100**  | 90/90         | ✅ met                           |
+| `apps/backend`    | 71.8 / 84.7  | **75.3 / 90.2** | 90 fn / 73 ln | functions ✅ met; lines climbing |
+| `apps/frontend`   | 72.6 / 55.0  | in progress     | 53 / 70       | pending                          |
+
+Landed batches (all happy + unhappy paths, ratcheted in):
+
+- **backend:** actor-ctx, isa-tax-year, retention, auth.service (token lifecycle),
+  member.service, snapshot, subcategory, isa-forecast, household.service (joinViaInvite +
+  member removal), forecast helpers, import.restoreFromBackup, gifts routes, waterfall
+  routes (mutations + periods), assets routes → **functions hit the 90% milestone.**
+- **frontend:** formatAmount, securityActivity.service, household.service endpoints.
+
+Remaining to 90%: **backend lines** (~75→90, concentrated in the big services —
+waterfall/cashflow/gifts/import) and **all of frontend** (hooks, components, the rest of
+the services). See the phased breakdown below.
 
 ---
 
