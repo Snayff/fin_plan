@@ -88,6 +88,23 @@ interface RunOptions {
   floor: Floor;
   floors?: Record<string, Floor>;
   ratchetTolerancePp: number;
+  /** Coverage goal each package is ratcheting toward. Reported, not enforced. */
+  target?: Floor;
+}
+
+/** Print per-package distance to the target. Informational — never fails CI. */
+export function reportProgress(current: Record<string, PackageCoverage>, target: Floor): void {
+  console.log(
+    `\nProgress toward target (functions ≥ ${target.functions}%, lines ≥ ${target.lines}%):`
+  );
+  for (const [pkg, cur] of Object.entries(current)) {
+    const fnGap = target.functions - cur.functions;
+    const lineGap = target.lines - cur.lines;
+    const mark = (gap: number) => (gap <= 0 ? "✅" : `▲ ${gap.toFixed(1)}pp`);
+    console.log(
+      `  ${pkg}: functions ${cur.functions.toFixed(1)}% ${mark(fnGap)}, lines ${cur.lines.toFixed(1)}% ${mark(lineGap)}`
+    );
+  }
 }
 
 export function runCli(opts: RunOptions): number {
@@ -116,6 +133,8 @@ export function runCli(opts: RunOptions): number {
     floors: opts.floors,
     ratchetTolerancePp: opts.ratchetTolerancePp,
   });
+
+  if (opts.target) reportProgress(current, opts.target);
 
   if (ok) {
     console.log("✅ coverage check passed");
@@ -150,13 +169,18 @@ if (import.meta.main) {
     // Default floor — applied to any package without an explicit override below.
     floor: { functions: 63, lines: 74 },
     // Per-package floors. Each sits a few points below the package's current
-    // baseline; the 1pp ratchet catches gradual erosion above the floor.
+    // baseline; the 1pp ratchet catches gradual erosion above the floor. As
+    // tests land, run `bun scripts/bump-baseline.ts` to lock in the gains —
+    // this drags each floor upward toward the 90% target below.
     floors: {
       "apps/backend": { functions: 63, lines: 74 },
       "apps/frontend": { functions: 38, lines: 54 },
       "packages/shared": { functions: 99, lines: 97 },
     },
     ratchetTolerancePp: 1,
+    // The goal every package is climbing toward. Reported on each run; the gate
+    // does not fail until a package's floor (raised via bump-baseline) reaches it.
+    target: { functions: 90, lines: 90 },
   });
   process.exit(exitCode);
 }
