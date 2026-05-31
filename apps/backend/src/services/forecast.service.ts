@@ -434,4 +434,9 @@ export function compoundForwardYears(
   return initialBalance * Math.pow(1 + annualRate, years);
 }
 
-export const __test__ = { projectBalanceSeries, disposalYearOffset, accountEffectiveRate };
+export const __test__ = {
+  projectBalanceSeries,
+  disposalYearOffset,
+  accountEffectiveRate,
+  compoundForwardYears,
+};

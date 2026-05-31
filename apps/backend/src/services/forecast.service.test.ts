@@ -680,3 +680,24 @@ describe("forecastService.getProjections — stocksAndShares series", () => {
     expect(result.monthlyContributionsByScope.savings).toBe(75);
   });
 });
+
+describe("forecastService.__test__.compoundForwardYears", () => {
+  const { compoundForwardYears } = forecastTest;
+
+  it("returns the initial balance unchanged for zero years", () => {
+    expect(compoundForwardYears(1000, 0.05, 0)).toBe(1000);
+  });
+
+  it("returns the initial balance for negative years (no time travel)", () => {
+    expect(compoundForwardYears(1000, 0.05, -3)).toBe(1000);
+  });
+
+  it("compounds at the annual rate over whole years", () => {
+    // 1000 * 1.1^2 = 1210
+    expect(compoundForwardYears(1000, 0.1, 2)).toBeCloseTo(1210, 5);
+  });
+
+  it("leaves the balance flat at a zero rate", () => {
+    expect(compoundForwardYears(2500, 0, 5)).toBe(2500);
+  });
+});
