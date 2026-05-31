@@ -35,7 +35,7 @@ mock.module("./export.service", () => ({
 }));
 
 import { importService } from "./import.service";
-import { AuthorizationError, ValidationError } from "../utils/errors";
+import { AuthorizationError, NotFoundError, ValidationError } from "../utils/errors";
 
 beforeEach(() => resetPrismaMocks());
 
@@ -534,5 +534,55 @@ describe("importService.importHousehold", () => {
 
     // The income source create should never have fired — the lookup throws first
     expect(prismaMock.incomeSource.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("importService.restoreFromBackup", () => {
+  const OWNER = buildMember({ role: "owner" });
+
+  it("rejects when the caller is not the household owner", async () => {
+    prismaMock.member.findFirst.mockResolvedValue(buildMember({ role: "member" }));
+
+    await expect(importService.restoreFromBackup("hh-1", "u1", "backup-1")).rejects.toThrow(
+      AuthorizationError
+    );
+    expect(prismaMock.importBackup.findUnique).not.toHaveBeenCalled();
+  });
+
+  it("throws NotFoundError when the backup does not exist", async () => {
+    prismaMock.member.findFirst.mockResolvedValue(OWNER);
+    prismaMock.importBackup.findUnique.mockResolvedValue(null);
+
+    await expect(importService.restoreFromBackup("hh-1", "u1", "missing")).rejects.toThrow(
+      NotFoundError
+    );
+  });
+
+  it("throws NotFoundError when the backup belongs to another household", async () => {
+    prismaMock.member.findFirst.mockResolvedValue(OWNER);
+    prismaMock.importBackup.findUnique.mockResolvedValue({
+      id: "backup-1",
+      householdId: "other-hh",
+      expiresAt: new Date(Date.now() + 60_000),
+      data: {},
+    } as any);
+
+    await expect(importService.restoreFromBackup("hh-1", "u1", "backup-1")).rejects.toThrow(
+      NotFoundError
+    );
+  });
+
+  it("throws ValidationError when the backup has expired", async () => {
+    prismaMock.member.findFirst.mockResolvedValue(OWNER);
+    prismaMock.importBackup.findUnique.mockResolvedValue({
+      id: "backup-1",
+      householdId: "hh-1",
+      expiresAt: new Date(Date.now() - 60_000), // expired
+      data: {},
+    } as any);
+
+    await expect(importService.restoreFromBackup("hh-1", "u1", "backup-1")).rejects.toThrow(
+      /backup has expired/i
+    );
   });
 });
