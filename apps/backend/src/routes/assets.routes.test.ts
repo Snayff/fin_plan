@@ -246,3 +246,81 @@ describe("GET /api/assets/accounts/isa-allowance", () => {
     expect(mockAssetsService.getIsaAllowanceSummary).toHaveBeenCalledWith("hh-1");
   });
 });
+
+describe("asset & account mutation endpoints (coverage gaps)", () => {
+  async function buildApp() {
+    const app = await buildTestApp();
+    app.setErrorHandler(errorHandler);
+    app.register(assetsRoutes, { prefix: "/api/assets" });
+    await app.ready();
+    return app;
+  }
+
+  it("PATCH /assets/:assetId updates and returns the asset", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "PATCH",
+      url: "/api/assets/assets/a-1",
+      payload: { name: "Holiday Home" },
+    });
+    expect(res.statusCode).toBe(200);
+    expect(mockAssetsService.updateAsset).toHaveBeenCalledWith(
+      "hh-1",
+      "a-1",
+      expect.objectContaining({ name: "Holiday Home" }),
+      expect.anything()
+    );
+  });
+
+  it("POST /assets/:assetId/confirm delegates to confirmAsset", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "POST", url: "/api/assets/assets/a-1/confirm" });
+    expect(res.statusCode).toBe(200);
+    expect(mockAssetsService.confirmAsset).toHaveBeenCalledWith("hh-1", "a-1", expect.anything());
+  });
+
+  it("DELETE /accounts/:accountId delegates to deleteAccount", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "DELETE", url: "/api/assets/accounts/ac-1" });
+    expect(res.statusCode).toBe(200);
+    expect(mockAssetsService.deleteAccount).toHaveBeenCalledWith("hh-1", "ac-1", expect.anything());
+  });
+
+  it("POST /accounts/:accountId/balance records a balance and returns 201", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/assets/accounts/ac-1/balance",
+      payload: { value: 5000, date: "2026-03-30" },
+    });
+    expect(res.statusCode).toBe(201);
+    expect(mockAssetsService.recordAccountBalance).toHaveBeenCalledWith(
+      "hh-1",
+      "ac-1",
+      expect.objectContaining({ value: 5000 }),
+      expect.anything()
+    );
+  });
+
+  it("POST /accounts/:accountId/balance rejects a non-positive value with 400", async () => {
+    const app = await buildApp();
+    const res = await app.inject({
+      method: "POST",
+      url: "/api/assets/accounts/ac-1/balance",
+      payload: { value: -1, date: "2026-03-30" },
+    });
+    expect(res.statusCode).toBe(400);
+    expect(mockAssetsService.recordAccountBalance).not.toHaveBeenCalled();
+  });
+
+  it("POST /accounts/:accountId/confirm delegates to confirmAccount", async () => {
+    const app = await buildApp();
+    const res = await app.inject({ method: "POST", url: "/api/assets/accounts/ac-1/confirm" });
+    expect(res.statusCode).toBe(200);
+    expect(mockAssetsService.confirmAccount).toHaveBeenCalledWith(
+      "hh-1",
+      "ac-1",
+      expect.anything()
+    );
+  });
+});
