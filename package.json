@@ -17,6 +17,7 @@
     "coverage:gaps:frontend": "bun scripts/coverage-report.ts apps/frontend apps/frontend --table",
     "coverage:gaps:shared": "bun scripts/coverage-report.ts packages/shared packages/shared --table",
     "coverage:bump": "bun scripts/bump-baseline.ts",
+    "coverage:backend": "bash scripts/coverage-backend-local.sh",
     "lint": "turbo run lint",
     "type-check": "turbo run type-check",
     "clean": "turbo run clean && rm -rf node_modules",
